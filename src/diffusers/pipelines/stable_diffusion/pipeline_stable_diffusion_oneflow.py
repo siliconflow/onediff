@@ -39,7 +39,11 @@ class GraphToRun(flow.nn.Graph):
                 latent_model_input = latent_model_input / ((sigma**2 + 1) ** 0.5)
 
             # predict the noise residual
-            noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+            print("type(latent_model_input)", type(latent_model_input))
+            print("type(t)", type(t))
+            print("type(text_embeddings)", type(text_embeddings))
+            noise_pred_ = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings)
+            noise_pred = noise_pred_.sample
 
             # perform guidance
             if do_classifier_free_guidance:

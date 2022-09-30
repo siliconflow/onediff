@@ -23,7 +23,7 @@ import oneflow as torch
 
 from ..configuration_utils import ConfigMixin, register_to_config
 from .scheduling_oneflow_utils import OneFlowSchedulerMixin, SchedulerOutput
-from ..modeling_oneflow_utils import extract_scalar
+from ..modeling_oneflow_utils import extract_scalar, from_numpy_if_needed
 
 def betas_for_alpha_bar(num_diffusion_timesteps, max_beta=0.999):
     """
@@ -357,7 +357,11 @@ class OneFlowPNDMScheduler(OneFlowSchedulerMixin, ConfigMixin):
         # model_output -> e_θ(x_t, t)
         # prev_sample -> x_(t−δ)
         alpha_prod_t = self.alphas_cumprod[timestep]
-        alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
+        # alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
+        if isinstance(prev_timestep, torch.Tensor):
+            alpha_prod_t_prev = torch.where(from_numpy_if_needed(prev_timestep >= 0), from_numpy_if_needed(self.alphas_cumprod[prev_timestep]), from_numpy_if_needed(self.final_alpha_cumprod))
+        else:
+            alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
         if self.tensor_format == "pt":
             if (alpha_prod_t_prev.dtype == torch.float64):
                 alpha_prod_t_prev = alpha_prod_t_prev.to(dtype=torch.float32)
@@ -378,11 +382,11 @@ class OneFlowPNDMScheduler(OneFlowSchedulerMixin, ConfigMixin):
         ) ** (0.5)
 
         # TODO(oneflow), oneflow's size [] tensor can't be used as a scalar
-        timestep = extract_scalar(timestep)
-        sample_coeff = extract_scalar(sample_coeff)
-        alpha_prod_t_prev = extract_scalar(alpha_prod_t_prev)
-        alpha_prod_t = extract_scalar(alpha_prod_t)
-        model_output_denom_coeff = extract_scalar(model_output_denom_coeff)
+        timestep = extract_scalar(timestep, device=sample.device)
+        sample_coeff = extract_scalar(sample_coeff, device=sample.device)
+        alpha_prod_t_prev = extract_scalar(alpha_prod_t_prev, device=sample.device)
+        alpha_prod_t = extract_scalar(alpha_prod_t, device=sample.device)
+        model_output_denom_coeff = extract_scalar(model_output_denom_coeff, device=sample.device)
 
         # full formula (9)
         prev_sample = (
