@@ -16,6 +16,43 @@ from ...schedulers import LMSDiscreteScheduler
 from . import StableDiffusionPipelineOutput
 from .safety_checker import StableDiffusionSafetyChecker
 
+import oneflow as flow
+
+class GraphToRun(flow.nn.Graph):
+    def __init__(self, unet, scheduler, guidance_scale, extra_step_kwargs):
+        super().__init__()
+        self.unet = unet
+        self.scheduler = scheduler
+        self.extra_step_kwargs = extra_step_kwargs
+        self.guidance_scale = guidance_scale
+
+    def build(self, latents, text_embeddings):
+        do_classifier_free_guidance = self.guidance_scale > 1.0
+        extra_step_kwargs = self.extra_step_kwargs
+        for i, t in enumerate(self.scheduler.timesteps):
+            torch._oneflow_internal.profiler.RangePush(f"denoise_{i}")
+            # expand the latents if we are doing classifier free guidance
+            latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+            if isinstance(self.scheduler, LMSDiscreteScheduler):
+                sigma = self.scheduler.sigmas[i]
+                # the model input needs to be scaled to match the continuous ODE formulation in K-LMS
+                latent_model_input = latent_model_input / ((sigma**2 + 1) ** 0.5)
+
+            # predict the noise residual
+            noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+
+            # perform guidance
+            if do_classifier_free_guidance:
+                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
+
+            # compute the previous noisy sample x_t -> x_t-1
+            if isinstance(self.scheduler, LMSDiscreteScheduler):
+                latents = self.scheduler.step(noise_pred, i, latents, **extra_step_kwargs).prev_sample
+            else:
+                latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+            torch._oneflow_internal.profiler.RangePop()
+        return latents
 
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     r"""
@@ -256,30 +293,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if accepts_eta:
             extra_step_kwargs["eta"] = eta
 
-        for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
-            torch._oneflow_internal.profiler.RangePush(f"denoise_{i}")
-            # expand the latents if we are doing classifier free guidance
-            latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-            if isinstance(self.scheduler, LMSDiscreteScheduler):
-                sigma = self.scheduler.sigmas[i]
-                # the model input needs to be scaled to match the continuous ODE formulation in K-LMS
-                latent_model_input = latent_model_input / ((sigma**2 + 1) ** 0.5)
-
-            # predict the noise residual
-            noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
-
-            # perform guidance
-            if do_classifier_free_guidance:
-                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
-
-            # compute the previous noisy sample x_t -> x_t-1
-            if isinstance(self.scheduler, LMSDiscreteScheduler):
-                latents = self.scheduler.step(noise_pred, i, latents, **extra_step_kwargs).prev_sample
-            else:
-                latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
-            torch._oneflow_internal.profiler.RangePop()
-
+        g = GraphToRun(self.unet, self.scheduler, guidance_scale, extra_step_kwargs)
+        latents = g(latents, text_embeddings)
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
         import numpy as np
