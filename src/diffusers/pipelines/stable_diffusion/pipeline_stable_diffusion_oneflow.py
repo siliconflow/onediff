@@ -4,7 +4,8 @@ from typing import List, Optional, Union
 
 import oneflow as torch
 
-from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
+from transformers import CLIPFeatureExtractor, CLIPTokenizer
+from transformers import OneFlowCLIPTextModel as CLIPTextModel
 
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL
@@ -14,7 +15,7 @@ from ...schedulers import OneFlowDDIMScheduler as DDIMScheduler
 from ...schedulers import OneFlowPNDMScheduler as PNDMScheduler
 from ...schedulers import LMSDiscreteScheduler
 from . import StableDiffusionPipelineOutput
-from .safety_checker import StableDiffusionSafetyChecker
+from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
 
 import oneflow as flow
 
@@ -30,7 +31,7 @@ class GraphToRun(flow.nn.Graph):
         do_classifier_free_guidance = self.guidance_scale > 1.0
         extra_step_kwargs = self.extra_step_kwargs
         for i, t in enumerate(self.scheduler.timesteps):
-            torch._oneflow_internal.profiler.RangePush(f"denoise_{i}")
+            torch._oneflow_internal.profiler.RangePush(f"denoise-{i}")
             # expand the latents if we are doing classifier free guidance
             latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
             if isinstance(self.scheduler, LMSDiscreteScheduler):
@@ -234,14 +235,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             padding="max_length",
             max_length=self.tokenizer.model_max_length,
             truncation=True,
-            return_tensors="pt",
+            return_tensors="np",
         )
-        # text_input.input_ids = torch.from_numpy(text_input.input_ids)
-        import torch as og_torch
-        # put embeddings on cpu to save VRAM
-        og_torch_device = og_torch.device("cpu")
-        self.text_encoder = self.text_encoder.to(og_torch_device)
-        text_embeddings = self.text_encoder(text_input.input_ids.to(og_torch_device))[0]
+        text_input.input_ids = torch.from_numpy(text_input.input_ids)
+        text_embeddings = self.text_encoder(text_input.input_ids.to(self.device))[0]
 
         # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
@@ -251,15 +248,16 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if do_classifier_free_guidance:
             max_length = text_input.input_ids.shape[-1]
             uncond_input = self.tokenizer(
-                [""] * batch_size, padding="max_length", max_length=max_length, return_tensors="pt"
+                [""] * batch_size, padding="max_length", max_length=max_length, return_tensors="np"
             )
-            uncond_embeddings = self.text_encoder(uncond_input.input_ids.to(og_torch_device))[0]
+            uncond_input.input_ids = torch.from_numpy(uncond_input.input_ids)
+            uncond_embeddings = self.text_encoder(uncond_input.input_ids.to(self.device))[0]
 
             # For classifier free guidance, we need to do two forward passes.
             # Here we concatenate the unconditional and text embeddings into a single batch
             # to avoid doing two forward passes
-            text_embeddings = og_torch.cat([uncond_embeddings, text_embeddings])
-        text_embeddings = torch.from_numpy(text_embeddings.detach().cpu().numpy()).to(device=self.device)
+            text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
+
         # get the initial random noise unless the user supplied it
 
         # Unlike in other pipelines, latents need to be generated in the target device
@@ -308,10 +306,16 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         image = (image / 2 + 0.5).clamp(0, 1)
         image = image.cpu().permute(0, 2, 3, 1).numpy()
 
+        # run safety checker
+        safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="np")
+        safety_checker_input.pixel_values = torch.from_numpy(safety_checker_input.pixel_values).to(self.device)
+        image, has_nsfw_concept = self.safety_checker(images=image, clip_input=safety_checker_input.pixel_values)
+
         if output_type == "pil":
             image = self.numpy_to_pil(image)
 
         if not return_dict:
-            return (image, [False])
-
-        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=[False])
+            return (image, has_nsfw_concept)
+        import torch as og_torch
+        assert og_torch.cuda.is_initialized() is False
+        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)

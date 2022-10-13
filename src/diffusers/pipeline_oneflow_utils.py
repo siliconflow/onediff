@@ -53,6 +53,7 @@ LOADABLE_CLASSES = {
         "PreTrainedTokenizerFast": ["save_pretrained", "from_pretrained"],
         "PreTrainedModel": ["save_pretrained", "from_pretrained"],
         "FeatureExtractionMixin": ["save_pretrained", "from_pretrained"],
+        "OneFlowCLIPTextModel": ["save_pretrained", "from_pretrained"],
     },
 }
 
@@ -169,16 +170,12 @@ class OneFlowDiffusionPipeline(ConfigMixin):
             if isinstance(module, torch.nn.Module):
                 module.to(torch_device)
             if isinstance(module, og_torch.nn.Module):
-                if "SafetyChecker" in str(type(module)) or "CLIPTextModel" in str(type(module)):
-                    print("skipping", type(module), "on:", module.device)
-                    continue
+                print(f"moving pytorch model to cuda {type(module)}: {module.device} => cuda" )
+                if isinstance(torch_device, torch.device):
+                    torch_device = og_torch.device(str(torch_device))
                 else:
-                    print(f"moving pytorch model to cuda {type(module)}: {module.device} => cuda" )
-                    if isinstance(torch_device, torch.device):
-                        torch_device = og_torch.device(str(torch_device))
-                    else:
-                        assert isinstance(torch_device, str)
-                    module.to(torch_device)
+                    assert isinstance(torch_device, str)
+                module.to(torch_device)
         return self
 
     @property
@@ -352,8 +349,11 @@ class OneFlowDiffusionPipeline(ConfigMixin):
 
         # 3. Load each module in the pipeline
         for name, (library_name, class_name) in init_dict.items():
-            if name in ["scheduler", "unet", "vae"]:
+            if name in ["scheduler", "unet", "vae", "text_encoder", "safety_checker"]:
                 class_name = "OneFlow" + class_name
+                print(f"[oneflow]", f"[{name}]", f"{library_name}.{class_name}")
+            else:
+                print(f"[non-oneflow]", f"[{name}]", f"{library_name}.{class_name}")
             # 3.1 - now that JAX/Flax is an official framework of the library, we might load from Flax names
             if class_name.startswith("Flax"):
                 class_name = class_name[4:]
@@ -406,8 +406,11 @@ class OneFlowDiffusionPipeline(ConfigMixin):
                     if issubclass(class_obj, class_candidate):
                         load_method_name = importable_classes[class_name][1]
 
-                load_method = getattr(class_obj, load_method_name)
-
+                try:
+                    load_method = getattr(class_obj, load_method_name)
+                except TypeError as e:
+                    print(f"fail to load {library_name}.{class_name}, class obj: {class_obj}, maybe it is not allowed?")
+                    raise e
                 loading_kwargs = {}
                 if issubclass(class_obj, torch.nn.Module):
                     loading_kwargs["torch_dtype"] = torch_dtype
