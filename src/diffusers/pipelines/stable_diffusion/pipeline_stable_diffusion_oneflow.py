@@ -96,7 +96,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     ):
         super().__init__()
         scheduler = scheduler.set_format("pt")
-
+        self.denoise_graph = None
         if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
             warnings.warn(
                 f"The configuration file of this scheduler: {scheduler} is outdated. `steps_offset`"
@@ -291,9 +291,9 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         extra_step_kwargs = {}
         if accepts_eta:
             extra_step_kwargs["eta"] = eta
-
-        g = GraphToRun(self.unet, self.scheduler, guidance_scale, extra_step_kwargs)
-        latents = g(latents, text_embeddings)
+        if self.denoise_graph is None:
+            self.denoise_graph = GraphToRun(self.unet, self.scheduler, guidance_scale, extra_step_kwargs)
+        latents = self.denoise_graph(latents, text_embeddings)
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
         import numpy as np
