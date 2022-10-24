@@ -18,6 +18,7 @@ from . import StableDiffusionPipelineOutput
 from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
 
 import oneflow as flow
+from timeit import default_timer as timer
 
 class GraphToRun(flow.nn.Graph):
     def __init__(self, unet, scheduler, guidance_scale, extra_step_kwargs):
@@ -293,9 +294,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             extra_step_kwargs["eta"] = eta
         if self.denoise_graph is None:
             self.denoise_graph = GraphToRun(self.unet, self.scheduler, guidance_scale, extra_step_kwargs)
+        start = timer()
         latents = self.denoise_graph(latents, text_embeddings)
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
+        end = timer()
+        print(f"latents generated in {end - start} seconds")
         import numpy as np
         if isinstance(latents, np.ndarray):
             latents = torch.from_numpy(latents)
