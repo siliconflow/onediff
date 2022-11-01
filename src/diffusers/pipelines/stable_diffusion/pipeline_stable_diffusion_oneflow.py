@@ -364,7 +364,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             # predict the noise residual
             torch._oneflow_internal.profiler.RangePush(f"denoise-{i}-unet-graph")
 
-            noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+            noise_pred = unet_graph(latent_model_input, t, text_embeddings)
 
             torch._oneflow_internal.profiler.RangePop()
 
