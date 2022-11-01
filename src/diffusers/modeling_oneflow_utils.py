@@ -579,10 +579,6 @@ class OneFlowModelMixin(torch.nn.Module):
         """
         return get_parameter_dtype(self)
 
-
-    def dtype_(self) -> torch.dtype:
-        return get_parameter_dtype(self)
-
     def num_parameters(self, only_trainable: bool = False, exclude_embeddings: bool = False) -> int:
         """
         Get number of (optionally, trainable or non-embeddings) parameters in the module.
