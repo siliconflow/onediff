@@ -283,8 +283,7 @@ class OneFlowUNet2DConditionModel(ModelMixin, ConfigMixin):
         # timesteps does not contain any weights and will always return f32 tensors
         # but time_embedding might actually be running in fp16. so we need to cast here.
         # there might be better ways to encapsulate this.
-        # TODO: oneflow doesn's support self.dtype
-        t_emb = t_emb.to(dtype=torch.float32)
+        t_emb = t_emb.to(dtype=self.dtype)
         emb = self.time_embedding(t_emb)
 
         # 2. pre-process
