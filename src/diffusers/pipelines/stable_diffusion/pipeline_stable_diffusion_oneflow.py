@@ -278,6 +278,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         i, t = list(enumerate(self.scheduler.timesteps))[0]
         latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
         unet_graph._compile(latent_model_input, t, text_embeddings)
+        unet_graph(latent_model_input, t, text_embeddings)
 
         for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
             torch._oneflow_internal.profiler.RangePush(f"denoise-{i}")
