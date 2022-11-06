@@ -286,7 +286,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             self.unet_compiled = True
             self.unet_graph(latent_model_input, t, text_embeddings) # warmup
             compilation_time = timer() - compilation_start
-            print("[oneflow]", "[unet compilation]", compilation_time)
+            print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
 
         for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
             torch._oneflow_internal.profiler.RangePush(f"denoise-{i}")
@@ -320,7 +320,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if isinstance(latents, np.ndarray):
             latents = torch.from_numpy(latents)
         image = self.vae.decode(latents).sample
-        print("[oneflow]", "[image]", "[elapsed(s)]", timer() - start - compilation_time)
+        print("[oneflow]", "[elapsed(s)]", "[image]", timer() - start - compilation_time)
         post_process_start = timer()
 
         image = (image / 2 + 0.5).clamp(0, 1)
@@ -341,5 +341,5 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         import torch as og_torch
         assert og_torch.cuda.is_initialized() is False
 
-        print("[oneflow]", "[post-process]", "[elapsed(s)]", timer() - post_process_start)
+        print("[oneflow]", "[elapsed(s)]", "[post-process]", timer() - post_process_start)
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
