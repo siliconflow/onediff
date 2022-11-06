@@ -320,6 +320,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if isinstance(latents, np.ndarray):
             latents = torch.from_numpy(latents)
         image = self.vae.decode(latents).sample
+        print("[oneflow]", "[image]", "[elapsed(s)]", timer() - start - compilation_time)
+        post_process_start = timer()
 
         image = (image / 2 + 0.5).clamp(0, 1)
         image = image.cpu().permute(0, 2, 3, 1).numpy()
@@ -338,5 +340,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             return (image, has_nsfw_concept)
         import torch as og_torch
         assert og_torch.cuda.is_initialized() is False
-        print("[oneflow]", "[e2e]", timer() - start - compilation_time)
+
+        print("[oneflow]", "[post-process]", "[elapsed(s)]", timer() - post_process_start)
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
