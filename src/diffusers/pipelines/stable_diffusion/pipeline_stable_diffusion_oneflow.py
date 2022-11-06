@@ -276,6 +276,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if accepts_eta:
             extra_step_kwargs["eta"] = eta
 
+        compilation_time = 0
         if self.unet_compiled == False:
             print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
             i, t = list(enumerate(self.scheduler.timesteps))[0]
@@ -283,7 +284,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             self.unet_graph._compile(latent_model_input, t, text_embeddings)
             self.unet_compiled = True
             self.unet_graph(latent_model_input, t, text_embeddings) # warmup
-            print("[oneflow]", "[unet compilation]", timer() - start)
+            compilation_time = timer() - start
+            print("[oneflow]", "[unet compilation]", compilation_time)
 
         for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
             torch._oneflow_internal.profiler.RangePush(f"denoise-{i}")
@@ -335,5 +337,5 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             return (image, has_nsfw_concept)
         import torch as og_torch
         assert og_torch.cuda.is_initialized() is False
-        print("[oneflow]", "[e2e]", timer() - start)
+        print("[oneflow]", "[e2e]", timer() - start - compilation_time)
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
