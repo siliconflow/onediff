@@ -276,6 +276,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if accepts_eta:
             extra_step_kwargs["eta"] = eta
 
+        compilation_start = timer()
         compilation_time = 0
         if self.unet_compiled == False:
             print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
@@ -284,7 +285,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             self.unet_graph._compile(latent_model_input, t, text_embeddings)
             self.unet_compiled = True
             self.unet_graph(latent_model_input, t, text_embeddings) # warmup
-            compilation_time = timer() - start
+            compilation_time = timer() - compilation_start
             print("[oneflow]", "[unet compilation]", compilation_time)
 
         for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
