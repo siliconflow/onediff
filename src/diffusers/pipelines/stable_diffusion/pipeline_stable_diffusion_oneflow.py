@@ -33,7 +33,6 @@ class UNetGraph(flow.nn.Graph):
 
     def build(self, latent_model_input, t, text_embeddings):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
-
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
