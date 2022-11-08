@@ -99,8 +99,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             safety_checker=safety_checker,
             feature_extractor=feature_extractor,
         )
-        self.unet_graph = UNetGraph(self.unet)
-        self.unet_compiled = False
+        self.unet_graphs = dict()
 
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
         r"""
@@ -282,15 +281,18 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         compilation_start = timer()
         compilation_time = 0
         if compile_unet:
-            if self.unet_compiled == False:
+            if (height, width) in self.unet_graphs:
+                unet_graph = self.unet_graphs[height, width]
+            else:
                 print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
                 i, t = list(enumerate(self.scheduler.timesteps))[0]
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                self.unet_graph._compile(latent_model_input, t, text_embeddings)
-                self.unet_compiled = True
-                self.unet_graph(latent_model_input, t, text_embeddings) # warmup
+                unet_graph = UNetGraph(self.unet)
+                unet_graph._compile(latent_model_input, t, text_embeddings)
+                unet_graph(latent_model_input, t, text_embeddings) # warmup
                 compilation_time = timer() - compilation_start
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
+                self.unet_graphs[height, width] = unet_graph
 
         for i, t in enumerate(self.progress_bar(self.scheduler.timesteps)):
             torch._oneflow_internal.profiler.RangePush(f"denoise-{i}")
@@ -304,7 +306,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             # predict the noise residual
             if compile_unet:
                 torch._oneflow_internal.profiler.RangePush(f"denoise-{i}-unet-graph")
-                noise_pred = self.unet_graph(latent_model_input, t, text_embeddings)
+                noise_pred = unet_graph(latent_model_input, t, text_embeddings)
                 torch._oneflow_internal.profiler.RangePop()
             else:
                 noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
