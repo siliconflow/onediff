@@ -22,7 +22,7 @@ import oneflow as torch
 
 from ..configuration_utils import ConfigMixin, register_to_config
 from .scheduling_oneflow_utils import OneFlowSchedulerMixin, SchedulerOutput
-
+from ..modeling_oneflow_utils import extract_scalar
 
 def betas_for_alpha_bar(num_diffusion_timesteps, max_beta=0.999):
     """
@@ -229,10 +229,12 @@ class OneFlowDPMSolverMultistepScheduler(OneFlowSchedulerMixin, ConfigMixin):
         if self.config.algorithm_type == "dpmsolver++":
             if self.config.predict_epsilon:
                 alpha_t, sigma_t = self.alpha_t[timestep], self.sigma_t[timestep]
-                x0_pred = (sample - sigma_t * model_output) / alpha_t
+                x0_pred = (sample - sigma_t * model_output) / extract_scalar(alpha_t)
             else:
                 x0_pred = model_output
             if self.config.thresholding:
+                print("[oneflow]", f"[{type(self)}]", "setting thresholding=True is effectless in oneflow")
+                """
                 # Dynamic thresholding in https://arxiv.org/abs/2205.11487
                 dynamic_max_val = torch.quantile(
                     torch.abs(x0_pred).reshape((x0_pred.shape[0], -1)), self.config.dynamic_thresholding_ratio, dim=1
@@ -242,6 +244,7 @@ class OneFlowDPMSolverMultistepScheduler(OneFlowSchedulerMixin, ConfigMixin):
                     self.config.sample_max_value * torch.ones_like(dynamic_max_val).to(dynamic_max_val.device),
                 )[(...,) + (None,) * (x0_pred.ndim - 1)]
                 x0_pred = torch.clamp(x0_pred, -dynamic_max_val, dynamic_max_val) / dynamic_max_val
+                """
             return x0_pred
         # DPM-Solver needs to solve an integral of the noise prediction model.
         elif self.config.algorithm_type == "dpmsolver":
