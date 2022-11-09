@@ -233,7 +233,7 @@ class OneFlowDPMSolverMultistepScheduler(OneFlowSchedulerMixin, ConfigMixin):
             else:
                 x0_pred = model_output
             if self.config.thresholding:
-                print("[oneflow]", f"[{type(self)}]", "setting thresholding=True is effectless in oneflow")
+                # TODO: setting thresholding=True is effectless in oneflow because quantile is not supported
                 """
                 # Dynamic thresholding in https://arxiv.org/abs/2205.11487
                 dynamic_max_val = torch.quantile(
