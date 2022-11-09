@@ -176,6 +176,36 @@ class SchedulerCommonTest(unittest.TestCase):
             self.assertEqual(output_0.shape, sample.shape)
             self.assertEqual(output_0.shape, output_1.shape)
 
+    def test_pytorch_equal_numpy(self):
+        kwargs = dict(self.forward_default_kwargs)
+
+        num_inference_steps = kwargs.pop("num_inference_steps", None)
+
+        for scheduler_class in self.scheduler_classes:
+            sample_pt = self.dummy_sample
+            residual_pt = 0.1 * sample_pt
+
+            sample = sample_pt.numpy()
+            residual = 0.1 * sample
+
+            scheduler_config = self.get_scheduler_config()
+            if scheduler_class is DPMSolverMultistepScheduler:
+                continue
+            scheduler = scheduler_class(tensor_format="np", **scheduler_config)
+
+            scheduler_pt = scheduler_class(tensor_format="pt", **scheduler_config)
+
+            if num_inference_steps is not None and hasattr(scheduler, "set_timesteps"):
+                scheduler.set_timesteps(num_inference_steps)
+                scheduler_pt.set_timesteps(num_inference_steps)
+            elif num_inference_steps is not None and not hasattr(scheduler, "set_timesteps"):
+                kwargs["num_inference_steps"] = num_inference_steps
+
+            output = scheduler.step(residual, 1, sample, **kwargs).prev_sample
+            output_pt = scheduler_pt.step(residual_pt, 1, sample_pt, **kwargs).prev_sample
+
+            assert np.sum(np.abs(output - output_pt.numpy())) < 1e-4, "Scheduler outputs are not identical"
+
     def test_scheduler_outputs_equivalence(self):
         def set_nan_tensor_to_zero(t):
             t[t != t] = 0
