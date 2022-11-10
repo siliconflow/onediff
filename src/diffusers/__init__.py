@@ -107,9 +107,11 @@ from .models.vae_oneflow import OneFlowAutoencoderKL
 from .schedulers import (
     OneFlowDDIMScheduler,
     OneFlowPNDMScheduler,
+    OneFlowDPMSolverMultistepScheduler,
     OneFlowSchedulerMixin
 )
 
 from .pipelines import OneFlowStableDiffusionPipeline
+from .pipelines import OneFlowStableDiffusionImg2ImgPipeline
 from .pipeline_oneflow_utils import OneFlowDiffusionPipeline
 from .modeling_oneflow_utils import OneFlowModelMixin

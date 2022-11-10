@@ -33,3 +33,4 @@ if is_transformers_available() and is_flax_available():
     from .stable_diffusion import FlaxStableDiffusionPipeline
 
 from .stable_diffusion import OneFlowStableDiffusionPipeline
+from .stable_diffusion import OneFlowStableDiffusionImg2ImgPipeline
