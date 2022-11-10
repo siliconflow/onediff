@@ -190,6 +190,12 @@ extras["test"] = deps_list(
     "torchvision",
     "transformers"
 )
+extras["oneflow"] = deps_list(
+    "torch",
+    "scipy",
+    "transformers"
+)
+
 extras["torch"] = deps_list("torch")
 
 if os.name == "nt":  # windows
