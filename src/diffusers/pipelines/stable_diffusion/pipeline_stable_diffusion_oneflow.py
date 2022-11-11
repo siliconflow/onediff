@@ -339,6 +339,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             self.unet_graphs_lru_cache_time += 1
             if (height, width) in self.unet_graphs:
                 _, unet_graph = self.unet_graphs[height, width]
+                unrolled_timesteps_graph = unet_graph
                 self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
             else:
                 while len(self.unet_graphs) >= self.unet_graphs_cache_size:
@@ -353,7 +354,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                     unrolled_timesteps_graph = UnrolledDenoiseGraph(self.unet, self.scheduler, guidance_scale, extra_step_kwargs)
                     unrolled_timesteps_graph._compile(latents, text_embeddings)
                     unrolled_timesteps_graph(latents, text_embeddings) # warmup
-                    self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
+                    self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unrolled_timesteps_graph)
                 else:
                     i, t = list(enumerate(self.scheduler.timesteps))[0]
                     latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
