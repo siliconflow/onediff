@@ -400,14 +400,13 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                     latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
                 torch._oneflow_internal.profiler.RangePop()
         torch.cuda.synchronize()
-
+        print("[oneflow]", "[elapsed(s)]", "[denoise]", timer() - denoise_start)
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
         import numpy as np
         if isinstance(latents, np.ndarray):
             latents = torch.from_numpy(latents)
         image = self.vae.decode(latents).sample
-        print("[oneflow]", "[elapsed(s)]", "[denoise]", timer() - denoise_start)
         print("[oneflow]", "[elapsed(s)]", "[image]", timer() - start - compilation_time)
         post_process_start = timer()
 
