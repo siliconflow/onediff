@@ -198,6 +198,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
         compile_unet: bool = True,
+        unrolled_timesteps: bool = False,
         **kwargs,
     ):
         r"""
@@ -237,6 +238,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 plain tuple.
             compile_unet (`bool`, *optional*, defaults to `True`):
                 Whether or not to compile unet as nn.graph
+            unrolled_timesteps (`bool`, *optional*, defaults to `False`):
+                Whether or not to unroll the timesteps
 
         Returns:
             [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
@@ -334,7 +337,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         compilation_start = timer()
         compilation_time = 0
-        unrolled_timesteps = False
 
         if compile_unet:
             self.unet_graphs_lru_cache_time += 1
