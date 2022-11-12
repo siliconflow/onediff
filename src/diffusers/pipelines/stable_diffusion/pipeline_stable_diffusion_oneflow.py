@@ -26,6 +26,7 @@ os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
 os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
 os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
 os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+os.environ["ONEFLOW_MLIR_CSE"] = "1"
 
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
