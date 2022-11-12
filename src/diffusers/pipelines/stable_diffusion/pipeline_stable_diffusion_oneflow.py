@@ -406,7 +406,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         torch.cuda.synchronize()
         dur_denoise = timer() - denoise_start
         print("[oneflow]", "[elapsed(s)]", "[denoise]", dur_denoise)
-        print("[oneflow]", "[denoise]", f"[{num_inference_steps} steps]", f"{1 / (dur_denoise / num_inference_steps)} it/s")
+        print("[oneflow]", "[denoise]", f"[{num_inference_steps} steps]", float("{:.2f}".format(1 / (dur_denoise / num_inference_steps))), "it/s")
         # scale and decode the image latents with vae
         latents = 1 / 0.18215 * latents
         import numpy as np
