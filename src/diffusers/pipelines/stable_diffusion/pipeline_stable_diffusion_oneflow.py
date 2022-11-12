@@ -25,6 +25,7 @@ os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
 os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
 os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
 os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
 
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
@@ -333,7 +334,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         compilation_start = timer()
         compilation_time = 0
-        unrolled_timesteps = True
+        unrolled_timesteps = False
 
         if compile_unet:
             self.unet_graphs_lru_cache_time += 1
