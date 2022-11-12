@@ -20,12 +20,6 @@ from ...modeling_oneflow_utils import extract_scalar
 from timeit import default_timer as timer
 
 import os
-os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
-os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-
 
 def preprocess(image):
     w, h = image.size
@@ -216,6 +210,12 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline):
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
             (nsfw) content, according to the `safety_checker`.
         """
+        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+
         start = timer()
         if isinstance(prompt, str):
             batch_size = 1

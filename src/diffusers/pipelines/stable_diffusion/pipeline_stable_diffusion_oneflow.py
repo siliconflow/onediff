@@ -20,13 +20,6 @@ from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as Stabl
 from timeit import default_timer as timer
 
 import os
-os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
-os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-os.environ["ONEFLOW_MLIR_CSE"] = "1"
 
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
@@ -249,6 +242,13 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
             (nsfw) content, according to the `safety_checker`.
         """
+        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+        os.environ["ONEFLOW_MLIR_CSE"] = "1"
         start = timer()
         if "torch_device" in kwargs:
             device = kwargs.pop("torch_device")
