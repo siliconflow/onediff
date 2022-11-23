@@ -344,7 +344,10 @@ class ResnetBlock2D(nn.Module):
         hidden_states = self.conv1(hidden_states)
 
         if temb is not None:
-            temb = self.time_emb_proj(self.nonlinearity(temb))[:, :, None, None]
+            temb = torch._C.matmul(self.nonlinearity(temb), self.time_emb_proj.weight, transpose_a=False, transpose_b=True)
+            temb = temb + self.time_emb_proj.bias
+            temb = temb[:, :, None, None]
+            # temb = self.time_emb_proj(self.nonlinearity(temb))[:, :, None, None]
             hidden_states = hidden_states + temb
 
         # make sure hidden states is in float32

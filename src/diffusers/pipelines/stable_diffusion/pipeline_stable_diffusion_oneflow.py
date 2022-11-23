@@ -25,6 +25,9 @@ os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
 os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
 os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
 os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+os.environ["ONEFLOW_MLIR_CSE"] = "1"
+os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
 
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
@@ -33,7 +36,7 @@ class UNetGraph(flow.nn.Graph):
         self.unet = unet
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         # TODO: this now has negative impact on performance
-        # self.config.allow_fused_add_to_output(True)
+        self.config.allow_fuse_add_to_output(True)
 
     def build(self, latent_model_input, t, text_embeddings):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
