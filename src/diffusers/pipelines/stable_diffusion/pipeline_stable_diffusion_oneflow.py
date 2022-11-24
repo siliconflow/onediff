@@ -463,6 +463,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             float("{:.2f}".format(1 / (dur_denoise / len(self.scheduler.timesteps)))),
             "it/s",
         )
+        vae_start = timer()
         if compile_vae:
             image = self.vae_graph(latents)
         else:
@@ -474,6 +475,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 latents = torch.from_numpy(latents)
 
             image = self.vae.decode(latents).sample
+        torch.cuda.synchronize()
+        print("[oneflow]", "[elapsed(s)]", "[vae]", timer() - vae_start)
         print("[oneflow]", "[elapsed(s)]", "[image]", timer() - start - compilation_time)
         post_process_start = timer()
 
