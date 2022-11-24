@@ -22,6 +22,8 @@ from timeit import default_timer as timer
 import os
 
 import oneflow as flow
+
+
 class UNetGraph(flow.nn.Graph):
     def __init__(self, unet):
         super().__init__()
@@ -33,6 +35,7 @@ class UNetGraph(flow.nn.Graph):
     def build(self, latent_model_input, t, text_embeddings):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+
 
 class UnrolledDenoiseGraph(flow.nn.Graph):
     def __init__(self, unet, scheduler, guidance_scale, extra_step_kwargs):
@@ -70,6 +73,35 @@ class UnrolledDenoiseGraph(flow.nn.Graph):
                 latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
             torch._oneflow_internal.profiler.RangePop()
         return latents
+
+
+class VaePostProcess(flow.nn.Module):
+    def __init__(self, vae) -> None:
+        super().__init__()
+        self.vae = vae
+
+    def forward(self, x):
+        x = 1 / 0.18215 * x
+        return self.vae.decoder(self.vae.post_quant_conv(x))
+
+
+class VaeGraph(flow.nn.Graph):
+    def __init__(self, vae_post_process) -> None:
+        super().__init__()
+        self.vae_post_process = vae_post_process
+
+    def build(self, latents):
+        return self.vae_post_process(latents)
+
+
+class TextEncoderGraph(flow.nn.Graph):
+    def __init__(self, text_encoder) -> None:
+        super().__init__()
+        self.text_encoder = text_encoder
+
+    def build(self, text_input):
+        return self.text_encoder(text_input)[0]
+
 
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     r"""
@@ -191,7 +223,9 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         latents: Optional[torch.FloatTensor] = None,
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
+        compile_text_encoder: bool = True,
         compile_unet: bool = True,
+        compile_vae: bool = True,
         unrolled_timesteps: bool = False,
         **kwargs,
     ):
@@ -281,8 +315,14 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             return_tensors="np",
         )
         text_input.input_ids = torch.from_numpy(text_input.input_ids)
+        if compile_text_encoder:
+            text_encoder_graph = TextEncoderGraph(self.text_encoder)
         torch._oneflow_internal.profiler.RangePush(f"text-encoder")
-        text_embeddings = self.text_encoder(text_input.input_ids.to(self.device))[0]
+        _input_ids = text_input.input_ids.to(self.device)
+        if compile_text_encoder:
+            text_embeddings = text_encoder_graph(_input_ids)
+        else:
+            text_embeddings = self.text_encoder(_input_ids)[0]
 
         # here `guidance_scale` is defined analog to the guidance weight `w` of equation (2)
         # of the Imagen paper: https://arxiv.org/pdf/2205.11487.pdf . `guidance_scale = 1`
@@ -348,28 +388,36 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             else:
                 while len(self.unet_graphs) >= self.unet_graphs_cache_size:
                     shape_to_del = min(self.unet_graphs.keys(), key=lambda shape: self.unet_graphs[shape][0])
-                    print("[oneflow]", f"a compiled unet (height={shape_to_del[0]}, width={shape_to_del[1]}) "
-                        "is deleted according to the LRU policy")
+                    print(
+                        "[oneflow]",
+                        f"a compiled unet (height={shape_to_del[0]}, width={shape_to_del[1]}) "
+                        "is deleted according to the LRU policy",
+                    )
                     print("[oneflow]", "cache size can be changed by `pipeline.set_unet_graphs_cache_size`")
                     del self.unet_graphs[shape_to_del]
                 print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
 
                 if unrolled_timesteps:
-                    unrolled_timesteps_graph = UnrolledDenoiseGraph(self.unet, self.scheduler, guidance_scale, extra_step_kwargs)
+                    unrolled_timesteps_graph = UnrolledDenoiseGraph(
+                        self.unet, self.scheduler, guidance_scale, extra_step_kwargs
+                    )
                     unrolled_timesteps_graph._compile(latents, text_embeddings)
-                    unrolled_timesteps_graph(latents, text_embeddings) # warmup
+                    unrolled_timesteps_graph(latents, text_embeddings)  # warmup
                     self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unrolled_timesteps_graph)
                 else:
                     i, t = list(enumerate(self.scheduler.timesteps))[0]
                     latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                     unet_graph = UNetGraph(self.unet)
                     unet_graph._compile(latent_model_input, t, text_embeddings)
-                    unet_graph(latent_model_input, t, text_embeddings) # warmup
+                    unet_graph(latent_model_input, t, text_embeddings)  # warmup
                     self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
 
                 compilation_time = timer() - compilation_start
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
-
+        if compile_vae:
+            vae_post_process = VaePostProcess(self.vae)
+            vae_post_process.eval()
+            vae_graph = VaeGraph(vae_post_process)
         torch.cuda.synchronize()
         denoise_start = timer()
         if unrolled_timesteps:
@@ -406,13 +454,24 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         torch.cuda.synchronize()
         dur_denoise = timer() - denoise_start
         print("[oneflow]", "[elapsed(s)]", "[denoise]", dur_denoise)
-        print("[oneflow]", "[denoise]", f"[{len(self.scheduler.timesteps)} steps]", float("{:.2f}".format(1 / (dur_denoise / len(self.scheduler.timesteps)))), "it/s")
-        # scale and decode the image latents with vae
-        latents = 1 / 0.18215 * latents
-        import numpy as np
-        if isinstance(latents, np.ndarray):
-            latents = torch.from_numpy(latents)
-        image = self.vae.decode(latents).sample
+        print(
+            "[oneflow]",
+            "[denoise]",
+            f"[{len(self.scheduler.timesteps)} steps]",
+            float("{:.2f}".format(1 / (dur_denoise / len(self.scheduler.timesteps)))),
+            "it/s",
+        )
+        if compile_vae:
+            image = vae_graph(latents)
+        else:
+            # scale and decode the image latents with vae
+            latents = 1 / 0.18215 * latents
+            import numpy as np
+
+            if isinstance(latents, np.ndarray):
+                latents = torch.from_numpy(latents)
+
+            image = self.vae.decode(latents).sample
         print("[oneflow]", "[elapsed(s)]", "[image]", timer() - start - compilation_time)
         post_process_start = timer()
 
@@ -432,7 +491,129 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if not return_dict:
             return (image, has_nsfw_concept)
         import torch as og_torch
+
         assert og_torch.cuda.is_initialized() is False
 
         print("[oneflow]", "[elapsed(s)]", "[post-process]", timer() - post_process_start)
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+
+    # @torch.no_grad()
+    # def graph_forward(
+    #     self,
+    #     prompt: Union[str, List[str]],
+    #     height: Optional[int] = 512,
+    #     width: Optional[int] = 512,
+    #     num_inference_steps: Optional[int] = 50,
+    #     guidance_scale: Optional[float] = 7.5,
+    #     eta: Optional[float] = 0.0,
+    #     generator: Optional[torch.Generator] = None,
+    #     latents: Optional[torch.FloatTensor] = None,
+    #     output_type: Optional[str] = "pil",
+    # ):
+    #     os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+    #     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+    #     os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+    #     os.environ["ONEFLOW_KERNEL_ENABLE_CUDNN_FUSED_CONV_BIAS"] = "1"
+    #     os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+    #     os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+    #     os.environ["ONEFLOW_MLIR_CSE"] = "1"
+
+    #     if isinstance(prompt, str):
+    #         batch_size = 1
+    #     elif isinstance(prompt, list):
+    #         batch_size = len(prompt)
+    #     else:
+    #         raise ValueError(f"`prompt` has to be of type `str` or `list` but is {type(prompt)}")
+
+    #     if height % 8 != 0 or width % 8 != 0:
+    #         raise ValueError(f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
+
+    #     # get prompt text embeddings
+    #     text_input = self.tokenizer(
+    #         prompt,
+    #         padding="max_length",
+    #         max_length=self.tokenizer.model_max_length,
+    #         truncation=True,
+    #         return_tensors="np",
+    #     )
+    #     text_input.input_ids = torch.from_numpy(text_input.input_ids)
+    #     text_encoder_graph = TextEncoderGraph(self.text_encoder)
+    #     _input_ids = text_input.input_ids.to(self.device)
+    #     text_embeddings = text_encoder_graph(_input_ids)
+
+    #     do_classifier_free_guidance = guidance_scale > 1.0
+    #     # get unconditional embeddings for classifier free guidance
+    #     if do_classifier_free_guidance:
+    #         max_length = text_input.input_ids.shape[-1]
+    #         uncond_input = self.tokenizer(
+    #             [""] * batch_size, padding="max_length", max_length=max_length, return_tensors="np"
+    #         )
+    #         uncond_input.input_ids = torch.from_numpy(uncond_input.input_ids)
+    #         uncond_embeddings = self.text_encoder(uncond_input.input_ids.to(self.device))[0]
+
+    #         # For classifier free guidance, we need to do two forward passes.
+    #         # Here we concatenate the unconditional and text embeddings into a single batch
+    #         # to avoid doing two forward passes
+    #         text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
+
+    #     latents_device = "cpu" if self.device.type == "mps" else self.device
+    #     latents_shape = (batch_size, self.unet.in_channels, height // 8, width // 8)
+
+    #     if latents is None:
+    #         latents = torch.randn(
+    #             latents_shape,
+    #             generator=generator,
+    #             device=latents_device,
+    #         )
+    #     latents = latents.to(self.device)
+
+    #     self.scheduler.set_timesteps(num_inference_steps)
+    #     if isinstance(self.scheduler, LMSDiscreteScheduler):
+    #         latents = latents * self.scheduler.sigmas[0]
+
+    #     accepts_eta = "eta" in set(inspect.signature(self.scheduler.step).parameters.keys())
+    #     extra_step_kwargs = {}
+    #     if accepts_eta:
+    #         extra_step_kwargs["eta"] = eta
+
+    #     self.unet_graphs_lru_cache_time += 1
+    #     if (height, width) in self.unet_graphs:
+    #         _, unet_graph = self.unet_graphs[height, width]
+    #         unrolled_timesteps_graph = unet_graph
+    #         self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
+    #     else:
+    #         while len(self.unet_graphs) >= self.unet_graphs_cache_size:
+    #             shape_to_del = min(self.unet_graphs.keys(), key=lambda shape: self.unet_graphs[shape][0])
+    #             print(
+    #                 "[oneflow]",
+    #                 f"a compiled unet (height={shape_to_del[0]}, width={shape_to_del[1]}) "
+    #                 "is deleted according to the LRU policy",
+    #             )
+    #             print("[oneflow]", "cache size can be changed by `pipeline.set_unet_graphs_cache_size`")
+    #             del self.unet_graphs[shape_to_del]
+    #         print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
+
+    #         unrolled_timesteps_graph = UnrolledDenoiseGraph(
+    #             self.unet, self.scheduler, guidance_scale, extra_step_kwargs
+    #         )
+    #         print(latents.shape)
+    #         print("\n")
+    #         print(text_embeddings.shape)
+    #         print("\n")
+    #         print(extra_step_kwargs)
+    #         unrolled_timesteps_graph._compile(latents, text_embeddings)
+    #         unrolled_timesteps_graph(latents, text_embeddings)  # warmup
+    #         self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unrolled_timesteps_graph)
+
+    #     latents = unrolled_timesteps_graph(latents, text_embeddings)
+
+    #     vae_graph = VaeGraph(VaePostProcess(self.vae))
+
+    #     image = vae_graph(latents)
+
+    #     image = (image / 2 + 0.5).clamp(0, 1)
+    #     image = image.cpu().permute(0, 2, 3, 1).numpy()
+
+    #     if output_type == "pil":
+    #         image = self.numpy_to_pil(image)
+    #     return image
