@@ -171,6 +171,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
         self.vae_graph = None
+        self.text_encoder_graph = None
 
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
         r"""
@@ -316,12 +317,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             return_tensors="np",
         )
         text_input.input_ids = torch.from_numpy(text_input.input_ids)
-        if compile_text_encoder:
-            text_encoder_graph = TextEncoderGraph(self.text_encoder)
+        if compile_text_encoder and self.text_encoder_graph is None:
+            self.text_encoder_graph = TextEncoderGraph(self.text_encoder)
         torch._oneflow_internal.profiler.RangePush(f"text-encoder")
         _input_ids = text_input.input_ids.to(self.device)
         if compile_text_encoder:
-            text_embeddings = text_encoder_graph(_input_ids)
+            text_embeddings = self.text_encoder_graph(_input_ids)
         else:
             text_embeddings = self.text_encoder(_input_ids)[0]
 
@@ -538,9 +539,9 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     #         return_tensors="np",
     #     )
     #     text_input.input_ids = torch.from_numpy(text_input.input_ids)
-    #     text_encoder_graph = TextEncoderGraph(self.text_encoder)
+    #     self.text_encoder_graph = TextEncoderGraph(self.text_encoder)
     #     _input_ids = text_input.input_ids.to(self.device)
-    #     text_embeddings = text_encoder_graph(_input_ids)
+    #     text_embeddings = self.text_encoder_graph(_input_ids)
 
     #     do_classifier_free_guidance = guidance_scale > 1.0
     #     # get unconditional embeddings for classifier free guidance
