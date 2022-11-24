@@ -170,6 +170,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         self.unet_graphs = dict()
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
+        self.vae_graph = None
 
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
         r"""
@@ -414,11 +415,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
                 compilation_time = timer() - compilation_start
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
-        vae_graph = None
-        if compile_vae and vae_graph is None:
+        if compile_vae and (self.vae_graph is None):
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
-            vae_graph = VaeGraph(vae_post_process)
+            self.vae_graph = VaeGraph(vae_post_process)
         torch.cuda.synchronize()
         denoise_start = timer()
         if unrolled_timesteps:
@@ -463,7 +463,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             "it/s",
         )
         if compile_vae:
-            image = vae_graph(latents)
+            image = self.vae_graph(latents)
         else:
             # scale and decode the image latents with vae
             latents = 1 / 0.18215 * latents
