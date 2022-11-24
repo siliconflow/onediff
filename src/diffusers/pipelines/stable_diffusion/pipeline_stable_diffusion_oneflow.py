@@ -414,7 +414,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
                 compilation_time = timer() - compilation_start
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
-        if compile_vae:
+        vae_graph = None
+        if compile_vae and vae_graph is None:
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
             vae_graph = VaeGraph(vae_post_process)
