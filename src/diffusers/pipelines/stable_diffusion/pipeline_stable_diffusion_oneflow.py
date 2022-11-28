@@ -28,6 +28,8 @@ os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
 os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
 os.environ["ONEFLOW_MLIR_CSE"] = "1"
 os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
+os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+os.environ["ONEFLOW_KERNEL_EANBLE_DUAL_GEMM_GLU"] = "1"
 
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
