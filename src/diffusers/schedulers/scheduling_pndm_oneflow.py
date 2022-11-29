@@ -128,8 +128,10 @@ class OneFlowPNDMScheduler(OneFlowSchedulerMixin, ConfigMixin):
 
         self.alphas = 1.0 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
+        self.alphas_cumprod_list = [float(v) for v in list(self.alphas_cumprod.clone().detach().numpy())]
 
         self.final_alpha_cumprod = torch.tensor(1.0) if set_alpha_to_one else self.alphas_cumprod[0]
+        self.final_alpha_cumprod_value = float(self.final_alpha_cumprod.clone().detach().item())
 
         # standard deviation of the initial noise distribution
         self.init_noise_sigma = 1.0
@@ -326,15 +328,19 @@ class OneFlowPNDMScheduler(OneFlowSchedulerMixin, ConfigMixin):
             model_output = model_output
             self.cur_sample = sample
         elif len(self.ets) == 1 and self.counter == 1:
-            model_output = (model_output + self.ets[-1]) / 2
+            #model_output = (model_output + self.ets[-1]) / 2
+            model_output = torch._C.fused_weighted_sum([model_output , self.ets[-1]], [1, 1], alpha=1/2)
             sample = self.cur_sample
             self.cur_sample = None
         elif len(self.ets) == 2:
-            model_output = (3 * self.ets[-1] - self.ets[-2]) / 2
+            model_output = torch._C.fused_weighted_sum([self.ets[-1], self.ets[-2]], [3, -1], alpha=1/2)
+            #model_output = (3 * self.ets[-1] - self.ets[-2]) / 2
         elif len(self.ets) == 3:
-            model_output = (23 * self.ets[-1] - 16 * self.ets[-2] + 5 * self.ets[-3]) / 12
+            model_output = torch._C.fused_weighted_sum([self.ets[-1], self.ets[-2], self.ets[-3]], [23, -16, 5], alpha=1/12)
+            # model_output = (23 * self.ets[-1] - 16 * self.ets[-2] + 5 * self.ets[-3]) / 12
         else:
-            model_output = (1 / 24) * (55 * self.ets[-1] - 59 * self.ets[-2] + 37 * self.ets[-3] - 9 * self.ets[-4])
+            model_output = torch._C.fused_weighted_sum([self.ets[-1], self.ets[-2], self.ets[-3], self.ets[-4]], [55, -59, 37, -9], alpha=1/24)
+            # model_output = (1 / 24) * (55 * self.ets[-1] - 59 * self.ets[-2] + 37 * self.ets[-3] - 9 * self.ets[-4])
 
         prev_sample = self._get_prev_sample(sample, timestep, prev_timestep, model_output)
         self.counter += 1
@@ -370,11 +376,9 @@ class OneFlowPNDMScheduler(OneFlowSchedulerMixin, ConfigMixin):
         # sample -> x_t
         # model_output -> e_θ(x_t, t)
         # prev_sample -> x_(t−δ)
-        alpha_prod_t = self.alphas_cumprod[timestep]
-        if isinstance(prev_timestep, torch.Tensor) and prev_timestep.is_lazy:
-            alpha_prod_t_prev = torch.where(prev_timestep >= 0, self.alphas_cumprod[prev_timestep], self.final_alpha_cumprod)
-        else:
-            alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
+        timestep = timestep.numpy().item()
+        alpha_prod_t = self.alphas_cumprod_list[timestep]
+        alpha_prod_t_prev = self.alphas_cumprod_list[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod_value
         beta_prod_t = 1 - alpha_prod_t
         beta_prod_t_prev = 1 - alpha_prod_t_prev
 
@@ -390,15 +394,16 @@ class OneFlowPNDMScheduler(OneFlowSchedulerMixin, ConfigMixin):
         ) ** (0.5)
 
         # TODO(oneflow), oneflow's size [] tensor can't be used as a scalar
-        timestep = extract_scalar(timestep, device=sample.device)
-        sample_coeff = extract_scalar(sample_coeff, device=sample.device)
-        alpha_prod_t_prev = extract_scalar(alpha_prod_t_prev, device=sample.device)
-        alpha_prod_t = extract_scalar(alpha_prod_t, device=sample.device)
-        model_output_denom_coeff = extract_scalar(model_output_denom_coeff, device=sample.device)
+        # timestep = extract_scalar(timestep, device=sample.device)
+        # sample_coeff = extract_scalar(sample_coeff, device=sample.device)
+        # alpha_prod_t_prev = extract_scalar(alpha_prod_t_prev, device=sample.device)
+        # alpha_prod_t = extract_scalar(alpha_prod_t, device=sample.device)
+        # model_output_denom_coeff = extract_scalar(model_output_denom_coeff, device=sample.device)
 
         # full formula (9)
         prev_sample = (
-            sample_coeff * sample - (alpha_prod_t_prev - alpha_prod_t) * model_output / model_output_denom_coeff
+            #sample_coeff * sample - (alpha_prod_t_prev - alpha_prod_t) * model_output / model_output_denom_coeff
+            torch._C.fused_weighted_sum([sample, model_output], [sample_coeff, - (alpha_prod_t_prev - alpha_prod_t) / model_output_denom_coeff])
         )
 
         return prev_sample
