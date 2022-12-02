@@ -337,7 +337,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         else:
             attention_mask = None
 
-        print(f"{type(text_input_ids)}")
         text_embeddings = self.text_encoder(
             text_input_ids.to(device),
             attention_mask=attention_mask,
