@@ -459,13 +459,17 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 latents = torch.randn(shape, generator=generator, device="cpu", dtype=dtype).to(device)
             else:
                 latents = torch.randn(shape, generator=generator, device=device, dtype=dtype)
+            print(f"{dtype=}")
         else:
             if latents.shape != shape:
                 raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {shape}")
             latents = latents.to(device)
 
         # scale the initial noise by the standard deviation required by the scheduler
-        latents = latents * self.scheduler.init_noise_sigma
+        print(f"{latents.dtype=}")
+        print(f"{self.scheduler.init_noise_sigma=}")
+        latents = latents * self.scheduler.init_noise_sigma.to(dtype)
+        print(f"{latents.dtype=}")
         return latents
 
     def set_unet_graphs_cache_size(self, cache_size: int):

@@ -125,7 +125,7 @@ class OneFlowEulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         if isinstance(timestep, torch.Tensor):
             timestep = timestep.to(self.timesteps.device)
         step_index = (self.timesteps == timestep).nonzero().item()
-        sigma = self.sigmas[step_index]
+        sigma = self.sigmas[step_index].to(sample.dtype)
         sample = sample / ((sigma**2 + 1) ** 0.5)
         self.is_scale_input_called = True
         return sample
