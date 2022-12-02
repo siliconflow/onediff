@@ -23,16 +23,31 @@ import os
 
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
-    def __init__(self, unet):
+    def __init__(self, unet, scheduler=None, do_classifier_free_guidance=True, guidance_scale: Optional[float] = 7.5, extra_step_kwargs={}):
         super().__init__()
         self.unet = unet
+        self.scheduler = scheduler
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.do_classifier_free_guidance = do_classifier_free_guidance
+        self.guidance_scale = guidance_scale
+        self.extra_step_kwargs = extra_step_kwargs
         # TODO: this now has negative impact on performance
         # self.config.allow_fused_add_to_output(True)
 
-    def build(self, latent_model_input, t, text_embeddings):
+    def build(self, latents, latent_model_input, t, text_embeddings):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
-        return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+        noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+        # perform guidance
+        if self.do_classifier_free_guidance:
+            noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+            noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
+
+        # compute the previous noisy sample x_t -> x_t-1
+        if isinstance(self.scheduler, LMSDiscreteScheduler):
+            latents = self.scheduler.step(noise_pred, i, latents, **self.extra_step_kwargs).prev_sample
+        else:
+            latents = self.scheduler.step(noise_pred, t, latents, **self.extra_step_kwargs).prev_sample
+        return latents
 
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     r"""
@@ -311,9 +326,9 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
                 i, t = list(enumerate(self.scheduler.timesteps))[0]
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                unet_graph = UNetGraph(self.unet)
-                unet_graph._compile(latent_model_input, t, text_embeddings)
-                unet_graph(latent_model_input, t, text_embeddings) # warmup
+                unet_graph = UNetGraph(self.unet, scheduler=self.scheduler, do_classifier_free_guidance=do_classifier_free_guidance, guidance_scale=guidance_scale, extra_step_kwargs=extra_step_kwargs)
+                unet_graph._compile(latents, latent_model_input, t, text_embeddings)
+                unet_graph(latents, latent_model_input, t, text_embeddings) # warmup
                 compilation_time = timer() - compilation_start
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
                 self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
@@ -330,21 +345,21 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             # predict the noise residual
             if compile_unet:
                 torch._oneflow_internal.profiler.RangePush(f"denoise-{i}-unet-graph")
-                noise_pred = unet_graph(latent_model_input, t, text_embeddings)
+                latents = unet_graph(latents, latent_model_input, t, text_embeddings)
                 torch._oneflow_internal.profiler.RangePop()
             else:
                 noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
-            # perform guidance
-            if do_classifier_free_guidance:
-                noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                # perform guidance
+                if do_classifier_free_guidance:
+                    noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
+                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
 
-            # compute the previous noisy sample x_t -> x_t-1
-            if isinstance(self.scheduler, LMSDiscreteScheduler):
-                latents = self.scheduler.step(noise_pred, i, latents, **extra_step_kwargs).prev_sample
-            else:
-                latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+                # compute the previous noisy sample x_t -> x_t-1
+                if isinstance(self.scheduler, LMSDiscreteScheduler):
+                    latents = self.scheduler.step(noise_pred, i, latents, **extra_step_kwargs).prev_sample
+                else:
+                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
             torch._oneflow_internal.profiler.RangePop()
 
         # scale and decode the image latents with vae
