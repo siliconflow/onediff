@@ -559,8 +559,6 @@ class CrossAttnDownBlock2D(nn.Module):
                     pre_norm=resnet_pre_norm,
                 )
             )
-            print(f"{out_channels=}")
-            print(f"{attn_num_head_channels=}")
             if not dual_cross_attention:
                 attentions.append(
                     Transformer2DModel(
