@@ -466,10 +466,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             latents = latents.to(device)
 
         # scale the initial noise by the standard deviation required by the scheduler
-        if isinstance(self.scheduler.init_noise_sigma, float):
-            latents = latents * self.scheduler.init_noise_sigma
-        else:
-            latents = latents * self.scheduler.init_noise_sigma.to(dtype)
+        latents = latents * self.scheduler.init_noise_sigma.to(dtype)
         return latents
 
     def set_unet_graphs_cache_size(self, cache_size: int):
@@ -604,7 +601,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 # expand the latents if we are doing classifier free guidance
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-
+                print(f"{latent_model_input.dtype}")
                 # predict the noise residual
                 noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
