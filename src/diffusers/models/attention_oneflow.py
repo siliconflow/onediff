@@ -325,7 +325,7 @@ class AttentionBlock(nn.Module):
         query_proj = self.reshape_heads_to_batch_dim(query_proj)
         key_proj = self.reshape_heads_to_batch_dim(key_proj)
         value_proj = self.reshape_heads_to_batch_dim(value_proj)
-
+        '''
         attention_scores = torch.baddbmm(
             torch.empty(
                 query_proj.shape[0],
@@ -339,6 +339,11 @@ class AttentionBlock(nn.Module):
             beta=0,
             alpha=scale,
         )
+        '''
+        attention_scores = torch.matmul(
+            query_proj,
+            key_proj.transpose(-1, -2),
+        ) * scale
         attention_probs = torch.softmax(attention_scores.float(), dim=-1).type(attention_scores.dtype)
         hidden_states = torch.bmm(attention_probs, value_proj)
 
