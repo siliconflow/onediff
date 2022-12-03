@@ -466,10 +466,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             latents = latents.to(device)
 
         # scale the initial noise by the standard deviation required by the scheduler
-        print(f"{latents.dtype=}")
-        print(f"{self.scheduler.init_noise_sigma=}")
-        latents = latents * self.scheduler.init_noise_sigma.to(dtype)
-        print(f"{latents.dtype=}")
+        if isinstance(self.scheduler.init_noise_sigma, float):
+            latents = latents * self.scheduler.init_noise_sigma
+        else:
+            latents = latents * self.scheduler.init_noise_sigma.to(dtype)
         return latents
 
     def set_unet_graphs_cache_size(self, cache_size: int):
