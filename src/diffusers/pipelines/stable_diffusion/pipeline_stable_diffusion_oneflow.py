@@ -41,6 +41,8 @@ from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as Stabl
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
+from timeit import default_timer as timer
+import os
 import oneflow as flow
 class UNetGraph(flow.nn.Graph):
     def __init__(self, unet):
@@ -101,7 +103,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         feature_extractor: CLIPFeatureExtractor,
         requires_safety_checker: bool = True,
     ):
-        import os
         os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
@@ -594,6 +595,30 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
+        compilation_start = timer()
+        compilation_time = 0
+        if compile_unet:
+            self.unet_graphs_lru_cache_time += 1
+            if (height, width) in self.unet_graphs:
+                _, unet_graph = self.unet_graphs[height, width]
+                self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
+            else:
+                while len(self.unet_graphs) >= self.unet_graphs_cache_size:
+                    shape_to_del = min(self.unet_graphs.keys(), key=lambda shape: self.unet_graphs[shape][0])
+                    print("[oneflow]", f"a compiled unet (height={shape_to_del[0]}, width={shape_to_del[1]}) "
+                          "is deleted according to the LRU policy")
+                    print("[oneflow]", "cache size can be changed by `pipeline.set_unet_graphs_cache_size`")
+                    del self.unet_graphs[shape_to_del]
+                print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
+                i, t = list(enumerate(self.scheduler.timesteps))[0]
+                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                unet_graph = UNetGraph(self.unet)
+                unet_graph._compile(latent_model_input, t, text_embeddings)
+                unet_graph(latent_model_input, t, text_embeddings) # warmup
+                compilation_time = timer() - compilation_start
+                print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
+                self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
+
         # 7. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
@@ -603,7 +628,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
                 # predict the noise residual
-                noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+                if compile_unet:
+                    torch._oneflow_internal.profiler.RangePush(f"denoise-{i}-unet-graph")
+                    noise_pred = unet_graph(latent_model_input, t, text_embeddings)
+                    torch._oneflow_internal.profiler.RangePop()
+                else:
+                    noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
                 # perform guidance
                 if do_classifier_free_guidance:
