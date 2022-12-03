@@ -16,6 +16,7 @@ import inspect
 from typing import Callable, List, Optional, Union
 
 import oneflow as torch
+import torch as og_torch
 
 from diffusers.utils import is_accelerate_available
 from packaging import version
@@ -631,4 +632,5 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if not return_dict:
             return (image, has_nsfw_concept)
 
+        assert og_torch.cuda.is_initialized() is False
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
