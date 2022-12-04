@@ -20,11 +20,10 @@ import torch as og_torch
 
 from diffusers.utils import is_accelerate_available
 from packaging import version
-from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 from transformers import CLIPFeatureExtractor, OneFlowCLIPTextModel as CLIPTextModel, CLIPTokenizer
 
 from ...configuration_utils import FrozenDict
-from ...models import AutoencoderKL, UNet2DConditionModel
+from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
 from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipeline
 from ...schedulers import (
     OneFlowDDIMScheduler as DDIMScheduler,
@@ -289,8 +288,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
-        return self.device
+        '''
         if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
+        '''
+        if not hasattr(self.unet, "_hf_hook"):
             return self.device
         for module in self.unet.modules():
             if (
