@@ -612,7 +612,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                     del self.unet_graphs[shape_to_del]
                 print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
                 i, t = list(enumerate(self.scheduler.timesteps))[0]
+
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+
                 unet_graph = UNetGraph(self.unet)
                 unet_graph._compile(latent_model_input, t, text_embeddings)
                 unet_graph(latent_model_input, t, text_embeddings) # warmup
