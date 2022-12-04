@@ -307,7 +307,8 @@ class UNetMidBlock2D(nn.Module):
 
     def forward(self, hidden_states, temb=None, encoder_states=None):
         hidden_states = self.resnets[0](hidden_states, temb)
-        for attn, resnet in zip(self.attentions, self.resnets[1:]):
+        resnets_list = [m for m in self.resnets]
+        for attn, resnet in zip(self.attentions, resnets_list[1:]):
             if self.attention_type == "default":
                 hidden_states = attn(hidden_states)
             else:
@@ -424,7 +425,8 @@ class UNetMidBlock2DCrossAttn(nn.Module):
 
     def forward(self, hidden_states, temb=None, encoder_hidden_states=None):
         hidden_states = self.resnets[0](hidden_states, temb)
-        for attn, resnet in zip(self.attentions, self.resnets[1:]):
+        resnets_list = [m for m in self.resnets]
+        for attn, resnet in zip(self.attentions, resnets_list[1:]):
             hidden_states = attn(hidden_states, encoder_hidden_states).sample
             hidden_states = resnet(hidden_states, temb)
 
