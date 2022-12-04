@@ -559,12 +559,9 @@ class CrossAttention(nn.Module):
         self.to_k = nn.Linear(cross_attention_dim, inner_dim, bias=bias)
         self.to_v = nn.Linear(cross_attention_dim, inner_dim, bias=bias)
 
-        '''
         self.to_out = nn.ModuleList([])
         self.to_out.append(nn.Linear(inner_dim, query_dim))
         self.to_out.append(nn.Dropout(dropout))
-        '''
-        self.to_out = nn.Sequential(nn.Linear(inner_dim, query_dim), nn.Dropout(dropout))
 
     def reshape_heads_to_batch_dim(self, tensor):
         batch_size, seq_len, dim = tensor.shape
@@ -606,7 +603,11 @@ class CrossAttention(nn.Module):
         else:
             hidden_states = torch._C.fused_multi_head_attention_inference(query, key, value, self.heads)
 
-        return self.to_out(hidden_states)
+        # linear proj
+        hidden_states = self.to_out[0](hidden_states)
+        # dropout
+        hidden_states = self.to_out[1](hidden_states)
+        return hidden_states
 
     def forward(self, hidden_states, context=None, mask=None):
         return self._fused_forward(hidden_states, context=context, mask=context)
