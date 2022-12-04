@@ -306,7 +306,50 @@ class AttentionBlock(nn.Module):
         tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
         return tensor
 
+    def fused_forward(self, hidden_states):
+        residual = hidden_states
+        batch, channel, height, width = hidden_states.shape
+
+        # norm
+        hidden_states = self.group_norm(hidden_states)
+
+        hidden_states = hidden_states.view(batch, channel, height * width).transpose(1, 2)
+
+        # proj to q, k, v
+        query_proj = self.query(hidden_states)
+        key_proj = self.key(hidden_states)
+        value_proj = self.value(hidden_states)
+
+        if query_proj.device == torch.device("cpu") or not IS_CUDA_SUPPORT_FUSE_ATTENTION or self.training:
+            # transpose
+            query_states = self.transpose_for_scores(query_proj)
+            key_states = self.transpose_for_scores(key_proj)
+            value_states = self.transpose_for_scores(value_proj)
+
+            # get scores
+            scale = 1 / math.sqrt(math.sqrt(self.channels / self.num_heads))
+
+            attention_scores = torch.matmul(query_states * scale, key_states.transpose(-1, -2) * scale)
+            attention_probs = torch.softmax(attention_scores.float(), dim=-1).type(attention_scores.dtype)
+
+            # compute attention output
+            hidden_states = torch.matmul(attention_probs, value_states)
+
+            hidden_states = hidden_states.permute(0, 2, 1, 3).contiguous()
+            new_hidden_states_shape = hidden_states.size()[:-2] + (self.channels,)
+            hidden_states = hidden_states.view(new_hidden_states_shape)
+        else:
+            hidden_states = torch._C.fused_multi_head_attention_inference(query_proj, key_proj, value_proj, self.num_heads)
+        # compute next hidden_states
+        hidden_states = self.proj_attn(hidden_states)
+        hidden_states = hidden_states.transpose(-1, -2).reshape(batch, channel, height, width)
+
+        # res connect and rescale
+        hidden_states = (hidden_states + residual) / self.rescale_output_factor
+        return hidden_states
+
     def forward(self, hidden_states):
+        return self.fused_forward(hidden_states)
         residual = hidden_states
         batch, channel, height, width = hidden_states.shape
 
@@ -521,9 +564,12 @@ class CrossAttention(nn.Module):
         self.to_k = nn.Linear(cross_attention_dim, inner_dim, bias=bias)
         self.to_v = nn.Linear(cross_attention_dim, inner_dim, bias=bias)
 
+        '''
         self.to_out = nn.ModuleList([])
         self.to_out.append(nn.Linear(inner_dim, query_dim))
         self.to_out.append(nn.Dropout(dropout))
+        '''
+        self.to_out = nn.Sequential(nn.Linear(inner_dim, query_dim), nn.Dropout(dropout))
 
     def reshape_heads_to_batch_dim(self, tensor):
         batch_size, seq_len, dim = tensor.shape
@@ -539,7 +585,36 @@ class CrossAttention(nn.Module):
         tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
         return tensor
 
+    def _fused_forward(self, hidden_states, context=None, mask=None):
+        batch_size, sequence_length, _ = hidden_states.shape
+
+        query = self.to_q(hidden_states)
+        context = context if context is not None else hidden_states
+        key = self.to_k(context)
+        value = self.to_v(context)
+
+        if query.device == torch.device("cpu") or not IS_CUDA_SUPPORT_FUSE_ATTENTION or self.training:
+            dim = query.shape[-1]
+
+            query = self.reshape_heads_to_batch_dim(query)
+            key = self.reshape_heads_to_batch_dim(key)
+            value = self.reshape_heads_to_batch_dim(value)
+
+            # TODO(PVP) - mask is currently never used. Remember to re-implement when used
+
+            # attention, what we cannot get enough of
+
+            if self._slice_size is None or query.shape[0] // self._slice_size == 1:
+                hidden_states = self._attention(query, key, value)
+            else:
+                hidden_states = self._sliced_attention(query, key, value, sequence_length, dim)
+        else:
+            hidden_states = torch._C.fused_multi_head_attention_inference(query, key, value, self.heads)
+
+        return self.to_out(hidden_states)
+
     def forward(self, hidden_states, context=None, mask=None):
+        return self._fused_forward(hidden_states, context=context, mask=context)
         batch_size, sequence_length, _ = hidden_states.shape
 
         query = self.to_q(hidden_states)
