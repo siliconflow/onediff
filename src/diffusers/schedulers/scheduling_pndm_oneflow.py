@@ -366,7 +366,7 @@ class OneFlowPNDMScheduler(SchedulerMixin, ConfigMixin):
         # prev_sample -> x_(t−δ)
         alpha_prod_t = self.alphas_cumprod[timestep]
         if isinstance(prev_timestep, torch.Tensor) and prev_timestep.is_lazy:
-            alpha_prod_t_prev = torch.where(prev_timestep >= 0, self.alphas_cumprod[prev_timestep], self.final_alpha_cumprod)
+            alpha_prod_t_prev = torch.where(prev_timestep >= 0, self.alphas_cumprod[prev_timestep].to(prev_timestep.device), self.final_alpha_cumprod.to(prev_timestep.device))
         else:
             alpha_prod_t_prev = self.alphas_cumprod[prev_timestep] if prev_timestep >= 0 else self.final_alpha_cumprod
         beta_prod_t = 1 - alpha_prod_t
