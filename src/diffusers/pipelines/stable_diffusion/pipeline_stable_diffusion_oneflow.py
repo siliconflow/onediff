@@ -60,9 +60,11 @@ class VaePostProcess(flow.nn.Module):
         super().__init__()
         self.vae = vae
 
-    def forward(self, x):
-        x = 1 / 0.18215 * x
-        return self.vae.decoder(self.vae.post_quant_conv(x))
+    def forward(self, latents):
+        latents = 1 / 0.18215 * latents
+        image = self.vae.decode(latents).sample
+        image = (image / 2 + 0.5).clamp(0, 1)
+        return image
 
 
 class VaeGraph(flow.nn.Graph):
