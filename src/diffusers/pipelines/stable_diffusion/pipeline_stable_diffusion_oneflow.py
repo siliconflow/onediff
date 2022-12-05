@@ -55,6 +55,24 @@ class UNetGraph(flow.nn.Graph):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
+class VaePostProcess(flow.nn.Module):
+    def __init__(self, vae) -> None:
+        super().__init__()
+        self.vae = vae
+
+    def forward(self, x):
+        x = 1 / 0.18215 * x
+        return self.vae.decoder(self.vae.post_quant_conv(x))
+
+
+class VaeGraph(flow.nn.Graph):
+    def __init__(self, vae_post_process) -> None:
+        super().__init__()
+        self.vae_post_process = vae_post_process
+
+    def build(self, latents):
+        return self.vae_post_process(latents)
+
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     r"""
     Pipeline for text-to-image generation using Stable Diffusion.
@@ -192,6 +210,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         self.unet_graphs = dict()
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
+        self.vae_graph = None
 
     def enable_xformers_memory_efficient_attention(self):
         r"""
@@ -507,6 +526,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
         compile_unet: bool = True,
+        compile_vae: bool = True,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -629,6 +649,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
                 self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
 
+        if compile_vae and (self.vae_graph is None):
+            vae_post_process = VaePostProcess(self.vae)
+            vae_post_process.eval()
+            self.vae_graph = VaeGraph(vae_post_process)
+            self.vae_graph(latents)
+
         # 7. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
@@ -660,7 +686,11 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                         callback(i, t, latents)
 
         # 8. Post-processing
-        image = self.decode_latents(latents)
+        if compile_vae:
+            image = self.vae_graph(latents)
+            image = image.cpu().permute(0, 2, 3, 1).float().numpy()
+        else:
+            image = self.decode_latents(latents)
 
         # 9. Run safety checker
         image, has_nsfw_concept = self.run_safety_checker(image, device, text_embeddings.dtype)
