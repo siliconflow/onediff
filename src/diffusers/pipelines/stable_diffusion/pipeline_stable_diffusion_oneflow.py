@@ -55,6 +55,15 @@ class UNetGraph(flow.nn.Graph):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
+class SchedulerStepGraph(flow.nn.Graph):
+    def __init__(self, scheduler, extra_step_kwargs):
+        super().__init__()
+        self.scheduler = scheduler
+        self.extra_step_kwargs = extra_step_kwargs
+
+    def build(self, noise_pred, t, latents):
+        return self.scheduler.step(noise_pred, t, latents, **self.extra_step_kwargs).prev_sample
+
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     r"""
     Pipeline for text-to-image generation using Stable Diffusion.
@@ -192,6 +201,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         self.unet_graphs = dict()
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
+        self.ssg = None
 
     def enable_xformers_memory_efficient_attention(self):
         r"""
@@ -604,6 +614,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         compilation_start = timer()
         compilation_time = 0
+
         if compile_unet:
             self.unet_graphs_lru_cache_time += 1
             if (height, width) in self.unet_graphs:
@@ -628,6 +639,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 compilation_time = timer() - compilation_start
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
                 self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
+            if self.ssg is None:
+                self.ssg = SchedulerStepGraph(self.scheduler, extra_step_kwargs)
 
         # 7. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
@@ -651,7 +664,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                     noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
 
                     # compute the previous noisy sample x_t -> x_t-1
-                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+                    if compile_unet:
+                        latents = self.ssg(noise_pred, t, latents)
+                    else:
+                        latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
 
                 # call the callback, if provided
                 if (i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0:
