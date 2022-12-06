@@ -349,7 +349,7 @@ class AttentionBlock(nn.Module):
         return hidden_states
 
     def forward(self, hidden_states):
-        return self._fused_forward(hidden_states)
+        # return self._fused_forward(hidden_states)
         residual = hidden_states
         batch, channel, height, width = hidden_states.shape
 
@@ -610,7 +610,7 @@ class CrossAttention(nn.Module):
         return hidden_states
 
     def forward(self, hidden_states, context=None, mask=None):
-        return self._fused_forward(hidden_states, context=context, mask=context)
+        # return self._fused_forward(hidden_states, context=context, mask=context)
         batch_size, sequence_length, _ = hidden_states.shape
 
         query = self.to_q(hidden_states)
