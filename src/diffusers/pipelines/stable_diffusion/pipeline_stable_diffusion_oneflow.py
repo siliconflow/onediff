@@ -43,6 +43,8 @@ logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 from timeit import default_timer as timer
 import os
 import oneflow as flow
+
+
 class UNetGraph(flow.nn.Graph):
     def __init__(self, unet):
         super().__init__()
@@ -54,6 +56,7 @@ class UNetGraph(flow.nn.Graph):
     def build(self, latent_model_input, t, text_embeddings):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+
 
 class VaePostProcess(flow.nn.Module):
     def __init__(self, vae) -> None:
@@ -74,6 +77,16 @@ class VaeGraph(flow.nn.Graph):
 
     def build(self, latents):
         return self.vae_post_process(latents)
+
+
+class TextEncoderGraph(flow.nn.Graph):
+    def __init__(self, text_encoder) -> None:
+        super().__init__()
+        self.text_encoder = text_encoder
+
+    def build(self, text_input, attention_mask):
+        return self.text_encoder(text_input, attention_mask)[0]
+
 
 class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     r"""
@@ -213,6 +226,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
         self.vae_graph = None
+        self.text_encoder_graph = None
 
     def enable_xformers_memory_efficient_attention(self):
         r"""
@@ -366,11 +380,11 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         else:
             attention_mask = None
 
-        text_embeddings = self.text_encoder(
-            text_input_ids.to(device),
-            attention_mask=attention_mask,
-        )
-        text_embeddings = text_embeddings[0]
+        if self.text_encoder_graph is not None:
+            text_embeddings = self.text_encoder_graph(text_input_ids.to(device), attention_mask,)
+        else:
+            text_embeddings = self.text_encoder(text_input_ids.to(device), attention_mask=attention_mask,)
+            text_embeddings = text_embeddings[0]
 
         # duplicate text embeddings for each generation per prompt, using mps friendly method
         bs_embed, seq_len, _ = text_embeddings.shape
@@ -529,6 +543,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         callback_steps: Optional[int] = 1,
         compile_unet: bool = True,
         compile_vae: bool = True,
+        compile_text_encoder: bool = True,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -600,6 +615,9 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         do_classifier_free_guidance = guidance_scale > 1.0
 
         # 3. Encode input prompt
+        if compile_text_encoder and self.text_encoder_graph is None:
+            self.text_encoder_graph = TextEncoderGraph(self.text_encoder)
+
         text_embeddings = self._encode_prompt(
             prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
         )
@@ -651,7 +669,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
                 self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
 
-        if compile_vae and (self.vae_graph is None):
+        # compile vae graph
+        if compile_vae and self.vae_graph is None:
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
             self.vae_graph = VaeGraph(vae_post_process)
@@ -688,7 +707,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                         callback(i, t, latents)
 
         # 8. Post-processing
-        if compile_vae:
+        if compile_vae and self.vae_graph is not None:
             image = self.vae_graph(latents)
             image = image.cpu().permute(0, 2, 3, 1).float().numpy()
         else:
