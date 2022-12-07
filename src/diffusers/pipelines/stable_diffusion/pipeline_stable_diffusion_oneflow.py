@@ -663,8 +663,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                         callback(i, t, latents)
 
         # 8. Post-processing
-        if compile_vae and self.vae_graph is not None:
-            image = self.vae_graph(latents)
+        if compile_vae:
+            image = vae_post_process_graph(latents)
             image = image.cpu().permute(0, 2, 3, 1).float().numpy()
         else:
             image = self.decode_latents(latents)
