@@ -29,7 +29,7 @@ class OneFlowGraph(object):
         compilation_time = 0
         self.graph_._compile(*args, **kwargs)
         compilation_time = timer() - compilation_start
-        print("[oneflow]", "[elapsed(s)]", f"[{global_class_name} compilation]", compilation_time)
+        print("[oneflow]", "[elapsed(s)]", f"[{global_class_name} compilation]", f"{compilation_time:.3f}")
 
         self.is_compiled_ = True
 
