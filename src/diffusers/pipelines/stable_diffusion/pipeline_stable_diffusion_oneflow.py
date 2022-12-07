@@ -617,7 +617,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         # compile vae graph
         if compile_vae:
             vae_post_process = VaePostProcess(self.vae)
-            # vae_post_process.eval()
+            vae_post_process.eval()
             vae_post_process_graph = get_oneflow_graph_from_compile_cache(VaeGraph, (height, width), vae_post_process)
             vae_post_process_graph.compile(latents)
 
