@@ -510,7 +510,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 New cache size, i.e., the maximum number of unet graphs.
         """
         logger.warning(f"`set_unet_graphs_cache_size` is deprecated, please use `set_graph_compile_cache_size` instead.")
-        self.set_graph_compile_cache_size(UNetGraph, cache_size)
+        self.set_graph_compile_cache_size(cache_size)
 
     @torch.no_grad()
     def __call__(
