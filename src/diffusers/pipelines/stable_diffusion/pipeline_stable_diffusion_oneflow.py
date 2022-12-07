@@ -36,6 +36,7 @@ from ...schedulers import (
 from ...utils import deprecate, logging
 from . import StableDiffusionPipelineOutput
 from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
+from .oneflow_graph_compile_cache import get_oneflow_graph_from_compile_cache
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -222,11 +223,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
-        self.unet_graphs = dict()
-        self.unet_graphs_cache_size = 1
-        self.unet_graphs_lru_cache_time = 0
-        self.vae_graph = None
-        self.text_encoder_graph = None
 
     def enable_xformers_memory_efficient_attention(self):
         r"""
@@ -323,9 +319,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
-        '''
-        if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
-        '''
+        # if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
         if not hasattr(self.unet, "_hf_hook"):
             return self.device
         for module in self.unet.modules():
@@ -380,11 +374,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         else:
             attention_mask = None
 
-        if self.text_encoder_graph is not None:
-            text_embeddings = self.text_encoder_graph(text_input_ids.to(device), attention_mask,)
-        else:
-            text_embeddings = self.text_encoder(text_input_ids.to(device), attention_mask=attention_mask,)
-            text_embeddings = text_embeddings[0]
+        text_embeddings = self.text_encoder(text_input_ids.to(device), attention_mask=attention_mask)
+        text_embeddings = text_embeddings[0]
 
         # duplicate text embeddings for each generation per prompt, using mps friendly method
         bs_embed, seq_len, _ = text_embeddings.shape
@@ -512,18 +503,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         latents = latents * self.scheduler.init_noise_sigma
         return latents
 
-    def set_unet_graphs_cache_size(self, cache_size: int):
-        r"""
-        Set the cache size of compiled unet graphs.
-
-        This option is designed to control the GPU memory size.
-
-        Args:
-            cache_size ([`int`]):
-                New cache size, i.e., the maximum number of unet graphs.
-        """
-        self.unet_graphs_cache_size = cache_size
-
     @torch.no_grad()
     def __call__(
         self,
@@ -543,7 +522,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         callback_steps: Optional[int] = 1,
         compile_unet: bool = True,
         compile_vae: bool = True,
-        compile_text_encoder: bool = True,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -615,9 +593,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         do_classifier_free_guidance = guidance_scale > 1.0
 
         # 3. Encode input prompt
-        if compile_text_encoder and self.text_encoder_graph is None:
-            self.text_encoder_graph = TextEncoderGraph(self.text_encoder)
-
         text_embeddings = self._encode_prompt(
             prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
         )
@@ -639,42 +614,23 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             latents,
         )
 
+        # compile vae graph
+        if compile_vae:
+            vae_post_process = VaePostProcess(self.vae)
+            # vae_post_process.eval()
+            vae_post_process_graph = get_oneflow_graph_from_compile_cache(VaeGraph, (height, width), vae_post_process)
+            vae_post_process_graph.compile(latents)
+
+        # compile unet graph
+        if compile_unet:
+            unet_graph = get_oneflow_graph_from_compile_cache(UNetGraph, (height, width), self.unet)
+            if unet_graph.is_compiled is False:
+                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                _, t = list(enumerate(self.scheduler.timesteps))[0]
+                unet_graph.compile(latent_model_input, t, text_embeddings)
+
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
-
-        compilation_start = timer()
-        compilation_time = 0
-        if compile_unet:
-            self.unet_graphs_lru_cache_time += 1
-            if (height, width) in self.unet_graphs:
-                _, unet_graph = self.unet_graphs[height, width]
-                self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
-            else:
-                while len(self.unet_graphs) >= self.unet_graphs_cache_size:
-                    shape_to_del = min(self.unet_graphs.keys(), key=lambda shape: self.unet_graphs[shape][0])
-                    print("[oneflow]", f"a compiled unet (height={shape_to_del[0]}, width={shape_to_del[1]}) "
-                          "is deleted according to the LRU policy")
-                    print("[oneflow]", "cache size can be changed by `pipeline.set_unet_graphs_cache_size`")
-                    del self.unet_graphs[shape_to_del]
-                print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
-                i, t = list(enumerate(self.scheduler.timesteps))[0]
-
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-
-                unet_graph = UNetGraph(self.unet)
-                unet_graph._compile(latent_model_input, t, text_embeddings)
-                unet_graph(latent_model_input, t, text_embeddings) # warmup
-                compilation_time = timer() - compilation_start
-                print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
-                self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
-
-        # compile vae graph
-        if compile_vae and self.vae_graph is None:
-            vae_post_process = VaePostProcess(self.vae)
-            vae_post_process.eval()
-            self.vae_graph = VaeGraph(vae_post_process)
-            self.vae_graph(latents)
 
         # 7. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
