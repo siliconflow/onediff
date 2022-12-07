@@ -20,15 +20,16 @@ class OneFlowGraph(object):
         if self.is_compiled_:
             return
 
+        global_class_name = self.graph_.__class__.__name__
         print(
             "[oneflow]",
-            f"compiling {self.__class__.__name__} beforehand to make sure the progress bar is more accurate",
+            f"compiling {global_class_name} beforehand to make sure the progress bar is more accurate",
         )
         compilation_start = timer()
         compilation_time = 0
         self.graph_._compile(*args, **kwargs)
         compilation_time = timer() - compilation_start
-        print("[oneflow]", "[elapsed(s)]", f"[{self.__class__.__name__} compilation]", compilation_time)
+        print("[oneflow]", "[elapsed(s)]", f"[{global_class_name} compilation]", compilation_time)
 
         self.is_compiled_ = True
 
