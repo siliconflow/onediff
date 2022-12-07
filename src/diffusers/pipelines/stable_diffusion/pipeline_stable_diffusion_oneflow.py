@@ -36,8 +36,6 @@ from ...schedulers import (
 from ...utils import deprecate, logging
 from . import StableDiffusionPipelineOutput
 from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
-from .oneflow_graph_compile_cache import get_oneflow_graph_from_compile_cache
-
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -223,6 +221,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
+        self.init_graph_compile_cache(1)
 
     def enable_xformers_memory_efficient_attention(self):
         r"""
@@ -319,7 +318,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
-        # if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
         if not hasattr(self.unet, "_hf_hook"):
             return self.device
         for module in self.unet.modules():
@@ -503,6 +501,17 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         latents = latents * self.scheduler.init_noise_sigma
         return latents
 
+    def set_unet_graphs_cache_size(self, cache_size: int):
+        r"""
+        Set the cache size of compiled unet graphs.
+        This option is designed to control the GPU memory size.
+        Args:
+            cache_size ([`int`]):
+                New cache size, i.e., the maximum number of unet graphs.
+        """
+        logger.warning(f"`set_unet_graphs_cache_size` is deprecated, please use `set_graph_compile_cache_size` instead.")
+        self.set_graph_compile_cache_size(UNetGraph, cache_size)
+
     @torch.no_grad()
     def __call__(
         self,
@@ -616,14 +625,16 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         # compile vae graph
         if compile_vae:
+            cache_key = (height, width, num_images_per_prompt)
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
-            vae_post_process_graph = get_oneflow_graph_from_compile_cache(VaeGraph, (height, width), vae_post_process)
+            vae_post_process_graph = self.graph_compile_cache.get_graph(VaeGraph, cache_key, vae_post_process)
             vae_post_process_graph.compile(latents)
 
         # compile unet graph
         if compile_unet:
-            unet_graph = get_oneflow_graph_from_compile_cache(UNetGraph, (height, width), self.unet)
+            cache_key = (height, width, num_images_per_prompt)
+            unet_graph = self.graph_compile_cache.get_graph(UNetGraph, cache_key, self.unet)
             if unet_graph.is_compiled is False:
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 _, t = list(enumerate(self.scheduler.timesteps))[0]
