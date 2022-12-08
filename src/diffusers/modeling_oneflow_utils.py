@@ -154,6 +154,23 @@ def _load_state_dict_into_model(model_to_load, state_dict):
 
     return error_msgs
 
+_ONEFLOW_DTYPE_TO_NUMPY_DTYPE = {
+    torch.bool: np.bool,
+    torch.float: np.float32,
+    torch.float16: np.float16,
+    torch.float32: np.float32,
+    torch.float64: np.double,
+    torch.double: np.double,
+    torch.int8: np.int8,
+    torch.int32: np.int32,
+    torch.int64: np.int64,
+    torch.uint8: np.uint8,
+}
+def convert_numpy_dtype_to_oneflow_dtype(numpy_dtype: np.dtype):
+    for (k, v) in _ONEFLOW_DTYPE_TO_NUMPY_DTYPE.items():
+        if v == numpy_dtype:
+            return k
+    raise NotImplementedError
 
 class OneFlowModelMixin(torch.nn.Module):
     r"""
@@ -357,14 +374,6 @@ class OneFlowModelMixin(torch.nn.Module):
             **kwargs,
         )
 
-        if torch_dtype is not None and not isinstance(torch_dtype, torch.dtype):
-            raise ValueError(
-                f"{torch_dtype} needs to be of type `torch.dtype`, e.g. `torch.float16`, but is {type(torch_dtype)}."
-            )
-        elif torch_dtype is not None:
-            model = model.to(torch_dtype)
-
-        model.register_to_config(_name_or_path=pretrained_model_name_or_path)
         # This variable will flag if we're loading a sharded checkpoint. In this case the archive file is just the
         # Load model
         pretrained_model_name_or_path = str(pretrained_model_name_or_path)
@@ -445,6 +454,21 @@ class OneFlowModelMixin(torch.nn.Module):
 
             # restore default dtype
         state_dict = load_state_dict(model_file)
+
+        dtype = set(v.dtype for v in state_dict.values())
+        if len(dtype) > 1 and np.float32 not in dtype:
+            raise ValueError(
+                f"The weights of the model file {model_file} have a mixture of incompatible dtypes {dtype}. Please"
+                f" make sure that {model_file} weights have only one dtype."
+            )
+        elif len(dtype) > 1 and np.float32 in dtype:
+            dtype = np.float32
+        else:
+            dtype = dtype.pop()
+
+        # move model to correct dtype
+        model = model.to(convert_numpy_dtype_to_oneflow_dtype(dtype))
+
         model, missing_keys, unexpected_keys, mismatched_keys, error_msgs = cls._load_pretrained_model(
             model,
             state_dict,
@@ -452,6 +476,15 @@ class OneFlowModelMixin(torch.nn.Module):
             pretrained_model_name_or_path,
             ignore_mismatched_sizes=ignore_mismatched_sizes,
         )
+
+        if torch_dtype is not None and not isinstance(torch_dtype, torch.dtype):
+            raise ValueError(
+                f"{torch_dtype} needs to be of type `torch.dtype`, e.g. `torch.float16`, but is {type(torch_dtype)}."
+            )
+        elif torch_dtype is not None:
+            model = model.to(torch_dtype)
+
+        model.register_to_config(_name_or_path=pretrained_model_name_or_path)
 
         # Set model in evaluation mode to deactivate DropOut modules by default
         model.eval()
