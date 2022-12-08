@@ -3,7 +3,7 @@ from timeit import default_timer as timer
 from .utils import logging
 
 logger = logging.get_logger(__name__)
-
+import oneflow as torch
 
 class OneFlowGraph(object):
     def __init__(self, graph_class, *args, **kwargs):
@@ -27,6 +27,12 @@ class OneFlowGraph(object):
         self.graph_._compile(*args, **kwargs)
         compilation_time = timer() - compilation_start
         logger.info(f"[oneflow] [elapsed(s)] [{global_class_name} compilation] {compilation_time:.3f}")
+        # warmup
+        ret = self.graph_(*args, **kwargs)
+        if isinstance(ret, torch.Tensor):
+            ret.numpy()
+        else:
+            torch.cuda.synchronize()
 
         self.is_compiled_ = True
 
