@@ -24,7 +24,6 @@ from oneflow import Tensor, device
 from huggingface_hub import hf_hub_download
 from huggingface_hub.utils import EntryNotFoundError, RepositoryNotFoundError, RevisionNotFoundError
 from requests import HTTPError
-import numpy as np
 
 from . import __version__
 from .utils import (
@@ -101,7 +100,7 @@ def load_state_dict(checkpoint_file: Union[str, os.PathLike]):
                 if value.is_cuda:
                     raise ValueError(f"torch model is not on cpu, it is on {value.device}")
                 val = value.detach().cpu().numpy()
-                oneflow_parameters[key] = val
+                oneflow_parameters[key] = torch.from_numpy(val)
             return oneflow_parameters
     except Exception as e:
         try:
@@ -144,24 +143,6 @@ def _load_state_dict_into_model(model_to_load, state_dict):
     load(model_to_load)
 
     return error_msgs
-
-_ONEFLOW_DTYPE_TO_NUMPY_DTYPE = {
-    torch.bool: np.bool,
-    torch.float: np.float32,
-    torch.float16: np.float16,
-    torch.float32: np.float32,
-    torch.float64: np.double,
-    torch.double: np.double,
-    torch.int8: np.int8,
-    torch.int32: np.int32,
-    torch.int64: np.int64,
-    torch.uint8: np.uint8,
-}
-def convert_numpy_dtype_to_oneflow_dtype(numpy_dtype: np.dtype):
-    for (k, v) in _ONEFLOW_DTYPE_TO_NUMPY_DTYPE.items():
-        if v == numpy_dtype:
-            return k
-    raise NotImplementedError
 
 class OneFlowModelMixin(torch.nn.Module):
     r"""
@@ -498,18 +479,18 @@ class OneFlowModelMixin(torch.nn.Module):
             state_dict = load_state_dict(model_file)
             dtype = set(v.dtype for v in state_dict.values())
 
-            if len(dtype) > 1 and np.float32 not in dtype:
+            if len(dtype) > 1 and torch.float32 not in dtype:
                 raise ValueError(
                     f"The weights of the model file {model_file} have a mixture of incompatible dtypes {dtype}. Please"
                     f" make sure that {model_file} weights have only one dtype."
                 )
-            elif len(dtype) > 1 and np.float32 in dtype:
-                dtype = np.float32
+            elif len(dtype) > 1 and torch.float32 in dtype:
+                dtype = torch.float32
             else:
                 dtype = dtype.pop()
 
             # move model to correct dtype
-            model = model.to(convert_numpy_dtype_to_oneflow_dtype(dtype))
+            model = model.to(dtype)
 
             model, missing_keys, unexpected_keys, mismatched_keys, error_msgs = cls._load_pretrained_model(
                 model,
