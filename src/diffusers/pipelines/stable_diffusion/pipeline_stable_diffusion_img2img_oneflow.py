@@ -36,12 +36,18 @@ from ...schedulers import (
 )
 from ...utils import PIL_INTERPOLATION, deprecate, logging
 from . import StableDiffusionPipelineOutput
-from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
 
 from timeit import default_timer as timer
 import os
 
 import oneflow as flow
+
+# with flow.mock_torch.enable():
+#     from .safety_checker import StableDiffusionSafetyChecker
+from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
+
+import oneflow as torch
+
 class UNetGraph(flow.nn.Graph):
     def __init__(self, unet):
         super().__init__()
