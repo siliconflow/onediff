@@ -306,6 +306,12 @@ class AttentionBlock(nn.Module):
         tensor = tensor.permute(0, 2, 1, 3).reshape(batch_size // head_size, seq_len, dim * head_size)
         return tensor
 
+    def transpose_for_scores(self, projection: torch.Tensor) -> torch.Tensor:
+        new_projection_shape = projection.size()[:-1] + (self.num_heads, -1)
+        # move heads to 2nd position (B, T, H * D) -> (B, T, H, D) -> (B, H, T, D)
+        new_projection = projection.view(new_projection_shape).permute(0, 2, 1, 3)
+        return new_projection
+
     def _fused_forward(self, hidden_states):
         residual = hidden_states
         batch, channel, height, width = hidden_states.shape
@@ -644,6 +650,7 @@ class CrossAttention(nn.Module):
         return hidden_states
 
     def _attention(self, query, key, value):
+        '''
         attention_scores = torch.baddbmm(
             torch.empty(query.shape[0], query.shape[1], key.shape[1], dtype=query.dtype, device=query.device),
             query,
@@ -651,6 +658,11 @@ class CrossAttention(nn.Module):
             beta=0,
             alpha=self.scale,
         )
+        '''
+        attention_scores = torch.matmul(
+            query,
+            key.transpose(-1, -2)
+        ) * self.scale
         attention_probs = attention_scores.softmax(dim=-1)
         # compute attention output
 
@@ -758,15 +770,8 @@ class GEGLU(nn.Module):
         return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
 
     def forward(self, hidden_states):
-        if hasattr(torch._C, "fused_geglu"):
-            x_shape = hidden_states.shape
-            if len(x_shape) != 2:
-                hidden_states = hidden_states.reshape(-1, x_shape[-1])
-            out = torch._C.fused_geglu(hidden_states, self.proj.weight, self.proj.bias)
-            if len(x_shape) != 2:
-                out_shape = x_shape[0:len(x_shape) -1 ] + (-1, )
-                out = out.reshape(out_shape)
-            return out
+        if hasattr(torch._C, "fused_glu"):
+            return torch._C.fused_glu(hidden_states, self.proj.weight, self.proj.bias, activation="gelu")
         hidden_states, gate = self.proj(hidden_states).chunk(2, dim=-1)
         return hidden_states * self.gelu(gate)
 

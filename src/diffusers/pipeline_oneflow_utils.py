@@ -50,6 +50,7 @@ from .utils import (
     is_transformers_available,
     logging,
 )
+from .oneflow_graph_compile_cache import OneFlowGraphCompileCache
 
 
 if is_transformers_available():
@@ -82,6 +83,7 @@ LOADABLE_CLASSES = {
         "ImageProcessingMixin": ["save_pretrained", "from_pretrained"],
         # TODO: impl oneflow mixin instead of using OneFlowCLIPTextModel directly
         "OneFlowCLIPTextModel": ["save_pretrained", "from_pretrained"],
+        "OneFlowBertModel": ["save_pretrained", "from_pretrained"],
     },
     "onnxruntime.training": {
         "ORTModule": ["save_pretrained", "from_pretrained"],
@@ -157,6 +159,12 @@ class OneFlowDiffusionPipeline(ConfigMixin):
     """
     config_name = "model_index.json"
     _optional_components = []
+
+    def init_graph_compile_cache(self, cache_size):
+        self.graph_compile_cache = OneFlowGraphCompileCache(cache_size)
+
+    def set_graph_compile_cache_size(self, cache_size):
+        self.graph_compile_cache.set_cache_size(cache_size)
 
     def register_modules(self, **kwargs):
         # import it here to avoid circular import
