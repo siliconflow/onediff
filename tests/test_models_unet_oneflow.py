@@ -16,27 +16,35 @@
 
 import os
 
+# oneflow: '0.8.1.dev20221210+cu112'
+# diffuser: oneflow-fork-unet-tests, 0e749cf375967883f950a4b0d89898853368eead
+
 os.environ["ONEFLOW_MLIR_CSE"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
 os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-
+os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
+os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+os.environ["ONEFLOW_KERENL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "1"
 # above env, no diff when set to 1, fp32 & fp16
 
+os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+# no diff when set to 1, only for fp16
+
+
 # os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-# fp16 max_diff=0.001953125, fp32 max_diff=0.000817
+# fp16: max_diff=0.00328
+# fp32: max_diff=0.00080
 
 # os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+# fp16: max_diff=0.01563
+# fp32: max_diff=0.00089
 
-# os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-# os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
 
-# os.environ["ONEFLOW_KERENL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
 # os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "1"
-# os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "1"
-
-# os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-# os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+# only for fused_multi_head_attention_inference kernel
 
 import math
 import unittest
@@ -89,8 +97,8 @@ class UNet2DConditionModelTests(ModelTesterMixin, unittest.TestCase):
 
     def test_compare_eager_graph_output(self):
         unet_pratrained_model_path = "/home/ldp/.cache/huggingface/diffusers/models--CompVis--stable-diffusion-v1-4/snapshots/a304b1ab1b59dd6c3ba9c40705c29c6de4144096/unet"
-        data_type = torch.float32
-        # data_type = torch.float16
+        # data_type = torch.float32
+        data_type = torch.float16
         loading_kwargs = {'torch_dtype': data_type}
         unet = OneFlowUNet2DConditionModel.from_pretrained(unet_pratrained_model_path, **loading_kwargs).to(torch_device)
         unet.eval()
