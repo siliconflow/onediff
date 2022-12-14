@@ -21,9 +21,23 @@ from diffusers import OneFlowAutoencoderKL as AutoencoderKL
 from diffusers.modeling_oneflow_utils import OneFlowModelMixin as ModelMixin
 from diffusers.testing_oneflow_utils import floats_tensor, torch_device
 
-from .test_modeling_common_oneflow import ModelTesterMixin
+from tests.test_modeling_common_oneflow import ModelTesterMixin
 
+import os
 
+# oneflow: '0.8.1.dev20221212+cu112'
+# diffuser: oneflow-fork-vae-tests
+
+os.environ["ONEFLOW_MLIR_CSE"] = "1"
+os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
+os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+
+# os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+# fp16 max_diff: 0.00928
+# os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+# fp16 max_diff: 0.00634
 
 class AutoencoderKLTests(ModelTesterMixin, unittest.TestCase):
     model_class = AutoencoderKL
@@ -108,3 +122,56 @@ class AutoencoderKLTests(ModelTesterMixin, unittest.TestCase):
             [-0.1307,  0.1102,  0.3255, -0.2596, -0.0746, -0.1416, -0.2858, -0.3020, -0.1785]
         )
         self.assertTrue(np.allclose(output_slice.numpy(), expected_output_slice.numpy(), rtol=1e-2))
+    
+    def test_compare_eager_graph_output(self):
+        vae_pratrained_model_path = "/home/ldp/.cache/huggingface/diffusers/models--CompVis--stable-diffusion-v1-4/snapshots/a304b1ab1b59dd6c3ba9c40705c29c6de4144096/vae"
+        # data_type = torch.float32
+        data_type = torch.float16
+        loading_kwargs = {'torch_dtype': data_type}
+        vae = AutoencoderKL.from_pretrained(vae_pratrained_model_path, **loading_kwargs).to(torch_device)
+
+        def dummy_input():
+            batch_size = 2
+            num_channels = 4
+            sizes = (64, 64)
+            image = floats_tensor((batch_size, num_channels) + sizes).to(torch_device).to(data_type)
+            return {"sample": image}
+
+        class VaePostProcess(torch.nn.Module):
+            def __init__(self, vae) -> None:
+                super().__init__()
+                self.vae = vae
+
+            def forward(self, latents):
+                latents = 1 / 0.18215 * latents
+                image = self.vae.decode(latents).sample
+                image = (image / 2 + 0.5).clamp(0, 1)
+                return image
+
+        class VaeGraph(torch.nn.Graph):
+            def __init__(self, vae_post_process) -> None:
+                super().__init__()
+                self.vae_post_process = vae_post_process
+
+            def build(self, latents):
+                return self.vae_post_process(latents)
+
+        vae_post_process = VaePostProcess(vae)
+        vae_post_process.eval()
+        vae_post_process_graph = VaeGraph(vae_post_process)
+
+        inputs_dict = dummy_input()
+
+        with torch.no_grad():
+            eager_res = vae_post_process(inputs_dict["sample"])
+
+            graph_res = vae_post_process_graph(inputs_dict["sample"])
+
+            import numpy as np
+            out_1 = eager_res.cpu().numpy()
+            out_2 = graph_res.cpu().numpy()
+            out_1 = out_1[~np.isnan(out_1)]
+            out_2 = out_2[~np.isnan(out_2)]
+            max_diff = np.amax(np.abs(out_1 - out_2))
+            print(f"max diff: {max_diff}")
+            self.assertLessEqual(max_diff, 1e-5)
