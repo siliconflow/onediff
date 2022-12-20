@@ -149,7 +149,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         os.environ["ONEFLOW_KERENL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
         # NOTE: avoid overflow
-        if "upcast_attention" in self.unet.config and self.unet.config.upcast_attention:
+        if "upcast_attention" in unet.config and unet.config.upcast_attention:
             os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         else:
             os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "1"
