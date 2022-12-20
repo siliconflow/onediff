@@ -132,7 +132,11 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline):
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
 
         os.environ["ONEFLOW_KERENL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-        os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "1"
+        # NOTE: avoid overflow
+        if "upcast_attention" in unet.config and unet.config.upcast_attention:
+            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+        else:
+            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "1"
         os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "1"
 
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
