@@ -770,7 +770,7 @@ class GEGLU(nn.Module):
         return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
 
     def forward(self, hidden_states):
-        if hasattr(torch._C, "fused_glu"):
+        if hasattr(torch._C, "fused_glu") and not self.training:
             return torch._C.fused_glu(hidden_states, self.proj.weight, self.proj.bias, activation="gelu")
         hidden_states, gate = self.proj(hidden_states).chunk(2, dim=-1)
         return hidden_states * self.gelu(gate)
