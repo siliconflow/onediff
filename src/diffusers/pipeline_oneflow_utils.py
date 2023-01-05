@@ -87,7 +87,6 @@ LOADABLE_CLASSES = {
         "ProcessorMixin": ["save_pretrained", "from_pretrained"],
         "ImageProcessingMixin": ["save_pretrained", "from_pretrained"],
         # TODO: impl oneflow mixin instead of using OneFlowCLIPTextModel directly
-        "OneFlowCLIPTextModel": ["save_pretrained", "from_pretrained"],
         "OneFlowBertModel": ["save_pretrained", "from_pretrained"],
     },
     "onnxruntime.training": {"ORTModule": ["save_pretrained", "from_pretrained"],},
