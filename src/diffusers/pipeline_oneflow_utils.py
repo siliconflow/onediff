@@ -88,7 +88,7 @@ LOADABLE_CLASSES = {
         "ImageProcessingMixin": ["save_pretrained", "from_pretrained"],
         # TODO: impl oneflow mixin instead of using OneFlowCLIPTextModel directly
         "OneFlowCLIPTextModel": ["save_pretrained", "from_pretrained"],
-        "OneFlowBertModel": ["save_pretrained", "from_pretrained"],      
+        "OneFlowBertModel": ["save_pretrained", "from_pretrained"],
     },
     "transformers.modeling_oneflow_utils": {
         "OneFlowPreTrainedModel": ["save_pretrained", "from_pretrained"],
