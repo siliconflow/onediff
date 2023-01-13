@@ -19,7 +19,7 @@ from .utils import logging
 if is_torch_available():
     import oneflow
     with oneflow.mock_torch.enable():
-        from transformers import CLIPTextModel
+        from transformers import CLIPTextModel, CLIPFeatureExtractor
     from .modeling_utils import ModelMixin
     from .models import AutoencoderKL, Transformer2DModel, UNet1DModel, UNet2DConditionModel, UNet2DModel, VQModel
     from .optimization import (
