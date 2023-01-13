@@ -253,14 +253,11 @@ class OneFlowDiffusionPipeline(ConfigMixin):
         if torch_device is None:
             return self
 
-        def has_parameters(module):
-            return next(module.parameters(), None) is not None
-
         module_names, _, _ = self.extract_init_dict(dict(self.config))
         for name in module_names.keys():
             module = getattr(self, name)
             if isinstance(module, torch.nn.Module):
-                if has_parameters(module) and module.dtype == torch.float16 and str(torch_device) in ["cpu"]:
+                if module.dtype == torch.float16 and str(torch_device) in ["cpu"]:
                     logger.warning(
                         "Pipelines loaded with `torch_dtype=torch.float16` cannot run with `cpu` device. It"
                         " is not recommended to move them to `cpu` as running them will fail. Please make"
@@ -287,7 +284,7 @@ class OneFlowDiffusionPipeline(ConfigMixin):
         module_names, _, _ = self.extract_init_dict(dict(self.config))
         for name in module_names.keys():
             module = getattr(self, name)
-            if isinstance(module, torch.nn.Module) and next(module.parameters(), None) is not None:
+            if isinstance(module, torch.nn.Module):
                 return module.device
         return torch.device("cpu")
 
