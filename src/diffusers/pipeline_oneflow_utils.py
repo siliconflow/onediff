@@ -253,11 +253,14 @@ class OneFlowDiffusionPipeline(ConfigMixin):
         if torch_device is None:
             return self
 
+        def has_parameters(module):
+            return next(module.parameters(), None) is not None
+
         module_names, _, _ = self.extract_init_dict(dict(self.config))
         for name in module_names.keys():
             module = getattr(self, name)
             if isinstance(module, torch.nn.Module):
-                if module.dtype == torch.float16 and str(torch_device) in ["cpu"]:
+                if has_parameters(module) and module.dtype == torch.float16 and str(torch_device) in ["cpu"]:
                     logger.warning(
                         "Pipelines loaded with `torch_dtype=torch.float16` cannot run with `cpu` device. It"
                         " is not recommended to move them to `cpu` as running them will fail. Please make"
@@ -284,7 +287,7 @@ class OneFlowDiffusionPipeline(ConfigMixin):
         module_names, _, _ = self.extract_init_dict(dict(self.config))
         for name in module_names.keys():
             module = getattr(self, name)
-            if isinstance(module, torch.nn.Module):
+            if isinstance(module, torch.nn.Module) and next(module.parameters(), None) is not None:
                 return module.device
         return torch.device("cpu")
 
@@ -650,10 +653,11 @@ class OneFlowDiffusionPipeline(ConfigMixin):
                 importable_classes = ALL_IMPORTABLE_CLASSES
                 class_candidates = {c: class_obj for c in importable_classes.keys()}
             else:
-                # else we just import it from the library.
-                library = importlib.import_module(library_name)
+                with torch.mock_torch.enable():
+                    # else we just import it from the library.
+                    library = importlib.import_module(library_name)
 
-                class_obj = getattr(library, class_name)
+                    class_obj = getattr(library, class_name)
                 importable_classes = LOADABLE_CLASSES[library_name]
                 class_candidates = {c: getattr(library, c, None) for c in importable_classes.keys()}
 
