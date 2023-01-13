@@ -89,6 +89,7 @@ if is_torch_available() and is_transformers_available():
 else:
     from .utils.dummy_torch_and_transformers_objects import *  # noqa F403
 
+
 if is_torch_available() and is_transformers_available() and is_onnx_available():
     from .pipelines import (
         OnnxStableDiffusionImg2ImgPipeline,
@@ -141,7 +142,9 @@ from .schedulers import (
     OneFlowSchedulerMixin
 )
 
+from .pipelines import OneFlowAltDiffusionPipeline
 from .pipelines import OneFlowStableDiffusionPipeline
 from .pipelines import OneFlowStableDiffusionImg2ImgPipeline
+from .pipelines import OneFlowStableDiffusionInpaintPipeline, OneFlowStableDiffusionInpaintPipelineLegacy
 from .pipeline_oneflow_utils import OneFlowDiffusionPipeline
 from .modeling_oneflow_utils import OneFlowModelMixin

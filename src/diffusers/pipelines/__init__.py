@@ -47,5 +47,7 @@ if is_transformers_available() and is_onnx_available():
 if is_transformers_available() and is_flax_available():
     from .stable_diffusion import FlaxStableDiffusionPipeline
 
+from .alt_diffusion import OneFlowAltDiffusionPipeline
 from .stable_diffusion import OneFlowStableDiffusionPipeline
 from .stable_diffusion import OneFlowStableDiffusionImg2ImgPipeline
+from .stable_diffusion import OneFlowStableDiffusionInpaintPipeline, OneFlowStableDiffusionInpaintPipelineLegacy

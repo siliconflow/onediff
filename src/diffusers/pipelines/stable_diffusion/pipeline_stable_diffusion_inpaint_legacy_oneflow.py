@@ -15,16 +15,13 @@
 import inspect
 from typing import Callable, List, Optional, Union
 
+import numpy as np
 import oneflow as torch
-import torch as og_torch
 
-
-def is_accelerate_available():
-    return False
-
-
+import PIL
+from diffusers.utils import is_accelerate_available
 from packaging import version
-from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
+from transformers import CLIPFeatureExtractor, OneFlowCLIPTextModel as CLIPTextModel, CLIPTokenizer
 
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
@@ -32,67 +29,45 @@ from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipel
 from ...schedulers import (
     OneFlowDDIMScheduler as DDIMScheduler,
     OneFlowDPMSolverMultistepScheduler as DPMSolverMultistepScheduler,
-    EulerAncestralDiscreteScheduler,
-    OneFlowEulerDiscreteScheduler as EulerDiscreteScheduler,
-    LMSDiscreteScheduler,
+    OneFlowEulerAncestralDiscreteScheduler as EulerAncestralDiscreteScheduler,
+    OneFlowEulerDiscreteScheduler as EulerDiscreteScheduler ,
+    OneFlowLMSDiscreteScheduler as LMSDiscreteScheduler,
     OneFlowPNDMScheduler as PNDMScheduler,
 )
-from ...utils import deprecate, logging
+from ...utils import PIL_INTERPOLATION, deprecate, logging
 from . import StableDiffusionPipelineOutput
-from .safety_checker import StableDiffusionSafetyChecker
-
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
-
-from timeit import default_timer as timer
-import os
-import oneflow as flow
+from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
 
 
-class UNetGraph(flow.nn.Graph):
-    def __init__(self, unet):
-        super().__init__()
-        self.unet = unet
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
-    def build(self, latent_model_input, t, text_embeddings):
-        text_embeddings = torch._C.amp_white_identity(text_embeddings)
-        return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+logger = logging.get_logger(__name__)
 
 
-class VaePostProcess(flow.nn.Module):
-    def __init__(self, vae) -> None:
-        super().__init__()
-        self.vae = vae
-
-    def forward(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        return image
+def preprocess_image(image):
+    w, h = image.size
+    w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
+    image = image.resize((w, h), resample=PIL_INTERPOLATION["lanczos"])
+    image = np.array(image).astype(np.float32) / 255.0
+    image = image[None].transpose(0, 3, 1, 2)
+    image = torch.from_numpy(image)
+    return 2.0 * image - 1.0
 
 
-class VaeGraph(flow.nn.Graph):
-    def __init__(self, vae_post_process) -> None:
-        super().__init__()
-        self.vae_post_process = vae_post_process
-
-    def build(self, latents):
-        return self.vae_post_process(latents)
-
-
-class TextEncoderGraph(flow.nn.Graph):
-    def __init__(self, text_encoder) -> None:
-        super().__init__()
-        self.text_encoder = text_encoder
-
-    def build(self, text_input, attention_mask):
-        return self.text_encoder(text_input, attention_mask)[0]
+def preprocess_mask(mask, scale_factor=8):
+    mask = mask.convert("L")
+    w, h = mask.size
+    w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
+    mask = mask.resize((w // scale_factor, h // scale_factor), resample=PIL_INTERPOLATION["nearest"])
+    mask = np.array(mask).astype(np.float32) / 255.0
+    mask = np.tile(mask, (4, 1, 1))
+    mask = mask[None].transpose(0, 1, 2, 3)  # what does this step do?
+    mask = 1 - mask  # repaint white, keep black
+    mask = torch.from_numpy(mask)
+    return mask
 
 
-class OneFlowStableDiffusionPipeline(DiffusionPipeline):
+class OneFlowStableDiffusionInpaintPipelineLegacy(DiffusionPipeline):
     r"""
-    Pipeline for text-to-image generation using Stable Diffusion.
+    Pipeline for text-guided image inpainting using Stable Diffusion. *This is an experimental feature*.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
@@ -119,6 +94,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     """
     _optional_components = ["safety_checker", "feature_extractor"]
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.__init__
     def __init__(
         self,
         vae: AutoencoderKL,
@@ -137,27 +113,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         feature_extractor: CLIPFeatureExtractor,
         requires_safety_checker: bool = True,
     ):
-        os.environ["ONEFLOW_MLIR_CSE"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-
-        os.environ["ONEFLOW_KERENL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-        # NOTE: avoid overflow
-        if "upcast_attention" in unet.config and unet.config.upcast_attention:
-            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
-        else:
-            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "1"
-        os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "1"
-
-        os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-
         super().__init__()
 
         if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
@@ -235,26 +190,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
-        self.init_graph_compile_cache(1)
 
-    def enable_xformers_memory_efficient_attention(self):
-        r"""
-        Enable memory efficient attention as implemented in xformers.
-
-        When this option is enabled, you should observe lower GPU memory usage and a potential speed up at inference
-        time. Speed up at training time is not guaranteed.
-
-        Warning: When Memory Efficient Attention and Sliced attention are both enabled, the Memory Efficient Attention
-        is used.
-        """
-        self.unet.set_use_memory_efficient_attention_xformers(True)
-
-    def disable_xformers_memory_efficient_attention(self):
-        r"""
-        Disable memory efficient attention as implemented in xformers.
-        """
-        self.unet.set_use_memory_efficient_attention_xformers(False)
-
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_attention_slicing
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
         r"""
         Enable sliced attention computation.
@@ -279,6 +216,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         self.unet.set_attention_slice(slice_size)
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_attention_slicing
     def disable_attention_slicing(self):
         r"""
         Disable sliced attention computation. If `enable_attention_slicing` was previously invoked, this method will go
@@ -287,22 +225,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         # set slice_size = `None` to disable `attention slicing`
         self.enable_attention_slicing(None)
 
-    def enable_vae_slicing(self):
-        r"""
-        Enable sliced VAE decoding.
-
-        When this option is enabled, the VAE will split the input tensor in slices to compute decoding in several
-        steps. This is useful to save some memory and allow larger batch sizes.
-        """
-        self.vae.enable_slicing()
-
-    def disable_vae_slicing(self):
-        r"""
-        Disable sliced VAE decoding. If `enable_vae_slicing` was previously invoked, this method will go back to
-        computing decoding in one step.
-        """
-        self.vae.disable_slicing()
-
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_sequential_cpu_offload
     def enable_sequential_cpu_offload(self, gpu_id=0):
         r"""
         Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
@@ -325,14 +248,35 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             # fix by only offloading self.safety_checker for now
             cpu_offload(self.safety_checker.vision_model, device)
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_xformers_memory_efficient_attention
+    def enable_xformers_memory_efficient_attention(self):
+        r"""
+        Enable memory efficient attention as implemented in xformers.
+
+        When this option is enabled, you should observe lower GPU memory usage and a potential speed up at inference
+        time. Speed up at training time is not guaranteed.
+
+        Warning: When Memory Efficient Attention and Sliced attention are both enabled, the Memory Efficient Attention
+        is used.
+        """
+        self.unet.set_use_memory_efficient_attention_xformers(True)
+
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.disable_xformers_memory_efficient_attention
+    def disable_xformers_memory_efficient_attention(self):
+        r"""
+        Disable memory efficient attention as implemented in xformers.
+        """
+        self.unet.set_use_memory_efficient_attention_xformers(False)
+
     @property
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._execution_device
     def _execution_device(self):
         r"""
         Returns the device on which the pipeline's models will be executed. After calling
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
-        if not hasattr(self.unet, "_hf_hook"):
+        if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
             return self.device
         for module in self.unet.modules():
             if (
@@ -343,6 +287,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 return torch.device(module._hf_hook.execution_device)
         return self.device
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._encode_prompt
     def _encode_prompt(self, prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt):
         r"""
         Encodes the prompt into text encoder hidden states.
@@ -367,18 +312,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             padding="max_length",
             max_length=self.tokenizer.model_max_length,
             truncation=True,
-            return_tensors="np",
+            return_tensors="pt",
         )
         text_input_ids = text_inputs.input_ids
-        text_input_ids = torch.from_numpy(text_input_ids)
-        untruncated_ids = self.tokenizer(prompt, padding="max_length", return_tensors="np").input_ids
-        untruncated_ids = torch.from_numpy(untruncated_ids)
+        untruncated_ids = self.tokenizer(prompt, padding="max_length", return_tensors="pt").input_ids
 
-        if (
-            text_input_ids.shape == untruncated_ids.shape
-            and text_input_ids.numel() == untruncated_ids.numel()
-            and not torch.equal(text_input_ids, untruncated_ids)
-        ):
+        if not torch.equal(text_input_ids, untruncated_ids):
             removed_text = self.tokenizer.batch_decode(untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1])
             logger.warning(
                 "The following part of your input was truncated because CLIP can only handle sequences up to"
@@ -390,7 +329,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         else:
             attention_mask = None
 
-        text_embeddings = self.text_encoder(text_input_ids.to(device), attention_mask=attention_mask)
+        text_embeddings = self.text_encoder(
+            text_input_ids.to(device),
+            attention_mask=attention_mask,
+        )
         text_embeddings = text_embeddings[0]
 
         # duplicate text embeddings for each generation per prompt, using mps friendly method
@@ -421,16 +363,21 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
             max_length = text_input_ids.shape[-1]
             uncond_input = self.tokenizer(
-                uncond_tokens, padding="max_length", max_length=max_length, truncation=True, return_tensors="np",
+                uncond_tokens,
+                padding="max_length",
+                max_length=max_length,
+                truncation=True,
+                return_tensors="pt",
             )
 
             if hasattr(self.text_encoder.config, "use_attention_mask") and self.text_encoder.config.use_attention_mask:
-                attention_mask = torch.from_numpy(uncond_input.attention_mask).to(device)
+                attention_mask = uncond_input.attention_mask.to(device)
             else:
                 attention_mask = None
 
             uncond_embeddings = self.text_encoder(
-                torch.from_numpy(uncond_input.input_ids).to(device), attention_mask=attention_mask,
+                uncond_input.input_ids.to(device),
+                attention_mask=attention_mask,
             )
             uncond_embeddings = uncond_embeddings[0]
 
@@ -446,10 +393,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
         return text_embeddings
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.run_safety_checker
     def run_safety_checker(self, image, device, dtype):
         if self.safety_checker is not None:
-            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="np")
-            safety_checker_input.pixel_values = torch.from_numpy(safety_checker_input.pixel_values).to(device)
+            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="pt").to(device)
             image, has_nsfw_concept = self.safety_checker(
                 images=image, clip_input=safety_checker_input.pixel_values.to(dtype)
             )
@@ -457,6 +404,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             has_nsfw_concept = None
         return image, has_nsfw_concept
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.decode_latents
     def decode_latents(self, latents):
         latents = 1 / 0.18215 * latents
         image = self.vae.decode(latents).sample
@@ -465,6 +413,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         image = image.cpu().permute(0, 2, 3, 1).float().numpy()
         return image
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_extra_step_kwargs
     def prepare_extra_step_kwargs(self, generator, eta):
         # prepare extra kwargs for the scheduler step, since not all schedulers have the same signature
         # eta (η) is only used with the DDIMScheduler, it will be ignored for other schedulers.
@@ -482,12 +431,13 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             extra_step_kwargs["generator"] = generator
         return extra_step_kwargs
 
-    def check_inputs(self, prompt, height, width, callback_steps):
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img.StableDiffusionImg2ImgPipeline.check_inputs
+    def check_inputs(self, prompt, strength, callback_steps):
         if not isinstance(prompt, str) and not isinstance(prompt, list):
             raise ValueError(f"`prompt` has to be of type `str` or `list` but is {type(prompt)}")
 
-        if height % 8 != 0 or width % 8 != 0:
-            raise ValueError(f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
+        if strength < 0 or strength > 1:
+            raise ValueError(f"The value of strength should in [1.0, 1.0] but is {strength}")
 
         if (callback_steps is None) or (
             callback_steps is not None and (not isinstance(callback_steps, int) or callback_steps <= 0)
@@ -497,55 +447,52 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 f" {type(callback_steps)}."
             )
 
-    def prepare_latents(self, batch_size, num_channels_latents, height, width, dtype, device, generator, latents=None):
-        shape = (batch_size, num_channels_latents, height // self.vae_scale_factor, width // self.vae_scale_factor)
-        if latents is None:
-            if device.type == "mps":
-                # randn does not work reproducibly on mps
-                latents = torch.randn(shape, generator=generator, device="cpu", dtype=dtype).to(device)
-            else:
-                latents = torch.randn(shape, generator=generator, device=device, dtype=dtype)
-        else:
-            if latents.shape != shape:
-                raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {shape}")
-            latents = latents.to(device)
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion_img2img.StableDiffusionImg2ImgPipeline.get_timesteps
+    def get_timesteps(self, num_inference_steps, strength, device):
+        # get the original timestep using init_timestep
+        offset = self.scheduler.config.get("steps_offset", 0)
+        init_timestep = int(num_inference_steps * strength) + offset
+        init_timestep = min(init_timestep, num_inference_steps)
 
-        # scale the initial noise by the standard deviation required by the scheduler
-        latents = latents * self.scheduler.init_noise_sigma
-        return latents
+        t_start = max(num_inference_steps - init_timestep + offset, 0)
+        timesteps = self.scheduler.timesteps[t_start:]
 
-    def set_unet_graphs_cache_size(self, cache_size: int):
-        r"""
-        Set the cache size of compiled unet graphs.
-        This option is designed to control the GPU memory size.
-        Args:
-            cache_size ([`int`]):
-                New cache size, i.e., the maximum number of unet graphs.
-        """
-        logger.warning(
-            f"`set_unet_graphs_cache_size` is deprecated, please use `set_graph_compile_cache_size` instead."
-        )
-        self.set_graph_compile_cache_size(cache_size)
+        return timesteps, num_inference_steps - t_start
+
+    def prepare_latents(self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator):
+        image = image.to(device=self.device, dtype=dtype)
+        init_latent_dist = self.vae.encode(image).latent_dist
+        init_latents = init_latent_dist.sample(generator=generator)
+        init_latents = 0.18215 * init_latents
+
+        # Expand init_latents for batch_size and num_images_per_prompt
+        init_latents = torch.cat([init_latents] * batch_size * num_images_per_prompt, dim=0)
+        init_latents_orig = init_latents
+
+        # add noise to latents using the timesteps
+        noise = torch.randn(init_latents.shape, generator=generator, device=self.device, dtype=dtype)
+        init_latents = self.scheduler.add_noise(init_latents, noise, timestep)
+        latents = init_latents
+        return latents, init_latents_orig, noise
 
     @torch.no_grad()
     def __call__(
         self,
         prompt: Union[str, List[str]],
-        height: Optional[int] = None,
-        width: Optional[int] = None,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 7.5,
+        image: Union[torch.FloatTensor, PIL.Image.Image],
+        mask_image: Union[torch.FloatTensor, PIL.Image.Image],
+        strength: float = 0.8,
+        num_inference_steps: Optional[int] = 50,
+        guidance_scale: Optional[float] = 7.5,
         negative_prompt: Optional[Union[str, List[str]]] = None,
         num_images_per_prompt: Optional[int] = 1,
-        eta: float = 0.0,
+        eta: Optional[float] = 0.0,
         generator: Optional[torch.Generator] = None,
-        latents: Optional[torch.FloatTensor] = None,
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
-        compile_unet: bool = True,
-        compile_vae: bool = True,
+        **kwargs,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -553,13 +500,22 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         Args:
             prompt (`str` or `List[str]`):
                 The prompt or prompts to guide the image generation.
-            height (`int`, *optional*, defaults to self.unet.config.sample_size * self.vae_scale_factor):
-                The height in pixels of the generated image.
-            width (`int`, *optional*, defaults to self.unet.config.sample_size * self.vae_scale_factor):
-                The width in pixels of the generated image.
+            image (`torch.FloatTensor` or `PIL.Image.Image`):
+                `Image`, or tensor representing an image batch, that will be used as the starting point for the
+                process. This is the image whose masked region will be inpainted.
+            mask_image (`torch.FloatTensor` or `PIL.Image.Image`):
+                `Image`, or tensor representing an image batch, to mask `image`. White pixels in the mask will be
+                replaced by noise and therefore repainted, while black pixels will be preserved. If `mask_image` is a
+                PIL image, it will be converted to a single channel (luminance) before use. If it's a tensor, it should
+                contain one color channel (L) instead of 3, so the expected shape would be `(B, H, W, 1)`.
+            strength (`float`, *optional*, defaults to 0.8):
+                Conceptually, indicates how much to inpaint the masked area. Must be between 0 and 1. When `strength`
+                is 1, the denoising process will be run on the masked area for the full number of iterations specified
+                in `num_inference_steps`. `image` will be used as a reference for the masked area, adding more noise to
+                that region the larger the `strength`. If `strength` is 0, no inpainting will occur.
             num_inference_steps (`int`, *optional*, defaults to 50):
-                The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference.
+                The reference number of denoising steps. More denoising steps usually lead to a higher quality image at
+                the expense of slower inference. This parameter will be modulated by `strength`, as explained above.
             guidance_scale (`float`, *optional*, defaults to 7.5):
                 Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
                 `guidance_scale` is defined as `w` of equation 2. of [Imagen
@@ -577,10 +533,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             generator (`torch.Generator`, *optional*):
                 A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
                 deterministic.
-            latents (`torch.FloatTensor`, *optional*):
-                Pre-generated noisy latents, sampled from a Gaussian distribution, to be used as inputs for image
-                generation. Can be used to tweak the same generation with different prompts. If not provided, a latents
-                tensor will ge generated by sampling using the supplied random `generator`.
             output_type (`str`, *optional*, defaults to `"pil"`):
                 The output format of the generate image. Choose between
                 [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
@@ -601,12 +553,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
             (nsfw) content, according to the `safety_checker`.
         """
-        # 0. Default height and width to unet
-        height = height or self.unet.config.sample_size * self.vae_scale_factor
-        width = width or self.unet.config.sample_size * self.vae_scale_factor
+        message = "Please use `image` instead of `init_image`."
+        init_image = deprecate("init_image", "0.12.0", message, take_from=kwargs)
+        image = init_image or image
 
-        # 1. Check inputs. Raise error if not correct
-        self.check_inputs(prompt, height, width, callback_steps)
+        # 1. Check inputs
+        self.check_inputs(prompt, strength, callback_steps)
 
         # 2. Define call parameters
         batch_size = 1 if isinstance(prompt, str) else len(prompt)
@@ -621,44 +573,32 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
         )
 
-        # 4. Prepare timesteps
-        self.scheduler.set_timesteps(num_inference_steps)
-        timesteps = self.scheduler.timesteps
+        # 4. Preprocess image and mask
+        if not isinstance(image, torch.FloatTensor):
+            image = preprocess_image(image)
 
-        # 5. Prepare latent variables
-        num_channels_latents = self.unet.in_channels
-        latents = self.prepare_latents(
-            batch_size * num_images_per_prompt,
-            num_channels_latents,
-            height,
-            width,
-            text_embeddings.dtype,
-            device,
-            generator,
-            latents,
+        if not isinstance(mask_image, torch.FloatTensor):
+            mask_image = preprocess_mask(mask_image, self.vae_scale_factor)
+
+        # 5. set timesteps
+        self.scheduler.set_timesteps(num_inference_steps, device=device)
+        timesteps, num_inference_steps = self.get_timesteps(num_inference_steps, strength, device)
+        latent_timestep = timesteps[:1].repeat(batch_size * num_images_per_prompt)
+
+        # 6. Prepare latent variables
+        # encode the init image into latents and scale the latents
+        latents, init_latents_orig, noise = self.prepare_latents(
+            image, latent_timestep, batch_size, num_images_per_prompt, text_embeddings.dtype, device, generator
         )
 
-        # compile vae graph
-        if compile_vae:
-            cache_key = (height, width, num_images_per_prompt)
-            vae_post_process = VaePostProcess(self.vae)
-            vae_post_process.eval()
-            vae_post_process_graph = self.graph_compile_cache.get_graph(VaeGraph, cache_key, vae_post_process)
-            vae_post_process_graph.compile(latents)
+        # 7. Prepare mask latent
+        mask = mask_image.to(device=self.device, dtype=latents.dtype)
+        mask = torch.cat([mask] * batch_size * num_images_per_prompt)
 
-        # compile unet graph
-        if compile_unet:
-            cache_key = (height, width, num_images_per_prompt)
-            unet_graph = self.graph_compile_cache.get_graph(UNetGraph, cache_key, self.unet)
-            if unet_graph.is_compiled is False:
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                _, t = list(enumerate(self.scheduler.timesteps))[0]
-                unet_graph.compile(latent_model_input, t, text_embeddings)
-
-        # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        # 8. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-        # 7. Denoising loop
+        # 9. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
@@ -667,20 +607,19 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
 
                 # predict the noise residual
-                if compile_unet:
-                    torch._oneflow_internal.profiler.RangePush(f"denoise-{i}-unet-graph")
-                    noise_pred = unet_graph(latent_model_input, t, text_embeddings)
-                    torch._oneflow_internal.profiler.RangePop()
-                else:
-                    noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+                noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
                 # perform guidance
                 if do_classifier_free_guidance:
                     noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
                     noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
 
-                    # compute the previous noisy sample x_t -> x_t-1
-                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+                # compute the previous noisy sample x_t -> x_t-1
+                latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs).prev_sample
+                # masking
+                init_latents_proper = self.scheduler.add_noise(init_latents_orig, noise, torch.tensor([t]))
+
+                latents = (init_latents_proper * mask) + (latents * (1 - mask))
 
                 # call the callback, if provided
                 if (i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0:
@@ -688,22 +627,17 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
 
-        # 8. Post-processing
-        if compile_vae:
-            image = vae_post_process_graph(latents)
-            image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-        else:
-            image = self.decode_latents(latents)
+        # 10. Post-processing
+        image = self.decode_latents(latents)
 
-        # 9. Run safety checker
+        # 11. Run safety checker
         image, has_nsfw_concept = self.run_safety_checker(image, device, text_embeddings.dtype)
 
-        # 10. Convert to PIL
+        # 12. Convert to PIL
         if output_type == "pil":
             image = self.numpy_to_pil(image)
 
         if not return_dict:
             return (image, has_nsfw_concept)
 
-        assert og_torch.cuda.is_initialized() is False
         return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)

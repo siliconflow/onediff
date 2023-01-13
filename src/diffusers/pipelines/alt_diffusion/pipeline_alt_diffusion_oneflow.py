@@ -11,20 +11,15 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
+import os
 import inspect
 from typing import Callable, List, Optional, Union
 
 import oneflow as torch
-import torch as og_torch
 
-
-def is_accelerate_available():
-    return False
-
-
+from diffusers.utils import is_accelerate_available
 from packaging import version
-from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
+from transformers import CLIPFeatureExtractor, XLMRobertaTokenizer
 
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
@@ -32,23 +27,21 @@ from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipel
 from ...schedulers import (
     OneFlowDDIMScheduler as DDIMScheduler,
     OneFlowDPMSolverMultistepScheduler as DPMSolverMultistepScheduler,
-    EulerAncestralDiscreteScheduler,
+    OneFlowEulerAncestralDiscreteScheduler as EulerAncestralDiscreteScheduler,
     OneFlowEulerDiscreteScheduler as EulerDiscreteScheduler,
-    LMSDiscreteScheduler,
+    OneFlowLMSDiscreteScheduler as LMSDiscreteScheduler,
     OneFlowPNDMScheduler as PNDMScheduler,
 )
 from ...utils import deprecate, logging
-from . import StableDiffusionPipelineOutput
-from .safety_checker import StableDiffusionSafetyChecker
+from ..stable_diffusion.safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
+from . import AltDiffusionPipelineOutput
+from . import OneFlowRobertaSeriesModelWithTransformation as RobertaSeriesModelWithTransformation
+
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
-from timeit import default_timer as timer
-import os
-import oneflow as flow
 
-
-class UNetGraph(flow.nn.Graph):
+class UNetGraph(torch.nn.Graph):
     def __init__(self, unet):
         super().__init__()
         self.unet = unet
@@ -59,8 +52,7 @@ class UNetGraph(flow.nn.Graph):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
-
-class VaePostProcess(flow.nn.Module):
+class VaePostProcess(torch.nn.Module):
     def __init__(self, vae) -> None:
         super().__init__()
         self.vae = vae
@@ -72,7 +64,7 @@ class VaePostProcess(flow.nn.Module):
         return image
 
 
-class VaeGraph(flow.nn.Graph):
+class VaeGraph(torch.nn.Graph):
     def __init__(self, vae_post_process) -> None:
         super().__init__()
         self.vae_post_process = vae_post_process
@@ -81,18 +73,10 @@ class VaeGraph(flow.nn.Graph):
         return self.vae_post_process(latents)
 
 
-class TextEncoderGraph(flow.nn.Graph):
-    def __init__(self, text_encoder) -> None:
-        super().__init__()
-        self.text_encoder = text_encoder
-
-    def build(self, text_input, attention_mask):
-        return self.text_encoder(text_input, attention_mask)[0]
-
-
-class OneFlowStableDiffusionPipeline(DiffusionPipeline):
+# Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline with Stable->Alt, CLIPTextModel->RobertaSeriesModelWithTransformation, CLIPTokenizer->XLMRobertaTokenizer, AltDiffusionSafetyChecker->StableDiffusionSafetyChecker
+class OneFlowAltDiffusionPipeline(DiffusionPipeline):
     r"""
-    Pipeline for text-to-image generation using Stable Diffusion.
+    Pipeline for text-to-image generation using Alt Diffusion.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
@@ -100,13 +84,13 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     Args:
         vae ([`AutoencoderKL`]):
             Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
-        text_encoder ([`CLIPTextModel`]):
-            Frozen text-encoder. Stable Diffusion uses the text portion of
-            [CLIP](https://huggingface.co/docs/transformers/model_doc/clip#transformers.CLIPTextModel), specifically
-            the [clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) variant.
-        tokenizer (`CLIPTokenizer`):
+        text_encoder ([`RobertaSeriesModelWithTransformation`]):
+            Frozen text-encoder. Alt Diffusion uses the text portion of
+            [CLIP](https://huggingface.co/docs/transformers/model_doc/clip#transformers.RobertaSeriesModelWithTransformation),
+            specifically the [clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) variant.
+        tokenizer (`XLMRobertaTokenizer`):
             Tokenizer of class
-            [CLIPTokenizer](https://huggingface.co/docs/transformers/v4.21.0/en/model_doc/clip#transformers.CLIPTokenizer).
+            [XLMRobertaTokenizer](https://huggingface.co/docs/transformers/v4.21.0/en/model_doc/clip#transformers.XLMRobertaTokenizer).
         unet ([`UNet2DConditionModel`]): Conditional U-Net architecture to denoise the encoded image latents.
         scheduler ([`SchedulerMixin`]):
             A scheduler to be used in combination with `unet` to denoise the encoded image latents. Can be one of
@@ -122,8 +106,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     def __init__(
         self,
         vae: AutoencoderKL,
-        text_encoder: CLIPTextModel,
-        tokenizer: CLIPTokenizer,
+        text_encoder: RobertaSeriesModelWithTransformation,
+        tokenizer: XLMRobertaTokenizer,
         unet: UNet2DConditionModel,
         scheduler: Union[
             DDIMScheduler,
@@ -190,7 +174,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if safety_checker is None and requires_safety_checker:
             logger.warning(
                 f"You have disabled the safety checker for {self.__class__} by passing `safety_checker=None`. Ensure"
-                " that you abide to the conditions of the Stable Diffusion license and do not expose unfiltered"
+                " that you abide to the conditions of the Alt Diffusion license and do not expose unfiltered"
                 " results in services or applications open to the public. Both the diffusers team and Hugging Face"
                 " strongly recommend to keep the safety filter enabled in all public facing circumstances, disabling"
                 " it only for use-cases that involve analyzing network behavior or auditing its results. For more"
@@ -332,16 +316,17 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
         hooks.
         """
-        if not hasattr(self.unet, "_hf_hook"):
-            return self.device
-        for module in self.unet.modules():
-            if (
-                hasattr(module, "_hf_hook")
-                and hasattr(module._hf_hook, "execution_device")
-                and module._hf_hook.execution_device is not None
-            ):
-                return torch.device(module._hf_hook.execution_device)
         return self.device
+        # if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
+        #     return self.device
+        # for module in self.unet.modules():
+        #     if (
+        #         hasattr(module, "_hf_hook")
+        #         and hasattr(module._hf_hook, "execution_device")
+        #         and module._hf_hook.execution_device is not None
+        #     ):
+        #         return torch.device(module._hf_hook.execution_device)
+        # return self.device
 
     def _encode_prompt(self, prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt):
         r"""
@@ -361,7 +346,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 if `guidance_scale` is less than `1`).
         """
         batch_size = len(prompt) if isinstance(prompt, list) else 1
-
         text_inputs = self.tokenizer(
             prompt,
             padding="max_length",
@@ -370,15 +354,10 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             return_tensors="np",
         )
         text_input_ids = text_inputs.input_ids
-        text_input_ids = torch.from_numpy(text_input_ids)
         untruncated_ids = self.tokenizer(prompt, padding="max_length", return_tensors="np").input_ids
+        text_input_ids = torch.from_numpy(text_input_ids)
         untruncated_ids = torch.from_numpy(untruncated_ids)
-
-        if (
-            text_input_ids.shape == untruncated_ids.shape
-            and text_input_ids.numel() == untruncated_ids.numel()
-            and not torch.equal(text_input_ids, untruncated_ids)
-        ):
+        if not torch.equal(text_input_ids, untruncated_ids):
             removed_text = self.tokenizer.batch_decode(untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1])
             logger.warning(
                 "The following part of your input was truncated because CLIP can only handle sequences up to"
@@ -386,11 +365,14 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             )
 
         if hasattr(self.text_encoder.config, "use_attention_mask") and self.text_encoder.config.use_attention_mask:
-            attention_mask = text_inputs.attention_mask.to(device)
+            attention_mask = torch.from_numpy(text_inputs.attention_mask).to(device)
         else:
             attention_mask = None
 
-        text_embeddings = self.text_encoder(text_input_ids.to(device), attention_mask=attention_mask)
+        text_embeddings = self.text_encoder(
+            text_input_ids.to(device),
+            attention_mask=attention_mask,
+        )
         text_embeddings = text_embeddings[0]
 
         # duplicate text embeddings for each generation per prompt, using mps friendly method
@@ -421,7 +403,11 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
 
             max_length = text_input_ids.shape[-1]
             uncond_input = self.tokenizer(
-                uncond_tokens, padding="max_length", max_length=max_length, truncation=True, return_tensors="np",
+                uncond_tokens,
+                padding="max_length",
+                max_length=max_length,
+                truncation=True,
+                return_tensors="np",
             )
 
             if hasattr(self.text_encoder.config, "use_attention_mask") and self.text_encoder.config.use_attention_mask:
@@ -430,7 +416,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 attention_mask = None
 
             uncond_embeddings = self.text_encoder(
-                torch.from_numpy(uncond_input.input_ids).to(device), attention_mask=attention_mask,
+                torch.from_numpy(uncond_input.input_ids).to(device),
+                attention_mask=attention_mask,
             )
             uncond_embeddings = uncond_embeddings[0]
 
@@ -445,13 +432,13 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
 
         return text_embeddings
-
+    
+    
     def run_safety_checker(self, image, device, dtype):
         if self.safety_checker is not None:
-            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="np")
-            safety_checker_input.pixel_values = torch.from_numpy(safety_checker_input.pixel_values).to(device)
+            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="np").to(device)
             image, has_nsfw_concept = self.safety_checker(
-                images=image, clip_input=safety_checker_input.pixel_values.to(dtype)
+                images=image, clip_input=torch.from_numpy(safety_checker_input.pixel_values).to(dtype=dtype, device=device)
             )
         else:
             has_nsfw_concept = None
@@ -513,7 +500,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         # scale the initial noise by the standard deviation required by the scheduler
         latents = latents * self.scheduler.init_noise_sigma
         return latents
-
+    
     def set_unet_graphs_cache_size(self, cache_size: int):
         r"""
         Set the cache size of compiled unet graphs.
@@ -585,7 +572,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 The output format of the generate image. Choose between
                 [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
             return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
+                Whether or not to return a [`~pipelines.stable_diffusion.AltDiffusionPipelineOutput`] instead of a
                 plain tuple.
             callback (`Callable`, *optional*):
                 A function that will be called every `callback_steps` steps during inference. The function will be
@@ -595,8 +582,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 called at every step.
 
         Returns:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
+            [`~pipelines.stable_diffusion.AltDiffusionPipelineOutput`] or `tuple`:
+            [`~pipelines.stable_diffusion.AltDiffusionPipelineOutput`] if `return_dict` is True, otherwise a `tuple.
             When returning a tuple, the first element is a list with the generated images, and the second element is a
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
             (nsfw) content, according to the `safety_checker`.
@@ -622,7 +609,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         )
 
         # 4. Prepare timesteps
-        self.scheduler.set_timesteps(num_inference_steps)
+        self.scheduler.set_timesteps(num_inference_steps, device=device)
         timesteps = self.scheduler.timesteps
 
         # 5. Prepare latent variables
@@ -637,6 +624,9 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             generator,
             latents,
         )
+
+        # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
         # compile vae graph
         if compile_vae:
@@ -654,9 +644,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
                 latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 _, t = list(enumerate(self.scheduler.timesteps))[0]
                 unet_graph.compile(latent_model_input, t, text_embeddings)
-
-        # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
-        extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
         # 7. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
@@ -705,5 +692,4 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
         if not return_dict:
             return (image, has_nsfw_concept)
 
-        assert og_torch.cuda.is_initialized() is False
-        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+        return AltDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)

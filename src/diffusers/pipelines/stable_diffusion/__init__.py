@@ -81,3 +81,5 @@ if is_transformers_available() and is_flax_available():
 
 from .pipeline_stable_diffusion_oneflow import OneFlowStableDiffusionPipeline
 from .pipeline_stable_diffusion_img2img_oneflow import OneFlowStableDiffusionImg2ImgPipeline
+from .pipeline_stable_diffusion_inpaint_oneflow import OneFlowStableDiffusionInpaintPipeline
+from .pipeline_stable_diffusion_inpaint_legacy_oneflow import OneFlowStableDiffusionInpaintPipelineLegacy
