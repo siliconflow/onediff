@@ -22,7 +22,7 @@ import oneflow as torch
 import PIL
 from diffusers.utils import is_accelerate_available
 from packaging import version
-from transformers import CLIPFeatureExtractor, OneFlowCLIPTextModel as CLIPTextModel, CLIPTokenizer
+from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
@@ -30,7 +30,7 @@ from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipel
 from ...schedulers import OneFlowDDIMScheduler as DDIMScheduler, OneFlowLMSDiscreteScheduler as LMSDiscreteScheduler, OneFlowPNDMScheduler as PNDMScheduler
 from ...utils import deprecate, logging
 from . import StableDiffusionPipelineOutput
-from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
+from .safety_checker import StableDiffusionSafetyChecker
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name

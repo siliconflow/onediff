@@ -4,7 +4,9 @@ from typing import Optional, Tuple
 import oneflow as torch
 from oneflow import nn
 
-from transformers import OneFlowRobertaPreTrainedModel as RobertaPreTrainedModel, XLMRobertaConfig, OneFlowXLMRobertaModel as XLMRobertaModel
+import oneflow
+with oneflow.mock_torch.enable():
+    from transformers import RobertaPreTrainedModel, XLMRobertaConfig, XLMRobertaModel
 from transformers.utils import ModelOutput
 
 

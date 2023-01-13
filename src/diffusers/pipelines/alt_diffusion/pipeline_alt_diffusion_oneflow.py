@@ -33,7 +33,7 @@ from ...schedulers import (
     OneFlowPNDMScheduler as PNDMScheduler,
 )
 from ...utils import deprecate, logging
-from ..stable_diffusion.safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
+from ..stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 from . import AltDiffusionPipelineOutput
 from . import OneFlowRobertaSeriesModelWithTransformation as RobertaSeriesModelWithTransformation
 
