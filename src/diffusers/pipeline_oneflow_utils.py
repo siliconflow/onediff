@@ -163,11 +163,14 @@ class OneFlowDiffusionPipeline(ConfigMixin):
     config_name = "model_index.json"
     _optional_components = []
 
-    def init_graph_compile_cache(self, cache_size):
-        self.graph_compile_cache = OneFlowGraphCompileCache(cache_size)
+    def init_graph_compile_cache(self, cache_size, enable_graph_share_mem=False):
+        self.graph_compile_cache = OneFlowGraphCompileCache(cache_size, enable_graph_share_mem)
 
     def set_graph_compile_cache_size(self, cache_size):
         self.graph_compile_cache.set_cache_size(cache_size)
+
+    def enable_graph_share_mem(self, enabled=True):
+        self.graph_compile_cache.enable_share_mem(enabled)
 
     def register_modules(self, **kwargs):
         # import it here to avoid circular import
@@ -561,7 +564,10 @@ class OneFlowDiffusionPipeline(ConfigMixin):
         if pipeline_class.__name__ == "StableDiffusionInpaintPipeline" and version.parse(
             version.parse(config_dict["_diffusers_version"]).base_version
         ) <= version.parse("0.5.1"):
-            from diffusers import OneFlowStableDiffusionInpaintPipeline as StableDiffusionInpaintPipeline, OneFlowStableDiffusionInpaintPipelineLegacy as StableDiffusionInpaintPipelineLegacy
+            from diffusers import (
+                OneFlowStableDiffusionInpaintPipeline as StableDiffusionInpaintPipeline,
+                OneFlowStableDiffusionInpaintPipelineLegacy as StableDiffusionInpaintPipelineLegacy,
+            )
 
             pipeline_class = StableDiffusionInpaintPipelineLegacy
 
