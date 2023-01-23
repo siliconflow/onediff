@@ -35,7 +35,7 @@ class OneFlowGraph(object):
         self.is_compiled_ = True
 
     def share_from(self, other_graph):
-        self.graph_._share_from(other_graph.graph_)
+        self.graph_.share_from(other_graph.graph_)
         self.is_shared_from_ = True
 
     def __call__(self, *args, **kwargs):
@@ -124,6 +124,7 @@ class OneFlowGraphCompileCache(object):
                     graph.share_from(self.share_origin_[graph_class_name])
                 else:
                     self.share_origin_[graph_class_name] = graph
+                    graph.graph_.enable_shared()
 
             if ret != cache_key:
                 logger.info(
