@@ -171,6 +171,12 @@ class OneFlowDiffusionPipeline(ConfigMixin):
 
     def enable_graph_share_mem(self, enabled=True):
         self.graph_compile_cache.enable_share_mem(enabled)
+    
+    def enable_save_graph(self, enabled=True):
+        self.graph_compile_cache.enable_save_graph(enabled)
+    
+    def save_graph(self, path):
+        self.graph_compile_cache.save_graph(path)
 
     def register_modules(self, **kwargs):
         # import it here to avoid circular import

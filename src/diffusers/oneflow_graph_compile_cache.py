@@ -1,6 +1,8 @@
+import os
 from collections import deque
 from timeit import default_timer as timer
 from .utils import logging
+import oneflow as flow
 
 logger = logging.get_logger(__name__)
 
@@ -89,6 +91,11 @@ class LRUCache(object):
             return self.hash_map[key]
 
         return None
+    
+    def pairs(self):
+        for (key, value) in self.hash_map.items():
+            yield (key, value)
+
 
 
 class OneFlowGraphCompileCache(object):
@@ -97,9 +104,9 @@ class OneFlowGraphCompileCache(object):
         self.cache_bucket_ = dict()
         self.share_origin_ = dict()
         self.enable_share_mem_ = enable_graph_share_mem
-        self.enable_save_ = False
-        self.enable_load_ = False
-        self.save_load_path_ = None
+        self.enable_save_graph_ = False
+        self.enable_load_graph_ = False
+        self.graph_save_load_path_ = None
 
     def set_cache_size(self, cache_size):
         self.cache_size_ = cache_size
@@ -109,6 +116,15 @@ class OneFlowGraphCompileCache(object):
 
     def enable_share_mem(self, enabled=True):
         self.enable_share_mem_ = enabled
+    
+    def enable_save_graph(self, enabled=True):
+        self.enable_save_graph_ = enabled
+
+    def save_graph(self, path):
+        if self.enable_save_graph_:
+            for (graph_class_name, cache) in self.cache_bucket_.items():
+                for (key, graph) in cache.pairs():
+                    flow.save(graph.graph_.runtime_state_dict(), os.path.join(path, graph_class_name + "_" + str(hash(key))))
 
     def get_graph(self, graph_class, cache_key, *args, **kwargs):
         graph_class_name = graph_class.__name__
@@ -122,6 +138,8 @@ class OneFlowGraphCompileCache(object):
             graph = OneFlowGraph(graph_class, *args, **kwargs)
             ret = compile_cache.set(cache_key, graph)
             assert ret is not None
+            if self.enable_save_graph_:
+                graph.graph_.enable_save_runtime_state_dict()
             if self.enable_share_mem_ is True:
                 if graph_class_name in self.share_origin_:
                     graph.share_from(self.share_origin_[graph_class_name])
