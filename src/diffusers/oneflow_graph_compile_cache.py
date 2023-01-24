@@ -36,6 +36,22 @@ class OneFlowGraph(object):
 
         self.is_compiled_ = True
 
+    def load_runtime_state_dict(self, state_dict):
+        if self.is_compiled_:
+            return
+
+        global_class_name = self.graph_.__class__.__name__
+        logger.info(
+            f"[oneflow] loading {global_class_name} beforehand to make sure the progress bar is more accurate",
+        )
+        load_start = timer()
+        load_time = 0
+        self.graph_.load_runtime_state_dict(state_dict)
+        load_time = timer() - load_start
+        logger.info(f"[oneflow] [elapsed(s)] [{global_class_name} loading] {load_time:.3f}")
+
+        self.is_compiled_ = True
+
     def share_from(self, other_graph):
         self.graph_.share_from(other_graph.graph_)
         self.is_shared_from_ = True
@@ -52,6 +68,7 @@ class LRUCache(object):
         self.cache_size = cache_size
         self.queue = deque()
         self.hash_map = dict()
+        self.cnt = 0
 
     def front(self):
         if self.is_empty():
@@ -81,6 +98,8 @@ class LRUCache(object):
             pop_key = self.pop()
 
         self.queue.appendleft(key)
+        value._oneflow_graph_cache_order = self.cnt
+        self.cnt += 1
         self.hash_map[key] = value
         return pop_key if pop_key is not None else key
 
@@ -120,11 +139,46 @@ class OneFlowGraphCompileCache(object):
     def enable_save_graph(self, enabled=True):
         self.enable_save_graph_ = enabled
 
+    def enable_load_graph(self, enabled=True):
+        self.enable_load_graph_ = enabled
+
     def save_graph(self, path):
         if self.enable_save_graph_:
             for (graph_class_name, cache) in self.cache_bucket_.items():
                 for (key, graph) in cache.pairs():
-                    flow.save(graph.graph_.runtime_state_dict(), os.path.join(path, graph_class_name + "_" + str(hash(key))))
+                    state_dict = graph.graph_.runtime_state_dict()
+                    state_dict["cache_order"] = graph._oneflow_graph_cache_order
+                    state_dict["cache_key"] = key
+                    state_dict["graph_class_name"] = graph_class_name
+                    flow.save(state_dict, os.path.join(path, graph_class_name + "_" + str(hash(key))))
+
+    def load_graph(self, path):
+        if self.enable_load_graph_:
+            sub_folders = [ f.path for f in os.scandir(path) if f.is_dir() ]
+            graph_dict = dict()
+            for sub_folder in sub_folders:
+                state_dict = flow.load(sub_folder, map_location="cuda")
+                cache_order = state_dict["cache_order"]
+                graph_dict[cache_order] = state_dict
+            
+            for order, state_dict in sorted(graph_dict.items()):
+                graph_class_name  = state_dict["graph_class_name"]
+                cache_key = state_dict["cache_key"]
+                if graph_class_name not in self.cache_bucket_:
+                    self.cache_bucket_[graph_class_name] = LRUCache(self.cache_size_)
+                    # TODO(): release eager vae/unet module
+                compile_cache = self.cache_bucket_[graph_class_name]
+                graph = OneFlowGraph(flow.nn.Graph)
+                if self.enable_share_mem_ is True:
+                    if graph_class_name in self.share_origin_:
+                        graph.share_from(self.share_origin_[graph_class_name])
+                    else:
+                        self.share_origin_[graph_class_name] = graph
+                        graph.graph_.enable_shared()
+
+                graph.load_runtime_state_dict(state_dict)
+                ret = compile_cache.set(cache_key, graph)
+                assert ret is not None
 
     def get_graph(self, graph_class, cache_key, *args, **kwargs):
         graph_class_name = graph_class.__name__

@@ -178,6 +178,12 @@ class OneFlowDiffusionPipeline(ConfigMixin):
     def save_graph(self, path):
         self.graph_compile_cache.save_graph(path)
 
+    def enable_load_graph(self, enabled=True):
+        self.graph_compile_cache.enable_load_graph(enabled)
+
+    def load_graph(self, path):
+        self.graph_compile_cache.load_graph(path)
+
     def register_modules(self, **kwargs):
         # import it here to avoid circular import
         from diffusers import pipelines
