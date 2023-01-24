@@ -97,6 +97,9 @@ class OneFlowGraphCompileCache(object):
         self.cache_bucket_ = dict()
         self.share_origin_ = dict()
         self.enable_share_mem_ = enable_graph_share_mem
+        self.enable_save_ = False
+        self.enable_load_ = False
+        self.save_load_path_ = None
 
     def set_cache_size(self, cache_size):
         self.cache_size_ = cache_size

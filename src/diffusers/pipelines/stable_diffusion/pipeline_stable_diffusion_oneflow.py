@@ -119,6 +119,12 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
     """
     _optional_components = ["safety_checker", "feature_extractor"]
 
+    # StableDiffusionPipeline 需要支持 unet 和 vae 的加载模式， 此时无需创建 eager module
+    # vae 和 unet 都不用传入 eager module，而是各传入一个目录
+    # 目录内部以 hash(cache_key) 为子目录名，每个子目录下保存一个 graph 的运行时状态
+    # graph 从 cache 中获取时，如果发现是 load 模式，就从对应目录加载 graph 即可
+    #
+    # 对应的，离线编译时，就是正常的编译模式，只不过传入一个目录，用于保存 graph 的运行时状态
     def __init__(
         self,
         vae: AutoencoderKL,
