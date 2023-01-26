@@ -159,11 +159,9 @@ class OneFlowGraphCompileCache(object):
             for sub_folder in sub_folders:
                 state_dict = flow.load(sub_folder)
                 cache_order = state_dict["cache_order"]
-                print("===> order", cache_order)
                 graph_dict[cache_order] = state_dict
             
             for order, state_dict in sorted(graph_dict.items()):
-                print("===> load order", order)
                 graph_class_name  = state_dict["graph_class_name"]
                 cache_key = state_dict["cache_key"]
                 if graph_class_name not in self.cache_bucket_:

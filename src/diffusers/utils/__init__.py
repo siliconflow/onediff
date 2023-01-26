@@ -101,6 +101,7 @@ def cost_cnt(fn):
         print(fn.__name__, " run time ", end_time - start_time)
         print(fn.__name__, " cuda mem", after_used - before_used)
         print("<==", fn.__name__, " finish run")
+        print("")
         return out
 
     return new_fn
