@@ -64,11 +64,11 @@ class OneFlowGraph(object):
 
 
 class LRUCache(object):
+    _cnt: int = 0
     def __init__(self, cache_size):
         self.cache_size = cache_size
         self.queue = deque()
         self.hash_map = dict()
-        self.cnt = 0
 
     def front(self):
         if self.is_empty():
@@ -98,8 +98,8 @@ class LRUCache(object):
             pop_key = self.pop()
 
         self.queue.appendleft(key)
-        value._oneflow_graph_cache_order = self.cnt
-        self.cnt += 1
+        value._oneflow_graph_cache_order = LRUCache._cnt
+        LRUCache._cnt += 1
         self.hash_map[key] = value
         return pop_key if pop_key is not None else key
 
@@ -157,11 +157,13 @@ class OneFlowGraphCompileCache(object):
             sub_folders = [ f.path for f in os.scandir(path) if f.is_dir() ]
             graph_dict = dict()
             for sub_folder in sub_folders:
-                state_dict = flow.load(sub_folder, map_location="cuda")
+                state_dict = flow.load(sub_folder)
                 cache_order = state_dict["cache_order"]
+                print("===> order", cache_order)
                 graph_dict[cache_order] = state_dict
             
             for order, state_dict in sorted(graph_dict.items()):
+                print("===> load order", order)
                 graph_class_name  = state_dict["graph_class_name"]
                 cache_key = state_dict["cache_key"]
                 if graph_class_name not in self.cache_bucket_:
