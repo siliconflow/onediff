@@ -152,7 +152,7 @@ class OneFlowGraphCompileCache(object):
                     state_dict["graph_class_name"] = graph_class_name
                     flow.save(state_dict, os.path.join(path, graph_class_name + "_" + str(hash(key))))
 
-    def load_graph(self, path):
+    def load_graph(self, path, graph_class2init_args=None):
         if self.enable_load_graph_:
             sub_folders = [ f.path for f in os.scandir(path) if f.is_dir() ]
             graph_dict = dict()
@@ -168,7 +168,11 @@ class OneFlowGraphCompileCache(object):
                     self.cache_bucket_[graph_class_name] = LRUCache(self.cache_size_)
                     # TODO(): release eager vae/unet module
                 compile_cache = self.cache_bucket_[graph_class_name]
-                graph = OneFlowGraph(flow.nn.Graph)
+                if graph_class_name in graph_class2init_args:
+                    init_args = graph_class2init_args[graph_class_name]
+                    graph = OneFlowGraph(init_args[0], init_args[1])
+                else:
+                    graph = OneFlowGraph(flow.nn.Graph)
                 if self.enable_share_mem_ is True:
                     if graph_class_name in self.share_origin_:
                         graph.share_from(self.share_origin_[graph_class_name])

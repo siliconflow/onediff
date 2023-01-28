@@ -24,6 +24,7 @@ from transformers import CLIPFeatureExtractor, XLMRobertaTokenizer
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
 from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipeline
+from ...pipeline_oneflow_utils import UNetGraph, VaePostProcess, VaeGraph
 from ...schedulers import (
     OneFlowDDIMScheduler as DDIMScheduler,
     OneFlowDPMSolverMultistepScheduler as DPMSolverMultistepScheduler,
@@ -39,38 +40,6 @@ from . import OneFlowRobertaSeriesModelWithTransformation as RobertaSeriesModelW
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
-
-
-class UNetGraph(torch.nn.Graph):
-    def __init__(self, unet):
-        super().__init__()
-        self.unet = unet
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
-    def build(self, latent_model_input, t, text_embeddings):
-        text_embeddings = torch._C.amp_white_identity(text_embeddings)
-        return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
-
-class VaePostProcess(torch.nn.Module):
-    def __init__(self, vae) -> None:
-        super().__init__()
-        self.vae = vae
-
-    def forward(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        return image
-
-
-class VaeGraph(torch.nn.Graph):
-    def __init__(self, vae_post_process) -> None:
-        super().__init__()
-        self.vae_post_process = vae_post_process
-
-    def build(self, latents):
-        return self.vae_post_process(latents)
 
 
 # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline with Stable->Alt, CLIPTextModel->RobertaSeriesModelWithTransformation, CLIPTokenizer->XLMRobertaTokenizer, AltDiffusionSafetyChecker->StableDiffusionSafetyChecker

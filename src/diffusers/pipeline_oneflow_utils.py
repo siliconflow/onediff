@@ -142,6 +142,38 @@ def is_safetensors_compatible(info) -> bool:
             is_safetensors_compatible = False
     return is_safetensors_compatible
 
+class UNetGraph(torch.nn.Graph):
+    def __init__(self, unet):
+        super().__init__()
+        self.unet = unet
+        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.config.allow_fuse_add_to_output(True)
+
+    def build(self, latent_model_input, t, text_embeddings):
+        text_embeddings = torch._C.amp_white_identity(text_embeddings)
+        return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+
+class VaePostProcess(torch.nn.Module):
+    def __init__(self, vae) -> None:
+        super().__init__()
+        self.vae = vae
+
+    def forward(self, latents):
+        latents = 1 / 0.18215 * latents
+        image = self.vae.decode(latents).sample
+        image = (image / 2 + 0.5).clamp(0, 1)
+        return image
+
+
+class VaeGraph(torch.nn.Graph):
+    def __init__(self, vae_post_process) -> None:
+        super().__init__()
+        self.vae_post_process = vae_post_process
+
+    def build(self, latents):
+        return self.vae_post_process(latents)
+
+
 
 class OneFlowDiffusionPipeline(ConfigMixin):
     r"""
@@ -181,8 +213,23 @@ class OneFlowDiffusionPipeline(ConfigMixin):
     def enable_load_graph(self, enabled=True):
         self.graph_compile_cache.enable_load_graph(enabled)
 
-    def load_graph(self, path):
-        self.graph_compile_cache.load_graph(path)
+    def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
+        graph_class2init_args = dict()
+        # compile vae graph
+        vae_graph = None
+        if compile_vae:
+            vae_post_process = VaePostProcess(self.vae)
+            vae_post_process.eval()
+            vae_graph_args = (VaeGraph, vae_post_process)
+            graph_class2init_args[VaeGraph.__name__] = vae_graph_args
+
+        # compile unet graph
+        unet_graph = None
+        if compile_unet:
+            unet_graph_args = (UNetGraph, self.unet)
+            graph_class2init_args[UNetGraph.__name__] = unet_graph_args
+
+        self.graph_compile_cache.load_graph(path, graph_class2init_args)
 
     def register_modules(self, **kwargs):
         # import it here to avoid circular import
