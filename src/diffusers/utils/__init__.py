@@ -93,13 +93,13 @@ def cost_cnt(fn):
     import oneflow as flow
     def new_fn(*args, **kwargs):
         print("==>", fn.__name__, " try to run")
-        before_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        #before_used = flow._oneflow_internal.GetCUDAMemoryUsed()
         start_time = time.time()
         out = fn(*args, **kwargs)
         end_time = time.time()
-        after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        #after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
         print(fn.__name__, " run time ", end_time - start_time)
-        print(fn.__name__, " cuda mem", after_used - before_used)
+        #print(fn.__name__, " cuda mem", after_used - before_used)
         print("<==", fn.__name__, " finish run")
         print("")
         return out

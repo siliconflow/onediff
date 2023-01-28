@@ -1,7 +1,7 @@
 import os
 from collections import deque
 from timeit import default_timer as timer
-from .utils import logging
+from .utils import logging, cost_cnt
 import oneflow as flow
 
 logger = logging.get_logger(__name__)
@@ -180,7 +180,10 @@ class OneFlowGraphCompileCache(object):
                         self.share_origin_[graph_class_name] = graph
                         graph.graph_.enable_shared()
 
-                graph.load_runtime_state_dict(state_dict)
+                @cost_cnt
+                def load(one_g):
+                    one_g.load_runtime_state_dict(state_dict)
+                load(graph)
                 ret = compile_cache.set(cache_key, graph)
                 assert ret is not None
 
