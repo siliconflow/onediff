@@ -92,20 +92,7 @@ def load_state_dict(checkpoint_file: Union[str, os.PathLike]):
     Reads a checkpoint file, returning properly formatted errors if they arise.
     """
     try:
-        # this is oneflow saved model, a dir
-        if os.path.isdir(checkpoint_file):
-            return torch.load(checkpoint_file, map_location="cpu")
-        elif os.path.basename(checkpoint_file) == WEIGHTS_NAME:
-            import torch as og_torch
-
-            torch_parameters = og_torch.load(checkpoint_file, map_location="cpu")
-            oneflow_parameters = dict()
-            for key, value in torch_parameters.items():
-                if value.is_cuda:
-                    raise ValueError(f"torch model is not on cpu, it is on {value.device}")
-                val = value.detach().cpu().numpy()
-                oneflow_parameters[key] = torch.from_numpy(val)
-            return oneflow_parameters
+        return torch.load(checkpoint_file, map_location="cpu")
     except Exception as e:
         try:
             with open(checkpoint_file) as f:

@@ -154,10 +154,10 @@ class OneFlowGraphCompileCache(object):
 
     def load_graph(self, path, graph_class2init_args=None):
         if self.enable_load_graph_:
-            sub_folders = [ f.path for f in os.scandir(path) if f.is_dir() ]
+            sub_files = [ f.path for f in os.scandir(path) if f.is_file() ]
             graph_dict = dict()
-            for sub_folder in sub_folders:
-                state_dict = flow.load(sub_folder)
+            for sub_file in sub_files:
+                state_dict = flow.load(sub_file)
                 cache_order = state_dict["cache_order"]
                 graph_dict[cache_order] = state_dict
             

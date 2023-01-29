@@ -675,7 +675,8 @@ class OneFlowDiffusionPipeline(ConfigMixin):
         # 3. Load each module in the pipeline
         for name, (library_name, class_name) in init_dict.items():
             if name in ["scheduler", "unet", "vae", "text_encoder", "safety_checker"]:
-                class_name = "OneFlow" + class_name
+                if "OneFlow" not in class_name:
+                    class_name = "OneFlow" + class_name
             # 3.1 - now that JAX/Flax is an official framework of the library, we might load from Flax names
             if class_name.startswith("Flax"):
                 class_name = class_name[4:]

@@ -1,5 +1,8 @@
 import oneflow as torch
 import time
+import os
+import shutil
+
 from diffusers import (
     OneFlowStableDiffusionPipeline as StableDiffusionPipeline,
     OneFlowEulerDiscreteScheduler as EulerDiscreteScheduler,
@@ -7,21 +10,30 @@ from diffusers import (
 from diffusers import utils
 
 model_id = "stabilityai/stable-diffusion-2"
+_graph_save_file = "./test_sd_save_graph"
+_sch_file_path = "./test_sd_sch"
+_pipe_file_path = "./test_sd_pipe"
 
-_offline_compile = False
+_online_mode = True
+_pipe_from_file = True
 
 total_start_t = time.time()
 start_t = time.time()
-# StableDiffusionPipeline 需要支持 unet 和 vae load graph， 此时无需创建 eager module
 @utils.cost_cnt
 def get_pipe():
-    scheduler = EulerDiscreteScheduler.from_pretrained(model_id, subfolder="scheduler")
-    sd_pipe = StableDiffusionPipeline.from_pretrained(
-        model_id, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
-        )
+    if _pipe_from_file:
+        scheduler = EulerDiscreteScheduler.from_pretrained(_sch_file_path, subfolder="scheduler")
+        sd_pipe = StableDiffusionPipeline.from_pretrained(
+            _pipe_file_path, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
+            )
+    else:
+        scheduler = EulerDiscreteScheduler.from_pretrained(model_id, subfolder="scheduler")
+        sd_pipe = StableDiffusionPipeline.from_pretrained(
+            model_id, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
+            )
     torch._oneflow_internal.eager.Sync()
-    return sd_pipe
-pipe = get_pipe()
+    return scheduler, sd_pipe
+sch, pipe = get_pipe()
 
 @utils.cost_cnt
 def pipe_to_cuda():
@@ -37,13 +49,14 @@ def config_graph():
     torch._oneflow_internal.eager.Sync()
 config_graph()
 
-if _offline_compile:
+if not _online_mode:
     pipe.enable_save_graph()
 else:
     @utils.cost_cnt
     def load_graph():
         pipe.enable_load_graph()
-        pipe.load_graph("./test_save_load", compile_unet=True, compile_vae=False)
+        assert (os.path.exists(_graph_save_file) and os.path.isdir(_graph_save_file))
+        pipe.load_graph(_graph_save_file, compile_unet=True, compile_vae=False)
         torch._oneflow_internal.eager.Sync()
     load_graph()
 end_t = time.time()
@@ -86,8 +99,18 @@ total_end_t = time.time()
 print("st init and run time ", total_end_t - total_start_t, 's.')
 
 @utils.cost_cnt
-def save_graph():
-    pipe.save_graph("./test_save_load")
+def save_pipe_sch():
+    pipe.save_pretrained(_pipe_file_path)
+    sch.save_pretrained(_sch_file_path)
 
-if _offline_compile:
+@utils.cost_cnt
+def save_graph():
+    if os.path.exists(_graph_save_file) and os.path.isdir(_graph_save_file):
+        shutil.rmtree(_graph_save_file)
+        os.makedirs(_graph_save_file)
+
+    pipe.save_graph(_graph_save_file)
+
+if not _online_mode:
+    save_pipe_sch()
     save_graph()
