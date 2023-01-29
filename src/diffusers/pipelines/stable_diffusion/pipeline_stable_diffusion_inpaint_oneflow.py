@@ -22,7 +22,7 @@ import oneflow as torch
 import PIL
 from diffusers.utils import is_accelerate_available
 from packaging import version
-from transformers import CLIPFeatureExtractor, OneFlowCLIPTextModel as CLIPTextModel, CLIPTokenizer
+from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
@@ -30,7 +30,7 @@ from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipel
 from ...schedulers import OneFlowDDIMScheduler as DDIMScheduler, OneFlowLMSDiscreteScheduler as LMSDiscreteScheduler, OneFlowPNDMScheduler as PNDMScheduler
 from ...utils import deprecate, logging
 from . import StableDiffusionPipelineOutput
-from .safety_checker_oneflow import OneFlowStableDiffusionSafetyChecker as StableDiffusionSafetyChecker
+from .safety_checker import StableDiffusionSafetyChecker
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -507,9 +507,11 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline):
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.run_safety_checker
     def run_safety_checker(self, image, device, dtype):
         if self.safety_checker is not None:
-            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="np").to(device)
+            # Function `BatchFeature.to` has a "import torch" inside
+            with torch.mock_torch.enable():
+                safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="pt").to(device)
             image, has_nsfw_concept = self.safety_checker(
-                images=image, clip_input=torch.from_numpy(safety_checker_input.pixel_values).to(dtype=dtype, device=device)
+                images=image, clip_input=safety_checker_input.pixel_values.to(dtype=dtype, device=device)
             )
         else:
             has_nsfw_concept = None

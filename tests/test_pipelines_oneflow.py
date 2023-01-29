@@ -52,7 +52,7 @@ from diffusers.schedulers.scheduling_utils import SCHEDULER_CONFIG_NAME
 from diffusers.testing_utils import floats_tensor, load_image, slow, torch_device
 from diffusers.utils import CONFIG_NAME, WEIGHTS_NAME
 from PIL import Image
-from transformers import CLIPTextConfig, OneFlowCLIPTextModel as CLIPTextModel, CLIPTokenizer
+from transformers import CLIPTextConfig, CLIPTextModel, CLIPTokenizer
 
 @unittest.skip("not implemented in oneflow")
 def test_progress_bar(capsys):
