@@ -180,10 +180,7 @@ class OneFlowGraphCompileCache(object):
                         self.share_origin_[graph_class_name] = graph
                         graph.graph_.enable_shared()
 
-                @cost_cnt
-                def load(one_g):
-                    one_g.load_runtime_state_dict(state_dict)
-                load(graph)
+                graph.load_runtime_state_dict(state_dict)
                 ret = compile_cache.set(cache_key, graph)
                 assert ret is not None
 
