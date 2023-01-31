@@ -166,7 +166,6 @@ class OneFlowGraphCompileCache(object):
                 cache_key = state_dict["cache_key"]
                 if graph_class_name not in self.cache_bucket_:
                     self.cache_bucket_[graph_class_name] = LRUCache(self.cache_size_)
-                    # TODO(): release eager vae/unet module
                 compile_cache = self.cache_bucket_[graph_class_name]
                 if graph_class_name in graph_class2init_args:
                     init_args = graph_class2init_args[graph_class_name]
