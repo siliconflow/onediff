@@ -16,7 +16,6 @@ from diffusers import (
 from diffusers import utils
 
 _model_id = "stabilityai/stable-diffusion-2"
-_generator = torch.Generator("cuda").manual_seed(1024)
 _with_image_save = True
 
 def _reset_session():
@@ -88,6 +87,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
         else:
             raise ValueError(f"invalie image_size {image_size}")
     
+        cur_generator = torch.Generator("cuda").manual_seed(1024)
         images = pipe(
             prompt,
             height=image_height,
@@ -95,7 +95,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
             compile_unet=with_graph,
             compile_vae=False,
             num_images_per_prompt=num_images_per_prompt,
-            generator=_generator,
+            generator=cur_generator,
             output_type="np",
         ).images
 
@@ -116,8 +116,8 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
             with_g_images = text_to_image(prompt, (i, j), prefix=f"is_save_{str(is_save)}-", with_graph=True)
             assert len(no_g_images) == len(with_g_images)
             for img_idx in range(len(no_g_images)):
-                #assert np.abs(no_g_images[img_idx].flatten() - with_g_images[img_idx].flatten()).max() < 1e-2
-                print("====> diff ", np.abs(no_g_images[img_idx].flatten() - with_g_images[img_idx].flatten()).max())
+                print("====> diff ", np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean())
+                assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
     total_end_t = time.time()
     print("st init and run time ", total_end_t - total_start_t, 's.')
     
