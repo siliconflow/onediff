@@ -644,7 +644,8 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline):
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
             vae_post_process_graph = self.graph_compile_cache.get_graph(VaeGraph, cache_key, vae_post_process)
-            vae_post_process_graph.compile(latents)
+            if vae_post_process_graph.is_compiled is False:
+                vae_post_process_graph.compile(latents)
 
         # compile unet graph
         if compile_unet:

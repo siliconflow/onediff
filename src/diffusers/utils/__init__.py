@@ -14,6 +14,7 @@
 
 
 import os
+import time
 
 from .deprecation_utils import deprecate
 from .import_utils import (
@@ -87,3 +88,4 @@ _COMPATIBLE_STABLE_DIFFUSION_SCHEDULERS = [
     "EulerAncestralDiscreteScheduler",
     "DPMSolverMultistepScheduler",
 ]
+
