@@ -29,7 +29,9 @@ class AltDiffusionPipelineOutput(BaseOutput):
 
 
 if is_transformers_available() and is_torch_available():
-    from .modeling_roberta_series import RobertaSeriesModelWithTransformation
+    import oneflow
+    with oneflow.mock_torch.enable():
+        from .modeling_roberta_series import RobertaSeriesModelWithTransformation
     from .pipeline_alt_diffusion import AltDiffusionPipeline
     from .pipeline_alt_diffusion_img2img import AltDiffusionImg2ImgPipeline
 

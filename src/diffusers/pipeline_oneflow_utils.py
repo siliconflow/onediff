@@ -87,7 +87,6 @@ LOADABLE_CLASSES = {
         "ProcessorMixin": ["save_pretrained", "from_pretrained"],
         "ImageProcessingMixin": ["save_pretrained", "from_pretrained"],
         # TODO: impl oneflow mixin instead of using OneFlowCLIPTextModel directly
-        "OneFlowCLIPTextModel": ["save_pretrained", "from_pretrained"],
         "OneFlowBertModel": ["save_pretrained", "from_pretrained"],
     },
     "onnxruntime.training": {"ORTModule": ["save_pretrained", "from_pretrained"],},
@@ -674,7 +673,7 @@ class OneFlowDiffusionPipeline(ConfigMixin):
 
         # 3. Load each module in the pipeline
         for name, (library_name, class_name) in init_dict.items():
-            if name in ["scheduler", "unet", "vae", "text_encoder", "safety_checker"]:
+            if name in ["scheduler", "unet", "vae"]:
                 if "OneFlow" not in class_name:
                     class_name = "OneFlow" + class_name
             # 3.1 - now that JAX/Flax is an official framework of the library, we might load from Flax names
@@ -717,10 +716,11 @@ class OneFlowDiffusionPipeline(ConfigMixin):
                 importable_classes = ALL_IMPORTABLE_CLASSES
                 class_candidates = {c: class_obj for c in importable_classes.keys()}
             else:
-                # else we just import it from the library.
-                library = importlib.import_module(library_name)
+                with torch.mock_torch.enable():
+                    # else we just import it from the library.
+                    library = importlib.import_module(library_name)
 
-                class_obj = getattr(library, class_name)
+                    class_obj = getattr(library, class_name)
                 importable_classes = LOADABLE_CLASSES[library_name]
                 class_candidates = {c: getattr(library, c, None) for c in importable_classes.keys()}
 
