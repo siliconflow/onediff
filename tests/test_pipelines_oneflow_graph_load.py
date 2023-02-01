@@ -18,6 +18,24 @@ from diffusers import utils
 _model_id = "stabilityai/stable-diffusion-2"
 _with_image_save = True
 
+def _cost_cnt(fn):
+    def new_fn(*args, **kwargs):
+        print("==>", fn.__name__, " try to run")
+        #before_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
+        out = fn(*args, **kwargs)
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        #after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        print(fn.__name__, " run time ", end_time - start_time)
+        #print(fn.__name__, " cuda mem", after_used - before_used)
+        print("<==", fn.__name__, " finish run")
+        print("")
+        return out
+
+    return new_fn
+
 def _reset_session():
     # Close session to avoid the buffer name duplicate error.
     flow.framework.session_context.TryCloseDefaultSession()
@@ -37,7 +55,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
 
     total_start_t = time.time()
     start_t = time.time()
-    @utils.cost_cnt
+    @_cost_cnt
     def get_pipe():
         if _pipe_from_file:
             scheduler = EulerDiscreteScheduler.from_pretrained(sch_file_path, subfolder="scheduler")
@@ -52,13 +70,13 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
         return scheduler, sd_pipe
     sch, pipe = get_pipe()
     
-    @utils.cost_cnt
+    @_cost_cnt
     def pipe_to_cuda():
         cu_pipe = pipe.to("cuda")
         return cu_pipe
     pipe = pipe_to_cuda()
     
-    @utils.cost_cnt
+    @_cost_cnt
     def config_graph():
         pipe.set_graph_compile_cache_size(9)
         pipe.enable_graph_share_mem()
@@ -67,7 +85,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     if not _online_mode:
         pipe.enable_save_graph()
     else:
-        @utils.cost_cnt
+        @_cost_cnt
         def load_graph():
             pipe.enable_load_graph()
             assert (os.path.exists(graph_save_path) and os.path.isdir(graph_save_path))
@@ -76,7 +94,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     end_t = time.time()
     print("sd init time ", end_t - start_t, 's.')
     
-    @utils.cost_cnt
+    @_cost_cnt
     def text_to_image(prompt, image_size, num_images_per_prompt=1, prefix="", with_graph=False):
         if isinstance(image_size, int):
             image_height = image_size
@@ -121,12 +139,12 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     total_end_t = time.time()
     print("st init and run time ", total_end_t - total_start_t, 's.')
     
-    @utils.cost_cnt
+    @_cost_cnt
     def save_pipe_sch():
         pipe.save_pretrained(pipe_file_path)
         sch.save_pretrained(sch_file_path)
     
-    @utils.cost_cnt
+    @_cost_cnt
     def save_graph():
         assert os.path.exists(graph_save_path) and os.path.isdir(graph_save_path)
         pipe.save_graph(graph_save_path)
