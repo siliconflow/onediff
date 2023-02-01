@@ -1,7 +1,7 @@
 import os
 from collections import deque
 from timeit import default_timer as timer
-from .utils import logging, cost_cnt
+from .utils import logging
 import oneflow as flow
 
 logger = logging.get_logger(__name__)
