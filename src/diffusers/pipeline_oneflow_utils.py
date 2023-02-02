@@ -209,9 +209,6 @@ class OneFlowDiffusionPipeline(ConfigMixin):
     def save_graph(self, path):
         self.graph_compile_cache.save_graph(path)
 
-    def enable_load_graph(self, enabled=True):
-        self.graph_compile_cache.enable_load_graph(enabled)
-
     def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
         graph_class2init_args = dict()
         # compile vae graph

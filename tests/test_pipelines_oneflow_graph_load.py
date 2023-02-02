@@ -87,7 +87,6 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     else:
         @_cost_cnt
         def load_graph():
-            pipe.enable_load_graph()
             assert (os.path.exists(graph_save_path) and os.path.isdir(graph_save_path))
             pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=False)
         load_graph()
