@@ -22,7 +22,7 @@ cd onediff
 python3 -m pip install -e .
 ```
 
-- If you clone the oneflow fork before
+- (optional) If you clone the oneflow fork before
 
   - uninstall and reinstall transformers and diffusers
 
