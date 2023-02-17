@@ -36,3 +36,16 @@ python3 -m onediff.demo
 ## More examples
 
 There is a directory for [examples](/examples/)
+
+## Release
+
+- run examples to check it works
+```bash
+python3 examples/text_to_image.py
+python3 examples/text_to_image_dpmsolver.py
+```
+- bump version in [this file](src/onediff/__init__.py)
+- build wheel
+```bash
+python setup.py bdist_wheel
+```
