@@ -55,14 +55,20 @@ There is a directory for [examples](/examples/)
 
 - run examples to check it works
 
-```bash
-python3 examples/text_to_image.py
-python3 examples/text_to_image_dpmsolver.py
-```
+  ```bash
+  python3 examples/text_to_image.py
+  python3 examples/text_to_image_dpmsolver.py
+  ```
 
 - bump version in [this file](src/onediff/__init__.py)
 - build wheel
 
-```bash
-python setup.py bdist_wheel
-```
+  ```
+  python3 setup.py bdist_wheel
+  ```
+
+- upload to pypi
+
+  ```bash
+  twine upload dist/*
+  ```
