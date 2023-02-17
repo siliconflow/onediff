@@ -17,7 +17,7 @@ OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
 - clone and dev install
 
 ```
-git clone git clone https://github.com/Oneflow-Inc/diffusers.git onediff
+git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff
 python3 -m pip install -e .
 ```
