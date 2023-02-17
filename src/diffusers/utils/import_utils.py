@@ -249,7 +249,7 @@ def is_xformers_available():
 
 
 def is_accelerate_available():
-    return _accelerate_available
+    return False
 
 
 # docstyle-ignore
