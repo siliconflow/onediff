@@ -14,6 +14,30 @@ OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
 
 ### Setup
 
+- (optional) If you were using the the oneflow fork of diffusers before
+
+  1. uninstall transformers and diffusers
+
+  ```
+  python3 -m pip uninstall tranformers -y
+  python3 -m pip uninstall diffusers -y
+  ```
+
+  2. install transformers and diffusers
+
+  ```
+  python3 -m pip install "transformers>=4.26"
+  python3 -m pip install "diffusers[torch]"
+  python3 -m pip uninstall accelerate -y
+  ```
+
+  3. delete the main first:
+
+  ```
+  git branch -D main
+  git fetch
+  ```
+
 - clone and dev install
 
 ```
@@ -21,25 +45,6 @@ git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff
 python3 -m pip install -e .
 ```
-
-- (optional) If you clone the oneflow fork before
-
-  - uninstall and reinstall transformers and diffusers
-
-  ```
-  python3 -m pip uninstall tranformers -y
-  python3 -m pip uninstall diffusers -y
-  python3 -m pip install "transformers>=4.26"
-  python3 -m pip install diffusers[torch]
-  python3 -m pip uninstall accelerate -y
-  ```
-
-  - delete the main first:
-
-    ```
-    git branch -D main
-    git fetch
-    ```
 
 ## Run demo
 
