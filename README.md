@@ -65,10 +65,17 @@ python3 -m onediff.demo
   python3 examples/text_to_image_dpmsolver.py
   ```
 
-- bump version in [this file](src/onediff/__init__.py)
+- bump version in these files:
+
+  ```
+  setup.py
+  src/onediff/__init__.py
+  ```
+
 - build wheel
 
   ```
+  rm -rf dist
   python3 setup.py bdist_wheel
   ```
 
