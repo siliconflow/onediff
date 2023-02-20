@@ -67,10 +67,10 @@ python3 -m onediff.demo
 
 - bump version in these files:
 
-```
-setup.py
-src/onediff/__init__.py
-```
+  ```
+  setup.py
+  src/onediff/__init__.py
+  ```
 
 - build wheel
 
