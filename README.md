@@ -46,15 +46,15 @@ cd onediff
 python3 -m pip install -e .
 ```
 
+## More examples
+
+There is a directory for [examples](/examples/)
+
 ## Run demo
 
 ```
 python3 -m onediff.demo
 ```
-
-## More examples
-
-There is a directory for [examples](/examples/)
 
 ## Release
 
