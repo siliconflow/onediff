@@ -31,6 +31,8 @@ from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 from ...configuration_utils import FrozenDict
 from ...models import OneFlowAutoencoderKL as AutoencoderKL, OneFlowUNet2DConditionModel as UNet2DConditionModel
 from ...pipeline_oneflow_utils import OneFlowDiffusionPipeline as DiffusionPipeline
+from ...pipeline_oneflow_utils import VaePostProcess, VaeGraph
+from ...oneflow_graph_compile_cache import OneFlowGraphCompileCache
 from ...schedulers import (
     OneFlowDDIMScheduler as DDIMScheduler,
     OneFlowDPMSolverMultistepScheduler as DPMSolverMultistepScheduler,
@@ -222,6 +224,41 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline):
         self.unet_graphs = dict()
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
+        # solve AttributeError: 'OneFlowStableDiffusionImg2ImgPipeline' object has no attribute 'graph_compile_cache'
+        self.init_graph_compile_cache(self.unet_graphs_cache_size)
+
+    def init_graph_compile_cache(self, cache_size, enable_graph_share_mem=False):
+        self.graph_compile_cache = OneFlowGraphCompileCache(cache_size, enable_graph_share_mem)
+
+    def set_graph_compile_cache_size(self, cache_size):
+        self.graph_compile_cache.set_cache_size(cache_size)
+
+    def enable_graph_share_mem(self, enabled=True):
+        self.graph_compile_cache.enable_share_mem(enabled)
+
+    def enable_save_graph(self, enabled=True):
+        self.graph_compile_cache.enable_save_graph(enabled)
+
+    def save_graph(self, path):
+        self.graph_compile_cache.save_graph(path)
+
+    def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
+        graph_class2init_args = dict()
+        # compile vae graph
+        vae_graph = None
+        if compile_vae:
+            vae_post_process = VaePostProcess(self.vae)
+            vae_post_process.eval()
+            vae_graph_args = (VaeGraph, vae_post_process)
+            graph_class2init_args[VaeGraph.__name__] = vae_graph_args
+
+        # compile unet graph
+        unet_graph = None
+        if compile_unet:
+            unet_graph_args = (UNetGraph, self.unet)
+            graph_class2init_args[UNetGraph.__name__] = unet_graph_args
+
+        self.graph_compile_cache.load_graph(path, graph_class2init_args)
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_attention_slicing
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
@@ -547,6 +584,7 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline):
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
         compile_unet: bool = True,
+        compile_vae: bool = True,
         **kwargs,
     ):
         r"""
