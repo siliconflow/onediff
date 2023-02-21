@@ -51,7 +51,7 @@ def benchmark(token, repeat, sync_interval):
             flow_dtype=flow.float16,
             subfolder="unet",
         )
-        unet = unet.to("cuda")
+        unet = unet.to("cuda").to(flow.float16)
         unet_graph = UNetGraph(unet)
 
         batch_size = 2
