@@ -17,7 +17,8 @@ OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
 ```
 git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff
-python3 -m pip install "transformers>=4.26" "diffusers[torch]"
+python3 -m pip install "transformers>=4.26" "diffusers[torch]==0.12.1"
+python3 -m pip uninstall accelerate -y
 python3 -m pip install -e .
 ```
 
@@ -33,8 +34,7 @@ python3 -m pip uninstall diffusers -y
 2. install transformers and diffusers
 
 ```
-python3 -m pip install "transformers>=4.26"
-python3 -m pip install "diffusers[torch]"
+python3 -m pip install "transformers>=4.26" "diffusers[torch]==0.12.1"
 python3 -m pip uninstall accelerate -y
 ```
 
