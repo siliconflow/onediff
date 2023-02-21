@@ -1,6 +1,6 @@
 import oneflow as flow
-
 flow.mock_torch.enable()
+
 import PIL
 import requests
 from io import BytesIO

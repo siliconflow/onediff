@@ -1,18 +1,6 @@
 import oneflow as flow
-
-# monkey patch hacks
-flow.strided = None
-flow_randn = flow.randn
-
-
-def dummy_randn(*args, **kwargs):
-    kwargs = {k: v for k, v in kwargs.items() if not k == "layout"}
-    return flow_randn(*args, **kwargs)
-
-
-flow.randn = dummy_randn
-
 flow.mock_torch.enable()
+
 from diffusers import EulerDiscreteScheduler
 from onediff import OneFlowStableDiffusionPipeline
 
