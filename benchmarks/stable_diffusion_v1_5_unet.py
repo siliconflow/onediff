@@ -48,10 +48,10 @@ def benchmark(token, repeat, sync_interval):
             "runwayml/stable-diffusion-v1-5",
             use_auth_token=token,
             revision="fp16",
-            flow_dtype=flow.float16,
+            torch_dtype=flow.float16,
             subfolder="unet",
         )
-        unet = unet.to("cuda").to(flow.float16)
+        unet = unet.to("cuda")
         unet_graph = UNetGraph(unet)
 
         batch_size = 2
