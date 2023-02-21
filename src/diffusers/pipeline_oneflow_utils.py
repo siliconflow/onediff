@@ -57,20 +57,16 @@ def is_accelerate_available():
 
 from .oneflow_graph_compile_cache import OneFlowGraphCompileCache
 
-
 if is_transformers_available():
     import transformers
     from transformers import PreTrainedModel
-
 
 INDEX_FILE = "diffusion_pytorch_model.bin"
 CUSTOM_PIPELINE_FILE_NAME = "pipeline.py"
 DUMMY_MODULES_FOLDER = "diffusers.utils"
 TRANSFORMERS_DUMMY_MODULES_FOLDER = "transformers.utils"
 
-
 logger = logging.get_logger(__name__)
-
 
 LOADABLE_CLASSES = {
     "diffusers": {
@@ -89,7 +85,7 @@ LOADABLE_CLASSES = {
         # TODO: impl oneflow mixin instead of using OneFlowCLIPTextModel directly
         "OneFlowBertModel": ["save_pretrained", "from_pretrained"],
     },
-    "onnxruntime.training": {"ORTModule": ["save_pretrained", "from_pretrained"],},
+    "onnxruntime.training": {"ORTModule": ["save_pretrained", "from_pretrained"], },
 }
 
 ALL_IMPORTABLE_CLASSES = {}
@@ -141,6 +137,7 @@ def is_safetensors_compatible(info) -> bool:
             is_safetensors_compatible = False
     return is_safetensors_compatible
 
+
 class UNetGraph(torch.nn.Graph):
     def __init__(self, unet):
         super().__init__()
@@ -151,6 +148,7 @@ class UNetGraph(torch.nn.Graph):
     def build(self, latent_model_input, t, text_embeddings):
         text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
+
 
 class VaePostProcess(torch.nn.Module):
     def __init__(self, vae) -> None:
@@ -173,27 +171,7 @@ class VaeGraph(torch.nn.Graph):
         return self.vae_post_process(latents)
 
 
-
-class OneFlowDiffusionPipeline(ConfigMixin):
-    r"""
-    Base class for all models.
-
-    [`DiffusionPipeline`] takes care of storing all components (models, schedulers, processors) for diffusion pipelines
-    and handles methods for loading, downloading and saving models as well as a few methods common to all pipelines to:
-
-        - move all PyTorch modules to the device of your choice
-        - enabling/disabling the progress bar for the denoising iteration
-
-    Class attributes:
-
-        - **config_name** (`str`) -- name of the config file that will store the class and module names of all
-          components of the diffusion pipeline.
-        - **_optional_components** (List[`str`]) -- list of all components that are optional so they don't have to be
-          passed for the pipeline to function (should be overridden by subclasses).
-    """
-    config_name = "model_index.json"
-    _optional_components = []
-
+class GraphCacheMixin:
     def init_graph_compile_cache(self, cache_size, enable_graph_share_mem=False):
         self.graph_compile_cache = OneFlowGraphCompileCache(cache_size, enable_graph_share_mem)
 
@@ -202,10 +180,10 @@ class OneFlowDiffusionPipeline(ConfigMixin):
 
     def enable_graph_share_mem(self, enabled=True):
         self.graph_compile_cache.enable_share_mem(enabled)
-    
+
     def enable_save_graph(self, enabled=True):
         self.graph_compile_cache.enable_save_graph(enabled)
-    
+
     def save_graph(self, path):
         self.graph_compile_cache.save_graph(path)
 
@@ -226,6 +204,27 @@ class OneFlowDiffusionPipeline(ConfigMixin):
             graph_class2init_args[UNetGraph.__name__] = unet_graph_args
 
         self.graph_compile_cache.load_graph(path, graph_class2init_args)
+
+
+class OneFlowDiffusionPipeline(ConfigMixin, GraphCacheMixin):
+    r"""
+    Base class for all models.
+
+    [`DiffusionPipeline`] takes care of storing all components (models, schedulers, processors) for diffusion pipelines
+    and handles methods for loading, downloading and saving models as well as a few methods common to all pipelines to:
+
+        - move all PyTorch modules to the device of your choice
+        - enabling/disabling the progress bar for the denoising iteration
+
+    Class attributes:
+
+        - **config_name** (`str`) -- name of the config file that will store the class and module names of all
+          components of the diffusion pipeline.
+        - **_optional_components** (List[`str`]) -- list of all components that are optional so they don't have to be
+          passed for the pipeline to function (should be overridden by subclasses).
+    """
+    config_name = "model_index.json"
+    _optional_components = []
 
     def register_modules(self, **kwargs):
         # import it here to avoid circular import
@@ -573,7 +572,7 @@ class OneFlowDiffusionPipeline(ConfigMixin):
             user_agent = http_user_agent(user_agent)
 
             if is_safetensors_available():
-                info = model_info(pretrained_model_name_or_path, use_auth_token=use_auth_token, revision=revision,)
+                info = model_info(pretrained_model_name_or_path, use_auth_token=use_auth_token, revision=revision, )
                 if is_safetensors_compatible(info):
                     ignore_patterns.append("*.bin")
 
@@ -617,7 +616,7 @@ class OneFlowDiffusionPipeline(ConfigMixin):
 
         # To be removed in 1.0.0
         if pipeline_class.__name__ == "StableDiffusionInpaintPipeline" and version.parse(
-            version.parse(config_dict["_diffusers_version"]).base_version
+                version.parse(config_dict["_diffusers_version"]).base_version
         ) <= version.parse("0.5.1"):
             from diffusers import (
                 OneFlowStableDiffusionInpaintPipeline as StableDiffusionInpaintPipeline,
@@ -752,9 +751,10 @@ class OneFlowDiffusionPipeline(ConfigMixin):
 
                 is_diffusers_model = issubclass(class_obj, diffusers.ModelMixin)
                 is_transformers_model = (
-                    is_transformers_available()
-                    and issubclass(class_obj, PreTrainedModel)
-                    and version.parse(version.parse(transformers.__version__).base_version) >= version.parse("4.20.0")
+                        is_transformers_available()
+                        and issubclass(class_obj, PreTrainedModel)
+                        and version.parse(version.parse(transformers.__version__).base_version) >= version.parse(
+                    "4.20.0")
                 )
 
                 # When loading a transformers model, if the device_map is None, the weights will be initialized as opposed to diffusers.

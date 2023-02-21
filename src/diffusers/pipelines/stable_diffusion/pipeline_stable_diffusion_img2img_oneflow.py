@@ -222,6 +222,8 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline):
         self.unet_graphs = dict()
         self.unet_graphs_cache_size = 1
         self.unet_graphs_lru_cache_time = 0
+        # solve AttributeError: 'OneFlowStableDiffusionImg2ImgPipeline' object has no attribute 'graph_compile_cache'
+        self.init_graph_compile_cache(self.unet_graphs_cache_size)
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_attention_slicing
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
@@ -547,6 +549,7 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline):
         callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
         compile_unet: bool = True,
+        compile_vae: bool = True,
         **kwargs,
     ):
         r"""
