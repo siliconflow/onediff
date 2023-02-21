@@ -112,8 +112,8 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     @_cost_cnt
     def image_to_image(prompt, img, num_images_per_prompt=1, prefix="", with_graph=False):
         cur_generator = torch.Generator("cuda").manual_seed(1024)
-        strength = 0.7
-        num_inference_steps = 50
+        strength = 0.8
+        num_inference_steps = 100
         guidance_scale = 10
         eta = 0.
 
@@ -138,8 +138,8 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
 
         return images
 
-    prompt = "sea,beach,the waves crashed on the sand"
-    img = Image.new("RGB", (512, 512), "#ffffff")
+    prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
+    img = Image.new("RGB", (512, 512), "#1f80f0")
 
     no_g_images = image_to_image(prompt, img, prefix=f"is_save_{str(is_save)}-", with_graph=False)
     with_g_images = image_to_image(prompt, img, prefix=f"is_save_{str(is_save)}-", with_graph=True)
