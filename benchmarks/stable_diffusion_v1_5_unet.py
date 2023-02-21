@@ -84,4 +84,6 @@ def benchmark(token, repeat, sync_interval):
 
 
 if __name__ == "__main__":
+    print(f"{flow.__path__=}")
+    print(f"{flow.__version__=}")
     benchmark()
