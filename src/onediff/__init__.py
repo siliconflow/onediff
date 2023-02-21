@@ -1,4 +1,4 @@
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 __author__ = "OneFlow"
 __credits__ = "OneFlow contributors"
 import oneflow as flow
@@ -8,9 +8,11 @@ import oneflow as flow
 flow.strided = None
 flow_randn = flow.randn
 
+
 def dummy_randn(*args, **kwargs):
     kwargs = {k: v for k, v in kwargs.items() if not k == "layout"}
     return flow_randn(*args, **kwargs)
+
 
 flow.randn = dummy_randn
 
@@ -18,4 +20,6 @@ flow.randn = dummy_randn
 flow.mock_torch.enable()
 from .pipeline_stable_diffusion_oneflow import OneFlowStableDiffusionPipeline
 from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
-from .pipeline_stable_diffusion_inpaint_oneflow import OneFlowStableDiffusionInpaintPipeline
+from .pipeline_stable_diffusion_inpaint_oneflow import (
+    OneFlowStableDiffusionInpaintPipeline,
+)

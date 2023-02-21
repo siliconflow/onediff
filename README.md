@@ -17,6 +17,7 @@ OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
 ```
 git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff
+python3 -m pip install "transformers>=4.26" "diffusers[torch]"
 python3 -m pip install -e .
 ```
 
