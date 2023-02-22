@@ -262,7 +262,7 @@ class OneFlowEulerAncestralDiscreteScheduler(SchedulerMixin, ConfigMixin):
             timesteps = timesteps.to(original_samples.device)
 
         schedule_timesteps = self.timesteps
-        step_indices = [(schedule_timesteps == t).nonzero().item() for t in timesteps]
+        step_indices = [(torch.abs(schedule_timesteps - t) < 0.0001).nonzero().item() for t in timesteps]
 
         sigma = self.sigmas[step_indices].flatten()
         while len(sigma.shape) < len(original_samples.shape):
