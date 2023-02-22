@@ -29,7 +29,7 @@ python3 -m pip install -e .
 1. uninstall transformers and diffusers
 
 ```
-python3 -m pip uninstall tranformers -y
+python3 -m pip uninstall transformers -y
 python3 -m pip uninstall diffusers -y
 ```
 
