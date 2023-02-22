@@ -1,4 +1,4 @@
-__version__ = "0.3.0"
+__version__ = "0.4.0"
 __author__ = "OneFlow"
 __credits__ = "OneFlow contributors"
 import oneflow as flow
