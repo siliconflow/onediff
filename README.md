@@ -1,3 +1,5 @@
+[![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
+
 # OneFlow diffusers
 
 OneFlow backend support for diffusers
