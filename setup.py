@@ -7,7 +7,7 @@ setup(
     url="https://github.com/Oneflow-Inc/oneflow",
     author="OneFlow contributors",
     license="Apache",
-    author_email="caishenghang@oneflow.com",
+    author_email="caishenghang@oneflow.org",
     package_dir={"": "src"},
     packages=find_packages("src"),
     python_requires=">=3.7.0",
