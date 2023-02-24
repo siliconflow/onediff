@@ -8,6 +8,15 @@ OneFlow backend support for diffusers
 
 Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to-Run-OneFlow-Stable-Diffusion)
 
+## Quick demo
+
+```
+python3 -m pip install "transformers>=4.26" "diffusers[torch]==0.12.1"
+python3 -m pip uninstall accelerate -y
+python3 -m pip install -U onediff
+python3 -m onediff.demo
+```
+
 ## More about OneFlow
 
 OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
@@ -52,12 +61,6 @@ python3 -m pip install -e .
 ## More examples
 
 There is a directory for [examples](/examples/)
-
-## Run demo
-
-```
-python3 -m onediff.demo
-```
 
 ## Release
 
