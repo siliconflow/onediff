@@ -18,6 +18,8 @@ flow.randn = dummy_randn
 
 
 flow.mock_torch.enable()
+import diffusers
+diffusers.utils.import_utils._accelerate_available = False
 from .pipeline_stable_diffusion_oneflow import OneFlowStableDiffusionPipeline
 from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
 from .pipeline_stable_diffusion_inpaint_oneflow import (
