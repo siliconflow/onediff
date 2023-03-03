@@ -132,15 +132,15 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     prompt = "a photo of an astronaut riding a horse on mars"
     
     #sizes = [1024, 896, 768]
-    sizes = [768]
+    sizes = [1024]
     for i in sizes:
         for j in sizes:
-            #no_g_images = text_to_image(prompt, (i, j), prefix=f"is_save_{str(is_save)}-", with_graph=False)
+            no_g_images = text_to_image(prompt, (i, j), prefix=f"is_save_{str(is_save)}-", with_graph=False)
             with_g_images = text_to_image(prompt, (i, j), prefix=f"is_save_{str(is_save)}-", with_graph=True)
-            #assert len(no_g_images) == len(with_g_images)
-            #for img_idx in range(len(no_g_images)):
-            #    print("====> diff ", np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean())
-            #    assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
+            assert len(no_g_images) == len(with_g_images)
+            for img_idx in range(len(no_g_images)):
+                print("====> diff ", np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean())
+                assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
     total_end_t = time.time()
     print("st init and run time ", total_end_t - total_start_t, 's.')
     
