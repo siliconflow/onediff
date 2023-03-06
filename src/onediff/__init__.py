@@ -17,7 +17,7 @@ def dummy_randn(*args, **kwargs):
 flow.randn = dummy_randn
 
 
-flow.mock_torch.enable()
+flow.mock_torch.enable(lazy=True)
 import diffusers
 diffusers.utils.import_utils._accelerate_available = False
 diffusers.utils.import_utils._xformers_available = False
