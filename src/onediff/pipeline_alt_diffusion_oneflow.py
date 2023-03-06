@@ -127,6 +127,7 @@ class OneFlowAltDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
         os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
+        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
         os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
 
@@ -434,8 +435,8 @@ class OneFlowAltDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
             text_embeddings = flow.cat([uncond_embeddings, text_embeddings])
 
         return text_embeddings
-    
-    
+
+
     def run_safety_checker(self, image, device, dtype):
         if self.safety_checker is not None:
             # Function `BatchFeature.to` has a "import torch" inside
@@ -504,7 +505,7 @@ class OneFlowAltDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
         # scale the initial noise by the standard deviation required by the scheduler
         latents = latents * self.scheduler.init_noise_sigma
         return latents
-    
+
     def set_unet_graphs_cache_size(self, cache_size: int):
         r"""
         Set the cache size of compiled unet graphs.

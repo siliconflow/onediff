@@ -12,29 +12,44 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
 import inspect
 from typing import Callable, List, Optional, Union
 
 import numpy as np
-import oneflow as flow
+import oneflow as torch
 from .graph_utils import GraphCacheMixin
 
 import PIL
-from diffusers.utils import is_accelerate_available
+
+
+def is_accelerate_available():
+    return False
+
+
 from packaging import version
 from transformers import CLIPFeatureExtractor, CLIPTextModel, CLIPTokenizer
 
 from diffusers.configuration_utils import FrozenDict
 from diffusers.models import AutoencoderKL, UNet2DConditionModel
 from diffusers.pipeline_utils import DiffusionPipeline
-from diffusers.schedulers import DDIMScheduler, LMSDiscreteScheduler, PNDMScheduler
-from diffusers.utils import deprecate, logging
+from diffusers.schedulers import (
+    DDIMScheduler,
+    DPMSolverMultistepScheduler,
+    EulerAncestralDiscreteScheduler,
+    EulerDiscreteScheduler,
+    LMSDiscreteScheduler,
+    PNDMScheduler,
+)
+from diffusers.utils import PIL_INTERPOLATION, deprecate, logging
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
-from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+from diffusers.pipelines.stable_diffusion.safety_checker import (
+    StableDiffusionSafetyChecker
+)
 
+from timeit import default_timer as timer
+import os
 
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+import oneflow as flow
 
 
 class UNetGraph(flow.nn.Graph):
@@ -42,126 +57,28 @@ class UNetGraph(flow.nn.Graph):
         super().__init__()
         self.unet = unet
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
 
     def build(self, latent_model_input, t, text_embeddings):
-        text_embeddings = flow._C.amp_white_identity(text_embeddings)
+        text_embeddings = torch._C.amp_white_identity(text_embeddings)
         return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
 
-class VaePostProcess(flow.nn.Module):
-    def __init__(self, vae) -> None:
-        super().__init__()
-        self.vae = vae
-
-    def forward(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        return image
+logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
-class VaeGraph(flow.nn.Graph):
-    def __init__(self, vae_post_process) -> None:
-        super().__init__()
-        self.vae_post_process = vae_post_process
-
-    def build(self, latents):
-        return self.vae_post_process(latents)
-
-
-def prepare_mask_and_masked_image(image, mask):
-    """
-    Prepares a pair (image, mask) to be consumed by the Stable Diffusion pipeline. This means that those inputs will be
-    converted to ``flow.Tensor`` with shapes ``batch x channels x height x width`` where ``channels`` is ``3`` for the
-    ``image`` and ``1`` for the ``mask``.
-
-    The ``image`` will be converted to ``flow.float32`` and normalized to be in ``[-1, 1]``. The ``mask`` will be
-    binarized (``mask > 0.5``) and cast to ``flow.float32`` too.
-
-    Args:
-        image (Union[np.array, PIL.Image, flow.Tensor]): The image to inpaint.
-            It can be a ``PIL.Image``, or a ``height x width x 3`` ``np.array`` or a ``channels x height x width``
-            ``flow.Tensor`` or a ``batch x channels x height x width`` ``flow.Tensor``.
-        mask (_type_): The mask to apply to the image, i.e. regions to inpaint.
-            It can be a ``PIL.Image``, or a ``height x width`` ``np.array`` or a ``1 x height x width``
-            ``flow.Tensor`` or a ``batch x 1 x height x width`` ``flow.Tensor``.
+def preprocess(image):
+    w, h = image.size
+    w, h = map(lambda x: x - x % 32, (w, h))  # resize to integer multiple of 32
+    image = image.resize((w, h), resample=PIL_INTERPOLATION["lanczos"])
+    image = np.array(image).astype(np.float32) / 255.0
+    image = image[None].transpose(0, 3, 1, 2)
+    image = torch.from_numpy(image)
+    return 2.0 * image - 1.0
 
 
-    Raises:
-        ValueError: ``flow.Tensor`` images should be in the ``[-1, 1]`` range. ValueError: ``flow.Tensor`` mask
-        should be in the ``[0, 1]`` range. ValueError: ``mask`` and ``image`` should have the same spatial dimensions.
-        TypeError: ``mask`` is a ``flow.Tensor`` but ``image`` is not
-            (ot the other way around).
-
-    Returns:
-        tuple[flow.Tensor]: The pair (mask, masked_image) as ``flow.Tensor`` with 4
-            dimensions: ``batch x channels x height x width``.
-    """
-    if isinstance(image, flow.Tensor):
-        if not isinstance(mask, flow.Tensor):
-            raise TypeError(f"`image` is a flow.Tensor but `mask` (type: {type(mask)} is not")
-
-        # Batch single image
-        if image.ndim == 3:
-            assert image.shape[0] == 3, "Image outside a batch should be of shape (3, H, W)"
-            image = image.unsqueeze(0)
-
-        # Batch and add channel dim for single mask
-        if mask.ndim == 2:
-            mask = mask.unsqueeze(0).unsqueeze(0)
-
-        # Batch single mask or add channel dim
-        if mask.ndim == 3:
-            # Single batched mask, no channel dim or single mask not batched but channel dim
-            if mask.shape[0] == 1:
-                mask = mask.unsqueeze(0)
-
-            # Batched masks no channel dim
-            else:
-                mask = mask.unsqueeze(1)
-
-        assert image.ndim == 4 and mask.ndim == 4, "Image and Mask must have 4 dimensions"
-        assert image.shape[-2:] == mask.shape[-2:], "Image and Mask must have the same spatial dimensions"
-        assert image.shape[0] == mask.shape[0], "Image and Mask must have the same batch size"
-
-        # Check image is in [-1, 1]
-        if image.min() < -1 or image.max() > 1:
-            raise ValueError("Image should be in [-1, 1] range")
-
-        # Check mask is in [0, 1]
-        if mask.min() < 0 or mask.max() > 1:
-            raise ValueError("Mask should be in [0, 1] range")
-
-        # Binarize mask
-        mask[mask < 0.5] = 0
-        mask[mask >= 0.5] = 1
-
-        # Image as float32
-        image = image.to(dtype=flow.float32)
-    elif isinstance(mask, flow.Tensor):
-        raise TypeError(f"`mask` is a flow.Tensor but `image` (type: {type(image)} is not")
-    else:
-        if isinstance(image, PIL.Image.Image):
-            image = np.array(image.convert("RGB"))
-        image = image[None].transpose(0, 3, 1, 2)
-        image = flow.from_numpy(image).to(dtype=flow.float32) / 127.5 - 1.0
-        if isinstance(mask, PIL.Image.Image):
-            mask = np.array(mask.convert("L"))
-            mask = mask.astype(np.float32) / 255.0
-        mask = mask[None, None]
-        mask[mask < 0.5] = 0
-        mask[mask >= 0.5] = 1
-        mask = flow.from_numpy(mask)
-
-    masked_image = image * (mask < 0.5)
-
-    return mask, masked_image
-
-
-class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
+class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline, GraphCacheMixin):
     r"""
-    Pipeline for text-guided image inpainting using Stable Diffusion. *This is an experimental feature*.
+    Pipeline for text-guided image to image generation using Stable Diffusion.
 
     This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
     library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
@@ -188,23 +105,29 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
     """
     _optional_components = ["safety_checker", "feature_extractor"]
 
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.__init__
     def __init__(
         self,
         vae: AutoencoderKL,
         text_encoder: CLIPTextModel,
         tokenizer: CLIPTokenizer,
         unet: UNet2DConditionModel,
-        scheduler: Union[DDIMScheduler, PNDMScheduler, LMSDiscreteScheduler],
+        scheduler: Union[
+            DDIMScheduler,
+            PNDMScheduler,
+            LMSDiscreteScheduler,
+            EulerDiscreteScheduler,
+            EulerAncestralDiscreteScheduler,
+            DPMSolverMultistepScheduler,
+        ],
         safety_checker: StableDiffusionSafetyChecker,
         feature_extractor: CLIPFeatureExtractor,
         requires_safety_checker: bool = True,
     ):
-
         os.environ["ONEFLOW_MLIR_CSE"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
         os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
 
@@ -238,18 +161,17 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             new_config["steps_offset"] = 1
             scheduler._internal_dict = FrozenDict(new_config)
 
-        if hasattr(scheduler.config, "skip_prk_steps") and scheduler.config.skip_prk_steps is False:
+        if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is True:
             deprecation_message = (
-                f"The configuration file of this scheduler: {scheduler} has not set the configuration"
-                " `skip_prk_steps`. `skip_prk_steps` should be set to True in the configuration file. Please make"
-                " sure to update the config accordingly as not setting `skip_prk_steps` in the config might lead to"
-                " incorrect results in future versions. If you have downloaded this checkpoint from the Hugging Face"
-                " Hub, it would be very nice if you could open a Pull request for the"
-                " `scheduler/scheduler_config.json` file"
+                f"The configuration file of this scheduler: {scheduler} has not set the configuration `clip_sample`."
+                " `clip_sample` should be set to False in the configuration file. Please make sure to update the"
+                " config accordingly as not setting `clip_sample` in the config might lead to incorrect results in"
+                " future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it would be very"
+                " nice if you could open a Pull request for the `scheduler/scheduler_config.json` file"
             )
-            deprecate("skip_prk_steps not set", "1.0.0", deprecation_message, standard_warn=False)
+            deprecate("clip_sample not set", "1.0.0", deprecation_message, standard_warn=False)
             new_config = dict(scheduler.config)
-            new_config["skip_prk_steps"] = True
+            new_config["clip_sample"] = False
             scheduler._internal_dict = FrozenDict(new_config)
 
         if safety_checker is None and requires_safety_checker:
@@ -300,7 +222,11 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
-        self.init_graph_compile_cache(1)
+        self.unet_graphs = dict()
+        self.unet_graphs_cache_size = 1
+        self.unet_graphs_lru_cache_time = 0
+        # solve AttributeError: 'OneFlowStableDiffusionImg2ImgPipeline' object has no attribute 'graph_compile_cache'
+        self.init_graph_compile_cache(self.unet_graphs_cache_size)
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_attention_slicing
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
@@ -341,14 +267,14 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         r"""
         Offloads all models to CPU using accelerate, significantly reducing memory usage. When called, unet,
         text_encoder, vae and safety checker have their state dicts saved to CPU and then are moved to a
-        `flow.device('meta') and loaded to GPU only when their specific submodule has its `forward` method called.
+        `torch.device('meta') and loaded to GPU only when their specific submodule has its `forward` method called.
         """
         if is_accelerate_available():
             from accelerate import cpu_offload
         else:
             raise ImportError("Please install accelerate via `pip install accelerate`")
 
-        device = flow.device(f"cuda:{gpu_id}")
+        device = torch.device(f"cuda:{gpu_id}")
 
         for cpu_offloaded_model in [self.unet, self.text_encoder, self.vae]:
             if cpu_offloaded_model is not None:
@@ -358,6 +284,26 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             # TODO(Patrick) - there is currently a bug with cpu offload of nn.Parameter in accelerate
             # fix by only offloading self.safety_checker for now
             cpu_offload(self.safety_checker.vision_model, device)
+
+    @property
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._execution_device
+    def _execution_device(self):
+        r"""
+        Returns the device on which the pipeline's models will be executed. After calling
+        `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
+        hooks.
+        """
+        # if self.device != torch.device("meta") or not hasattr(self.unet, "_hf_hook"):
+        if not hasattr(self.unet, "_hf_hook"):
+            return self.device
+        for module in self.unet.modules():
+            if (
+                hasattr(module, "_hf_hook")
+                and hasattr(module._hf_hook, "execution_device")
+                and module._hf_hook.execution_device is not None
+            ):
+                return torch.device(module._hf_hook.execution_device)
+        return self.device
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_xformers_memory_efficient_attention
     def enable_xformers_memory_efficient_attention(self):
@@ -379,26 +325,6 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         """
         self.unet.set_use_memory_efficient_attention_xformers(False)
 
-    @property
-    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._execution_device
-    def _execution_device(self):
-        r"""
-        Returns the device on which the pipeline's models will be executed. After calling
-        `pipeline.enable_sequential_cpu_offload()` the execution device can only be inferred from Accelerate's module
-        hooks.
-        """
-        if not hasattr(self.unet, "_hf_hook"):
-            return self.device
-
-        for module in self.unet.modules():
-            if (
-                hasattr(module, "_hf_hook")
-                and hasattr(module._hf_hook, "execution_device")
-                and module._hf_hook.execution_device is not None
-            ):
-                return flow.device(module._hf_hook.execution_device)
-        return self.device
-
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline._encode_prompt
     def _encode_prompt(self, prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt):
         r"""
@@ -407,8 +333,8 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         Args:
             prompt (`str` or `list(int)`):
                 prompt to be encoded
-            device: (`flow.device`):
-                flow device
+            device: (`torch.device`):
+                torch device
             num_images_per_prompt (`int`):
                 number of images that should be generated per prompt
             do_classifier_free_guidance (`bool`):
@@ -427,10 +353,11 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             return_tensors="np",
         )
         text_input_ids = text_inputs.input_ids
+        text_input_ids = torch.from_numpy(text_input_ids)
         untruncated_ids = self.tokenizer(prompt, padding="max_length", return_tensors="np").input_ids
-        text_input_ids = flow.from_numpy(text_input_ids)
-        untruncated_ids = flow.from_numpy(untruncated_ids)
-        if not flow.equal(text_input_ids, untruncated_ids):
+        untruncated_ids = torch.from_numpy(untruncated_ids)
+
+        if not torch.equal(text_input_ids, untruncated_ids):
             removed_text = self.tokenizer.batch_decode(untruncated_ids[:, self.tokenizer.model_max_length - 1 : -1])
             logger.warning(
                 "The following part of your input was truncated because CLIP can only handle sequences up to"
@@ -442,10 +369,7 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         else:
             attention_mask = None
 
-        text_embeddings = self.text_encoder(
-            text_input_ids.to(device),
-            attention_mask=attention_mask,
-        )
+        text_embeddings = self.text_encoder(text_input_ids.to(device), attention_mask=attention_mask,)
         text_embeddings = text_embeddings[0]
 
         # duplicate text embeddings for each generation per prompt, using mps friendly method
@@ -476,21 +400,16 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
 
             max_length = text_input_ids.shape[-1]
             uncond_input = self.tokenizer(
-                uncond_tokens,
-                padding="max_length",
-                max_length=max_length,
-                truncation=True,
-                return_tensors="np",
+                uncond_tokens, padding="max_length", max_length=max_length, truncation=True, return_tensors="np",
             )
 
             if hasattr(self.text_encoder.config, "use_attention_mask") and self.text_encoder.config.use_attention_mask:
-                attention_mask = uncond_input.attention_mask.to(device)
+                attention_mask = torch.from_numpy(uncond_input.attention_mask).to(device)
             else:
                 attention_mask = None
 
             uncond_embeddings = self.text_encoder(
-                flow.from_numpy(uncond_input.input_ids).to(device),
-                attention_mask=attention_mask,
+                torch.from_numpy(uncond_input.input_ids).to(device), attention_mask=attention_mask,
             )
             uncond_embeddings = uncond_embeddings[0]
 
@@ -502,22 +421,30 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             # For classifier free guidance, we need to do two forward passes.
             # Here we concatenate the unconditional and text embeddings into a single batch
             # to avoid doing two forward passes
-            text_embeddings = flow.cat([uncond_embeddings, text_embeddings])
+            text_embeddings = torch.cat([uncond_embeddings, text_embeddings])
 
         return text_embeddings
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.run_safety_checker
     def run_safety_checker(self, image, device, dtype):
         if self.safety_checker is not None:
-            # Function `BatchFeature.to` has a "import torch" inside
-            with flow.mock_torch.enable():
-                safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="pt").to(device)
+            safety_checker_input = self.feature_extractor(self.numpy_to_pil(image), return_tensors="np")
+            safety_checker_input.pixel_values = torch.from_numpy(safety_checker_input.pixel_values).to(device)
             image, has_nsfw_concept = self.safety_checker(
-                images=image, clip_input=safety_checker_input.pixel_values.to(dtype=dtype, device=device)
+                images=image, clip_input=safety_checker_input.pixel_values.to(dtype)
             )
         else:
             has_nsfw_concept = None
         return image, has_nsfw_concept
+
+    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.decode_latents
+    def decode_latents(self, latents):
+        latents = 1 / 0.18215 * latents
+        image = self.vae.decode(latents).sample
+        image = (image / 2 + 0.5).clamp(0, 1)
+        # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
+        image = image.cpu().permute(0, 2, 3, 1).float().numpy()
+        return image
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_extra_step_kwargs
     def prepare_extra_step_kwargs(self, generator, eta):
@@ -537,22 +464,12 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             extra_step_kwargs["generator"] = generator
         return extra_step_kwargs
 
-    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.decode_latents
-    def decode_latents(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        # we always cast to float32 as this does not cause significant overhead and is compatible with bfloa16
-        image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-        return image
-
-    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.check_inputs
-    def check_inputs(self, prompt, height, width, callback_steps):
+    def check_inputs(self, prompt, strength, callback_steps):
         if not isinstance(prompt, str) and not isinstance(prompt, list):
             raise ValueError(f"`prompt` has to be of type `str` or `list` but is {type(prompt)}")
 
-        if height % 8 != 0 or width % 8 != 0:
-            raise ValueError(f"`height` and `width` have to be divisible by 8 but are {height} and {width}.")
+        if strength < 0 or strength > 1:
+            raise ValueError(f"The value of strength should in [1.0, 1.0] but is {strength}")
 
         if (callback_steps is None) or (
             callback_steps is not None and (not isinstance(callback_steps, int) or callback_steps <= 0)
@@ -562,88 +479,81 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
                 f" {type(callback_steps)}."
             )
 
-    # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.prepare_latents
-    def prepare_latents(self, batch_size, num_channels_latents, height, width, dtype, device, generator, latents=None):
-        shape = (batch_size, num_channels_latents, height // self.vae_scale_factor, width // self.vae_scale_factor)
-        if latents is None:
-            if device.type == "mps":
-                # randn does not work reproducibly on mps
-                latents = flow.randn(shape, generator=generator, device="cpu", dtype=dtype).to(device)
-            else:
-                latents = flow.randn(shape, generator=generator, device=device, dtype=dtype)
+    def get_timesteps(self, num_inference_steps, strength, device):
+        # get the original timestep using init_timestep
+        offset = self.scheduler.config.get("steps_offset", 0)
+        init_timestep = int(num_inference_steps * strength) + offset
+        init_timestep = min(init_timestep, num_inference_steps)
+
+        t_start = max(num_inference_steps - init_timestep + offset, 0)
+        timesteps = self.scheduler.timesteps[t_start:]
+
+        return timesteps, num_inference_steps - t_start
+
+    def prepare_latents(self, image, timestep, batch_size, num_images_per_prompt, dtype, device, generator=None):
+        image = image.to(device=device, dtype=dtype)
+        init_latent_dist = self.vae.encode(image).latent_dist
+        init_latents = init_latent_dist.sample(generator=generator)
+        init_latents = 0.18215 * init_latents
+
+        if batch_size > init_latents.shape[0] and batch_size % init_latents.shape[0] == 0:
+            # expand init_latents for batch_size
+            deprecation_message = (
+                f"You have passed {batch_size} text prompts (`prompt`), but only {init_latents.shape[0]} initial"
+                " images (`image`). Initial images are now duplicating to match the number of text prompts. Note"
+                " that this behavior is deprecated and will be removed in a version 1.0.0. Please make sure to update"
+                " your script to pass as many initial images as text prompts to suppress this warning."
+            )
+            deprecate("len(prompt) != len(image)", "1.0.0", deprecation_message, standard_warn=False)
+            additional_image_per_prompt = batch_size // init_latents.shape[0]
+            init_latents = torch.cat([init_latents] * additional_image_per_prompt * num_images_per_prompt, dim=0)
+        elif batch_size > init_latents.shape[0] and batch_size % init_latents.shape[0] != 0:
+            raise ValueError(
+                f"Cannot duplicate `image` of batch size {init_latents.shape[0]} to {batch_size} text prompts."
+            )
         else:
-            if latents.shape != shape:
-                raise ValueError(f"Unexpected latents shape, got {latents.shape}, expected {shape}")
-            latents = latents.to(device)
+            init_latents = torch.cat([init_latents] * num_images_per_prompt, dim=0)
 
-        # scale the initial noise by the standard deviation required by the scheduler
-        latents = latents * self.scheduler.init_noise_sigma
+        # add noise to latents using the timesteps
+        noise = torch.randn(init_latents.shape, generator=generator, device=device, dtype=dtype)
+
+        # get latents
+        init_latents = self.scheduler.add_noise(init_latents, noise, timestep)
+        latents = init_latents
+
         return latents
-
-    def prepare_mask_latents(
-        self, mask, masked_image, batch_size, height, width, dtype, device, generator, do_classifier_free_guidance
-    ):
-        # resize the mask to latents shape as we concatenate the mask to the latents
-        # we do that before converting to dtype to avoid breaking in case we're using cpu_offload
-        # and half precision
-        mask = flow.nn.functional.interpolate(
-            mask, size=(height // self.vae_scale_factor, width // self.vae_scale_factor)
-        )
-        mask = mask.to(device=device, dtype=dtype)
-
-        masked_image = masked_image.to(device=device, dtype=dtype)
-
-        # encode the mask image into latents space so we can concatenate it to the latents
-        masked_image_latents = self.vae.encode(masked_image).latent_dist.sample(generator=generator)
-        masked_image_latents = 0.18215 * masked_image_latents
-
-        # duplicate mask and masked_image_latents for each generation per prompt, using mps friendly method
-        mask = mask.repeat(batch_size, 1, 1, 1)
-        masked_image_latents = masked_image_latents.repeat(batch_size, 1, 1, 1)
-
-        mask = flow.cat([mask] * 2) if do_classifier_free_guidance else mask
-        masked_image_latents = (
-            flow.cat([masked_image_latents] * 2) if do_classifier_free_guidance else masked_image_latents
-        )
-
-        # aligning device to prevent device errors when concating it with the latent model input
-        masked_image_latents = masked_image_latents.to(device=device, dtype=dtype)
-        return mask, masked_image_latents
 
     def set_unet_graphs_cache_size(self, cache_size: int):
         r"""
         Set the cache size of compiled unet graphs.
+
         This option is designed to control the GPU memory size.
+
         Args:
             cache_size ([`int`]):
                 New cache size, i.e., the maximum number of unet graphs.
         """
-        logger.warning(
-            f"`set_unet_graphs_cache_size` is deprecated, please use `set_graph_compile_cache_size` instead."
-        )
-        self.set_graph_compile_cache_size(cache_size)
+        self.unet_graphs_cache_size = cache_size
 
-    @flow.no_grad()
+    @torch.no_grad()
     def __call__(
         self,
         prompt: Union[str, List[str]],
-        image: Union[flow.FloatTensor, PIL.Image.Image],
-        mask_image: Union[flow.FloatTensor, PIL.Image.Image],
-        height: Optional[int] = None,
-        width: Optional[int] = None,
-        num_inference_steps: int = 50,
-        guidance_scale: float = 7.5,
+        image: Union[torch.FloatTensor, PIL.Image.Image],
+        strength: float = 0.8,
+        num_inference_steps: Optional[int] = 50,
+        guidance_scale: Optional[float] = 7.5,
         negative_prompt: Optional[Union[str, List[str]]] = None,
         num_images_per_prompt: Optional[int] = 1,
-        eta: float = 0.0,
-        generator: Optional[flow.Generator] = None,
-        latents: Optional[flow.FloatTensor] = None,
+        eta: Optional[float] = 0.0,
+        generator: Optional[torch.Generator] = None,
         output_type: Optional[str] = "pil",
         return_dict: bool = True,
-        callback: Optional[Callable[[int, int, flow.FloatTensor], None]] = None,
+        callback: Optional[Callable[[int, int, torch.FloatTensor], None]] = None,
         callback_steps: Optional[int] = 1,
         compile_unet: bool = True,
         compile_vae: bool = True,
+        **kwargs,
     ):
         r"""
         Function invoked when calling the pipeline for generation.
@@ -651,21 +561,18 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         Args:
             prompt (`str` or `List[str]`):
                 The prompt or prompts to guide the image generation.
-            image (`PIL.Image.Image`):
-                `Image`, or tensor representing an image batch which will be inpainted, *i.e.* parts of the image will
-                be masked out with `mask_image` and repainted according to `prompt`.
-            mask_image (`PIL.Image.Image`):
-                `Image`, or tensor representing an image batch, to mask `image`. White pixels in the mask will be
-                repainted, while black pixels will be preserved. If `mask_image` is a PIL image, it will be converted
-                to a single channel (luminance) before use. If it's a tensor, it should contain one color channel (L)
-                instead of 3, so the expected shape would be `(B, H, W, 1)`.
-            height (`int`, *optional*, defaults to self.unet.config.sample_size * self.vae_scale_factor):
-                The height in pixels of the generated image.
-            width (`int`, *optional*, defaults to self.unet.config.sample_size * self.vae_scale_factor):
-                The width in pixels of the generated image.
+            image (`torch.FloatTensor` or `PIL.Image.Image`):
+                `Image`, or tensor representing an image batch, that will be used as the starting point for the
+                process.
+            strength (`float`, *optional*, defaults to 0.8):
+                Conceptually, indicates how much to transform the reference `image`. Must be between 0 and 1. `image`
+                will be used as a starting point, adding more noise to it the larger the `strength`. The number of
+                denoising steps depends on the amount of noise initially added. When `strength` is 1, added noise will
+                be maximum and the denoising process will run for the full number of iterations specified in
+                `num_inference_steps`. A value of 1, therefore, essentially ignores `image`.
             num_inference_steps (`int`, *optional*, defaults to 50):
                 The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference.
+                expense of slower inference. This parameter will be modulated by `strength`.
             guidance_scale (`float`, *optional*, defaults to 7.5):
                 Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
                 `guidance_scale` is defined as `w` of equation 2. of [Imagen
@@ -680,13 +587,9 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             eta (`float`, *optional*, defaults to 0.0):
                 Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
                 [`schedulers.DDIMScheduler`], will be ignored for others.
-            generator (`flow.Generator`, *optional*):
-                A oneflow generator to make generation
+            generator (`torch.Generator`, *optional*):
+                A [torch generator](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make generation
                 deterministic.
-            latents (`flow.FloatTensor`, *optional*):
-                Pre-generated noisy latents, sampled from a Gaussian distribution, to be used as inputs for image
-                generation. Can be used to tweak the same generation with different prompts. If not provided, a latents
-                tensor will ge generated by sampling using the supplied random `generator`.
             output_type (`str`, *optional*, defaults to `"pil"`):
                 The output format of the generate image. Choose between
                 [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
@@ -695,7 +598,7 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
                 plain tuple.
             callback (`Callable`, *optional*):
                 A function that will be called every `callback_steps` steps during inference. The function will be
-                called with the following arguments: `callback(step: int, timestep: int, latents: flow.FloatTensor)`.
+                called with the following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
             callback_steps (`int`, *optional*, defaults to 1):
                 The frequency at which the `callback` function will be called. If not specified, the callback will be
                 called at every step.
@@ -707,12 +610,12 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             list of `bool`s denoting whether the corresponding generated image likely represents "not-safe-for-work"
             (nsfw) content, according to the `safety_checker`.
         """
-        # 0. Default height and width to unet
-        height = height or self.unet.config.sample_size * self.vae_scale_factor
-        width = width or self.unet.config.sample_size * self.vae_scale_factor
+        message = "Please use `image` instead of `init_image`."
+        init_image = deprecate("init_image", "0.13.0", message, take_from=kwargs)
+        image = init_image or image
 
         # 1. Check inputs
-        self.check_inputs(prompt, height, width, callback_steps)
+        self.check_inputs(prompt, strength, callback_steps)
 
         # 2. Define call parameters
         batch_size = 1 if isinstance(prompt, str) else len(prompt)
@@ -727,89 +630,62 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
             prompt, device, num_images_per_prompt, do_classifier_free_guidance, negative_prompt
         )
 
-        # 4. Preprocess mask and image
-        if isinstance(image, PIL.Image.Image) and isinstance(mask_image, PIL.Image.Image):
-            mask, masked_image = prepare_mask_and_masked_image(image, mask_image)
+        # 4. Preprocess image
+        if isinstance(image, PIL.Image.Image):
+            image = preprocess(image)
 
         # 5. set timesteps
         self.scheduler.set_timesteps(num_inference_steps, device=device)
-        timesteps = self.scheduler.timesteps
+        timesteps, num_inference_steps = self.get_timesteps(num_inference_steps, strength, device)
+        latent_timestep = timesteps[:1].repeat(batch_size * num_images_per_prompt)
 
         # 6. Prepare latent variables
-        num_channels_latents = self.vae.config.latent_channels
         latents = self.prepare_latents(
-            batch_size * num_images_per_prompt,
-            num_channels_latents,
-            height,
-            width,
-            text_embeddings.dtype,
-            device,
-            generator,
-            latents,
+            image, latent_timestep, batch_size, num_images_per_prompt, text_embeddings.dtype, device, generator
         )
 
-        # 7. Prepare mask latent variables
-        mask, masked_image_latents = self.prepare_mask_latents(
-            mask,
-            masked_image,
-            batch_size * num_images_per_prompt,
-            height,
-            width,
-            text_embeddings.dtype,
-            device,
-            generator,
-            do_classifier_free_guidance,
-        )
+        compilation_start = timer()
+        compilation_time = 0
+        if compile_unet:
+            self.unet_graphs_lru_cache_time += 1
+            (_, _, height, width) = latents.shape
+            if (height, width) in self.unet_graphs:
+                _, unet_graph = self.unet_graphs[height, width]
+                self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
+            else:
+                while len(self.unet_graphs) >= self.unet_graphs_cache_size:
+                    shape_to_del = min(self.unet_graphs.keys(), key=lambda shape: self.unet_graphs[shape][0])
+                    print(
+                        "[oneflow]",
+                        f"a compiled unet (height={shape_to_del[0]}, width={shape_to_del[1]}) "
+                        "is deleted according to the LRU policy",
+                    )
+                    print("[oneflow]", "cache size can be changed by `pipeline.set_unet_graphs_cache_size`")
+                    del self.unet_graphs[shape_to_del]
+                print("[oneflow]", "compiling unet beforehand to make sure the progress bar is more accurate")
+                i, t = list(enumerate(self.scheduler.timesteps))[0]
+                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                unet_graph = UNetGraph(self.unet)
+                unet_graph._compile(latent_model_input, t, text_embeddings)
+                unet_graph(latent_model_input, t, text_embeddings)  # warmup
+                compilation_time = timer() - compilation_start
+                print("[oneflow]", "[elapsed(s)]", "[unet compilation]", compilation_time)
+                self.unet_graphs[height, width] = (self.unet_graphs_lru_cache_time, unet_graph)
 
-        # 8. Check that sizes of mask, masked image and latents match
-        num_channels_mask = mask.shape[1]
-        num_channels_masked_image = masked_image_latents.shape[1]
-        if num_channels_latents + num_channels_mask + num_channels_masked_image != self.unet.config.in_channels:
-            raise ValueError(
-                f"Incorrect configuration settings! The config of `pipeline.unet`: {self.unet.config} expects"
-                f" {self.unet.config.in_channels} but received `num_channels_latents`: {num_channels_latents} +"
-                f" `num_channels_mask`: {num_channels_mask} + `num_channels_masked_image`: {num_channels_masked_image}"
-                f" = {num_channels_latents+num_channels_masked_image+num_channels_mask}. Please verify the config of"
-                " `pipeline.unet` or your `mask_image` or `image` input."
-            )
-
-        # 9. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
+        # 7. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-        # compile vae graph
-        if compile_vae:
-            cache_key = (height, width, num_images_per_prompt)
-            vae_post_process = VaePostProcess(self.vae)
-            vae_post_process.eval()
-            vae_post_process_graph = self.graph_compile_cache.get_graph(VaeGraph, cache_key, vae_post_process)
-            vae_post_process_graph.compile(latents)
-
-        # compile unet graph
-        if compile_unet:
-            cache_key = (height, width, num_images_per_prompt)
-            unet_graph = self.graph_compile_cache.get_graph(UNetGraph, cache_key, self.unet)
-            if unet_graph.is_compiled is False:
-                latent_model_input = flow.cat([latents] * 2) if do_classifier_free_guidance else latents
-                _, t = list(enumerate(self.scheduler.timesteps))[0]
-                latent_model_input = flow.cat([latent_model_input, mask, masked_image_latents], dim=1)
-                unet_graph.compile(latent_model_input, t, text_embeddings)
-
-        # 10. Denoising loop
+        # 8. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
-                latent_model_input = flow.cat([latents] * 2) if do_classifier_free_guidance else latents
-
-                # concat latents, mask, masked_image_latents in the channel dimension
+                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
                 latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
-                latent_model_input = flow.cat([latent_model_input, mask, masked_image_latents], dim=1)
 
                 # predict the noise residual
                 if compile_unet:
-                    flow._oneflow_internal.profiler.RangePush(f"denoise-{i}-unet-graph")
                     noise_pred = unet_graph(latent_model_input, t, text_embeddings)
-                    flow._oneflow_internal.profiler.RangePop()
                 else:
                     noise_pred = self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
 
@@ -827,17 +703,13 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
 
-        # 11. Post-processing
-        if compile_vae:
-            image = vae_post_process_graph(latents)
-            image = image.cpu().permute(0, 2, 3, 1).float().numpy()
-        else:
-            image = self.decode_latents(latents)
+        # 9. Post-processing
+        image = self.decode_latents(latents)
 
-        # 12. Run safety checker
+        # 10. Run safety checker
         image, has_nsfw_concept = self.run_safety_checker(image, device, text_embeddings.dtype)
 
-        # 13. Convert to PIL
+        # 11. Convert to PIL
         if output_type == "pil":
             image = self.numpy_to_pil(image)
 

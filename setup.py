@@ -2,12 +2,12 @@ from setuptools import find_packages, setup
 
 setup(
     name="onediff",
-    version="0.4.0",
+    version="0.5.0",
     description="OneFlow backend for diffusers",
     url="https://github.com/Oneflow-Inc/oneflow",
     author="OneFlow contributors",
     license="Apache",
-    author_email="caishenghang@oneflow.co",
+    author_email="caishenghang@oneflow.org",
     package_dir={"": "src"},
     packages=find_packages("src"),
     python_requires=">=3.7.0",

@@ -1,4 +1,4 @@
-__version__ = "0.4.0"
+__version__ = "0.5.0"
 __author__ = "OneFlow"
 __credits__ = "OneFlow contributors"
 import oneflow as flow
@@ -22,6 +22,7 @@ import diffusers
 diffusers.utils.import_utils._accelerate_available = False
 diffusers.utils.import_utils._xformers_available = False
 diffusers.utils.import_utils._safetensors_available = False
+from .pipeline_stable_diffusion_img2img_oneflow import OneFlowStableDiffusionImg2ImgPipeline
 from .pipeline_stable_diffusion_oneflow import OneFlowStableDiffusionPipeline
 from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
 from .pipeline_stable_diffusion_inpaint_oneflow import (
