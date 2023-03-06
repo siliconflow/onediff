@@ -17,7 +17,11 @@ def dummy_randn(*args, **kwargs):
 flow.randn = dummy_randn
 
 
-flow.mock_torch.enable()
+flow.mock_torch.enable(lazy=True)
+import diffusers
+diffusers.utils.import_utils._accelerate_available = False
+diffusers.utils.import_utils._xformers_available = False
+diffusers.utils.import_utils._safetensors_available = False
 from .pipeline_stable_diffusion_img2img_oneflow import OneFlowStableDiffusionImg2ImgPipeline
 from .pipeline_stable_diffusion_oneflow import OneFlowStableDiffusionPipeline
 from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
