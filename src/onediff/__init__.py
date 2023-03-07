@@ -31,3 +31,8 @@ from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
 from .pipeline_stable_diffusion_inpaint_oneflow import (
     OneFlowStableDiffusionInpaintPipeline,
 )
+
+from .models.unet_2d_condition_oneflow import OneFlowUNet2DConditionModel
+from .models.vae_oneflow import OneFlowAutoencoderKL
+from .schedulers.scheduling_pndm_oneflow import OneFlowPNDMScheduler
+from .schedulers.scheduling_lms_discrete_oneflow import OneFlowLMSDiscreteScheduler

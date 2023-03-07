@@ -46,6 +46,11 @@ from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker
 )
 
+from onediff.schedulers import (
+    OneFlowLMSDiscreteScheduler,
+    OneFlowPNDMScheduler
+)
+
 from timeit import default_timer as timer
 import os
 
