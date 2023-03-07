@@ -12,7 +12,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import pdb
 
 import gc
 import random
@@ -21,16 +20,15 @@ import unittest
 import numpy as np
 import oneflow as torch
 
-import PIL
-from onediff import (
-    OneFlowAutoencoderKL as AutoencoderKL,
-    OneFlowLMSDiscreteScheduler,
-    OneFlowPNDMScheduler,
-    OneFlowStableDiffusionImg2ImgPipeline,
-    OneFlowUNet2DConditionModel as UNet2DConditionModel,
+from onediff import OneFlowStableDiffusionImg2ImgPipeline
+
+from diffusers import (
+    AutoencoderKL, 
+    LMSDiscreteScheduler, 
+    PNDMScheduler, 
+    UNet2DConditionModel
 )
 
-from diffusers import LMSDiscreteScheduler
 from diffusers.utils import floats_tensor, load_image, torch_device
 from transformers import CLIPTextConfig, CLIPTextModel, CLIPTokenizer
 
@@ -127,7 +125,7 @@ class PipelineFastTests(unittest.TestCase):
 
     def test_stable_diffusion_img2img(self):
         unet = self.dummy_cond_unet.to(torch_device)
-        scheduler = OneFlowPNDMScheduler(skip_prk_steps=True, steps_offset=1)
+        scheduler = PNDMScheduler(skip_prk_steps=True, steps_offset=1)
         vae = self.dummy_vae.to(torch_device)
         bert = self.dummy_text_encoder.to(torch_device)
         tokenizer = CLIPTokenizer.from_pretrained("hf-internal-testing/tiny-random-clip")
@@ -186,7 +184,7 @@ class PipelineFastTests(unittest.TestCase):
 
     def test_stable_diffusion_img2img_k_lms(self):
         unet = self.dummy_cond_unet
-        scheduler = OneFlowLMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear")
+        scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear")
 
         vae = self.dummy_vae
         bert = self.dummy_text_encoder
@@ -243,7 +241,6 @@ class PipelineFastTests(unittest.TestCase):
         assert np.abs(image_slice.flatten() - expected_slice).max() < 1e-2
         assert np.abs(image_from_tuple_slice.flatten() - expected_slice).max() < 1e-2
 
-
     def test_stable_diffusion_img2img_pipeline(self):
         init_image = load_image(
             "https://huggingface.co/datasets/hf-internal-testing/diffusers-images/resolve/main"
@@ -283,7 +280,6 @@ class PipelineFastTests(unittest.TestCase):
         assert image.shape == (512, 768, 3)
         # img2img is flaky across GPUs even in fp32, so using MAE here
         assert np.abs(expected_image - image).mean() < 1e-2
-
 
     def test_stable_diffusion_img2img_pipeline_k_lms(self):
         init_image = load_image(
