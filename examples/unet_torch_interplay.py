@@ -28,6 +28,7 @@ def mock_wrapper(f):
     flow.mock_torch.enable(lazy=True)
     ret = f()
     flow.mock_torch.disable()
+    # TODO: this trick of py mod purging will be removed
     tmp = sys.modules.copy()
     for x in tmp:
         if x.startswith('diffusers'):
@@ -66,29 +67,38 @@ def get_graph(token):
 @click.option("--repeat", default=1000)
 @click.option("--sync_interval", default=50)
 def benchmark(token, repeat, sync_interval):
-    f = lambda : get_graph(token)
-    unet_graph = mock_wrapper(f)
+    # create a mocked unet graph
+    unet_graph = mock_wrapper(lambda : get_graph(token))
+
+    # generate inputs with torch
     from diffusers.utils import floats_tensor
+    import torch
     batch_size = 2
     num_channels = 4
     sizes = (64, 64)
     noise = (
         floats_tensor((batch_size, num_channels) + sizes)
         .to("cuda")
-        .to(flow.float16)
+        .to(torch.float16)
     )
     print(f"{type(noise)=}")
-    time_step = flow.tensor([10]).to("cuda")
+    time_step = torch.tensor([10]).to("cuda")
     encoder_hidden_states = (
-        floats_tensor((batch_size, 77, 768)).to("cuda").to(flow.float16)
+        floats_tensor((batch_size, 77, 768)).to("cuda").to(torch.float16)
     )
+
+    # convert to oneflow tensors
+    [noise, time_step, encoder_hidden_states] = [flow.utils.tensor.from_torch(x) for x in [noise, time_step, encoder_hidden_states]]
     unet_graph(noise, time_step, encoder_hidden_states)
+
     flow._oneflow_internal.eager.Sync()
     import time
 
     t0 = time.time()
     for r in tqdm(range(repeat)):
         out = unet_graph(noise, time_step, encoder_hidden_states)
+        # convert to torch tensors
+        out = flow.utils.tensor.to_torch(out)
         if r == repeat - 1 or r % sync_interval == 0:
             flow._oneflow_internal.eager.Sync()
     print(f"{type(out)=}")
