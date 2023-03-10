@@ -115,7 +115,8 @@ def benchmark(token, repeat, sync_interval):
     noise_of_sizes = [flow.utils.tensor.from_torch(x) for x in noise_of_sizes]
 
     [noise, time_step, encoder_hidden_states] = [
-        flow.utils.tensor.from_torch(x) for x in [noise, time_step, encoder_hidden_states]
+        flow.utils.tensor.from_torch(x)
+        for x in [noise, time_step, encoder_hidden_states]
     ]
     unet_graph(noise, time_step, encoder_hidden_states)
 
@@ -125,6 +126,7 @@ def benchmark(token, repeat, sync_interval):
     t0 = time.time()
     for r in tqdm(range(repeat)):
         import random
+
         noise = random.choice(noise_of_sizes)
         out = unet_graph(noise, time_step, encoder_hidden_states)
         # convert to torch tensors
