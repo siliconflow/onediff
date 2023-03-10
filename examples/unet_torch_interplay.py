@@ -52,19 +52,56 @@ class UNetGraph(flow.nn.Graph):
         ).sample
 
 
-def get_graph(token):
-    from diffusers import UNet2DConditionModel
-
+def get_graph(unet):
     with flow.no_grad():
-        unet = UNet2DConditionModel.from_pretrained(
+        unet = unet.to("cuda")
+        return UNetGraph(unet)
+
+
+class UnetCache:
+    def __init__(self, token, graph_getter, arg_meta_of_sizes):
+        from diffusers import UNet2DConditionModel
+
+        self.unet = UNet2DConditionModel.from_pretrained(
             "runwayml/stable-diffusion-v1-5",
             use_auth_token=token,
             revision="fp16",
             torch_dtype=flow.float16,
             subfolder="unet",
         )
-        unet = unet.to("cuda")
-        return UNetGraph(unet)
+        graph_of_sizes = dict({})
+        shared_from = None
+        for arg_metas in arg_meta_of_sizes:
+            print(f"{arg_metas=}")
+            arg_tensors = [flow.empty(a[0], dtype=a[1]).to("cuda") for a in arg_metas]
+            g = graph_getter(self.unet)
+            g.debug(0)
+            g.enable_save_runtime_state_dict()
+            if shared_from is None:
+                g.enable_shared()
+                shared_from = g
+            else:
+                g.share_from(shared_from)
+            g(*arg_tensors)  # build and warmup
+            graph_of_sizes[tuple(arg_metas)] = g
+        self.graph_of_sizes = graph_of_sizes
+
+    def __call__(self, *arg_tensors):
+        arg_metas = [(tuple(t.shape), t.dtype) for t in arg_tensors]
+        return self.graph_of_sizes[tuple(arg_metas)](*arg_tensors)
+
+
+# TODO: noise shape might change by batch
+def noise_shape(batch_size, num_channels, image_w, image_h):
+    sizes = (image_w // 8, image_h // 8)
+    return (batch_size, num_channels) + sizes
+
+
+test_seq = [2, 1, 0]
+
+
+def image_dim(i):
+    return 768 + 128 * i
 
 
 @click.command()
@@ -73,14 +110,34 @@ def get_graph(token):
 @click.option("--sync_interval", default=50)
 def benchmark(token, repeat, sync_interval):
     # create a mocked unet graph
-    unet_graph = mock_wrapper(lambda: get_graph(token))
+    batch_size = 2
+    num_channels = 4
+
+    graph_cache = mock_wrapper(
+        lambda: UnetCache(
+            token,
+            get_graph,
+            [
+                [
+                    (
+                        noise_shape(
+                            batch_size, num_channels, image_dim(i), image_dim(j)
+                        ),
+                        flow.float16,
+                    ),
+                    ((1,), flow.int64),
+                    ((batch_size, 77, 768), flow.float16),
+                ]
+                for i in test_seq
+                for j in test_seq
+            ],
+        )
+    )
 
     # generate inputs with torch
     from diffusers.utils import floats_tensor
     import torch
 
-    batch_size = 2
-    num_channels = 4
     sizes = (64, 64)
     noise = (
         floats_tensor((batch_size, num_channels) + sizes).to("cuda").to(torch.float16)
@@ -91,19 +148,28 @@ def benchmark(token, repeat, sync_interval):
         floats_tensor((batch_size, 77, 768)).to("cuda").to(torch.float16)
     )
 
-    # convert to oneflow tensors
-    [noise, time_step, encoder_hidden_states] = [
-        flow.utils.tensor.from_torch(x)
-        for x in [noise, time_step, encoder_hidden_states]
+    noise_of_sizes = [
+        floats_tensor(noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)))
+        .to("cuda")
+        .to(torch.float16)
+        for i in test_seq
+        for j in test_seq
     ]
-    unet_graph(noise, time_step, encoder_hidden_states)
+    noise_of_sizes = [flow.utils.tensor.from_torch(x) for x in noise_of_sizes]
+    # convert to oneflow tensors
+    [time_step, encoder_hidden_states] = [
+        flow.utils.tensor.from_torch(x) for x in [time_step, encoder_hidden_states]
+    ]
 
     flow._oneflow_internal.eager.Sync()
     import time
 
     t0 = time.time()
     for r in tqdm(range(repeat)):
-        out = unet_graph(noise, time_step, encoder_hidden_states)
+        import random
+
+        noise = random.choice(noise_of_sizes)
+        out = graph_cache(noise, time_step, encoder_hidden_states)
         # convert to torch tensors
         out = flow.utils.tensor.to_torch(out)
         if r == repeat - 1 or r % sync_interval == 0:
