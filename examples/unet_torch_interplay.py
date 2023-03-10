@@ -23,17 +23,20 @@ import click
 import oneflow as flow
 from tqdm import tqdm
 
+
 def mock_wrapper(f):
     import sys
+
     flow.mock_torch.enable(lazy=True)
     ret = f()
     flow.mock_torch.disable()
     # TODO: this trick of py mod purging will be removed
     tmp = sys.modules.copy()
     for x in tmp:
-        if x.startswith('diffusers'):
+        if x.startswith("diffusers"):
             del sys.modules[x]
     return ret
+
 
 class UNetGraph(flow.nn.Graph):
     def __init__(self, unet):
@@ -48,8 +51,10 @@ class UNetGraph(flow.nn.Graph):
             latent_model_input, t, encoder_hidden_states=text_embeddings
         ).sample
 
+
 def get_graph(token):
     from diffusers import UNet2DConditionModel
+
     with flow.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
             "runwayml/stable-diffusion-v1-5",
@@ -68,18 +73,17 @@ def get_graph(token):
 @click.option("--sync_interval", default=50)
 def benchmark(token, repeat, sync_interval):
     # create a mocked unet graph
-    unet_graph = mock_wrapper(lambda : get_graph(token))
+    unet_graph = mock_wrapper(lambda: get_graph(token))
 
     # generate inputs with torch
     from diffusers.utils import floats_tensor
     import torch
+
     batch_size = 2
     num_channels = 4
     sizes = (64, 64)
     noise = (
-        floats_tensor((batch_size, num_channels) + sizes)
-        .to("cuda")
-        .to(torch.float16)
+        floats_tensor((batch_size, num_channels) + sizes).to("cuda").to(torch.float16)
     )
     print(f"{type(noise)=}")
     time_step = torch.tensor([10]).to("cuda")
@@ -88,7 +92,10 @@ def benchmark(token, repeat, sync_interval):
     )
 
     # convert to oneflow tensors
-    [noise, time_step, encoder_hidden_states] = [flow.utils.tensor.from_torch(x) for x in [noise, time_step, encoder_hidden_states]]
+    [noise, time_step, encoder_hidden_states] = [
+        flow.utils.tensor.from_torch(x)
+        for x in [noise, time_step, encoder_hidden_states]
+    ]
     unet_graph(noise, time_step, encoder_hidden_states)
 
     flow._oneflow_internal.eager.Sync()
@@ -108,8 +115,6 @@ def benchmark(token, repeat, sync_interval):
     print(
         f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f}it/s"
     )
-
-
 
 
 if __name__ == "__main__":
