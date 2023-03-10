@@ -17,14 +17,21 @@ os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
 os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 
+os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+
 import click
 import oneflow as flow
 from tqdm import tqdm
 
 def mock_wrapper(f):
+    import sys
     flow.mock_torch.enable(lazy=True)
     ret = f()
     flow.mock_torch.disable()
+    tmp = sys.modules.copy()
+    for x in tmp:
+        if x.startswith('diffusers'):
+            del sys.modules[x]
     return ret
 
 class UNetGraph(flow.nn.Graph):
@@ -61,7 +68,6 @@ def get_graph(token):
 def benchmark(token, repeat, sync_interval):
     f = lambda : get_graph(token)
     unet_graph = mock_wrapper(f)
-
     from diffusers.utils import floats_tensor
     batch_size = 2
     num_channels = 4
