@@ -18,6 +18,7 @@ os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 
 os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
 
 import click
 import oneflow as flow
@@ -67,6 +68,18 @@ def get_graph(token):
         return UNetGraph(unet)
 
 
+test_seq = [2, 1, 0]
+
+
+def noise_shape(batch_size, num_channels, image_w, image_h):
+    sizes = (image_w // 8, image_h // 8)
+    return (batch_size, num_channels) + sizes
+
+
+def image_dim(i):
+    return 768 + 128 * i
+
+
 @click.command()
 @click.option("--token")
 @click.option("--repeat", default=1000)
@@ -92,9 +105,17 @@ def benchmark(token, repeat, sync_interval):
     )
 
     # convert to oneflow tensors
+    noise_of_sizes = [
+        floats_tensor(noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)))
+        .to("cuda")
+        .to(torch.float16)
+        for i in test_seq
+        for j in test_seq
+    ]
+    noise_of_sizes = [flow.utils.tensor.from_torch(x) for x in noise_of_sizes]
+
     [noise, time_step, encoder_hidden_states] = [
-        flow.utils.tensor.from_torch(x)
-        for x in [noise, time_step, encoder_hidden_states]
+        flow.utils.tensor.from_torch(x) for x in [noise, time_step, encoder_hidden_states]
     ]
     unet_graph(noise, time_step, encoder_hidden_states)
 
@@ -103,6 +124,8 @@ def benchmark(token, repeat, sync_interval):
 
     t0 = time.time()
     for r in tqdm(range(repeat)):
+        import random
+        noise = random.choice(noise_of_sizes)
         out = unet_graph(noise, time_step, encoder_hidden_states)
         # convert to torch tensors
         out = flow.utils.tensor.to_torch(out)
