@@ -39,7 +39,7 @@ def mock_wrapper(f):
 
 
 class UNetGraph(flow.nn.Graph):
-    @flow.nn.Graph.with_dynamic_input_shape
+    @flow.nn.Graph.with_dynamic_input_shape(size=9)
     def __init__(self, unet):
         super().__init__()
         self.unet = unet
