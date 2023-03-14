@@ -39,6 +39,7 @@ def mock_wrapper(f):
 
 
 class UNetGraph(flow.nn.Graph):
+    @flow.nn.Graph.with_dynamic_input_shape
     def __init__(self, unet):
         super().__init__()
         self.unet = unet
@@ -69,26 +70,15 @@ class UnetCache:
             torch_dtype=flow.float16,
             subfolder="unet",
         )
-        graph_of_sizes = dict({})
-        shared_from = None
+        self.g = graph_getter(self.unet)
+        self.g.debug(0)
         for arg_metas in arg_meta_of_sizes:
             print(f"{arg_metas=}")
             arg_tensors = [flow.empty(a[0], dtype=a[1]).to("cuda") for a in arg_metas]
-            g = graph_getter(self.unet)
-            g.debug(0)
-            g.enable_save_runtime_state_dict()
-            if shared_from is None:
-                g.enable_shared()
-                shared_from = g
-            else:
-                g.share_from(shared_from)
-            g(*arg_tensors)  # build and warmup
-            graph_of_sizes[tuple(arg_metas)] = g
-        self.graph_of_sizes = graph_of_sizes
+            self.g(*arg_tensors)  # build and warmup
 
     def __call__(self, *arg_tensors):
-        arg_metas = [(tuple(t.shape), t.dtype) for t in arg_tensors]
-        return self.graph_of_sizes[tuple(arg_metas)](*arg_tensors)
+        return self.g(*arg_tensors)
 
 
 # TODO: noise shape might change by batch
