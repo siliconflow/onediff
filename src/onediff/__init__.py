@@ -31,4 +31,5 @@ from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
 from .pipeline_stable_diffusion_inpaint_oneflow import (
     OneFlowStableDiffusionInpaintPipeline,
 )
+from .pipeline_stable_diffusion_controlnet_oneflow import OneFlowStableDiffusionControlNetPipeline
 
