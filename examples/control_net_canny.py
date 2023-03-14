@@ -43,12 +43,9 @@ generator = flow.manual_seed(0)
 prompt = "disco dancer with colorful lights, best quality, extremely detailed"
 negative_prompt = "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
 
-out_image = pipe(
+
+out_images = pipe(
     prompt = prompt, negative_prompt=negative_prompt, num_inference_steps=20, generator=generator, image=canny_image
-).images[0]
-
-import os
-os.makedirs("oneflow-sd-output", exist_ok=True)
-
-dst = os.path.join("oneflow-sd-output", f"qwe.png")
-out_image.save(dst)
+).images
+for i, image in enumerate(out_images):
+    image.save(f"{prompt}-of-{i}.png")
