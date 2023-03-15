@@ -1,22 +1,18 @@
-import sys
-import os
 import cv2
 from PIL import Image
 import numpy as np
 
-sys.path.append("../diffusers/src")
 from onediff import OneFlowStableDiffusionControlNetPipeline
-
-from diffusers.utils import load_image
-from diffusers import ControlNetModel
 
 import oneflow as flow
 flow.mock_torch.enable()
 
+from diffusers.utils import load_image
+from diffusers import ControlNetModel
+
 image = load_image(
     "http://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png"
 )
-
 
 image = np.array(image)
 
@@ -28,15 +24,13 @@ image = image[:, :, None]
 image = np.concatenate([image, image, image], axis=2)
 canny_image = Image.fromarray(image)
 
-
 controlnet = ControlNetModel.from_pretrained("lllyasviel/sd-controlnet-canny", torch_dtype=flow.float16)
     
 pipe = OneFlowStableDiffusionControlNetPipeline.from_pretrained(
     "runwayml/stable-diffusion-v1-5", controlnet=controlnet, torch_dtype=flow.float16
 )
 
-# this command loads the individual model components on GPU on-demand.
-pipe.enable_model_cpu_offload()
+pipe.to("cuda")
 
 generator = flow.manual_seed(0)
 

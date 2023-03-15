@@ -1,22 +1,14 @@
+from onediff import OneFlowStableDiffusionInpaintPipeline
+
+from diffusers.utils import load_image
+
 import oneflow as flow
 flow.mock_torch.enable()
 
-import PIL
-import requests
-from io import BytesIO
-from onediff import OneFlowStableDiffusionInpaintPipeline
-
-
-def download_image(url):
-    response = requests.get(url)
-    return PIL.Image.open(BytesIO(response.content)).convert("RGB")
-
-
 img_url = "https://raw.githubusercontent.com/CompVis/latent-diffusion/main/data/inpainting_examples/overture-creations-5sI6fQgYIuo.png"
 mask_url = "https://raw.githubusercontent.com/CompVis/latent-diffusion/main/data/inpainting_examples/overture-creations-5sI6fQgYIuo_mask.png"
-init_image = download_image(img_url).resize((512, 512))
-mask_image = download_image(mask_url).resize((512, 512))
-
+init_image = load_image(img_url).resize((512, 512))
+mask_image = load_image(mask_url).resize((512, 512))
 pipe = OneFlowStableDiffusionInpaintPipeline.from_pretrained(
     "runwayml/stable-diffusion-inpainting",
     torch_dtype=flow.float16,

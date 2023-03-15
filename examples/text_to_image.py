@@ -1,7 +1,7 @@
-import oneflow as flow
-
-flow.mock_torch.enable()
 from onediff import OneFlowStableDiffusionPipeline
+
+import oneflow as flow
+flow.mock_torch.enable()
 
 pipe = OneFlowStableDiffusionPipeline.from_pretrained(
     "CompVis/stable-diffusion-v1-4",

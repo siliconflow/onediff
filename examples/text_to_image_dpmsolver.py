@@ -1,8 +1,9 @@
-import oneflow as flow
-
-flow.mock_torch.enable()
-from diffusers import DPMSolverMultistepScheduler
 from onediff import OneFlowStableDiffusionPipeline
+
+import oneflow as flow
+flow.mock_torch.enable()
+
+from diffusers import DPMSolverMultistepScheduler
 
 model_id = "CompVis/stable-diffusion-v1-4"
 
