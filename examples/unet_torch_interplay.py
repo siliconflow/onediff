@@ -24,19 +24,6 @@ import oneflow as flow
 from tqdm import tqdm
 
 
-def mock_wrapper(f):
-    import sys
-
-    flow.mock_torch.enable(lazy=True)
-    ret = f()
-    flow.mock_torch.disable()
-    # TODO: this trick of py mod purging will be removed
-    tmp = sys.modules.copy()
-    for x in tmp:
-        if x.startswith("diffusers"):
-            del sys.modules[x]
-    return ret
-
 class MockCtx(object):
     def __enter__(self):
         flow.mock_torch.enable(lazy=True)
