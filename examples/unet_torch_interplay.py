@@ -27,7 +27,7 @@ from tqdm import tqdm
 class MockCtx(object):
     def __enter__(self):
         flow.mock_torch.enable(lazy=True)
-    
+
     def __exit__(self, exc_type, exc_val, exc_tb):
         flow.mock_torch.disable()
         # TODO: this trick of py mod purging will be removed
@@ -59,7 +59,7 @@ def get_graph(unet):
             self.unet = unet
             self.config.enable_cudnn_conv_heuristic_search_algo(False)
             self.config.allow_fuse_add_to_output(True)
-    
+
         def build(self, latent_model_input, t, text_embeddings):
             text_embeddings = flow._C.amp_white_identity(text_embeddings)
             return self.unet(
@@ -73,13 +73,13 @@ class GraphUtil(object):
     def __init__(self, graph):
         self._g = graph
         self._g.debug(0)
-    
+
     def warmup_with_arg(self, arg_meta_of_sizes):
         for arg_metas in arg_meta_of_sizes:
             print(f"warmup {arg_metas=}")
             arg_tensors = [flow.empty(a[0], dtype=a[1]).to("cuda") for a in arg_metas]
             self._g(*arg_tensors)  # build and warmup
-    
+
     def warmup_with_load(self, file_path):
         state_dict = flow.load(file_path)
         self._g.load_runtime_state_dict(state_dict)
@@ -122,8 +122,8 @@ def get_arg_meta_of_sizes(batch_size, num_channels):
 @click.option("--token")
 @click.option("--repeat", default=10)
 @click.option("--sync_interval", default=50)
-@click.option("--save", type=bool, default=False)
-@click.option("--load", type=bool, default=False)
+@click.option("--save", is_flag=True)
+@click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
 def benchmark(token, repeat, sync_interval, save, load, file):
     # create a mocked unet graph
@@ -139,7 +139,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
         else:
             print("warmup_with_arg")
             unet_graph_util.warmup_with_arg(get_arg_meta_of_sizes(batch_size, num_channels))
-        
+
     # generate inputs with torch
     from diffusers.utils import floats_tensor
     import torch
