@@ -111,6 +111,8 @@ def get_arg_meta_of_sizes(batch_sizes, resolution_scales, num_channels):
 def benchmark(token, repeat, sync_interval, save, load, file):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
+    # TODO: reproduce bug caused by changing batch
+    # BATCH_SIZES = [4, 2]
 
     # create a mocked unet graph
     num_channels = 4
