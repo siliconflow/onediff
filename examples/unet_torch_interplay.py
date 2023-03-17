@@ -30,13 +30,6 @@ class MockCtx(object):
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         flow.mock_torch.disable()
-        # TODO: this trick of py mod purging will be removed
-        import sys
-
-        tmp = sys.modules.copy()
-        for x in tmp:
-            if x.startswith("diffusers"):
-                del sys.modules[x]
 
 
 def get_unet(token):
