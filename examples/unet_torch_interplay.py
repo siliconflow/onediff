@@ -120,7 +120,7 @@ def get_arg_meta_of_sizes(batch_size, num_channels):
 
 @click.command()
 @click.option("--token")
-@click.option("--repeat", default=10)
+@click.option("--repeat", default=100)
 @click.option("--sync_interval", default=50)
 @click.option("--save", is_flag=True)
 @click.option("--load", is_flag=True)
@@ -134,7 +134,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
         unet_graph = get_graph(unet)
         unet_graph_util = GraphUtil(unet_graph)
         if load == True :
-            print("warmup_with_load")
+            print("loading graphs...")
             unet_graph_util.warmup_with_load(file)
         else:
             print("warmup_with_arg")
@@ -189,7 +189,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
     )
 
     if save:
-        print("save_graph")
+        print("saving graphs...")
         unet_graph_util.save_graph(file)
 
 
