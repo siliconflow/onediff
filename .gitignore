@@ -172,3 +172,4 @@ op_prof.csv
 *.png
 log
 unet_graphs
+*.json
