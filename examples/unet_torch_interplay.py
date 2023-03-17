@@ -130,7 +130,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
             print("loading graphs...")
             unet_graph.warmup_with_load(file)
         else:
-            print("warmup_with_arg")
+            print("warmup with arguments...")
             unet_graph.warmup_with_arg(get_arg_meta_of_sizes(batch_size, num_channels))
 
     # generate inputs with torch
