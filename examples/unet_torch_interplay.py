@@ -121,7 +121,7 @@ def get_arg_meta_of_sizes(batch_size, num_channels):
 @click.command()
 @click.option("--token")
 @click.option("--repeat", default=10)
-@click.option("--sync_interval", default=50)
+@click.option("--sync_interval", default=5)
 @click.option("--save", type=bool, default=False)
 @click.option("--load", type=bool, default=False)
 @click.option("--file", type=str, default="./unet_graphs")
@@ -181,6 +181,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
         if r == repeat - 1 or r % sync_interval == 0:
             flow._oneflow_internal.eager.Sync()
     print(f"{type(out)=}")
+    flow._oneflow_internal.eager.Sync()
     t1 = time.time()
     duration = t1 - t0
     throughput = repeat / duration
