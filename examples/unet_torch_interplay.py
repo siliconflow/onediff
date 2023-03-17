@@ -32,6 +32,7 @@ class MockCtx(object):
         flow.mock_torch.disable()
         # TODO: this trick of py mod purging will be removed
         import sys
+
         tmp = sys.modules.copy()
         for x in tmp:
             if x.startswith("diffusers"):
@@ -40,6 +41,7 @@ class MockCtx(object):
 
 def get_unet(token):
     from diffusers import UNet2DConditionModel
+
     unet = UNet2DConditionModel.from_pretrained(
         "runwayml/stable-diffusion-v1-5",
         use_auth_token=token,
@@ -51,71 +53,63 @@ def get_unet(token):
         unet = unet.to("cuda")
     return unet
 
-def get_graph(unet):
-    class UNetGraph(flow.nn.Graph):
-        @flow.nn.Graph.with_dynamic_input_shape(size=9)
-        def __init__(self, unet):
-            super().__init__(enable_get_runtime_state_dict=True)
-            self.unet = unet
-            self.config.enable_cudnn_conv_heuristic_search_algo(False)
-            self.config.allow_fuse_add_to_output(True)
 
-        def build(self, latent_model_input, t, text_embeddings):
-            text_embeddings = flow._C.amp_white_identity(text_embeddings)
-            return self.unet(
-                latent_model_input, t, encoder_hidden_states=text_embeddings
-            ).sample
+class UNetGraphWithCache(flow.nn.Graph):
+    @flow.nn.Graph.with_dynamic_input_shape(size=9)
+    def __init__(self, unet):
+        super().__init__(enable_get_runtime_state_dict=True)
+        self.unet = unet
+        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.config.allow_fuse_add_to_output(True)
 
-    return UNetGraph(unet)
-
-
-class GraphUtil(object):
-    def __init__(self, graph):
-        self._g = graph
-        self._g.debug(0)
+    def build(self, latent_model_input, t, text_embeddings):
+        text_embeddings = flow._C.amp_white_identity(text_embeddings)
+        return self.unet(
+            latent_model_input, t, encoder_hidden_states=text_embeddings
+        ).sample
 
     def warmup_with_arg(self, arg_meta_of_sizes):
         for arg_metas in arg_meta_of_sizes:
             print(f"warmup {arg_metas=}")
             arg_tensors = [flow.empty(a[0], dtype=a[1]).to("cuda") for a in arg_metas]
-            self._g(*arg_tensors)  # build and warmup
+            self(*arg_tensors)  # build and warmup
 
     def warmup_with_load(self, file_path):
         state_dict = flow.load(file_path)
-        self._g.load_runtime_state_dict(state_dict)
+        self.load_runtime_state_dict(state_dict)
 
     def save_graph(self, file_path):
-        state_dict = self._g.runtime_state_dict()
+        state_dict = self.runtime_state_dict()
         flow.save(state_dict, file_path)
 
 
 test_seq = [2, 1, 0]
 
+
 def image_dim(i):
     return 768 + 128 * i
+
 
 # TODO: noise shape might change by batch
 def noise_shape(batch_size, num_channels, image_w, image_h):
     sizes = (image_w // 8, image_h // 8)
     return (batch_size, num_channels) + sizes
 
-def get_arg_meta_of_sizes(batch_size, num_channels):
-    ret =  [
-                [
-                    (
-                        noise_shape(
-                            batch_size, num_channels, image_dim(i), image_dim(j)
-                        ),
-                        flow.float16,
-                    ),
-                    ((1,), flow.int64),
-                    ((batch_size, 77, 768), flow.float16),
-                ]
-                for i in test_seq
-                for j in test_seq
-            ]
-    return ret
 
+def get_arg_meta_of_sizes(batch_size, num_channels):
+    ret = [
+        [
+            (
+                noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)),
+                flow.float16,
+            ),
+            ((1,), flow.int64),
+            ((batch_size, 77, 768), flow.float16),
+        ]
+        for i in test_seq
+        for j in test_seq
+    ]
+    return ret
 
 
 @click.command()
@@ -131,14 +125,13 @@ def benchmark(token, repeat, sync_interval, save, load, file):
     num_channels = 4
     with MockCtx():
         unet = get_unet(token)
-        unet_graph = get_graph(unet)
-        unet_graph_util = GraphUtil(unet_graph)
-        if load == True :
+        unet_graph = UNetGraphWithCache(unet)
+        if load == True:
             print("loading graphs...")
-            unet_graph_util.warmup_with_load(file)
+            unet_graph.warmup_with_load(file)
         else:
             print("warmup_with_arg")
-            unet_graph_util.warmup_with_arg(get_arg_meta_of_sizes(batch_size, num_channels))
+            unet_graph.warmup_with_arg(get_arg_meta_of_sizes(batch_size, num_channels))
 
     # generate inputs with torch
     from diffusers.utils import floats_tensor
@@ -190,7 +183,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
 
     if save:
         print("saving graphs...")
-        unet_graph_util.save_graph(file)
+        unet_graph.save_graph(file)
 
 
 if __name__ == "__main__":
