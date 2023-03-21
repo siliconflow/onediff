@@ -46,6 +46,22 @@ def get_unet(token):
         unet = unet.to("cuda")
     return unet
 
+# Get state dict tensors total size in MB
+def _get_state_dict_tensor_size(sd):
+    from oneflow.framework.args_tree import ArgsTree
+    def _get_tensor_mem(input):
+        cnt_size = input.element_size() * flow.numel(input)
+        return cnt_size
+
+    args_tree = ArgsTree(sd, False)
+
+    size = 0
+    for arg in args_tree.iter_nodes():
+        if isinstance(arg, flow.Tensor):
+            size += _get_tensor_mem(arg)
+        else:
+            continue
+    return size / 1024 / 1024
 
 class UNetGraphWithCache(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape(size=9)
@@ -68,12 +84,40 @@ class UNetGraphWithCache(flow.nn.Graph):
             self(*arg_tensors)  # build and warmup
 
     def warmup_with_load(self, file_path):
+        import time
+        flow._oneflow_internal.eager.Sync()
+        t0 = time.time()
+        # load state dict from file
         state_dict = flow.load(file_path)
+        flow._oneflow_internal.eager.Sync()
+        t1 = time.time()
+        print("load state dict time: ", t1 - t0)
+        print(f"state_dict tensors size ", _get_state_dict_tensor_size(state_dict), " MB.")
+        flow._oneflow_internal.eager.Sync()
+        t1 = time.time()
+        # load state dict into graph
         self.load_runtime_state_dict(state_dict)
+        flow._oneflow_internal.eager.Sync()
+        t2 = time.time()
+        print("load into graph time: ", t2 - t1)
 
-    def save_graph(self, file_path):
-        state_dict = self.runtime_state_dict()
+    def save_graph(self, file_path, with_eager=True):
+        import time
+        flow._oneflow_internal.eager.Sync()
+        t0 = time.time()
+        # get state dict from graph
+        state_dict = self.runtime_state_dict(with_eager=with_eager)
+        flow._oneflow_internal.eager.Sync()
+        t1 = time.time()
+        print("get state dict time: ", t1 - t0)
+        print(f"state_dict(with_eager={with_eager}) tensors size ", _get_state_dict_tensor_size(state_dict), " MB.")
+        flow._oneflow_internal.eager.Sync()
+        t1 = time.time()
+        # save state dict to file
         flow.save(state_dict, file_path)
+        flow._oneflow_internal.eager.Sync()
+        t2 = time.time()
+        print("save state dict time: ", t2 - t1)
 
 
 def image_dim(i):
@@ -106,9 +150,10 @@ def get_arg_meta_of_sizes(batch_sizes, resolution_scales, num_channels):
 @click.option("--repeat", default=100)
 @click.option("--sync_interval", default=50)
 @click.option("--save", is_flag=True)
+@click.option("--with_eager", is_flag=True)
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
-def benchmark(token, repeat, sync_interval, save, load, file):
+def benchmark(token, repeat, sync_interval, save, with_eager, load, file):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
     # TODO: reproduce bug caused by changing batch
@@ -178,7 +223,7 @@ def benchmark(token, repeat, sync_interval, save, load, file):
 
     if save:
         print("saving graphs...")
-        unet_graph.save_graph(file)
+        unet_graph.save_graph(file, with_eager)
 
 
 if __name__ == "__main__":
