@@ -54,13 +54,14 @@ def _get_state_dict_tensor_size(sd):
 
     args_tree = ArgsTree(sd, False)
 
-    size = 0
+    tensor_size, string_size = 0, 0
     for arg in args_tree.iter_nodes():
         if isinstance(arg, flow.Tensor):
-            size += _get_tensor_mem(arg)
-        else:
+            tensor_size += _get_tensor_mem(arg)
+        elif isinstance(arg, str):
+            string_size += len(arg.encode())
             continue
-    return size / 1024 / 1024
+    return tensor_size / 1024 / 1024, string_size / 1024 / 1024
 
 class UNetGraphWithCache(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape(size=16)
@@ -93,7 +94,10 @@ class UNetGraphWithCache(flow.nn.Graph):
         t1 = time.time()
         print(f"load state dict time: {t1 - t0:.3f} seconds")
         print(
-            f"state_dict tensors size {_get_state_dict_tensor_size(state_dict):.3f} MB."
+            f"state_dict tensors size {_get_state_dict_tensor_size(state_dict)[0]:.3f} MB."
+        )
+        print(
+            f"state_dict string size {_get_state_dict_tensor_size(state_dict)[1]:.3f} MB."
         )
         flow._oneflow_internal.eager.Sync()
         t1 = time.time()
@@ -113,7 +117,10 @@ class UNetGraphWithCache(flow.nn.Graph):
         t1 = time.time()
         print(f"get state dict time: {t1 - t0:.3f} seconds")
         print(
-            f"state_dict(with_eager={with_eager}) tensors size {_get_state_dict_tensor_size(state_dict):.3f} MB"
+            f"state_dict(with_eager={with_eager}) tensors size {_get_state_dict_tensor_size(state_dict)[0]:.3f} MB"
+        )
+        print(
+            f"state_dict(with_eager={with_eager}) string size {_get_state_dict_tensor_size(state_dict)[1]:.3f} MB"
         )
         flow._oneflow_internal.eager.Sync()
         t1 = time.time()
@@ -158,7 +165,7 @@ def get_arg_meta_of_sizes(batch_sizes, resolution_scales, num_channels, cross_at
 @click.option("--with_eager", is_flag=True)
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
-@click.option("--model_id", type=str, default="stabilityai/stable-diffusion-2-1")
+@click.option("--model_id", type=str, default="stabilityai/stable-diffusion-2")
 def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_id):
     RESOLUTION_SCALES = [3, 2, 1, 0]
     BATCH_SIZES = [2]
@@ -176,7 +183,6 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
         for (i, m) in enumerate(warmup_meta_of_sizes):
             print(f"warmup case #{i + 1}:", m)
         unet_graph = UNetGraphWithCache(unet)
-        # import pdb; pdb.set_trace()
         if load == True:
             print("loading graphs...")
             unet_graph.warmup_with_load(file)
