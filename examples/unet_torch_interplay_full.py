@@ -22,31 +22,15 @@ os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 import click
 import oneflow as flow
 from tqdm import tqdm
-from unet_torch_interplay import image_dim, noise_shape
+from unet_torch_interplay import (
+    MockCtx,
+    get_unet, 
+    image_dim,
+    noise_shape, 
+    get_arg_meta_of_sizes
+)
 
-class MockCtx(object):
-    def __enter__(self):
-        flow.mock_torch.enable(lazy=True)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        flow.mock_torch.disable()
-
-
-def get_unet(token, _model_id):
-    from diffusers import UNet2DConditionModel
-
-    unet = UNet2DConditionModel.from_pretrained(
-        _model_id,
-        use_auth_token=token,
-        revision="fp16",
-        torch_dtype=flow.float16,
-        subfolder="unet",
-    )
-    with flow.no_grad():
-        unet = unet.to("cuda")
-    return unet
-
-# Get state dict tensors total size in MB
+# Get state dict tensors and string total size in MB
 def _get_state_dict_tensor_size(sd):
     from oneflow.framework.args_tree import ArgsTree
     def _get_tensor_mem(input):
@@ -131,24 +115,6 @@ class UNetGraphWithCache(flow.nn.Graph):
         t2 = time.time()
         print(f"save state dict time: {t2 - t1:.3f} seconds")
 
-
-def get_arg_meta_of_sizes(batch_sizes, resolution_scales, num_channels, cross_attention_dim):
-    return [
-        [
-            (
-                noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)),
-                flow.float16,
-            ),
-            ((1,), flow.int64),
-            # max_length of tokenizer, cross_attention_dim
-            ((batch_size, 77, cross_attention_dim), flow.float16),
-        ]
-        for batch_size in batch_sizes
-        for i in resolution_scales
-        for j in resolution_scales
-    ]
-
-
 @click.command()
 @click.option("--token")
 @click.option("--repeat", default=100)
@@ -167,12 +133,12 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
     print(f"Model ID: {model_id}")
     with MockCtx():
         unet = get_unet(token, model_id)
+        unet_graph = UNetGraphWithCache(unet)
         cross_attention_dim = unet.config['cross_attention_dim']
-        warmup_meta_of_sizes = get_arg_meta_of_sizes(BATCH_SIZES, RESOLUTION_SCALES, 
-                                                     num_channels, cross_attention_dim)
+        warmup_meta_of_sizes = get_arg_meta_of_sizes(BATCH_SIZES, RESOLUTION_SCALES, num_channels, 
+                                                     cross_attention_dim, 256, 256)
         for (i, m) in enumerate(warmup_meta_of_sizes):
             print(f"warmup case #{i + 1}:", m)
-        unet_graph = UNetGraphWithCache(unet)
         if load == True:
             print("loading graphs...")
             unet_graph.warmup_with_load(file)
@@ -190,7 +156,7 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
         for batch_size in BATCH_SIZES
     }
     noise_of_sizes = [
-        floats_tensor(noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)))
+        floats_tensor(noise_shape(batch_size, num_channels, image_dim(i, 256, 256), image_dim(j, 256, 256)))
         .to("cuda")
         .to(torch.float16)
         for batch_size in BATCH_SIZES
