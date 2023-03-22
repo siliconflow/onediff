@@ -127,10 +127,10 @@ class UNetGraphWithCache(flow.nn.Graph):
 def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_id):
     RESOLUTION_SCALES = [3, 2, 1, 0]
     BATCH_SIZES = [2]
-
-    # create a mocked unet graph
+    
     num_channels = 4
     print(f"Model ID: {model_id}")
+    # create a mocked unet graph
     with MockCtx():
         unet = get_unet(token, model_id)
         unet_graph = UNetGraphWithCache(unet)

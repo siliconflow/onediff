@@ -115,10 +115,9 @@ def benchmark(token, repeat, sync_interval, save, load, file):
     # TODO: reproduce bug caused by changing batch
     # BATCH_SIZES = [4, 2]
 
-    # create a mocked unet graph
     num_channels = 4
     model_id = "runwayml/stable-diffusion-v1-5"
-
+    # create a mocked unet graph
     with MockCtx():
         unet = get_unet(token, model_id)
         unet_graph = UNetGraphWithCache(unet)
