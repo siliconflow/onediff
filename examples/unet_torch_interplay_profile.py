@@ -22,12 +22,12 @@ os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 import click
 import oneflow as flow
 from tqdm import tqdm
+import time
 from unet_torch_interplay import (
     MockCtx,
     get_unet, 
-    image_dim,
-    noise_shape, 
-    get_arg_meta_of_sizes
+    get_arg_meta_of_sizes,
+    UNetGraphWithCache
 )
 
 # Get state dict tensors and string total size in MB
@@ -45,75 +45,36 @@ def _get_state_dict_tensor_size(sd):
             tensor_size += _get_tensor_mem(arg)
         elif isinstance(arg, str):
             string_size += len(arg.encode())
+        else:
             continue
     return tensor_size / 1024 / 1024, string_size / 1024 / 1024
 
-class UNetGraphWithCache(flow.nn.Graph):
+def _cost_cnt(f):
+    def wrapper(*args, **kwargs):
+        flow._oneflow_internal.eager.Sync()
+        t0 = time.time()
+        state_dict = f(*args, **kwargs)
+        flow._oneflow_internal.eager.Sync()
+        t1 = time.time()
+        tensor_size, str_size = _get_state_dict_tensor_size(state_dict)
+        print(f"Time cost: {t1 - t0:.3f} seconds")
+        print(
+            f"state_dict tensors size {tensor_size:.3f} MB; string size {str_size:.3f} MB"
+        )
+    return wrapper
+
+class UNetGraphWithCacheProfile(UNetGraphWithCache):
     @flow.nn.Graph.with_dynamic_input_shape(size=16)
     def __init__(self, unet):
-        super().__init__(enable_get_runtime_state_dict=True)
-        self.unet = unet
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
+        super().__init__(unet=unet)
 
-    def build(self, latent_model_input, t, text_embeddings):
-        text_embeddings = flow._C.amp_white_identity(text_embeddings)
-        # import pdb; pdb.set_trace()
-        return self.unet(
-            latent_model_input, t, encoder_hidden_states=text_embeddings
-        ).sample
+    @_cost_cnt
+    def warmup_with_load_profile(self, file_path):
+        return self.warmup_with_load(file_path)
 
-    def warmup_with_arg(self, arg_meta_of_sizes):
-        for arg_metas in arg_meta_of_sizes:
-            print(f"warmup {arg_metas=}")
-            arg_tensors = [flow.empty(a[0], dtype=a[1]).to("cuda") for a in arg_metas]
-            self(*arg_tensors)  # build and warmup
-
-    def warmup_with_load(self, file_path):
-        import time
-        flow._oneflow_internal.eager.Sync()
-        t0 = time.time()
-        # load state dict from file
-        state_dict = flow.load(file_path)
-        flow._oneflow_internal.eager.Sync()
-        t1 = time.time()
-        print(f"load state dict time: {t1 - t0:.3f} seconds")
-        print(
-            f"state_dict tensors size {_get_state_dict_tensor_size(state_dict)[0]:.3f} MB."
-        )
-        print(
-            f"state_dict string size {_get_state_dict_tensor_size(state_dict)[1]:.3f} MB."
-        )
-        flow._oneflow_internal.eager.Sync()
-        t1 = time.time()
-        # load state dict into graph
-        self.load_runtime_state_dict(state_dict)
-        flow._oneflow_internal.eager.Sync()
-        t2 = time.time()
-        print(f"load into graph time: {t2 - t1:.3f} seconds")
-
-    def save_graph(self, file_path, with_eager=True):
-        import time
-        flow._oneflow_internal.eager.Sync()
-        t0 = time.time()
-        # get state dict from graph
-        state_dict = self.runtime_state_dict(with_eager=with_eager)
-        flow._oneflow_internal.eager.Sync()
-        t1 = time.time()
-        print(f"get state dict time: {t1 - t0:.3f} seconds")
-        print(
-            f"state_dict(with_eager={with_eager}) tensors size {_get_state_dict_tensor_size(state_dict)[0]:.3f} MB"
-        )
-        print(
-            f"state_dict(with_eager={with_eager}) string size {_get_state_dict_tensor_size(state_dict)[1]:.3f} MB"
-        )
-        flow._oneflow_internal.eager.Sync()
-        t1 = time.time()
-        # save state dict to file
-        flow.save(state_dict, file_path)
-        flow._oneflow_internal.eager.Sync()
-        t2 = time.time()
-        print(f"save state dict time: {t2 - t1:.3f} seconds")
+    @_cost_cnt
+    def save_graph_profile(self, file_path, with_eager=False):
+        return self.save_graph(file_path, with_eager=False)
 
 @click.command()
 @click.option("--token")
@@ -133,15 +94,15 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
     # create a mocked unet graph
     with MockCtx():
         unet = get_unet(token, model_id)
-        unet_graph = UNetGraphWithCache(unet)
+        unet_graph = UNetGraphWithCacheProfile(unet)
         cross_attention_dim = unet.config['cross_attention_dim']
-        warmup_meta_of_sizes = get_arg_meta_of_sizes(BATCH_SIZES, RESOLUTION_SCALES, num_channels, 
-                                                     cross_attention_dim, 256, 256)
+        warmup_meta_of_sizes = get_arg_meta_of_sizes(BATCH_SIZES, RESOLUTION_SCALES, cross_attention_dim,
+                                                     num_channels=num_channels, start=256, stride=256)
         for (i, m) in enumerate(warmup_meta_of_sizes):
             print(f"warmup case #{i + 1}:", m)
         if load == True:
             print("loading graphs...")
-            unet_graph.warmup_with_load(file)
+            unet_graph.warmup_with_load_profile(file)
         else:
             print("warmup with arguments...")
             unet_graph.warmup_with_arg(warmup_meta_of_sizes)
@@ -156,12 +117,10 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
         for batch_size in BATCH_SIZES
     }
     noise_of_sizes = [
-        floats_tensor(noise_shape(batch_size, num_channels, image_dim(i, 256, 256), image_dim(j, 256, 256)))
+        floats_tensor(warmup_meta_of_sizes[i][0][0])
         .to("cuda")
         .to(torch.float16)
-        for batch_size in BATCH_SIZES
-        for i in RESOLUTION_SCALES
-        for j in RESOLUTION_SCALES
+        for i in range(len(warmup_meta_of_sizes))
     ]
     noise_of_sizes = [flow.utils.tensor.from_torch(x) for x in noise_of_sizes]
     encoder_hidden_states_of_sizes = {
@@ -171,8 +130,6 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
     time_step = flow.utils.tensor.from_torch(time_step)
 
     flow._oneflow_internal.eager.Sync()
-    import time
-
     t0 = time.time()
     for r in tqdm(range(repeat)):
         import random
@@ -188,16 +145,15 @@ def benchmark(token, repeat, sync_interval, save, with_eager, load, file, model_
     duration = t1 - t0
     throughput = repeat / duration
     print(
-        f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f}it/s"
+        f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f} it/s"
     )
 
     if save:
         print("saving graphs...")
-        unet_graph.save_graph(file, with_eager)
+        unet_graph.save_graph_profile(file, with_eager)
 
 
 if __name__ == "__main__":
     print(f"{flow.__path__=}")
     print(f"{flow.__version__=}")
     benchmark()
-    
