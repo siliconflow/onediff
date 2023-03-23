@@ -70,12 +70,10 @@ class UNetGraphWithCache(flow.nn.Graph):
     def warmup_with_load(self, file_path):
         state_dict = flow.load(file_path)
         self.load_runtime_state_dict(state_dict)
-        return state_dict
     
     def save_graph(self, file_path, with_eager=False):
         state_dict = self.runtime_state_dict(with_eager=with_eager)
         flow.save(state_dict, file_path)
-        return state_dict
 
 def noise_shape(batch_size, i, j, num_channels, start, stride):
     image_w = start + stride * i
