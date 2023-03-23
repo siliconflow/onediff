@@ -24,6 +24,7 @@ import oneflow as flow
 from tqdm import tqdm
 from dataclasses import dataclass
 
+
 @dataclass
 class tensorInput:
     noise: flow.float16
