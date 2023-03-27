@@ -1,4 +1,4 @@
-__version__ = "0.6.0"
+__version__ = "0.7.0"
 __author__ = "OneFlow"
 __credits__ = "OneFlow contributors"
 import oneflow as flow
@@ -31,5 +31,6 @@ from .pipeline_alt_diffusion_oneflow import OneFlowAltDiffusionPipeline
 from .pipeline_stable_diffusion_inpaint_oneflow import (
     OneFlowStableDiffusionInpaintPipeline,
 )
-from .pipeline_stable_diffusion_controlnet_oneflow import OneFlowStableDiffusionControlNetPipeline
-
+from .pipeline_stable_diffusion_controlnet_oneflow import (
+    OneFlowStableDiffusionControlNetPipeline,
+)
