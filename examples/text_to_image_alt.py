@@ -1,8 +1,7 @@
-import oneflow as flow
-
-flow.mock_torch.enable()
 from onediff import OneFlowAltDiffusionPipeline
 
+import oneflow as flow
+flow.mock_torch.enable()
 
 pipe = OneFlowAltDiffusionPipeline.from_pretrained("BAAI/AltDiffusion-m9", torch_dtype=flow.float16)
 pipe = pipe.to("cuda")

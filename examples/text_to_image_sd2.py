@@ -1,8 +1,9 @@
+from onediff import OneFlowStableDiffusionPipeline
+
 import oneflow as flow
 flow.mock_torch.enable()
 
 from diffusers import EulerDiscreteScheduler
-from onediff import OneFlowStableDiffusionPipeline
 
 model_id = "stabilityai/stable-diffusion-2"
 # Use the Euler scheduler here instead

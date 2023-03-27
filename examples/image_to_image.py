@@ -1,7 +1,8 @@
-import oneflow as flow
 from PIL import Image
-flow.mock_torch.enable()
+
 from onediff import OneFlowStableDiffusionImg2ImgPipeline
+import oneflow as flow
+flow.mock_torch.enable()
 
 pipe = OneFlowStableDiffusionImg2ImgPipeline.from_pretrained(
     "stabilityai/stable-diffusion-2",
@@ -22,7 +23,6 @@ with flow.autocast("cuda"):
         image=img,
         guidance_scale=10,
         num_inference_steps=100,
-        compile_unet=False,
         output_type="np",
     ).images
     for i, image in enumerate(images):
