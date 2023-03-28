@@ -92,8 +92,8 @@ class UNetGraphWithCache(flow.nn.Graph):
         flow.save(state_dict, file_path)
 
 
-def img_dim(i, start, end):
-    return start + i * end
+def img_dim(i, start, stride):
+    return start + stride * i
 
 
 def noise_shape(batch_size, num_channels, image_w, image_h):
