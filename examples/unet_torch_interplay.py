@@ -31,6 +31,9 @@ class TensorInput:
     time: flow.int64
     cross_attention_dim: flow.float16
 
+    def gettype(self, key):
+        return self.__annotations__[key]
+
 
 class MockCtx(object):
     def __enter__(self):
@@ -72,13 +75,14 @@ class UNetGraphWithCache(flow.nn.Graph):
     def warmup_with_arg(self, arg_meta_of_sizes):
         for arg_metas in arg_meta_of_sizes:
             print(f"warmup {arg_metas=}")
-            type_dict = arg_metas.__annotations__
             arg_tensors = [
-                flow.empty(arg_metas.noise, dtype=type_dict["noise"]).to("cuda"),
-                flow.empty(arg_metas.time, dtype=type_dict["time"]).to("cuda"),
+                flow.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to(
+                    "cuda"
+                ),
+                flow.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
                 flow.empty(
                     arg_metas.cross_attention_dim,
-                    dtype=type_dict["cross_attention_dim"],
+                    dtype=arg_metas.gettype("cross_attention_dim"),
                 ).to("cuda"),
             ]
             self(*arg_tensors)  # build and warmup
