@@ -22,17 +22,19 @@ os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 import click
 import oneflow as flow
 from tqdm import tqdm
-from dataclasses import dataclass
+from dataclasses import dataclass, fields
 
 
 @dataclass
-class TensorInput:
+class TensorInput(object):
     noise: flow.float16
     time: flow.int64
     cross_attention_dim: flow.float16
 
-    def gettype(self, key):
-        return self.__annotations__[key]
+    @classmethod
+    def gettype(cls, key):
+        field_types = {field.name: field.type for field in fields(TensorInput)}
+        return field_types[key]
 
 
 class MockCtx(object):
