@@ -35,50 +35,6 @@ import oneflow as flow
 from .graph_utils import GraphCacheMixin
 
 
-class UNetGraph(flow.nn.Graph):
-    def __init__(self, unet):
-        super().__init__()
-        self.unet = unet
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
-    def build(self, latent_model_input, t, text_embeddings):
-        text_embeddings = flow._C.amp_white_identity(text_embeddings)
-        return self.unet(
-            latent_model_input, t, encoder_hidden_states=text_embeddings
-        ).sample
-
-
-class VaePostProcess(flow.nn.Module):
-    def __init__(self, vae) -> None:
-        super().__init__()
-        self.vae = vae
-
-    def forward(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        return image
-
-
-class VaeGraph(flow.nn.Graph):
-    def __init__(self, vae_post_process) -> None:
-        super().__init__()
-        self.vae_post_process = vae_post_process
-
-    def build(self, latents):
-        return self.vae_post_process(latents)
-
-
-class TextEncoderGraph(flow.nn.Graph):
-    def __init__(self, text_encoder) -> None:
-        super().__init__()
-        self.text_encoder = text_encoder
-
-    def build(self, text_input, attention_mask):
-        return self.text_encoder(text_input, attention_mask)[0]
-
-
 class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
     r"""
     Pipeline for text-to-image generation using Stable Diffusion.
@@ -243,7 +199,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
-        self.init_graph_compile_cache(1)
 
     def enable_xformers_memory_efficient_attention(self):
         r"""
@@ -713,28 +668,19 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
 
         # compile vae graph
         if compile_vae:
-            cache_key = (height, width, num_images_per_prompt)
-            vae_post_process = VaePostProcess(self.vae)
-            vae_post_process.eval()
-            vae_post_process_graph = self.graph_compile_cache.get_graph(
-                VaeGraph, cache_key, vae_post_process
-            )
+            vae_post_process_graph = self.get_graph("vae", self.vae)
             if vae_post_process_graph.is_compiled is False:
-                vae_post_process_graph.compile(latents)
+                vae_post_process_graph(latents)
 
         # compile unet graph
         if compile_unet:
-            cache_key = (height, width, num_images_per_prompt)
-            unet_graph = self.graph_compile_cache.get_graph(
-                UNetGraph, cache_key, self.unet
-            )
+            unet_graph = self.get_graph("unet", self.unet)
             if unet_graph.is_compiled is False:
                 latent_model_input = (
                     flow.cat([latents] * 2) if do_classifier_free_guidance else latents
                 )
                 _, t = list(enumerate(self.scheduler.timesteps))[0]
-                unet_graph.compile(latent_model_input, t, text_embeddings)
-
+                unet_graph(latent_model_input, t, text_embeddings)
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 

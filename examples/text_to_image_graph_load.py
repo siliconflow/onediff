@@ -85,16 +85,13 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     @_cost_cnt
     def config_graph():
         pipe.set_graph_compile_cache_size(9)
-        pipe.enable_graph_share_mem()
     config_graph()
     
-    if not _online_mode:
-        pipe.enable_save_graph()
-    else:
+    if _online_mode:
         @_cost_cnt
         def load_graph():
             assert (os.path.exists(graph_save_path) and os.path.isdir(graph_save_path))
-            pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=False)
+            pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=True)
         load_graph()
     end_t = time.time()
     print("sd init time ", end_t - start_t, 's.')
@@ -116,7 +113,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
             height=image_height,
             width=image_weight,
             compile_unet=with_graph,
-            compile_vae=False,
+            compile_vae=with_graph,
             num_images_per_prompt=num_images_per_prompt,
             generator=cur_generator,
             output_type="np",
@@ -130,7 +127,6 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     
     
     prompt = "a photo of an astronaut riding a horse on mars"
-    
     #sizes = [1024, 896, 768]
     sizes = [1024]
     for i in sizes:
@@ -143,7 +139,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
                 assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
     total_end_t = time.time()
     print("st init and run time ", total_end_t - total_start_t, 's.')
-    
+
     @_cost_cnt
     def save_pipe_sch():
         pipe.save_pretrained(pipe_file_path)
