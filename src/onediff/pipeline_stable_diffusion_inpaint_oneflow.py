@@ -37,39 +37,6 @@ from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionS
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
-class UNetGraph(flow.nn.Graph):
-    def __init__(self, unet):
-        super().__init__()
-        self.unet = unet
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
-    def build(self, latent_model_input, t, text_embeddings):
-        text_embeddings = flow._C.amp_white_identity(text_embeddings)
-        return self.unet(latent_model_input, t, encoder_hidden_states=text_embeddings).sample
-
-
-class VaePostProcess(flow.nn.Module):
-    def __init__(self, vae) -> None:
-        super().__init__()
-        self.vae = vae
-
-    def forward(self, latents):
-        latents = 1 / 0.18215 * latents
-        image = self.vae.decode(latents).sample
-        image = (image / 2 + 0.5).clamp(0, 1)
-        return image
-
-
-class VaeGraph(flow.nn.Graph):
-    def __init__(self, vae_post_process) -> None:
-        super().__init__()
-        self.vae_post_process = vae_post_process
-
-    def build(self, latents):
-        return self.vae_post_process(latents)
-
-
 def prepare_mask_and_masked_image(image, mask):
     """
     Prepares a pair (image, mask) to be consumed by the Stable Diffusion pipeline. This means that those inputs will be
@@ -300,7 +267,6 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
-        self.init_graph_compile_cache(1)
 
     # Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.StableDiffusionPipeline.enable_attention_slicing
     def enable_attention_slicing(self, slice_size: Optional[Union[str, int]] = "auto"):
@@ -778,21 +744,18 @@ class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
 
         # compile vae graph
         if compile_vae:
-            cache_key = (height, width, num_images_per_prompt)
-            vae_post_process = VaePostProcess(self.vae)
-            vae_post_process.eval()
-            vae_post_process_graph = self.graph_compile_cache.get_graph(VaeGraph, cache_key, vae_post_process)
-            vae_post_process_graph.compile(latents)
+            vae_post_process_graph = self.get_graph("vae", self.vae)
+            if vae_post_process_graph.is_compiled is False:
+                vae_post_process_graph._compile(latents)
 
         # compile unet graph
         if compile_unet:
-            cache_key = (height, width, num_images_per_prompt)
-            unet_graph = self.graph_compile_cache.get_graph(UNetGraph, cache_key, self.unet)
+            unet_graph = self.get_graph("unet", self.unet)
             if unet_graph.is_compiled is False:
                 latent_model_input = flow.cat([latents] * 2) if do_classifier_free_guidance else latents
                 _, t = list(enumerate(self.scheduler.timesteps))[0]
                 latent_model_input = flow.cat([latent_model_input, mask, masked_image_latents], dim=1)
-                unet_graph.compile(latent_model_input, t, text_embeddings)
+                unet_graph._compile(latent_model_input, t, text_embeddings)
 
         # 10. Denoising loop
         num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
