@@ -670,7 +670,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
         if compile_vae:
             vae_post_process_graph = self.get_graph("vae", self.vae)
             if vae_post_process_graph.is_compiled is False:
-                vae_post_process_graph(latents)
+                vae_post_process_graph._compile(latents)
 
         # compile unet graph
         if compile_unet:
@@ -680,7 +680,7 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
                     flow.cat([latents] * 2) if do_classifier_free_guidance else latents
                 )
                 _, t = list(enumerate(self.scheduler.timesteps))[0]
-                unet_graph(latent_model_input, t, text_embeddings)
+                unet_graph._compile(latent_model_input, t, text_embeddings)
         # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
         extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 

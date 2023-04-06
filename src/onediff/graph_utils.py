@@ -2,13 +2,13 @@ import os
 import oneflow as flow
 
 
-def get_graph_class(graph_class, cache_size, enable_shared):
+def get_graph_class(graph_class, cache_size, enable_shared, enable_save):
     class UNetGraph(flow.nn.Graph):
         @flow.nn.Graph.with_dynamic_input_shape(
             enable_shared=enable_shared, size=cache_size
         )
         def __init__(self, unet):
-            super().__init__(enable_get_runtime_state_dict=True)
+            super().__init__(enable_get_runtime_state_dict=enable_save)
             self.unet = unet
             self.config.enable_cudnn_conv_heuristic_search_algo(False)
             self.config.allow_fuse_add_to_output(True)
@@ -24,7 +24,7 @@ def get_graph_class(graph_class, cache_size, enable_shared):
             enable_shared=enable_shared, size=cache_size
         )
         def __init__(self, vae_post_process) -> None:
-            super().__init__(enable_get_runtime_state_dict=True)
+            super().__init__(enable_get_runtime_state_dict=enable_save)
             self.vae_post_process = vae_post_process
             self.config.enable_cudnn_conv_heuristic_search_algo(False)
             self.config.allow_fuse_add_to_output(True)
@@ -70,22 +70,27 @@ class GraphCacheMixin(object):
 
     def __init__(self) -> None:
         self.graph_dict = dict()
-        self.cache_size = 1
-        self.enable_shared = True
+        self.cache_size = 10
+        self.enable_shared = False
+        self.enable_save = False
 
     def set_graph_compile_cache_size(self, cache_size):
         self.cache_size = cache_size
 
-    def disable_share_mem(self):
-        self.enable_shared = False
+    def enable_save_graph(self):
+        self.enable_save = True
+
+    def enable_graph_share_mem(self):
+        self.enable_shared = True
 
     def save_graph(self, path):
-        for graph_class_name, graph in self.graph_dict.items():
-            state_dict = graph.runtime_state_dict()
-            flow.save(
-                state_dict,
-                os.path.join(path, graph_class_name),
-            )
+        if self.enable_save:
+            for graph_class_name, graph in self.graph_dict.items():
+                state_dict = graph.runtime_state_dict()
+                flow.save(
+                    state_dict,
+                    os.path.join(path, graph_class_name),
+                )
 
     def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
         # compile vae graph
@@ -109,7 +114,12 @@ class GraphCacheMixin(object):
             self.graph_dict["unet"] = unet_graph
 
     def get_graph(self, graph_class, graph):
-        Graph = get_graph_class(graph_class, self.cache_size, self.enable_shared)
+        Graph = get_graph_class(
+            graph_class=graph_class,
+            cache_size=self.cache_size,
+            enable_shared=self.enable_shared,
+            enable_save=self.enable_save,
+        )
         if graph_class == "unet":
             if graph_class not in self.graph_dict:
                 self.graph_dict[graph_class] = Graph(unet=graph)

@@ -15,6 +15,7 @@ from onediff import OneFlowStableDiffusionPipeline as StableDiffusionPipeline
 from diffusers import utils
 
 _model_id = "stabilityai/stable-diffusion-2"
+_model_id = "stabilityai/stable-diffusion-2-1-base"
 _with_image_save = True
 
 def _cost_cnt(fn):
@@ -85,9 +86,12 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     @_cost_cnt
     def config_graph():
         pipe.set_graph_compile_cache_size(9)
+        pipe.enable_graph_share_mem()
     config_graph()
     
-    if _online_mode:
+    if not _online_mode:
+        pipe.enable_save_graph()
+    else:
         @_cost_cnt
         def load_graph():
             assert (os.path.exists(graph_save_path) and os.path.isdir(graph_save_path))
@@ -128,7 +132,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     
     prompt = "a photo of an astronaut riding a horse on mars"
     #sizes = [1024, 896, 768]
-    sizes = [1024]
+    sizes = [768]
     for i in sizes:
         for j in sizes:
             no_g_images = text_to_image(prompt, (i, j), prefix=f"is_save_{str(is_save)}-", with_graph=False)
