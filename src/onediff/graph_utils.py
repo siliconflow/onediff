@@ -88,8 +88,7 @@ class GraphCacheMixin(object):
             for graph_class_name, graph in self.graph_dict.items():
                 state_dict = graph.runtime_state_dict()
                 flow.save(
-                    state_dict,
-                    os.path.join(path, graph_class_name),
+                    state_dict, os.path.join(path, graph_class_name),
                 )
 
     def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
@@ -99,7 +98,9 @@ class GraphCacheMixin(object):
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
             state_dict = flow.load(os.path.join(path, "vae"))
-            VaeGraph = get_graph_class("vae", self.cache_size, self.enable_shared)
+            VaeGraph = get_graph_class(
+                "vae", self.cache_size, self.enable_shared, self.enable_save
+            )
             vae_graph = VaeGraph(vae_post_process=vae_post_process)
             vae_graph.load_runtime_state_dict(state_dict)
             self.graph_dict["vae"] = vae_graph
@@ -108,7 +109,9 @@ class GraphCacheMixin(object):
         unet_graph = None
         if compile_unet:
             state_dict = flow.load(os.path.join(path, "unet"))
-            UNetGraph = get_graph_class("unet", self.cache_size, self.enable_shared)
+            UNetGraph = get_graph_class(
+                "unet", self.cache_size, self.enable_shared, self.enable_save
+            )
             unet_graph = UNetGraph(unet=self.unet)
             unet_graph.load_runtime_state_dict(state_dict)
             self.graph_dict["unet"] = unet_graph
