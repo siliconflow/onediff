@@ -2,7 +2,7 @@ import os
 import oneflow as flow
 
 
-def get_graph_class(graph_class, cache_size, enable_shared, enable_save):
+def get_unet_graph(cache_size, enable_shared, enable_save, *args, **kwargs):
     class UNetGraph(flow.nn.Graph):
         @flow.nn.Graph.with_dynamic_input_shape(
             enable_shared=enable_shared, size=cache_size
@@ -19,6 +19,10 @@ def get_graph_class(graph_class, cache_size, enable_shared, enable_save):
                 latent_model_input, t, encoder_hidden_states=text_embeddings
             ).sample
 
+    return UNetGraph(*args, **kwargs)
+
+
+def get_vae_graph(cache_size, enable_shared, enable_save, *args, **kwargs):
     class VaeGraph(flow.nn.Graph):
         @flow.nn.Graph.with_dynamic_input_shape(
             enable_shared=enable_shared, size=cache_size
@@ -32,10 +36,7 @@ def get_graph_class(graph_class, cache_size, enable_shared, enable_save):
         def build(self, latents):
             return self.vae_post_process(latents)
 
-    if graph_class == "unet":
-        return UNetGraph
-    elif graph_class == "vae":
-        return VaeGraph
+    return VaeGraph(*args, **kwargs)
 
 
 class VaePostProcess(flow.nn.Module):
@@ -71,17 +72,17 @@ class GraphCacheMixin(object):
     def __init__(self) -> None:
         self.graph_dict = dict()
         self.cache_size = 10
-        self.enable_shared = False
-        self.enable_save = False
+        self.enable_shared = True
+        self.enable_save = True
 
     def set_graph_compile_cache_size(self, cache_size):
         self.cache_size = cache_size
 
-    def enable_save_graph(self):
-        self.enable_save = True
+    def enable_save_graph(self, mode=True):
+        self.enable_save = mode
 
-    def enable_graph_share_mem(self):
-        self.enable_shared = True
+    def enable_graph_share_mem(self, mode=True):
+        self.enable_shared = mode
 
     def save_graph(self, path):
         if self.enable_save:
@@ -98,10 +99,12 @@ class GraphCacheMixin(object):
             vae_post_process = VaePostProcess(self.vae)
             vae_post_process.eval()
             state_dict = flow.load(os.path.join(path, "vae"))
-            VaeGraph = get_graph_class(
-                "vae", self.cache_size, self.enable_shared, self.enable_save
+            vae_graph = get_vae_graph(
+                cache_size=self.cache_size,
+                enable_shared=self.enable_shared,
+                enable_save=self.enable_save,
+                vae_post_process=vae_post_process,
             )
-            vae_graph = VaeGraph(vae_post_process=vae_post_process)
             vae_graph.load_runtime_state_dict(state_dict)
             self.graph_dict["vae"] = vae_graph
 
@@ -109,27 +112,33 @@ class GraphCacheMixin(object):
         unet_graph = None
         if compile_unet:
             state_dict = flow.load(os.path.join(path, "unet"))
-            UNetGraph = get_graph_class(
-                "unet", self.cache_size, self.enable_shared, self.enable_save
+            unet_graph = get_unet_graph(
+                cache_size=self.cache_size,
+                enable_shared=self.enable_shared,
+                enable_save=self.enable_save,
+                unet=self.unet,
             )
-            unet_graph = UNetGraph(unet=self.unet)
             unet_graph.load_runtime_state_dict(state_dict)
             self.graph_dict["unet"] = unet_graph
 
     def get_graph(self, graph_class, graph):
-        Graph = get_graph_class(
-            graph_class=graph_class,
-            cache_size=self.cache_size,
-            enable_shared=self.enable_shared,
-            enable_save=self.enable_save,
-        )
         if graph_class == "unet":
             if graph_class not in self.graph_dict:
-                self.graph_dict[graph_class] = Graph(unet=graph)
+                self.graph_dict[graph_class] = get_unet_graph(
+                    cache_size=self.cache_size,
+                    enable_shared=self.enable_shared,
+                    enable_save=self.enable_save,
+                    unet=graph,
+                )
             return self.graph_dict[graph_class]
         elif graph_class == "vae":
             if graph_class not in self.graph_dict:
                 vae_post_process = VaePostProcess(graph)
                 vae_post_process.eval()
-                self.graph_dict[graph_class] = Graph(vae_post_process=vae_post_process)
+                self.graph_dict[graph_class] = get_vae_graph(
+                    cache_size=self.cache_size,
+                    enable_shared=self.enable_shared,
+                    enable_save=self.enable_save,
+                    vae_post_process=vae_post_process,
+                )
             return self.graph_dict[graph_class]
