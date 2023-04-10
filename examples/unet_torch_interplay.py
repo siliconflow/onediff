@@ -22,6 +22,19 @@ os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 import click
 import oneflow as flow
 from tqdm import tqdm
+from dataclasses import dataclass, fields
+
+
+@dataclass
+class TensorInput(object):
+    noise: flow.float16
+    time: flow.int64
+    cross_attention_dim: flow.float16
+
+    @classmethod
+    def gettype(cls, key):
+        field_types = {field.name: field.type for field in fields(TensorInput)}
+        return field_types[key]
 
 
 class MockCtx(object):
@@ -32,11 +45,11 @@ class MockCtx(object):
         flow.mock_torch.disable()
 
 
-def get_unet(token):
+def get_unet(token, _model_id):
     from diffusers import UNet2DConditionModel
 
     unet = UNet2DConditionModel.from_pretrained(
-        "runwayml/stable-diffusion-v1-5",
+        _model_id,
         use_auth_token=token,
         revision="fp16",
         torch_dtype=flow.float16,
@@ -64,7 +77,16 @@ class UNetGraphWithCache(flow.nn.Graph):
     def warmup_with_arg(self, arg_meta_of_sizes):
         for arg_metas in arg_meta_of_sizes:
             print(f"warmup {arg_metas=}")
-            arg_tensors = [flow.empty(a[0], dtype=a[1]).to("cuda") for a in arg_metas]
+            arg_tensors = [
+                flow.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to(
+                    "cuda"
+                ),
+                flow.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
+                flow.empty(
+                    arg_metas.cross_attention_dim,
+                    dtype=arg_metas.gettype("cross_attention_dim"),
+                ).to("cuda"),
+            ]
             self(*arg_tensors)  # build and warmup
 
     def warmup_with_load(self, file_path):
@@ -76,8 +98,8 @@ class UNetGraphWithCache(flow.nn.Graph):
         flow.save(state_dict, file_path)
 
 
-def image_dim(i):
-    return 768 + 128 * i
+def img_dim(i, start, stride):
+    return start + stride * i
 
 
 def noise_shape(batch_size, num_channels, image_w, image_h):
@@ -85,16 +107,25 @@ def noise_shape(batch_size, num_channels, image_w, image_h):
     return (batch_size, num_channels) + sizes
 
 
-def get_arg_meta_of_sizes(batch_sizes, resolution_scales, num_channels):
+def get_arg_meta_of_sizes(
+    batch_sizes,
+    resolution_scales,
+    num_channels,
+    cross_attention_dim,
+    start=768,
+    stride=128,
+):
     return [
-        [
-            (
-                noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)),
-                flow.float16,
+        TensorInput(
+            noise_shape(
+                batch_size,
+                num_channels,
+                img_dim(i, start, stride),
+                img_dim(j, start, stride),
             ),
-            ((1,), flow.int64),
-            ((batch_size, 77, 768), flow.float16),
-        ]
+            (1,),
+            (batch_size, 77, cross_attention_dim),
+        )
         for batch_size in batch_sizes
         for i in resolution_scales
         for j in resolution_scales
@@ -108,21 +139,27 @@ def get_arg_meta_of_sizes(batch_sizes, resolution_scales, num_channels):
 @click.option("--save", is_flag=True)
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
-def benchmark(token, repeat, sync_interval, save, load, file):
+@click.option("--model_id", type=str, default="runwayml/stable-diffusion-v1-5")
+def benchmark(token, repeat, sync_interval, save, load, file, model_id):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
     # TODO: reproduce bug caused by changing batch
     # BATCH_SIZES = [4, 2]
 
-    # create a mocked unet graph
     num_channels = 4
-
-    warmup_meta_of_sizes = get_arg_meta_of_sizes(BATCH_SIZES, RESOLUTION_SCALES, num_channels)
-    for (i, m) in enumerate(warmup_meta_of_sizes):
-        print(f"warmup case #{i + 1}:", m)
+    # create a mocked unet graph
     with MockCtx():
-        unet = get_unet(token)
+        unet = get_unet(token, model_id)
         unet_graph = UNetGraphWithCache(unet)
+        cross_attention_dim = unet.config["cross_attention_dim"]
+        warmup_meta_of_sizes = get_arg_meta_of_sizes(
+            batch_sizes=BATCH_SIZES,
+            resolution_scales=RESOLUTION_SCALES,
+            num_channels=num_channels,
+            cross_attention_dim=cross_attention_dim,
+        )
+        for (i, m) in enumerate(warmup_meta_of_sizes):
+            print(f"warmup case #{i + 1}:", m)
         if load == True:
             print("loading graphs...")
             unet_graph.warmup_with_load(file)
@@ -136,20 +173,19 @@ def benchmark(token, repeat, sync_interval, save, load, file):
 
     time_step = torch.tensor([10]).to("cuda")
     encoder_hidden_states_of_sizes = {
-        batch_size: floats_tensor((batch_size, 77, 768)).to("cuda").to(torch.float16)
-        for batch_size in BATCH_SIZES
-    }
-    noise_of_sizes = [
-        floats_tensor(noise_shape(batch_size, num_channels, image_dim(i), image_dim(j)))
+        batch_size: floats_tensor((batch_size, 77, cross_attention_dim))
         .to("cuda")
         .to(torch.float16)
         for batch_size in BATCH_SIZES
-        for i in RESOLUTION_SCALES
-        for j in RESOLUTION_SCALES
+    }
+    noise_of_sizes = [
+        floats_tensor(arg_metas.noise).to("cuda").to(torch.float16)
+        for arg_metas in warmup_meta_of_sizes
     ]
     noise_of_sizes = [flow.utils.tensor.from_torch(x) for x in noise_of_sizes]
     encoder_hidden_states_of_sizes = {
-        k: flow.utils.tensor.from_torch(v) for k, v in encoder_hidden_states_of_sizes.items()
+        k: flow.utils.tensor.from_torch(v)
+        for k, v in encoder_hidden_states_of_sizes.items()
     }
     # convert to oneflow tensors
     time_step = flow.utils.tensor.from_torch(time_step)

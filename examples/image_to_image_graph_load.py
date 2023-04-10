@@ -102,7 +102,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
         @_cost_cnt
         def load_graph():
             assert (os.path.exists(graph_save_path) and os.path.isdir(graph_save_path))
-            pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=False)
+            pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=True)
 
         load_graph()
     end_t = time.time()
@@ -123,7 +123,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
             num_inference_steps=num_inference_steps,
             guidance_scale=guidance_scale,
             compile_unet=with_graph,
-            compile_vae=False,
+            compile_vae=with_graph,
             num_images_per_prompt=num_images_per_prompt,
             eta=eta,
             generator=cur_generator,
@@ -145,7 +145,7 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     assert len(no_g_images) == len(with_g_images)
     for img_idx in range(len(no_g_images)):
         print("====> diff ", np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean())
-        # assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
+        assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
 
     total_end_t = time.time()
     print("st init and run time ", total_end_t - total_start_t, 's.')
