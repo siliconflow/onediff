@@ -86,6 +86,7 @@ class GraphCacheMixin(object):
 
     def save_graph(self, path):
         if self.enable_save:
+            os.makedirs(path, exist_ok=True)
             for graph_class_name, graph in self.graph_dict.items():
                 state_dict = graph.runtime_state_dict()
                 flow.save(
