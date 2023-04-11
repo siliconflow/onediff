@@ -1,0 +1,98 @@
+name: Build OneFlow Stable Diffusion
+
+on:
+  push:
+    branches:
+      - main
+
+  workflow_dispatch:
+# Environment variables available to all jobs and steps in this workflow.
+env:
+  REGION_ID: cn-beijing
+  REGISTRY: registry.cn-beijing.aliyuncs.com
+  NAMESPACE: oneflow
+
+concurrency:
+  group: sd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-oneflow:
+    name: "Build sd ${{ matrix.image.suffix }}"
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        image:
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:22.09-py3",
+              suffix: "cu116",
+              ONEFLOW_PIP_INDEX: "https://staging.oneflow.info/branch/master/cu116",
+            }
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:22.09-py3",
+              suffix: "cu117",
+              ONEFLOW_PIP_INDEX: "https://staging.oneflow.info/branch/master/cu117",
+            }
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:22.09-py3",
+              suffix: "cu118",
+              ONEFLOW_PIP_INDEX: "https://staging.oneflow.info/branch/master/cu118",
+            }
+
+    env:
+      IMAGE: onediff
+      TAG: ${{ matrix.image.suffix }}
+      DOCKER_BUILDKIT: 1
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+      - run: ls -al
+      - run: sudo apt-get install ripgrep
+      # 1.1 Login to ACR
+      - name: Login to ACR with the AccessKey pair
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: https://registry.${{env.REGION_ID}}.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Login to DockerHub
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+      # 1.2 Build and push image to ACR
+      - name: Set env
+        run: |
+          echo ACR_TAG="$REGISTRY/$NAMESPACE/$IMAGE:$TAG" >> $GITHUB_ENV
+          echo DOCKERHUB_TAG="oneflowinc/$IMAGE:$TAG" >> $GITHUB_ENV
+      - name: Get OneFlow version
+        id: get-oneflow-version
+        run: |
+          curl "${{ matrix.image.ONEFLOW_PIP_INDEX }}"
+          ONEFLOW_PIP_INDEX=${{matrix.image.ONEFLOW_PIP_INDEX}}
+          DEV_VERSION=$(curl $ONEFLOW_PIP_INDEX | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | head -n 1)
+          echo "DEV_VERSION: ${DEV_VERSION}"
+          if [ -z "$DEV_VERSION" ]
+          then
+            exit 1
+          fi
+          echo "ONEFLOW_PACKAGE_NAME="oneflow==${DEV_VERSION}"" >> $GITHUB_OUTPUT
+      - name: Build and push
+        uses: docker/build-push-action@v2
+        with:
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_TAG }}
+            ${{ env.ACR_TAG }}
+          # cache-from: type=registry,ref=${{ env.DOCKERHUB_TAG }}
+          # cache-to: type=inline
+          target: ${{ matrix.build-target }}
+          build-args: |
+            BASE_IMAGE=${{matrix.image.BASE_IMAGE}}
+            ONEFLOW_PIP_INDEX=${{matrix.image.ONEFLOW_PIP_INDEX}}
+            ONEFLOW_PACKAGE_NAME=${{steps.get-oneflow-version.outputs.ONEFLOW_PACKAGE_NAME}}
+      - name: Push image to ACR
+        run: |
+          docker push "${{ env.ACR_TAG }}"
