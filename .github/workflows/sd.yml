@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - main
-      - move-docker-build-to-onediff-repo
 
   workflow_dispatch:
 # Environment variables available to all jobs and steps in this workflow.
