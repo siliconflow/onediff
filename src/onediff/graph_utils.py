@@ -92,7 +92,8 @@ class GraphCacheMixin(object):
                     state_dict, os.path.join(path, graph_class_name),
                 )
 
-    def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
+    def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True, time_flag: bool = False):
+        import time
         # compile vae graph
         vae_graph = None
         if compile_vae:
@@ -105,7 +106,10 @@ class GraphCacheMixin(object):
                 enable_save=self.enable_save,
                 vae_post_process=vae_post_process,
             )
+            start = time.time()
             vae_graph.load_runtime_state_dict(state_dict)
+            if time_flag:
+                print(f"Loading time of VAE graph: {time.time() - start:.2f}s")
             self.graph_dict["vae"] = vae_graph
 
         # compile unet graph
@@ -118,7 +122,10 @@ class GraphCacheMixin(object):
                 enable_save=self.enable_save,
                 unet=self.unet,
             )
+            start = time.time()
             unet_graph.load_runtime_state_dict(state_dict)
+            if time_flag:
+                print(f"Loading time of UNET graph: {time.time() - start :.2f}s")
             self.graph_dict["unet"] = unet_graph
 
     def get_graph(self, graph_class, graph):
