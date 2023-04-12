@@ -106,8 +106,10 @@ class GraphCacheMixin(object):
                 enable_save=self.enable_save,
                 vae_post_process=vae_post_process,
             )
+            flow._oneflow_internal.eager.Sync()
             start = time.time()
             vae_graph.load_runtime_state_dict(state_dict)
+            flow._oneflow_internal.eager.Sync()
             if time_flag:
                 print(f"Loading time of VAE graph: {time.time() - start:.2f}s")
             self.graph_dict["vae"] = vae_graph
@@ -122,8 +124,10 @@ class GraphCacheMixin(object):
                 enable_save=self.enable_save,
                 unet=self.unet,
             )
+            flow._oneflow_internal.eager.Sync()
             start = time.time()
             unet_graph.load_runtime_state_dict(state_dict)
+            flow._oneflow_internal.eager.Sync()
             if time_flag:
                 print(f"Loading time of UNET graph: {time.time() - start :.2f}s")
             self.graph_dict["unet"] = unet_graph

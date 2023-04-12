@@ -81,6 +81,8 @@ def run_load_graph(pipe_file_path, graph_save_path):
 
 
 if __name__ == "__main__":
-    if not os.path.exists(pipe_file_path):
-        run_save_graph(pipe_file_path, graph_save_path)
+    run_save_graph(pipe_file_path, graph_save_path)
+    flow.framework.session_context.TryCloseDefaultSession()
+    time.sleep(5)
+    flow.framework.session_context.NewDefaultSession(flow._oneflow_global_unique_env)
     run_load_graph(pipe_file_path, graph_save_path)
