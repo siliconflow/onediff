@@ -106,7 +106,9 @@ class GraphCacheMixin(object):
                 enable_save=self.enable_save,
                 vae_post_process=vae_post_process,
             )
+            flow._oneflow_internal.eager.Sync()
             vae_graph.load_runtime_state_dict(state_dict)
+            flow._oneflow_internal.eager.Sync()
             self.graph_dict["vae"] = vae_graph
 
         # compile unet graph
@@ -119,7 +121,9 @@ class GraphCacheMixin(object):
                 enable_save=self.enable_save,
                 unet=self.unet,
             )
+            flow._oneflow_internal.eager.Sync()
             unet_graph.load_runtime_state_dict(state_dict)
+            flow._oneflow_internal.eager.Sync()
             self.graph_dict["unet"] = unet_graph
 
     def get_graph(self, graph_class, graph):
