@@ -1,4 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
+[![Docker image build](https://github.com/Oneflow-Inc/diffusers/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/diffusers/actions/workflows/sd.yml)
 
 # OneFlow diffusers
 
