@@ -123,6 +123,7 @@ class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline, GraphCacheMixin):
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
 
+        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
         os.environ["ONEFLOW_KERENL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
         # NOTE: avoid overflow
         if "upcast_attention" in unet.config and unet.config.upcast_attention:
