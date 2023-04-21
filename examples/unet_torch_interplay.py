@@ -37,14 +37,6 @@ class TensorInput(object):
         return field_types[key]
 
 
-class MockCtx(object):
-    def __enter__(self):
-        flow.mock_torch.enable(lazy=True)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        flow.mock_torch.disable()
-
-
 def get_unet(token, _model_id):
     from diffusers import UNet2DConditionModel
 
@@ -139,7 +131,7 @@ def get_arg_meta_of_sizes(
 @click.option("--save", is_flag=True)
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
-@click.option("--model_id", type=str, default="runwayml/stable-diffusion-v1-5")
+@click.option("--model_id", type=str, default="stabilityai/stable-diffusion-2")
 def benchmark(token, repeat, sync_interval, save, load, file, model_id):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
@@ -148,7 +140,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id):
 
     num_channels = 4
     # create a mocked unet graph
-    with MockCtx():
+    with flow.mock_torch.enable():
         unet = get_unet(token, model_id)
         unet_graph = UNetGraphWithCache(unet)
         cross_attention_dim = unet.config["cross_attention_dim"]
@@ -158,7 +150,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id):
             num_channels=num_channels,
             cross_attention_dim=cross_attention_dim,
         )
-        for (i, m) in enumerate(warmup_meta_of_sizes):
+        for i, m in enumerate(warmup_meta_of_sizes):
             print(f"warmup case #{i + 1}:", m)
         if load == True:
             print("loading graphs...")
