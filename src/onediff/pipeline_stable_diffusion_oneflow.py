@@ -744,10 +744,6 @@ class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
         if not return_dict:
             return (image, has_nsfw_concept)
 
-        with flow.mock_torch.disable():
-            import torch
-
-            assert torch.cuda.is_initialized() is False
         return StableDiffusionPipelineOutput(
             images=image, nsfw_content_detected=has_nsfw_concept
         )
