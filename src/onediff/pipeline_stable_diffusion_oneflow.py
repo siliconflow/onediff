@@ -22,6 +22,7 @@ from diffusers.schedulers import (
     PNDMScheduler,
 )
 from diffusers.utils import deprecate, logging
+from diffusers.loaders import LoraLoaderMixin, TextualInversionLoaderMixin
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker,
@@ -35,7 +36,7 @@ import oneflow as flow
 from .graph_utils import GraphCacheMixin
 
 
-class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin):
+class OneFlowStableDiffusionPipeline(DiffusionPipeline, GraphCacheMixin, TextualInversionLoaderMixin, LoraLoaderMixin):
     r"""
     Pipeline for text-to-image generation using Stable Diffusion.
 

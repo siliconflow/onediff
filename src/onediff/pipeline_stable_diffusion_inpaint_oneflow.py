@@ -30,6 +30,7 @@ from diffusers.models import AutoencoderKL, UNet2DConditionModel
 from diffusers.pipeline_utils import DiffusionPipeline
 from diffusers.schedulers import DDIMScheduler, LMSDiscreteScheduler, PNDMScheduler
 from diffusers.utils import deprecate, logging
+from diffusers.loaders import LoraLoaderMixin, TextualInversionLoaderMixin
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
 
@@ -126,7 +127,7 @@ def prepare_mask_and_masked_image(image, mask):
     return mask, masked_image
 
 
-class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin):
+class OneFlowStableDiffusionInpaintPipeline(DiffusionPipeline, GraphCacheMixin, TextualInversionLoaderMixin, LoraLoaderMixin):
     r"""
     Pipeline for text-guided image inpainting using Stable Diffusion. *This is an experimental feature*.
 

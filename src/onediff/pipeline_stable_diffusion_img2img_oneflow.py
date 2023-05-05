@@ -41,6 +41,7 @@ from diffusers.schedulers import (
     PNDMScheduler,
 )
 from diffusers.utils import PIL_INTERPOLATION, deprecate, logging
+from diffusers.loaders import LoraLoaderMixin, TextualInversionLoaderMixin
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker
@@ -65,7 +66,7 @@ def preprocess(image):
     return 2.0 * image - 1.0
 
 
-class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline, GraphCacheMixin):
+class OneFlowStableDiffusionImg2ImgPipeline(DiffusionPipeline, GraphCacheMixin, TextualInversionLoaderMixin, LoraLoaderMixin):
     r"""
     Pipeline for text-guided image to image generation using Stable Diffusion.
 
