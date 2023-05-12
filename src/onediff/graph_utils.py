@@ -90,10 +90,17 @@ class GraphCacheMixin(object):
             for graph_class_name, graph in self.graph_dict.items():
                 state_dict = graph.runtime_state_dict()
                 flow.save(
-                    state_dict, os.path.join(path, graph_class_name),
+                    state_dict,
+                    os.path.join(path, graph_class_name),
                 )
 
-    def load_graph(self, path, compile_unet: bool = True, compile_vae: bool = True):
+    def load_graph(
+        self,
+        path,
+        compile_unet: bool = True,
+        compile_vae: bool = True,
+        warmup_with_run: bool = False,
+    ):
         # compile vae graph
         vae_graph = None
         if compile_vae:
@@ -107,7 +114,9 @@ class GraphCacheMixin(object):
                 vae_post_process=vae_post_process,
             )
             flow._oneflow_internal.eager.Sync()
-            vae_graph.load_runtime_state_dict(state_dict)
+            vae_graph.load_runtime_state_dict(
+                state_dict, warmup_with_run=warmup_with_run
+            )
             flow._oneflow_internal.eager.Sync()
             self.graph_dict["vae"] = vae_graph
 
@@ -122,7 +131,9 @@ class GraphCacheMixin(object):
                 unet=self.unet,
             )
             flow._oneflow_internal.eager.Sync()
-            unet_graph.load_runtime_state_dict(state_dict)
+            unet_graph.load_runtime_state_dict(
+                state_dict, warmup_with_run=warmup_with_run
+            )
             flow._oneflow_internal.eager.Sync()
             self.graph_dict["unet"] = unet_graph
 
