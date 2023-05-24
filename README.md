@@ -12,7 +12,7 @@ Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to
 ## Quick demo
 
 ```
-python3 -m pip install "torch<2" "transformers>=4.26" "diffusers[torch]==0.15.0"
+python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.15.1"
 python3 -m pip uninstall accelerate -y
 python3 -m pip install -U onediff
 python3 -m onediff.demo
@@ -29,7 +29,7 @@ OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
 ```
 git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff
-python3 -m pip install "torch<2" "transformers>=4.26" "diffusers[torch]==0.15.0"
+python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.15.1"
 python3 -m pip uninstall accelerate -y
 python3 -m pip install -e .
 ```
@@ -46,7 +46,7 @@ python3 -m pip uninstall diffusers -y
 2. install transformers and diffusers
 
 ```
-python3 -m pip install "torch<2" "transformers>=4.26" "diffusers[torch]==0.15.0"
+python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.15.1"
 python3 -m pip uninstall accelerate -y
 ```
 
