@@ -69,33 +69,43 @@ class ProxySubmodule:
         attrnames = [k for k in submod.__dict__.keys() if not k.startswith("_")]
         print(f"{attrnames=}")
         self._1f_proxy_parameters = dict()
+        self._1f_proxy_attrs = dict()
 
     def __getattribute__(self, attribute):
         if attribute.startswith("_1f_proxy"):
             return object.__getattribute__(self, attribute)
-        elif attribute in ["forward"]:
+        elif attribute in ["forward", "_conv_forward"]:
             replacement = replace_class(type(self._1f_proxy_submod))
-            return getattr(replacement, attribute)
+            return lambda *args, **kwargs : getattr(replacement, attribute)(self, *args, **kwargs)
+        # Linear
         elif attribute == "use_fused_matmul_bias":
-            self.use_fused_matmul_bias = (
+            return (
                 self.bias is not None
                 and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
             )
+        # Conv2d
+        # elif attribute == "channel_pos":
+        #     if attribute not in self._1f_proxy_attrs:
+        #         self._1f_proxy_attrs[attribute] = "channels_first"
+        #     return self._1f_proxy_attrs[attribute]
         else:
             a = getattr(self._1f_proxy_submod, attribute)
             if isinstance(a, torch.nn.parameter.Parameter):
+                # TODO: assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
                     a = flow.utils.tensor.from_torch(a.data)
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
+            assert type(a).__module__.startswith("torch") == False
+            print(f"{type(a)=}")
             return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))
         print_types(args, kwargs)
         # TODO: why can't we use __call__?
-        return replacement.forward(self, *args, **kwargs)
+        return replacement.__call__(self, *args, **kwargs)
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
