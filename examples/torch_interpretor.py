@@ -2,6 +2,7 @@ from diffusers import StableDiffusionPipeline
 
 import torch
 import oneflow
+import oneflow as flow
 
 from unet_torch_interplay import MockCtx
 pipe = StableDiffusionPipeline.from_pretrained(
@@ -20,6 +21,17 @@ torch._dynamo.config.verbose=True
 
 def replace_cls(obj):
     cls = type(obj)
+    if cls == torch.dtype:
+        return {
+            "torch.float16": flow.float16,
+            "torch.float32": flow.float32,
+            "torch.double": flow.double,
+            "torch.int8": flow.int8,
+            "torch.int32": flow.int32,
+            "torch.int64": flow.int64,
+            "torch.uint8": flow.uint8,
+        }[str(obj)]
+
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = globals()[mod_name]
@@ -28,13 +40,37 @@ def replace_cls(obj):
     else:
         return obj
 
+def replace_func(func):
+    if func.__module__.startswith("torch"):
+        mod_name = func.__module__.replace("torch", "oneflow")
+        mod = globals()[mod_name]
+        return getattr(mod, func.__name__)
+    else:
+        return func
+
+def map_args(args, kwargs):
+    args = [replace_cls(a) for a in args]
+    kwargs = dict((k, replace_cls(v)) for (k, v) in kwargs.items())
+    return (args, kwargs)
+
+def print_types(args, kwargs):
+    print([type(a) for a in args], [type(v) for v in kwargs.values()])
+
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
     from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+    def run_node(self, n : Node) -> Any:
+        print("\nrun", n)
+        return super().run_node(n)
+
     def call_function(self, target : Target,
                       args : Tuple, kwargs : Dict) -> Any:
         if target == torch.sigmoid:
             return torch.neg(*args, **kwargs)
+        print_types(args, kwargs)
+        args, kwargs = map_args(args, kwargs)
+        print_types(args, kwargs)
+        target = replace_func(target)
         return super().call_function(target, args, kwargs)
 
     def call_method(self, target : Target,
@@ -42,12 +78,8 @@ class OneFlowInterpreter(torch.fx.Interpreter):
         if target == 'neg':
             call_self, *args_tail = args
             return call_self.sigmoid(*args_tail, **kwargs)
-        print([type(a) for a in args], [type(v) for v in kwargs.values()])
-        args = [replace_cls(a) for a in args]
-        print("after")
-        print([str(a) for a in args])
-        print([type(a) for a in args], [type(v) for v in kwargs.values()])
-        print([(key, str(value)) for key, value in kwargs.items()])
+        args, kwargs = map_args(args, kwargs)
+        print_types(args, kwargs)
         return super().call_method(target, args, kwargs)
 
 def torchbackend(gm, example_inputs):
@@ -59,7 +91,7 @@ def torchbackend(gm, example_inputs):
         args = [flow.utils.tensor.from_torch(a) for a in args]
         print([type(a) for a in args], [type(v) for v in kwargs.values()])
         # with MockCtx():
-        return OneFlowInterpreter(gm).run(*args, **kwargs)
+        return OneFlowInterpreter(gm, garbage_collect_values=False).run(*args, **kwargs)
     return wrapped_forward
 
 # print(pipe.unet.state_dict().keys())
