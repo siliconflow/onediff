@@ -86,12 +86,14 @@ class ProxySubmodule:
         elif attribute in ["forward", "_conv_forward"]:
             replacement = replace_class(type(self._1f_proxy_submod))
             return lambda *args, **kwargs : getattr(replacement, attribute)(self, *args, **kwargs)
-        elif type(self._1f_proxy_submod) == torch.nn.Linear and attribute == "use_fused_matmul_bias":
+        elif isinstance(self._1f_proxy_submod, torch.nn.Linear) and attribute == "use_fused_matmul_bias":
             return (
                 self.bias is not None
                 and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
             )
-        elif type(self._1f_proxy_submod) == torch.nn.Conv2d and attribute == "channel_pos":
+        elif isinstance(self._1f_proxy_submod, torch.nn.Dropout) and attribute == "generator":
+            return flow.Generator()
+        elif isinstance(self._1f_proxy_submod, torch.nn.Conv2d) and attribute == "channel_pos":
             return "channels_first"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
@@ -111,7 +113,10 @@ class ProxySubmodule:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))
         print_types(args, kwargs)
-        return replacement.__call__(self, *args, **kwargs)
+        if replacement is not None:
+            return replacement.__call__(self, *args, **kwargs)
+        else:
+            raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
