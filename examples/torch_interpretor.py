@@ -3,8 +3,8 @@ from diffusers import StableDiffusionPipeline
 import torch
 import oneflow
 import oneflow as flow
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from unet_torch_interplay import MockCtx
 pipe = StableDiffusionPipeline.from_pretrained(
     "CompVis/stable-diffusion-v1-4",
     use_auth_token=True,
@@ -57,9 +57,25 @@ def map_args(args, kwargs):
 def print_types(args, kwargs):
     print([type(a) for a in args], [type(v) for v in kwargs.values()])
 
+class ProxySubmodule:
+    def __init__(self, submod):
+        self.submod = submod
+        attrnames = [k for k in submod.__dict__.keys() if not k.startswith("_")]
+        print(f"{attrnames=}")
+
+    def __getattribute__(self, attribute):
+        submod = object.__getattribute__(self, "submod")
+        if attribute == "submod":
+            return submod
+        else:
+            return getattr(submod, attribute)
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self.submod(*args, **kwargs)
+
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
-    from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+
     def run_node(self, n : Node) -> Any:
         print("\nrun", n)
         return super().run_node(n)
@@ -86,7 +102,10 @@ class OneFlowInterpreter(torch.fx.Interpreter):
     def call_module(self, target : 'Target', args : Tuple[Argument, ...], kwargs : Dict[str, Any]) -> Any:
         submod = self.fetch_attr(target)
         print(f"{type(submod)=}")
-        return super().call_module(target, args, kwargs)
+        for name, param in submod.named_parameters():
+            print(name, param)
+        submod = ProxySubmodule(submod)
+        return submod(*args, **kwargs)
 
 def torchbackend(gm, example_inputs):
     import oneflow as flow
