@@ -19,7 +19,7 @@ def add_op_from_torch(node):
 
 torch._dynamo.config.verbose=True
 
-def replace_cls(obj):
+def replace_obj(obj):
     cls = type(obj)
     if cls == torch.dtype:
         return {
@@ -50,8 +50,8 @@ def replace_func(func):
         return func
 
 def map_args(args, kwargs):
-    args = [replace_cls(a) for a in args]
-    kwargs = dict((k, replace_cls(v)) for (k, v) in kwargs.items())
+    args = [replace_obj(a) for a in args]
+    kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
     return (args, kwargs)
 
 def print_types(args, kwargs):
