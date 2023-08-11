@@ -3,6 +3,7 @@ from diffusers import StableDiffusionPipeline
 import torch
 import oneflow
 import oneflow as flow
+import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
 pipe = StableDiffusionPipeline.from_pretrained(
@@ -22,7 +23,7 @@ torch._dynamo.config.verbose=True
 def replace_class(cls):
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
-        mod = globals()[mod_name]
+        mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
 def replace_obj(obj):
@@ -71,11 +72,15 @@ class ProxySubmodule:
         submod = object.__getattribute__(self, "submod")
         if attribute == "submod":
             return submod
+        elif attribute in ["forward"]:
+            replacement = replace_class(type(self.submod))
+            return getattr(replacement, attribute)
         else:
             return getattr(submod, attribute)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return self.submod(*args, **kwargs)
+        replacement = replace_class(type(self.submod))
+        return replacement.__call__(self, *args, **kwargs)
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
