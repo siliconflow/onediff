@@ -21,7 +21,7 @@ torch._dynamo.config.verbose=True
 def replace_cls(obj):
     cls = type(obj)
     if cls.__module__.startswith("torch"):
-        mod_name = cls.__module__.replace("torch", "oneflow").strip()
+        mod_name = cls.__module__.replace("torch", "oneflow")
         mod = globals()[mod_name]
         cls = getattr(mod, cls.__name__)
         return cls(str(obj))
