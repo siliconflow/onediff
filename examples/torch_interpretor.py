@@ -94,6 +94,7 @@ class ProxySubmodule:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))
         print_types(args, kwargs)
+        # TODO: why can't we use __call__?
         return replacement.forward(self, *args, **kwargs)
 
 class OneFlowInterpreter(torch.fx.Interpreter):
