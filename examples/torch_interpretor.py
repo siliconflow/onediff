@@ -83,9 +83,6 @@ class ProxySubmodule:
                 and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
             )
         elif type(self._1f_proxy_submod) == torch.nn.Conv2d and attribute == "channel_pos":
-            # if attribute not in self._1f_proxy_attrs:
-            #     self._1f_proxy_attrs[attribute] = "channels_first"
-            # return self._1f_proxy_attrs[attribute]
             return "channels_last"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
