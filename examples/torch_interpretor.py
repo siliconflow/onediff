@@ -83,6 +83,11 @@ class OneFlowInterpreter(torch.fx.Interpreter):
         print_types(args, kwargs)
         return super().call_method(target, args, kwargs)
 
+    def call_module(self, target : 'Target', args : Tuple[Argument, ...], kwargs : Dict[str, Any]) -> Any:
+        submod = self.fetch_attr(target)
+        print(f"{type(submod)=}")
+        return super().call_module(target, args, kwargs)
+
 def torchbackend(gm, example_inputs):
     import oneflow as flow
     # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
