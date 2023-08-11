@@ -45,6 +45,8 @@ def replace_obj(obj):
     if replacement is not None:
         if cls in [torch.device]:
             return replacement(str(obj))
+        elif cls == torch.nn.parameter.Parameter:
+            return flow.utils.tensor.from_torch(obj.data)
         else:
             raise RuntimeError("don't know how to create oneflow obj for: " + str(cls))
     else:
