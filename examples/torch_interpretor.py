@@ -43,7 +43,10 @@ def replace_obj(obj):
         return [e for e in obj]
     replacement = replace_class(cls)
     if replacement is not None:
-        return replacement(str(obj))
+        if cls in [torch.device]:
+            return replacement(str(obj))
+        else:
+            raise RuntimeError("don't know how to create oneflow obj for: " + str(cls))
     else:
         return obj
 
@@ -83,7 +86,7 @@ class ProxySubmodule:
                 and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
             )
         elif type(self._1f_proxy_submod) == torch.nn.Conv2d and attribute == "channel_pos":
-            return "channels_last"
+            return "channels_first"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
             if isinstance(a, torch.nn.parameter.Parameter):
@@ -95,6 +98,8 @@ class ProxySubmodule:
                     a = self._1f_proxy_parameters[attribute]
             assert type(a).__module__.startswith("torch") == False
             print(f"{type(a)=}")
+            if type(a) != oneflow.Tensor:
+                print(attribute, a)
             return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
