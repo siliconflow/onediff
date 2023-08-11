@@ -77,17 +77,16 @@ class ProxySubmodule:
         elif attribute in ["forward", "_conv_forward"]:
             replacement = replace_class(type(self._1f_proxy_submod))
             return lambda *args, **kwargs : getattr(replacement, attribute)(self, *args, **kwargs)
-        # Linear
-        elif attribute == "use_fused_matmul_bias":
+        elif type(self._1f_proxy_submod) == torch.nn.Linear and attribute == "use_fused_matmul_bias":
             return (
                 self.bias is not None
                 and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
             )
-        # Conv2d
-        # elif attribute == "channel_pos":
-        #     if attribute not in self._1f_proxy_attrs:
-        #         self._1f_proxy_attrs[attribute] = "channels_first"
-        #     return self._1f_proxy_attrs[attribute]
+        elif type(self._1f_proxy_submod) == torch.nn.Conv2d and attribute == "channel_pos":
+            # if attribute not in self._1f_proxy_attrs:
+            #     self._1f_proxy_attrs[attribute] = "channels_first"
+            # return self._1f_proxy_attrs[attribute]
+            return "channels_last"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
             if isinstance(a, torch.nn.parameter.Parameter):
