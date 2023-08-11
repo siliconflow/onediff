@@ -1,6 +1,6 @@
 # HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
 from diffusers import StableDiffusionPipeline
-
+import os
 import torch
 import oneflow
 import oneflow as flow
@@ -65,22 +65,34 @@ def print_types(args, kwargs):
 
 class ProxySubmodule:
     def __init__(self, submod):
-        self.submod = submod
+        self._1f_proxy_submod = submod
         attrnames = [k for k in submod.__dict__.keys() if not k.startswith("_")]
         print(f"{attrnames=}")
+        self._1f_proxy_parameters = dict()
 
     def __getattribute__(self, attribute):
-        submod = object.__getattribute__(self, "submod")
-        if attribute == "submod":
-            return submod
+        if attribute.startswith("_1f_proxy"):
+            return object.__getattribute__(self, attribute)
         elif attribute in ["forward"]:
-            replacement = replace_class(type(self.submod))
+            replacement = replace_class(type(self._1f_proxy_submod))
             return getattr(replacement, attribute)
+        elif attribute == "use_fused_matmul_bias":
+            self.use_fused_matmul_bias = (
+                self.bias is not None
+                and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
+            )
         else:
-            return getattr(submod, attribute)
+            a = getattr(self._1f_proxy_submod, attribute)
+            if isinstance(a, torch.nn.parameter.Parameter):
+                if attribute not in self._1f_proxy_parameters:
+                    a = flow.utils.tensor.from_torch(a.data)
+                    self._1f_proxy_parameters[attribute] = a
+                else:
+                    a = self._1f_proxy_parameters[attribute]
+            return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        replacement = replace_class(type(self.submod))
+        replacement = replace_class(type(self._1f_proxy_submod))
         print_types(args, kwargs)
         return replacement.forward(self, *args, **kwargs)
 
@@ -113,8 +125,6 @@ class OneFlowInterpreter(torch.fx.Interpreter):
     def call_module(self, target : 'Target', args : Tuple[Argument, ...], kwargs : Dict[str, Any]) -> Any:
         submod = self.fetch_attr(target)
         print(f"{type(submod)=}")
-        for name, param in submod.named_parameters():
-            print(name, param)
         submod = ProxySubmodule(submod)
         return submod(*args, **kwargs)
 
