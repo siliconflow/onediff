@@ -31,7 +31,8 @@ def replace_cls(obj):
             "torch.int64": flow.int64,
             "torch.uint8": flow.uint8,
         }[str(obj)]
-
+    if cls == torch.fx.immutable_collections.immutable_list:
+        return [e for e in obj]
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = globals()[mod_name]
