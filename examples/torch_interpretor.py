@@ -19,6 +19,12 @@ def add_op_from_torch(node):
 
 torch._dynamo.config.verbose=True
 
+def replace_class(cls):
+    if cls.__module__.startswith("torch"):
+        mod_name = cls.__module__.replace("torch", "oneflow")
+        mod = globals()[mod_name]
+        return getattr(mod, cls.__name__)
+
 def replace_obj(obj):
     cls = type(obj)
     if cls == torch.dtype:
@@ -33,11 +39,9 @@ def replace_obj(obj):
         }[str(obj)]
     if cls == torch.fx.immutable_collections.immutable_list:
         return [e for e in obj]
-    if cls.__module__.startswith("torch"):
-        mod_name = cls.__module__.replace("torch", "oneflow")
-        mod = globals()[mod_name]
-        cls = getattr(mod, cls.__name__)
-        return cls(str(obj))
+    replacement = replace_class(cls)
+    if replacement is not None:
+        return replacement(str(obj))
     else:
         return obj
 
