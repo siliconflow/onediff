@@ -1,3 +1,4 @@
+# HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
 from diffusers import StableDiffusionPipeline
 
 import torch
@@ -80,7 +81,8 @@ class ProxySubmodule:
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self.submod))
-        return replacement.__call__(self, *args, **kwargs)
+        print_types(args, kwargs)
+        return replacement.forward(self, *args, **kwargs)
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
