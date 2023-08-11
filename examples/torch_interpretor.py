@@ -1,6 +1,8 @@
 from diffusers import StableDiffusionPipeline
 
 import torch
+import oneflow
+
 from unet_torch_interplay import MockCtx
 pipe = StableDiffusionPipeline.from_pretrained(
     "CompVis/stable-diffusion-v1-4",
@@ -13,49 +15,52 @@ pipe = StableDiffusionPipeline.from_pretrained(
 def add_op_from_torch(node):
     getattr(oneflow, node["functioname"])(node.args)
 
-global num_graphs
-num_graphs = 0
+
 torch._dynamo.config.verbose=True
 
-def to_of_transform(
-    gm: torch.fx.GraphModule
-) -> torch.fx.GraphModule:
-    for node in gm.graph.nodes:
-        if not node.is_impure():
-            raise "Graph impure, can't convert to oneflow"
-        if node.op == "call_function":
-            if node.target in mapping_dict:
-                node.target = mapping_dict[node.target]
-            else:
-                raise NotImplementedError
-        elif node.op == "call_method":
-            if hasattr(torch.Tensor, node.target):
-                pass
-            else:
-                raise NotImplementedError
+def replace_cls(obj):
+    cls = type(obj)
+    if cls.__module__.startswith("torch"):
+        mod_name = cls.__module__.replace("torch", "oneflow").strip()
+        mod = globals()[mod_name]
+        cls = getattr(mod, cls.__name__)
+        return cls(str(obj))
+    else:
+        return obj
 
-    gm.graph.lint()
-    with MockCtx():
-        gm.recompile()
-    return gm
+class OneFlowInterpreter(torch.fx.Interpreter):
+    from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
+    from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+    def call_function(self, target : Target,
+                      args : Tuple, kwargs : Dict) -> Any:
+        if target == torch.sigmoid:
+            return torch.neg(*args, **kwargs)
+        return super().call_function(target, args, kwargs)
+
+    def call_method(self, target : Target,
+                    args : Tuple, kwargs : Dict) -> Any:
+        if target == 'neg':
+            call_self, *args_tail = args
+            return call_self.sigmoid(*args_tail, **kwargs)
+        print([type(a) for a in args], [type(v) for v in kwargs.values()])
+        args = [replace_cls(a) for a in args]
+        print("after")
+        print([str(a) for a in args])
+        print([type(a) for a in args], [type(v) for v in kwargs.values()])
+        print([(key, str(value)) for key, value in kwargs.items()])
+        return super().call_method(target, args, kwargs)
 
 def torchbackend(gm, example_inputs):
     import oneflow as flow
-    import torch_fx_to_oneflow
-    torch_fx_to_oneflow.to_of_transform(gm)
     # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
-    gm.print_readable()
-    # g = flow.NNGraph()
-    # for node in gm.graph.nodes:
-        # g.add_op_from_torch(node)
-        # Checks if we're calling a function (i.e:
-        # torch.add)
-        # if node.op == "call_function":
-        # print(node.op, node)
-    # g.compile()
-    global num_graphs
-    num_graphs += 1
-    return gm.forward
+    # gm.print_readable()
+    def wrapped_forward(*args, **kwargs):
+        import oneflow as flow
+        args = [flow.utils.tensor.from_torch(a) for a in args]
+        print([type(a) for a in args], [type(v) for v in kwargs.values()])
+        # with MockCtx():
+        return OneFlowInterpreter(gm).run(*args, **kwargs)
+    return wrapped_forward
 
 # print(pipe.unet.state_dict().keys())
 pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
@@ -66,6 +71,5 @@ pipe = pipe.to("cuda")
 prompt = "a photo of an astronaut riding a horse on mars"
 with torch.autocast("cuda"):
     images = pipe(prompt).images
-    print(f"{num_graphs=}")
     for i, image in enumerate(images):
         image.save(f"{prompt}-of-{i}.png")
