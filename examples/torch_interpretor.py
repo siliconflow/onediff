@@ -53,6 +53,10 @@ def replace_obj(obj):
         return obj
 
 def replace_func(func):
+    if func == torch.conv2d:
+        return oneflow.nn.functional.conv2d
+    if func == torch._C._nn.linear:
+        return oneflow.nn.functional.linear
     if func.__module__.startswith("torch"):
         mod_name = func.__module__.replace("torch", "oneflow")
         mod = globals()[mod_name]
