@@ -179,5 +179,9 @@ def torchbackend(gm, example_inputs):
         args = [flow.utils.tensor.from_torch(a) for a in args]
         print([type(a) for a in args], [type(v) for v in kwargs.values()])
         # with MockCtx():
-        return OneFlowInterpreter(gm, garbage_collect_values=False).run(*args, **kwargs)
+        output = OneFlowInterpreter(gm, garbage_collect_values=False).run(*args, **kwargs)
+        print(f"{type(output)=}")
+        if isinstance(output, tuple):
+          return tuple(flow.utils.tensor.to_torch(i) for i in output)
+        return flow.utils.tensor.to_torch(output)
     return wrapped_forward
