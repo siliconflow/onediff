@@ -5,7 +5,7 @@ import torch._dynamo
 # To force dynamo to capture attention
 # torch._dynamo.allow_in_graph = lambda x : x
 # torch._dynamo.allow_in_graph = torch._dynamo.disallow_in_graph
-# import diffusers
+import diffusers
 # import diffusers.models.attention_processor
 # diffusers.models.attention_processor.AttnProcessor2_0 = diffusers.models.attention_processor.AttnProcessor
 
@@ -19,6 +19,7 @@ import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import diffusers.utils.torch_utils
 from attention_1f import BasicTransformerBlock
+from attention_processor_1f import Attention
 
 diffusers.utils.torch_utils.maybe_allow_in_graph = lambda x : x
 
@@ -41,8 +42,10 @@ def replace_class(cls):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
-    if cls == diffusers.models.attention.BasicTransformerBlock:
+    elif cls == diffusers.models.attention.BasicTransformerBlock:
         return BasicTransformerBlock
+    elif cls == diffusers.models.attention_processor.Attention:
+        return Attention
 
 def replace_obj(obj):
     cls = type(obj)
@@ -96,11 +99,15 @@ class ProxySubmodule:
         print(f"{attrnames=}")
         self._1f_proxy_parameters = dict()
         self._1f_proxy_attrs = dict()
+        self._1f_proxy_children = dict()
 
     def __getattribute__(self, attribute):
         if attribute.startswith("_1f_proxy"):
             return object.__getattribute__(self, attribute)
         elif attribute in ["forward", "_conv_forward"]:
+            replacement = replace_class(type(self._1f_proxy_submod))
+            return lambda *args, **kwargs : getattr(replacement, attribute)(self, *args, **kwargs)
+        elif isinstance(self._1f_proxy_submod, diffusers.models.attention_processor.Attention) and attribute == "get_attention_scores":
             replacement = replace_class(type(self._1f_proxy_submod))
             return lambda *args, **kwargs : getattr(replacement, attribute)(self, *args, **kwargs)
         elif isinstance(self._1f_proxy_submod, torch.nn.Linear) and attribute == "use_fused_matmul_bias":
@@ -121,7 +128,13 @@ class ProxySubmodule:
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
-            assert type(a).__module__.startswith("torch") == False, "can't be a torch module at this point! But found " + str(type(a))
+            elif isinstance(a, torch.nn.Module):
+                if attribute not in self._1f_proxy_children:
+                    a = ProxySubmodule(a)
+                    self._1f_proxy_children[attribute] = a
+                else:
+                    a = self._1f_proxy_children[attribute]
+            assert type(a).__module__.startswith("torch") == False and type(a).__module__.startswith("diffusers") == False, "can't be a torch module at this point! But found " + str(type(a))
             print(f"{type(a)=}")
             if type(a) != oneflow.Tensor:
                 print(attribute, a)
@@ -135,6 +148,9 @@ class ProxySubmodule:
         else:
             return self._1f_proxy_submod(*args, **kwargs)
             # raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
+
+    def __getitem__(self, index):
+        return ProxySubmodule(self._1f_proxy_submod[index])
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate

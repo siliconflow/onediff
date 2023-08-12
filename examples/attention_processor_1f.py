@@ -324,7 +324,8 @@ class Attention(nn.Module):
         # The `Attention` class can call different attention processors / attention functions
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
-        return self.processor(
+        # TODO: fix this hack
+        return AttnProcessor()(
             self,
             hidden_states,
             encoder_hidden_states=encoder_hidden_states,
