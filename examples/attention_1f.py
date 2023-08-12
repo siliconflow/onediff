@@ -186,3 +186,188 @@ class BasicTransformerBlock(nn.Module):
         hidden_states = ff_output + hidden_states
 
         return hidden_states
+
+
+class FeedForward(nn.Module):
+    r"""
+    A feed-forward layer.
+
+    Parameters:
+        dim (`int`): The number of channels in the input.
+        dim_out (`int`, *optional*): The number of channels in the output. If not given, defaults to `dim`.
+        mult (`int`, *optional*, defaults to 4): The multiplier to use for the hidden dimension.
+        dropout (`float`, *optional*, defaults to 0.0): The dropout probability to use.
+        activation_fn (`str`, *optional*, defaults to `"geglu"`): Activation function to be used in feed-forward.
+        final_dropout (`bool` *optional*, defaults to False): Apply a final dropout.
+    """
+
+    def __init__(
+        self,
+        dim: int,
+        dim_out: Optional[int] = None,
+        mult: int = 4,
+        dropout: float = 0.0,
+        activation_fn: str = "geglu",
+        final_dropout: bool = False,
+    ):
+        super().__init__()
+        inner_dim = int(dim * mult)
+        dim_out = dim_out if dim_out is not None else dim
+
+        if activation_fn == "gelu":
+            act_fn = GELU(dim, inner_dim)
+        if activation_fn == "gelu-approximate":
+            act_fn = GELU(dim, inner_dim, approximate="tanh")
+        elif activation_fn == "geglu":
+            act_fn = GEGLU(dim, inner_dim)
+        elif activation_fn == "geglu-approximate":
+            act_fn = ApproximateGELU(dim, inner_dim)
+
+        self.net = nn.ModuleList([])
+        # project in
+        self.net.append(act_fn)
+        # project dropout
+        self.net.append(nn.Dropout(dropout))
+        # project out
+        self.net.append(LoRACompatibleLinear(inner_dim, dim_out))
+        # FF as used in Vision Transformer, MLP-Mixer, etc. have a final dropout
+        if final_dropout:
+            self.net.append(nn.Dropout(dropout))
+
+    def forward(self, hidden_states):
+        for module in self.net:
+            hidden_states = module(hidden_states)
+        return hidden_states
+
+
+class GELU(nn.Module):
+    r"""
+    GELU activation function with tanh approximation support with `approximate="tanh"`.
+    """
+
+    def __init__(self, dim_in: int, dim_out: int, approximate: str = "none"):
+        super().__init__()
+        self.proj = nn.Linear(dim_in, dim_out)
+        self.approximate = approximate
+
+    def gelu(self, gate):
+        if gate.device.type != "mps":
+            return F.gelu(gate, approximate=self.approximate)
+        # mps: gelu is not implemented for float16
+        return F.gelu(gate.to(dtype=torch.float32), approximate=self.approximate).to(dtype=gate.dtype)
+
+    def forward(self, hidden_states):
+        hidden_states = self.proj(hidden_states)
+        hidden_states = self.gelu(hidden_states)
+        return hidden_states
+
+
+class GEGLU(nn.Module):
+    r"""
+    A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
+
+    Parameters:
+        dim_in (`int`): The number of channels in the input.
+        dim_out (`int`): The number of channels in the output.
+    """
+
+    def __init__(self, dim_in: int, dim_out: int):
+        super().__init__()
+        self.proj = LoRACompatibleLinear(dim_in, dim_out * 2)
+
+    def gelu(self, gate):
+        if gate.device.type != "mps":
+            return F.gelu(gate)
+        # mps: gelu is not implemented for float16
+        return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
+
+    def forward(self, hidden_states):
+        hidden_states, gate = self.proj(hidden_states).chunk(2, dim=-1)
+        return hidden_states * self.gelu(gate)
+
+
+class ApproximateGELU(nn.Module):
+    """
+    The approximate form of Gaussian Error Linear Unit (GELU)
+
+    For more details, see section 2: https://arxiv.org/abs/1606.08415
+    """
+
+    def __init__(self, dim_in: int, dim_out: int):
+        super().__init__()
+        self.proj = nn.Linear(dim_in, dim_out)
+
+    def forward(self, x):
+        x = self.proj(x)
+        return x * torch.sigmoid(1.702 * x)
+
+
+class AdaLayerNorm(nn.Module):
+    """
+    Norm layer modified to incorporate timestep embeddings.
+    """
+
+    def __init__(self, embedding_dim, num_embeddings):
+        super().__init__()
+        self.emb = nn.Embedding(num_embeddings, embedding_dim)
+        self.silu = nn.SiLU()
+        self.linear = nn.Linear(embedding_dim, embedding_dim * 2)
+        self.norm = nn.LayerNorm(embedding_dim, elementwise_affine=False)
+
+    def forward(self, x, timestep):
+        emb = self.linear(self.silu(self.emb(timestep)))
+        scale, shift = torch.chunk(emb, 2)
+        x = self.norm(x) * (1 + scale) + shift
+        return x
+
+
+class AdaLayerNormZero(nn.Module):
+    """
+    Norm layer adaptive layer norm zero (adaLN-Zero).
+    """
+
+    def __init__(self, embedding_dim, num_embeddings):
+        super().__init__()
+
+        self.emb = CombinedTimestepLabelEmbeddings(num_embeddings, embedding_dim)
+
+        self.silu = nn.SiLU()
+        self.linear = nn.Linear(embedding_dim, 6 * embedding_dim, bias=True)
+        self.norm = nn.LayerNorm(embedding_dim, elementwise_affine=False, eps=1e-6)
+
+    def forward(self, x, timestep, class_labels, hidden_dtype=None):
+        emb = self.linear(self.silu(self.emb(timestep, class_labels, hidden_dtype=hidden_dtype)))
+        shift_msa, scale_msa, gate_msa, shift_mlp, scale_mlp, gate_mlp = emb.chunk(6, dim=1)
+        x = self.norm(x) * (1 + scale_msa[:, None]) + shift_msa[:, None]
+        return x, gate_msa, shift_mlp, scale_mlp, gate_mlp
+
+
+class AdaGroupNorm(nn.Module):
+    """
+    GroupNorm layer modified to incorporate timestep embeddings.
+    """
+
+    def __init__(
+        self, embedding_dim: int, out_dim: int, num_groups: int, act_fn: Optional[str] = None, eps: float = 1e-5
+    ):
+        super().__init__()
+        self.num_groups = num_groups
+        self.eps = eps
+
+        if act_fn is None:
+            self.act = None
+        else:
+            self.act = get_activation(act_fn)
+
+        self.linear = nn.Linear(embedding_dim, out_dim * 2)
+
+    def forward(self, x, emb):
+        if self.act:
+            emb = self.act(emb)
+        emb = self.linear(emb)
+        emb = emb[:, :, None, None]
+        scale, shift = emb.chunk(2, dim=1)
+
+        x = F.group_norm(x, self.num_groups, eps=self.eps)
+        x = x * (1 + scale) + shift
+        return x

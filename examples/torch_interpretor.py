@@ -20,7 +20,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import diffusers.utils.torch_utils
 from attention_1f import BasicTransformerBlock
 from attention_processor_1f import Attention
-from backend_1f import ProxySubmodule, OneFlowInterpreter
+from backend_1f import torchbackend
 
 diffusers.utils.torch_utils.maybe_allow_in_graph = lambda x : x
 
@@ -38,19 +38,6 @@ def add_op_from_torch(node):
 
 torch._dynamo.config.verbose=True
 
-def torchbackend(gm, example_inputs):
-    # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
-    # gm.print_readable()
-    def wrapped_forward(*args, **kwargs):
-        for fn in [diffusers.models.attention.BasicTransformerBlock]:
-            torch._dynamo.allowed_functions._allowed_function_ids.remove(id(fn))
-        # gmf = make_fx(functionalize(gm))(*args, **kwargs)
-        # gmf.print_readable()
-        args = [flow.utils.tensor.from_torch(a) for a in args]
-        print([type(a) for a in args], [type(v) for v in kwargs.values()])
-        # with MockCtx():
-        return OneFlowInterpreter(gm, garbage_collect_values=False).run(*args, **kwargs)
-    return wrapped_forward
 
 # print(pipe.unet.state_dict().keys())
 pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)

@@ -7,8 +7,9 @@ from torch.func import functionalize
 import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import diffusers.utils.torch_utils
-from attention_1f import BasicTransformerBlock
+from attention_1f import BasicTransformerBlock, FeedForward, GEGLU
 from attention_processor_1f import Attention
+from lora_1f import LoRACompatibleLinear
 
 def replace_class(cls):
     if cls.__module__.startswith("torch"):
@@ -19,6 +20,12 @@ def replace_class(cls):
         return BasicTransformerBlock
     elif cls == diffusers.models.attention_processor.Attention:
         return Attention
+    elif cls == diffusers.models.attention.FeedForward:
+        return FeedForward
+    elif cls == diffusers.models.attention.GEGLU:
+        return GEGLU
+    elif cls == diffusers.models.lora.LoRACompatibleLinear:
+        return LoRACompatibleLinear
 
 def replace_obj(obj):
     cls = type(obj)
@@ -101,6 +108,8 @@ class ProxySubmodule:
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
+            # elif isinstance(a, diffusers.models.attention.FeedForward):
+            #         a = torch.compile(a, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
             elif isinstance(a, torch.nn.ModuleList):
                 a = [ProxySubmodule(m) for m in a]
             elif isinstance(a, torch.nn.Module):
@@ -109,6 +118,7 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
+            # if not isinstance(a, torch._dynamo.eval_frame.OptimizedModule):
             assert type(a).__module__.startswith("torch") == False and type(a).__module__.startswith("diffusers") == False, "can't be a torch module at this point! But found " + str(type(a))
             print(f"{type(a)=}")
             if type(a) != oneflow.Tensor:
@@ -121,8 +131,8 @@ class ProxySubmodule:
         if replacement is not None:
             return replacement.__call__(self, *args, **kwargs)
         else:
-            return self._1f_proxy_submod(*args, **kwargs)
-            # raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
+            # return self._1f_proxy_submod(*args, **kwargs)
+            raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
@@ -155,3 +165,17 @@ class OneFlowInterpreter(torch.fx.Interpreter):
         print(f"{type(submod)=}")
         submod = ProxySubmodule(submod)
         return submod(*args, **kwargs)
+
+def torchbackend(gm, example_inputs):
+    # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
+    # gm.print_readable()
+    def wrapped_forward(*args, **kwargs):
+        for fn in [diffusers.models.attention.BasicTransformerBlock]:
+            torch._dynamo.allowed_functions._allowed_function_ids.remove(id(fn))
+        # gmf = make_fx(functionalize(gm))(*args, **kwargs)
+        # gmf.print_readable()
+        args = [flow.utils.tensor.from_torch(a) for a in args]
+        print([type(a) for a in args], [type(v) for v in kwargs.values()])
+        # with MockCtx():
+        return OneFlowInterpreter(gm, garbage_collect_values=False).run(*args, **kwargs)
+    return wrapped_forward

@@ -118,6 +118,6 @@ class LoRACompatibleLinear(nn.Linear):
 
     def forward(self, x):
         if self.lora_layer is None:
-            return self._1f_proxy_submod.forward(x)
+            return nn.Linear.forward(self, x)
         else:
             return super().forward(x) + self.lora_layer(x)
