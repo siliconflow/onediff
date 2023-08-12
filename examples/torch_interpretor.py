@@ -150,6 +150,7 @@ class ProxySubmodule:
             # raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
 
     def __getitem__(self, index):
+        assert isinstance(self._1f_proxy_submod, torch.nn.ModuleList)
         return ProxySubmodule(self._1f_proxy_submod[index])
 
 class OneFlowInterpreter(torch.fx.Interpreter):
