@@ -262,6 +262,12 @@ class GELU(nn.Module):
         return hidden_states
 
 
+def gelu(gate):
+    if gate.device.type != "mps":
+        return F.gelu(gate)
+    # mps: gelu is not implemented for float16
+    return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
+
 class GEGLU(nn.Module):
     r"""
     A variant of the gated linear unit activation function from https://arxiv.org/abs/2002.05202.
@@ -275,15 +281,9 @@ class GEGLU(nn.Module):
         super().__init__()
         self.proj = LoRACompatibleLinear(dim_in, dim_out * 2)
 
-    def gelu(self, gate):
-        if gate.device.type != "mps":
-            return F.gelu(gate)
-        # mps: gelu is not implemented for float16
-        return F.gelu(gate.to(dtype=torch.float32)).to(dtype=gate.dtype)
-
     def forward(self, hidden_states):
         hidden_states, gate = self.proj(hidden_states).chunk(2, dim=-1)
-        return hidden_states * self.gelu(gate)
+        return hidden_states * gelu(gate)
 
 
 class ApproximateGELU(nn.Module):
