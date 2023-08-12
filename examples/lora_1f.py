@@ -14,8 +14,8 @@
 
 from typing import Optional
 
-import torch.nn.functional as F
-from torch import nn
+import oneflow.nn.functional as F
+from oneflow import nn
 
 
 class LoRALinearLayer(nn.Module):
@@ -118,6 +118,6 @@ class LoRACompatibleLinear(nn.Linear):
 
     def forward(self, x):
         if self.lora_layer is None:
-            return super().forward(x)
+            return self._1f_proxy_submod.forward(x)
         else:
             return super().forward(x) + self.lora_layer(x)
