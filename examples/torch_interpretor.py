@@ -18,6 +18,7 @@ from torch.func import functionalize
 import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import diffusers.utils.torch_utils
+from attention_1f import BasicTransformerBlock
 
 diffusers.utils.torch_utils.maybe_allow_in_graph = lambda x : x
 
@@ -40,6 +41,8 @@ def replace_class(cls):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
+    if cls == diffusers.models.attention.BasicTransformerBlock:
+        return BasicTransformerBlock
 
 def replace_obj(obj):
     cls = type(obj)
