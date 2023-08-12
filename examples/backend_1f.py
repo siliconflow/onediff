@@ -101,6 +101,8 @@ class ProxySubmodule:
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
+            elif isinstance(a, torch.nn.ModuleList):
+                a = [ProxySubmodule(m) for m in a]
             elif isinstance(a, torch.nn.Module):
                 if attribute not in self._1f_proxy_children:
                     a = ProxySubmodule(a)
@@ -121,10 +123,6 @@ class ProxySubmodule:
         else:
             return self._1f_proxy_submod(*args, **kwargs)
             # raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
-
-    def __getitem__(self, index):
-        assert isinstance(self._1f_proxy_submod, torch.nn.ModuleList)
-        return ProxySubmodule(self._1f_proxy_submod[index])
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
