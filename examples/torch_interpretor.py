@@ -121,7 +121,7 @@ class ProxySubmodule:
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
-            assert type(a).__module__.startswith("torch") == False
+            assert type(a).__module__.startswith("torch") == False, "can't be a torch module at this point! But found " + str(type(a))
             print(f"{type(a)=}")
             if type(a) != oneflow.Tensor:
                 print(attribute, a)
