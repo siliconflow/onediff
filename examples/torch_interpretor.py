@@ -1,7 +1,16 @@
 # HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
+import torch
+import torch._dynamo
+
+# To force dynamo to capture attention
+# torch._dynamo.allow_in_graph = lambda x : x
+# torch._dynamo.allow_in_graph = torch._dynamo.disallow_in_graph
+# import diffusers
+# import diffusers.models.attention_processor
+# diffusers.models.attention_processor.AttnProcessor2_0 = diffusers.models.attention_processor.AttnProcessor
+
 from diffusers import StableDiffusionPipeline
 import os
-import torch
 import oneflow
 import oneflow as flow
 from torch.fx.experimental.proxy_tensor import make_fx
@@ -160,7 +169,10 @@ def torchbackend(gm, example_inputs):
     # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
     # gm.print_readable()
     def wrapped_forward(*args, **kwargs):
+        for fn in [diffusers.models.attention.BasicTransformerBlock]:
+            torch._dynamo.allowed_functions._allowed_function_ids.remove(id(fn))
         # gmf = make_fx(functionalize(gm))(*args, **kwargs)
+        # gmf.print_readable()
         args = [flow.utils.tensor.from_torch(a) for a in args]
         print([type(a) for a in args], [type(v) for v in kwargs.values()])
         # with MockCtx():
