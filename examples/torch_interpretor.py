@@ -4,8 +4,13 @@ import os
 import torch
 import oneflow
 import oneflow as flow
+from torch.fx.experimental.proxy_tensor import make_fx
+from torch.func import functionalize
 import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
+import diffusers.utils.torch_utils
+
+diffusers.utils.torch_utils.maybe_allow_in_graph = lambda x : x
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "CompVis/stable-diffusion-v1-4",
@@ -116,7 +121,8 @@ class ProxySubmodule:
         if replacement is not None:
             return replacement.__call__(self, *args, **kwargs)
         else:
-            raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
+            return self._1f_proxy_submod(*args, **kwargs)
+            # raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
@@ -151,11 +157,10 @@ class OneFlowInterpreter(torch.fx.Interpreter):
         return submod(*args, **kwargs)
 
 def torchbackend(gm, example_inputs):
-    import oneflow as flow
     # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
     # gm.print_readable()
     def wrapped_forward(*args, **kwargs):
-        import oneflow as flow
+        # gmf = make_fx(functionalize(gm))(*args, **kwargs)
         args = [flow.utils.tensor.from_torch(a) for a in args]
         print([type(a) for a in args], [type(v) for v in kwargs.values()])
         # with MockCtx():
