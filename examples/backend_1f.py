@@ -57,9 +57,11 @@ def replace_func(func):
         return oneflow.nn.functional.conv2d
     if func == torch._C._nn.linear:
         return oneflow.nn.functional.linear
+    # if func == torch.nn.functional.interpolate:
+      # return oneflow.nn.modules.interpolate
     if func.__module__.startswith("torch"):
         mod_name = func.__module__.replace("torch", "oneflow")
-        mod = globals()[mod_name]
+        mod = importlib.import_module(mod_name)
         return getattr(mod, func.__name__)
     else:
         return func
