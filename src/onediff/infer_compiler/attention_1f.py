@@ -6,7 +6,7 @@ import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
 
-from attention_processor_1f import Attention
+from .attention_processor_1f import Attention
 
 class BasicTransformerBlock(nn.Module):
     r"""

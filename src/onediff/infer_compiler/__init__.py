@@ -6,10 +6,9 @@ from torch.fx.experimental.proxy_tensor import make_fx
 from torch.func import functionalize
 import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
-import diffusers.utils.torch_utils
-from attention_1f import BasicTransformerBlock, FeedForward, GEGLU
-from attention_processor_1f import Attention
-from lora_1f import LoRACompatibleLinear
+from .attention_1f import BasicTransformerBlock, FeedForward, GEGLU
+from .attention_processor_1f import Attention
+from .lora_1f import LoRACompatibleLinear
 
 def replace_class(cls):
     if cls.__module__.startswith("torch"):

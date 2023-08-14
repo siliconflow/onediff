@@ -18,9 +18,7 @@ from torch.func import functionalize
 import importlib
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 import diffusers.utils.torch_utils
-from attention_1f import BasicTransformerBlock
-from attention_processor_1f import Attention
-from backend_1f import torchbackend
+from onediff.infer_compiler import torchbackend
 
 diffusers.utils.torch_utils.maybe_allow_in_graph = lambda x : x
 
