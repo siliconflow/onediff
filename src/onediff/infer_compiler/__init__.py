@@ -1,5 +1,6 @@
 import os
 import torch
+import diffusers
 import oneflow
 import oneflow as flow
 from torch.fx.experimental.proxy_tensor import make_fx
