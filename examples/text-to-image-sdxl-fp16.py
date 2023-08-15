@@ -7,7 +7,7 @@ from onediff.infer_compiler import torchbackend
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--model", type=str, default="/ssd/home/chenhoujiang/stable-diffusion-xl-base-1.0"
+    "--model", type=str, default="/share_nfs/hf_models/stable-diffusion-xl-base-1.0"
 )
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
@@ -15,7 +15,7 @@ parser.add_argument(
     type=str,
     default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
 )
-parser.add_argument("--saved_image", type=str, required=True)
+parser.add_argument("--saved_image", type=str, required=False, default="xl-base-out.png")
 parser.add_argument("--seed", type=int, default=1)
 args = parser.parse_args()
 
