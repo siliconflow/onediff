@@ -1,23 +1,6 @@
 # HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
 import torch
-import torch._dynamo
-
-# To force dynamo to capture attention
-# torch._dynamo.allow_in_graph = lambda x : x
-# torch._dynamo.allow_in_graph = torch._dynamo.disallow_in_graph
-import diffusers
-# import diffusers.models.attention_processor
-# diffusers.models.attention_processor.AttnProcessor2_0 = diffusers.models.attention_processor.AttnProcessor
-
 from diffusers import StableDiffusionPipeline
-import os
-import oneflow
-import oneflow as flow
-from torch.fx.experimental.proxy_tensor import make_fx
-from torch.func import functionalize
-import importlib
-from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
-import diffusers.utils.torch_utils
 from onediff.infer_compiler import torchbackend
 
 pipe = StableDiffusionPipeline.from_pretrained(
