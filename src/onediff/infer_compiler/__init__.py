@@ -111,7 +111,6 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
-            # if not isinstance(a, torch._dynamo.eval_frame.OptimizedModule):
             assert type(a).__module__.startswith("torch") == False and type(a).__module__.startswith("diffusers") == False, "can't be a torch module at this point! But found " + str(type(a))
             return a
 
