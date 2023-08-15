@@ -118,7 +118,6 @@ class ProxySubmodule:
         if replacement is not None:
             return replacement.__call__(self, *args, **kwargs)
         else:
-            # return self._1f_proxy_submod(*args, **kwargs)
             raise RuntimeError("can't find oneflow module for: " + str(type(self._1f_proxy_submod)))
 
 class OneFlowInterpreter(torch.fx.Interpreter):
