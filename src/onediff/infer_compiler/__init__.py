@@ -163,9 +163,6 @@ class OneFlowInterpreter(torch.fx.Interpreter):
         return super().call_function(target, args, kwargs)
 
     def call_method(self, target: Target, args: Tuple, kwargs: Dict) -> Any:
-        if target == "neg":
-            call_self, *args_tail = args
-            return call_self.sigmoid(*args_tail, **kwargs)
         args, kwargs = map_args(args, kwargs)
         return super().call_method(target, args, kwargs)
 
