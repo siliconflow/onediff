@@ -152,9 +152,6 @@ class ProxySubmodule:
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
 
-    def run_node(self, n: Node) -> Any:
-        return super().run_node(n)
-
     def call_function(self, target: Target, args: Tuple, kwargs: Dict) -> Any:
         if target == torch.sigmoid:
             return torch.neg(*args, **kwargs)

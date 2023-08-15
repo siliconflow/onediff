@@ -18,7 +18,5 @@ with torch.autocast("cuda"):
     images = pipe(prompt).images
     images = pipe(prompt).images
     images = pipe(prompt).images
-    images = pipe(prompt).images
-    images = pipe(prompt).images
     for i, image in enumerate(images):
         image.save(f"{prompt}-of-{i}.png")
