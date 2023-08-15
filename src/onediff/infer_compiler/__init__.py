@@ -73,7 +73,6 @@ class ProxySubmodule:
     def __init__(self, submod):
         self._1f_proxy_submod = submod
         self._1f_proxy_parameters = dict()
-        self._1f_proxy_attrs = dict()
         self._1f_proxy_children = dict()
 
     def __getattribute__(self, attribute):
