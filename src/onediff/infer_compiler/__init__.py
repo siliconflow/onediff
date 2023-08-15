@@ -57,8 +57,6 @@ def replace_func(func):
         return oneflow.nn.functional.conv2d
     if func == torch._C._nn.linear:
         return oneflow.nn.functional.linear
-    # if func == torch.nn.functional.interpolate:
-      # return oneflow.nn.modules.interpolate
     if func.__module__.startswith("torch"):
         mod_name = func.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
@@ -71,14 +69,9 @@ def map_args(args, kwargs):
     kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
     return (args, kwargs)
 
-def print_types(args, kwargs):
-    print([type(a) for a in args], [type(v) for v in kwargs.values()])
-
 class ProxySubmodule:
     def __init__(self, submod):
         self._1f_proxy_submod = submod
-        attrnames = [k for k in submod.__dict__.keys() if not k.startswith("_")]
-        print(f"{attrnames=}")
         self._1f_proxy_parameters = dict()
         self._1f_proxy_attrs = dict()
         self._1f_proxy_children = dict()
@@ -110,8 +103,6 @@ class ProxySubmodule:
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
-            # elif isinstance(a, diffusers.models.attention.FeedForward):
-            #         a = torch.compile(a, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
             elif isinstance(a, torch.nn.ModuleList):
                 a = [ProxySubmodule(m) for m in a]
             elif isinstance(a, torch.nn.Module):
@@ -122,14 +113,10 @@ class ProxySubmodule:
                     a = self._1f_proxy_children[attribute]
             # if not isinstance(a, torch._dynamo.eval_frame.OptimizedModule):
             assert type(a).__module__.startswith("torch") == False and type(a).__module__.startswith("diffusers") == False, "can't be a torch module at this point! But found " + str(type(a))
-            print(f"{type(a)=}")
-            if type(a) != oneflow.Tensor:
-                print(attribute, a)
             return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))
-        print_types(args, kwargs)
         if replacement is not None:
             return replacement.__call__(self, *args, **kwargs)
         else:
@@ -140,16 +127,13 @@ class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Node, Target, map_arg, map_aggregate
 
     def run_node(self, n : Node) -> Any:
-        print("\nrun", n)
         return super().run_node(n)
 
     def call_function(self, target : Target,
                       args : Tuple, kwargs : Dict) -> Any:
         if target == torch.sigmoid:
             return torch.neg(*args, **kwargs)
-        print_types(args, kwargs)
         args, kwargs = map_args(args, kwargs)
-        print_types(args, kwargs)
         target = replace_func(target)
         return super().call_function(target, args, kwargs)
 
@@ -159,28 +143,17 @@ class OneFlowInterpreter(torch.fx.Interpreter):
             call_self, *args_tail = args
             return call_self.sigmoid(*args_tail, **kwargs)
         args, kwargs = map_args(args, kwargs)
-        print_types(args, kwargs)
         return super().call_method(target, args, kwargs)
 
     def call_module(self, target : 'Target', args : Tuple[Argument, ...], kwargs : Dict[str, Any]) -> Any:
         submod = self.fetch_attr(target)
-        print(f"{type(submod)=}")
         submod = ProxySubmodule(submod)
         return submod(*args, **kwargs)
 
 def torchbackend(gm, example_inputs):
-    # TODO: when initialzing oneflow variables, find them in the state dict and reuse them using dlpack
-    # gm.print_readable()
     def wrapped_forward(*args, **kwargs):
-        for fn in [diffusers.models.attention.BasicTransformerBlock]:
-            torch._dynamo.allowed_functions._allowed_function_ids.remove(id(fn))
-        # gmf = make_fx(functionalize(gm))(*args, **kwargs)
-        # gmf.print_readable()
         args = [flow.utils.tensor.from_torch(a) for a in args]
-        print([type(a) for a in args], [type(v) for v in kwargs.values()])
-        # with MockCtx():
         output = OneFlowInterpreter(gm, garbage_collect_values=False).run(*args, **kwargs)
-        print(f"{type(output)=}")
         if isinstance(output, tuple):
           return tuple(flow.utils.tensor.to_torch(i) for i in output)
         return flow.utils.tensor.to_torch(output)
