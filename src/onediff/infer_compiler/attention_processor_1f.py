@@ -324,8 +324,8 @@ class Attention(nn.Module):
         # The `Attention` class can call different attention processors / attention functions
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
-        # TODO(oneflow): fix this hack
-        # return self.processor(
+        if type(self._1f_proxy_submod.processor).__name__ not in ["AttnProcessor", "AttnProcessor2_0"]:
+            raise "TODO(oneflow): fix this hack"
         return AttnProcessor()(
             self,
             hidden_states,
