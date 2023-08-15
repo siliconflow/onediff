@@ -119,7 +119,7 @@ class ProxySubmodule:
         else:
             a = getattr(self._1f_proxy_submod, attribute)
             if isinstance(a, torch.nn.parameter.Parameter):
-                # TODO: assert a.requires_grad == False
+                # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
                     a = flow.utils.tensor.from_torch(a.data)
                     self._1f_proxy_parameters[attribute] = a
