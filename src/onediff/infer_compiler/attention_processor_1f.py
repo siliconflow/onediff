@@ -325,6 +325,7 @@ class Attention(nn.Module):
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
         # TODO(oneflow): fix this hack
+        # return self.processor(
         return AttnProcessor()(
             self,
             hidden_states,
