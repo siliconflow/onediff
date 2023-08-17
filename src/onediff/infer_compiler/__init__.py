@@ -74,6 +74,50 @@ def map_args(args, kwargs):
     return (args, kwargs)
 
 
+def replace_module(mod):
+    mod_1f = None
+    # only need to replace top level module
+    if type(mod) == diffusers.models.attention_processor.Attention:
+        cross_attention_norm = None
+        if type(mod.norm_cross) == torch.nn.LayerNorm:
+            cross_attention_norm = "layer_norm"
+        elif type(mod.norm_cross) == torch.nn.GroupNorm:
+            cross_attention_norm = "group_norm"
+        mod_1f = Attention(
+            mod.to_q.in_features, # query_dim
+            cross_attention_dim=mod.to_k.in_features if mod.to_k else None,
+            heads=mod.heads,
+            dim_head=mod.to_q.out_features / mod.heads,
+            dropout=mod.dropout,
+            bias=False,
+            upcast_attention=mod.upcast_attention,
+            upcast_softmax=mod.upcast_softmax,
+            cross_attention_norm=cross_attention_norm,
+            cross_attention_norm_num_groups=mod.norm_cross.num_groups.num_groups if type(mod.norm_cross) == torch.nn.GroupNorm else 32,
+            added_kv_proj_dim=mod.added_kv_proj_dim,
+            norm_num_groups=mod.group_norm.num_groups.num_groups if mod.group_norm is not None else None,
+            spatial_norm_dim=mod.spatial_norm_dim,
+            out_bias=mod.out_bias,
+            scale_qk=mod.scale_qk,
+            only_cross_attention=mod.only_cross_attention,
+            eps=mod.eps,
+            rescale_output_factor=mod.rescale_output_factor,
+            residual_connection=mod.residual_connection,
+            _from_deprecated_attn_block=mod._from_deprecated_attn_block,
+            processor=None, # TODO(oneflow): support other processor
+        )
+    if type(mod) == torch.nn.modules.linear.Linear:
+        mod_1f = flow.nn.Linear(
+            mod.in_features,
+            mod.out_features,
+            bias=mod.bias,
+            device=mod.device,
+            dtype=mod.dtype)
+    if mod_1f is not None:
+        mod_1f.to("cuda")
+    return mod_1f
+
+_unique_modules = set()
 class ProxySubmodule:
     def __init__(self, submod):
         self._1f_proxy_submod = submod
@@ -128,6 +172,9 @@ class ProxySubmodule:
             elif isinstance(a, torch.nn.ModuleList):
                 a = [ProxySubmodule(m) for m in a]
             elif isinstance(a, torch.nn.Module):
+                print(replace_module(a))
+                global _unique_modules
+                _unique_modules.add(type(a))
                 if attribute not in self._1f_proxy_children:
                     a = ProxySubmodule(a)
                     self._1f_proxy_children[attribute] = a
@@ -177,6 +224,9 @@ def torchbackend(gm, example_inputs):
         output = OneFlowInterpreter(gm, garbage_collect_values=False).run(
             *args, **kwargs
         )
+        global _unique_modules
+        for a in _unique_modules:
+            print(f"{a}=")
         if isinstance(output, tuple):
             return tuple(flow.utils.tensor.to_torch(i) for i in output)
         return flow.utils.tensor.to_torch(output)
