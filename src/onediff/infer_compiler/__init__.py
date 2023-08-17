@@ -87,7 +87,7 @@ def replace_module(mod):
             mod.to_q.in_features, # query_dim
             cross_attention_dim=mod.to_k.in_features if mod.to_k else None,
             heads=mod.heads,
-            dim_head=mod.to_q.out_features / mod.heads,
+            dim_head=mod.to_q.out_features // mod.heads,
             dropout=mod.dropout,
             bias=False,
             upcast_attention=mod.upcast_attention,
@@ -107,14 +107,12 @@ def replace_module(mod):
             processor=None, # TODO(oneflow): support other processor
         )
     if type(mod) == torch.nn.modules.linear.Linear:
-        print("f{replace_obj(mod.device)=")
-        print("f{replace_obj(mod.dtype)=")
         mod_1f = flow.nn.Linear(
             mod.in_features,
             mod.out_features,
             bias=mod.bias is not None,
-            device=replace_obj(mod.device),
-            dtype=replace_obj(mod.dtype))
+            device=replace_obj(mod.weight.device),
+            dtype=replace_obj(mod.weight.dtype))
     if mod_1f is not None:
         mod_1f.to("cuda")
     return mod_1f
