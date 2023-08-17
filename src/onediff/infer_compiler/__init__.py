@@ -93,26 +93,28 @@ def replace_module(mod):
             upcast_attention=mod.upcast_attention,
             upcast_softmax=mod.upcast_softmax,
             cross_attention_norm=cross_attention_norm,
-            cross_attention_norm_num_groups=mod.norm_cross.num_groups.num_groups if type(mod.norm_cross) == torch.nn.GroupNorm else 32,
+            cross_attention_norm_num_groups=mod.norm_cross.num_groups if type(mod.norm_cross) == torch.nn.GroupNorm else 32,
             added_kv_proj_dim=mod.added_kv_proj_dim,
-            norm_num_groups=mod.group_norm.num_groups.num_groups if mod.group_norm is not None else None,
-            spatial_norm_dim=mod.spatial_norm_dim,
-            out_bias=mod.out_bias,
+            norm_num_groups=mod.group_norm.num_groups if mod.group_norm is not None else None,
+            spatial_norm_dim=mod.spatial_norm.zq_channels if mod.spatial_norm is not None else None,
+            out_bias=mod.to_out[0].bias is not None,
             scale_qk=mod.scale_qk,
             only_cross_attention=mod.only_cross_attention,
-            eps=mod.eps,
+            eps=mod.group_norm.eps if mod.group_norm is not None else 1e-5,
             rescale_output_factor=mod.rescale_output_factor,
             residual_connection=mod.residual_connection,
             _from_deprecated_attn_block=mod._from_deprecated_attn_block,
             processor=None, # TODO(oneflow): support other processor
         )
     if type(mod) == torch.nn.modules.linear.Linear:
+        print("f{replace_obj(mod.device)=")
+        print("f{replace_obj(mod.dtype)=")
         mod_1f = flow.nn.Linear(
             mod.in_features,
             mod.out_features,
-            bias=mod.bias,
-            device=mod.device,
-            dtype=mod.dtype)
+            bias=mod.bias is not None,
+            device=replace_obj(mod.device),
+            dtype=replace_obj(mod.dtype))
     if mod_1f is not None:
         mod_1f.to("cuda")
     return mod_1f
