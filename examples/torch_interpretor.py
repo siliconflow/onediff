@@ -1,4 +1,5 @@
 # HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
+import os
 import torch
 from diffusers import StableDiffusionPipeline
 from onediff.infer_compiler import torchbackend
@@ -10,6 +11,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
     torch_dtype=torch.float16,
 )
 
+os.environ["with_interp"] = "0"
 pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
 pipe = pipe.to("cuda")
 
