@@ -106,7 +106,25 @@ def replace_module(mod):
             _from_deprecated_attn_block=mod._from_deprecated_attn_block,
             processor=None, # TODO(oneflow): support other processor
         )
-    if type(mod) == torch.nn.modules.linear.Linear:
+    if type(mod) == diffusers.models.attention.FeedForward:
+        mod_1f = FeedForward(
+            mod.net[0].proj.in_features,
+            mod.dim_out,
+            mod.mult,
+            mod.dropout,
+            mod.activation_fn,
+            mod.final_dropout
+        )
+    if type(mod) == torch.nn.modules.normalization.LayerNorm:
+        mod_1f = flow.nn.modules.normalization.LayerNorm(
+            mod.normalized_shape,
+            eps=mod.eps,
+            elementwise_affine=mod.elementwise_affine
+        )
+    is_lora = type(mod) == diffusers.models.lora.LoRACompatibleLinear
+    if type(mod) == torch.nn.modules.linear.Linear or is_lora:
+        if is_lora:
+            assert mod.lora_layer == None
         mod_1f = flow.nn.Linear(
             mod.in_features,
             mod.out_features,
@@ -172,9 +190,10 @@ class ProxySubmodule:
             elif isinstance(a, torch.nn.ModuleList):
                 a = [ProxySubmodule(m) for m in a]
             elif isinstance(a, torch.nn.Module):
-                print(replace_module(a))
-                global _unique_modules
-                _unique_modules.add(type(a))
+                r = replace_module(a)
+                if r == None:
+                    global _unique_modules
+                    _unique_modules.add(type(a))
                 if attribute not in self._1f_proxy_children:
                     a = ProxySubmodule(a)
                     self._1f_proxy_children[attribute] = a
