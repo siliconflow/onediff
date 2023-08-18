@@ -17,8 +17,7 @@ pipe = pipe.to("cuda")
 
 prompt = "a photo of an astronaut riding a horse on mars"
 with torch.autocast("cuda"):
-    images = pipe(prompt).images
-    images = pipe(prompt).images
-    images = pipe(prompt).images
-    for i, image in enumerate(images):
-        image.save(f"{prompt}-of-{i}.png")
+    for i in range(3):
+        images = pipe(prompt).images
+        for j, image in enumerate(images):
+            image.save(f'{prompt}-of-{i}-{j}.png')

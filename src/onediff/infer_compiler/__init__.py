@@ -178,7 +178,6 @@ def torchbackend(gm, example_inputs):
         "1",
         "t",
     )
-    print("spt========== beforetrans")
     def wrapped_forward(*args, **kwargs):
         args = [flow.utils.tensor.from_torch(a) for a in args]
         if with_interp:
@@ -187,7 +186,6 @@ def torchbackend(gm, example_inputs):
             )
         else:
             transformed_fn = fx_node_tranform(gm)
-            import pdb; pdb.set_trace()
             output = transformed_fn(*args, **kwargs)
         if isinstance(output, tuple):
             return tuple(flow.utils.tensor.to_torch(i) for i in output)
@@ -196,8 +194,8 @@ def torchbackend(gm, example_inputs):
     return wrapped_forward
 
 def fx_node_tranform(gm):
+    print("==> gm node transform")
     of_gm = to_of_transform(gm)
-    import pdb; pdb.set_trace()
 
     enable_graph = os.getenv("enable_graph", "False").lower() in (
         "true",
@@ -232,7 +230,6 @@ def to_of_transform(
     of_g = flow.fx.Graph()
     modules = dict(gm.named_modules())
     for node in gm.graph.nodes:
-        print("old: ", node.format_node())
         if node.op == "placeholder":
             of_node = of_g.create_node('placeholder', node.target)
             name2node[node.name] = of_node
@@ -256,12 +253,7 @@ def to_of_transform(
             name2obj[node.target] = _get_attr(gm, node, torch2flow)
         else:
             raise ValueError(f"not valid node type{node.foramt_node()}")
-        print("new: ", of_node.format_node())
 
-    print("\n new of graph", of_g.print_tabular())
-    for of_node in of_g.nodes:
-        print(of_node.format_node())
-    
     of_gm = flow.fx.GraphModule(name2obj, of_g)
     of_gm.graph.lint()
     of_gm.recompile()
@@ -277,79 +269,6 @@ def replace_node(node, name2node):
 def node_replace_args(args, name2node):
     return map_aggregate(args, lambda node: replace_node(node, name2node))
 
-class NodeProxySubmodule:
-    def __init__(self, submod):
-        self._1f_proxy_submod = submod
-        self._1f_proxy_parameters = dict()
-        self._1f_proxy_children = dict()
-
-    def __getattribute__(self, attribute):
-        if attribute.startswith("_1f_proxy"):
-            return object.__getattribute__(self, attribute)
-        elif attribute in ["forward", "_conv_forward"]:
-            replacement = replace_class(type(self._1f_proxy_submod))
-            return lambda *args, **kwargs: getattr(replacement, attribute)(
-                self, *args, **kwargs
-            )
-        elif (
-            isinstance(
-                self._1f_proxy_submod, diffusers.models.attention_processor.Attention
-            )
-            and attribute == "get_attention_scores"
-        ):
-            replacement = replace_class(type(self._1f_proxy_submod))
-            return lambda *args, **kwargs: getattr(replacement, attribute)(
-                self, *args, **kwargs
-            )
-        elif (
-            isinstance(self._1f_proxy_submod, torch.nn.Linear)
-            and attribute == "use_fused_matmul_bias"
-        ):
-            return (
-                self.bias is not None
-                and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
-            )
-        elif (
-            isinstance(self._1f_proxy_submod, torch.nn.Dropout)
-            and attribute == "generator"
-        ):
-            return flow.Generator()
-        elif (
-            isinstance(self._1f_proxy_submod, torch.nn.Conv2d)
-            and attribute == "channel_pos"
-        ):
-            return "channels_first"
-        else:
-            a = getattr(self._1f_proxy_submod, attribute)
-            if isinstance(a, torch.nn.parameter.Parameter):
-                # TODO(oneflow): assert a.requires_grad == False
-                if attribute not in self._1f_proxy_parameters:
-                    a = flow.utils.tensor.from_torch(a.data)
-                    self._1f_proxy_parameters[attribute] = a
-                else:
-                    a = self._1f_proxy_parameters[attribute]
-            elif isinstance(a, torch.nn.ModuleList):
-                a = [NodeProxySubmodule(m) for m in a]
-            elif isinstance(a, torch.nn.Module):
-                if attribute not in self._1f_proxy_children:
-                    a = NodeProxySubmodule(a)
-                    self._1f_proxy_children[attribute] = a
-                else:
-                    a = self._1f_proxy_children[attribute]
-            assert (
-                type(a).__module__.startswith("torch") == False
-                and type(a).__module__.startswith("diffusers") == False
-            ), "can't be a torch module at this point! But found " + str(type(a))
-            return a
-
-    def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        replacement = replace_class(type(self._1f_proxy_submod))
-        if replacement is not None:
-            return replacement.__call__(self, *args, **kwargs)
-        else:
-            raise RuntimeError(
-                "can't find oneflow module for: " + str(type(self._1f_proxy_submod))
-            )
 
 def _get_module_list(origin_mod, torch2flow):
     assert isinstance(origin_mod, torch.nn.ModuleList)
@@ -369,7 +288,7 @@ def _get_module(origin_mod, torch2flow):
     if isinstance(origin_mod, torch.nn.ModuleList):
         return _get_module_list(origin_mod, torch2flow)
 
-    proxy_md = NodeProxySubmodule(origin_mod)
+    proxy_md = ProxySubmodule(origin_mod)
     new_md_cls = replace_class(type(origin_mod))
 
     def init(self):
