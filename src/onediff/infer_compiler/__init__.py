@@ -6,7 +6,7 @@ from .with_fx_graph import fx_node_tranform
 
 
 def torchbackend(gm, example_inputs):
-    with_interp = os.getenv("with_interp", "True").lower() in (
+    with_interp = os.getenv("with_interp", "False").lower() in (
         "true",
         "1",
         "t",
