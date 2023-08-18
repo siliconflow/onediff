@@ -112,7 +112,6 @@ def _get_module(origin_mod, torch2flow):
         for (n, b) in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for (n, m) in proxy_md._modules.items():
-            # TODO
             self._modules[n] = _get_module(m, torch2flow)
     
     def proxy_getattr(self, attr):
