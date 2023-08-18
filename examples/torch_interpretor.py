@@ -12,6 +12,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
 )
 
 os.environ["with_interp"] = "0"
+os.environ["with_graph"] = "1"
 pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
 pipe = pipe.to("cuda")
 

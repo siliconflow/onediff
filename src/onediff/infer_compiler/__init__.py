@@ -178,14 +178,17 @@ def torchbackend(gm, example_inputs):
         "1",
         "t",
     )
+    if not with_interp:
+        transformed_fn = fx_node_tranform(gm)
+
     def wrapped_forward(*args, **kwargs):
+        print("==> id of gm", id(gm))
         args = [flow.utils.tensor.from_torch(a) for a in args]
         if with_interp:
             output = OneFlowInterpreter(gm, garbage_collect_values=False).run(
                 *args, **kwargs
             )
         else:
-            transformed_fn = fx_node_tranform(gm)
             output = transformed_fn(*args, **kwargs)
         if isinstance(output, tuple):
             return tuple(flow.utils.tensor.to_torch(i) for i in output)
@@ -197,7 +200,7 @@ def fx_node_tranform(gm):
     print("==> gm node transform")
     of_gm = to_of_transform(gm)
 
-    enable_graph = os.getenv("enable_graph", "False").lower() in (
+    enable_graph = os.getenv("with_graph", "False").lower() in (
         "true",
         "1",
         "t",
