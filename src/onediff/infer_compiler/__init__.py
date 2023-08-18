@@ -12,6 +12,14 @@ from .attention_processor_1f import Attention
 from .lora_1f import LoRACompatibleLinear
 
 
+_is_diffusers_quant_available = False
+try:
+    import diffusers_quant
+    _is_diffusers_quant_available = True
+except:
+    pass
+
+
 def replace_class(cls):
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
@@ -27,6 +35,14 @@ def replace_class(cls):
         return GEGLU
     elif cls == diffusers.models.lora.LoRACompatibleLinear:
         return LoRACompatibleLinear
+
+    if _is_diffusers_quant_available:
+        if cls == diffusers_quant.FakeQuantModule:
+            return diffusers_quant.OneFlowFakeQuantModule
+        if cls == diffusers_quant.StaticQuantModule:
+            return diffusers_quant.OneFlowStaticQuantModule
+        if cls == diffusers_quant.DynamicQuantModule:
+            return diffusers_quant.OneFlowDynamicQuantModule
 
 
 def replace_obj(obj):
@@ -118,7 +134,9 @@ class ProxySubmodule:
             return "channels_first"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
-            if isinstance(a, torch.nn.parameter.Parameter):
+            if isinstance(a, torch.Tensor):
+                a = flow.utils.tensor.from_torch(a.data)
+            elif isinstance(a, torch.nn.parameter.Parameter):
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
                     a = flow.utils.tensor.from_torch(a.data)
