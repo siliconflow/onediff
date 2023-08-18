@@ -113,6 +113,14 @@ def _get_module(origin_mod, torch2flow):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for (n, m) in proxy_md._modules.items():
             self._modules[n] = _get_module(m, torch2flow)
+        
+        for k, v in proxy_md.__dict__.items():
+            if k not in self.__dict__:
+                try:
+                    attr = getattr(proxy_md, k)
+                except:
+                    continue
+                self.__dict__[k] = attr
     
     def proxy_getattr(self, attr):
         if attr in ["_parameters", "_buffers", "_modules"]:
