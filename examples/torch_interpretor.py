@@ -1,4 +1,5 @@
 # HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
+import os
 import torch
 from diffusers import StableDiffusionPipeline
 from onediff.infer_compiler import torchbackend
@@ -10,13 +11,14 @@ pipe = StableDiffusionPipeline.from_pretrained(
     torch_dtype=torch.float16,
 )
 
+os.environ["with_interp"] = "0"
+os.environ["with_graph"] = "1"
 pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
 pipe = pipe.to("cuda")
 
 prompt = "a photo of an astronaut riding a horse on mars"
 with torch.autocast("cuda"):
-    images = pipe(prompt).images
-    images = pipe(prompt).images
-    images = pipe(prompt).images
-    for i, image in enumerate(images):
-        image.save(f"{prompt}-of-{i}.png")
+    for i in range(3):
+        images = pipe(prompt).images
+        for j, image in enumerate(images):
+            image.save(f'{prompt}-of-{i}-{j}.png')
