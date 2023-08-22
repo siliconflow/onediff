@@ -34,10 +34,14 @@ def replace_class(cls):
     if _is_diffusers_quant_available:
         if cls == diffusers_quant.FakeQuantModule:
             return diffusers_quant.OneFlowFakeQuantModule
-        if cls == diffusers_quant.StaticQuantModule:
-            return diffusers_quant.OneFlowStaticQuantModule
-        if cls == diffusers_quant.DynamicQuantModule:
-            return diffusers_quant.OneFlowDynamicQuantModule
+        if cls == diffusers_quant.StaticQuantConvModule:
+            return diffusers_quant.OneFlowStaticQuantConvModule
+        if cls == diffusers_quant.DynamicQuantConvModule:
+            return diffusers_quant.OneFlowDynamicQuantConvModule
+        if cls == diffusers_quant.StaticQuantLinearModule:
+            return diffusers_quant.OneFlowStaticQuantLinearModule
+        if cls == diffusers_quant.DynamicQuantLinearModule:
+            return diffusers_quant.OneFlowDynamicLinearQuantModule
 
 
 def replace_obj(obj):
