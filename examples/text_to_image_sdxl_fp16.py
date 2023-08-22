@@ -3,7 +3,7 @@ import argparse
 from diffusers import StableDiffusionXLPipeline
 import torch
 
-from onediff.infer_compiler import torchbackend
+from onediff.infer_compiler import oneflow_backend
 
 
 parser = argparse.ArgumentParser()
@@ -29,6 +29,7 @@ if args.compile:
 
 torch.manual_seed(args.seed)
 
+# Reference: https://huggingface.co/docs/diffusers/v0.20.0/en/api/pipelines/stable_diffusion/stable_diffusion_xl#diffusers.StableDiffusionXLPipeline
 pipe = StableDiffusionXLPipeline.from_pretrained(
     args.model, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True
 )
@@ -36,25 +37,14 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
 if args.compile:
     if args.graph:
         os.environ["with_graph"] = "1"
-        os.environ["ONEFLOW_MLIR_CSE"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-        # Open this will raise error
-        # os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-        os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-    pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
+    pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=oneflow_backend)
 
 pipe.to("cuda")
 
-for i in range(3):
-    image = pipe(prompt=args.prompt).images[0]
-    image.save(f"{i}-{args.saved_image}")
+# sizes = [1024, 896, 768]
+sizes = [896, 768]
+for h in sizes:
+    for w in sizes:
+        for i in range(2):
+            image = pipe(prompt=args.prompt, height=h, width=w, num_inference_steps=50).images[0]
+            image.save(f"h{h}-w{w}-i{i}-{args.saved_image}")
