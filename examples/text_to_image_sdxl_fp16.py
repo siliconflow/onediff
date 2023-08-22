@@ -20,12 +20,17 @@ parser.add_argument("--saved_image", type=str, required=False, default="xl-base-
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
 parser.add_argument("--graph", action=argparse.BooleanOptionalAction)
+parser.add_argument("--dynamic", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 
 if args.compile:
     print("unet is compiled to oneflow.")
     if args.graph:
+        os.environ["with_graph"] = "1"
         print("unet is compiled to oneflow graph.")
+        if args.dynamic:
+            os.environ["dynamic_shape"] = "1"
+            print("unet is compiled to oneflow dynamic shape graph.")
 
 torch.manual_seed(args.seed)
 
@@ -34,10 +39,9 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
     args.model, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True
 )
 
-if args.compile:
-    if args.graph:
-        os.environ["with_graph"] = "1"
-    pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=oneflow_backend)
+# Reference: https://pytorch.org/docs/stable/generated/torch.compile.html
+# dynamic=True will cause error in torch dynamo trace
+pipe.unet = torch.compile(pipe.unet, disable=(not args.compile), dynamic=False, fullgraph=True, mode="default", backend=oneflow_backend)
 
 pipe.to("cuda")
 

@@ -7,16 +7,49 @@ from collections import OrderedDict
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from .obj_1f_from_torch import replace_obj, replace_func, replace_class, ProxySubmodule
 
-def fx_node_tranform(gm):
-    of_gm = to_of_transform(gm)
+__of_graph_cache = {}
 
-    enable_graph = os.getenv("with_graph", "False").lower() in (
-        "true",
-        "1",
-        "t",
-    )
+class DynamicGraph(flow.nn.Graph):
+    @flow.nn.Graph.with_dynamic_input_shape(size=9)
+    def __init__(self, module):
+        super().__init__(enable_get_runtime_state_dict=True)
+        self.mod = module
+        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.config.allow_fuse_add_to_output(True)
+
+    def build(self, *args, **kwargs):
+        return self.mod(*args, **kwargs)
+
+    def warmup_with_arg(self, arg_meta_of_sizes):
+        for arg_metas in arg_meta_of_sizes:
+            print(f"warmup {arg_metas=}")
+            arg_tensors = [
+                flow.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to(
+                    "cuda"
+                ),
+                flow.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
+                flow.empty(
+                    arg_metas.cross_attention_dim,
+                    dtype=arg_metas.gettype("cross_attention_dim"),
+                ).to("cuda"),
+            ]
+            self(*arg_tensors)  # build and warmup
+
+    def warmup_with_load(self, file_path):
+        state_dict = flow.load(file_path)
+        self.load_runtime_state_dict(state_dict)
+
+    def save_graph(self, file_path):
+        state_dict = self.runtime_state_dict()
+        flow.save(state_dict, file_path)
+
+def fx_node_tranform(gm):
+
+    enable_graph = os.getenv("with_graph", "False").lower() in ("true", "1", "t",)
+    enable_dynamic = os.getenv("dynamic_shape", "False").lower() in ( "true", "1", "t",)
 
     if not enable_graph:
+        of_gm = to_of_transform(gm)
         oneflow_fn = of_gm.forward
     else:
         os.environ["ONEFLOW_MLIR_CSE"] = "1"
@@ -34,19 +67,29 @@ def fx_node_tranform(gm):
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-        class OfGraph(flow.nn.Graph):
-            def __init__(self):
-                super().__init__()
-                self.fx_md = of_gm
-                self.config.enable_cudnn_conv_heuristic_search_algo(False)
-                self.config.allow_fuse_add_to_output(True)
-            
-            def build(self, *args, **kwargs):
-                return self.fx_md(*args, **kwargs)
+
+        if not enable_dynamic:
+            of_gm = to_of_transform(gm)
+            class OfGraph(flow.nn.Graph):
+                def __init__(self):
+                    super().__init__()
+                    self.fx_md = of_gm
+                    self.config.enable_cudnn_conv_heuristic_search_algo(False)
+                    self.config.allow_fuse_add_to_output(True)
+                
+                def build(self, *args, **kwargs):
+                    return self.fx_md(*args, **kwargs)
         
-        of_g = OfGraph()
-        of_g.debug(0)
-        oneflow_fn = lambda *args, **kwargs: of_g(*args, **kwargs)
+            of_g = OfGraph()
+            of_g.debug(2)
+            oneflow_fn = lambda *args, **kwargs: of_g(*args, **kwargs)
+        else:
+            if "_cached_graph" not in __of_graph_cache:
+                of_gm = to_of_transform(gm)
+                cached_graph = DynamicGraph(of_gm)
+                cached_graph.debug(0)
+                __of_graph_cache["_cached_graph"] = cached_graph
+            oneflow_fn = lambda *args, **kwargs: __of_graph_cache["_cached_graph"](*args, **kwargs)
 
     return oneflow_fn
 

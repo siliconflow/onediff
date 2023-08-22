@@ -6,6 +6,7 @@ from .with_fx_graph import fx_node_tranform
 
 
 def oneflow_backend(gm, example_inputs):
+    print("id of gm", id(gm))
     with_interp = os.getenv("with_interp", "False").lower() in (
         "true",
         "1",
