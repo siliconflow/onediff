@@ -1,10 +1,16 @@
 import os
 import argparse
+# cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
+# Maybe bacause oneflow use a lower version of cv2
+import cv2
+import oneflow as flow
+# obj_1f_from_torch should be import before import any diffusers
+from onediff.infer_compiler import obj_1f_from_torch
+
 from diffusers import StableDiffusionXLPipeline
 import torch
-import oneflow as flow
-from onediff.infer_compiler import torchbackend
-from .unet_torch_interplay import get_unet, UNetGraphWithCache
+#from onediff.infer_compiler import torchbackend
+from onediff.infer_compiler.with_fx_graph import _get_of_module
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -32,6 +38,7 @@ torch.manual_seed(args.seed)
 pipe = StableDiffusionXLPipeline.from_pretrained(
     args.model, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True
 )
+pipe.to("cuda")
 
 if args.compile:
     if args.graph:
@@ -51,9 +58,42 @@ if args.compile:
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-    pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
+    torch2flow = {}
 
-pipe.to("cuda")
+    def get_deployable(of_md):
+        from oneflow.framework.args_tree import ArgsTree
+        def input_fn(value):
+            if isinstance(value, torch.Tensor):
+                return flow.utils.tensor.from_torch(value)
+            else:
+                return value
+
+        def output_fn(value):
+            if isinstance(value, flow.Tensor):
+                return flow.utils.tensor.to_torch(value)
+            else:
+                return value
+
+        class DeplayableModule(of_md.__class__):
+            def __call__(self, *args, **kwargs):
+                args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+                out = args_tree.map_leaf(input_fn)
+                mapped_args = out[0]
+                mapped_kwargs = out[1]
+
+                output = super().__call__(*mapped_args, **mapped_kwargs)
+
+                out_tree = ArgsTree((output, None), False)
+                out = out_tree.map_leaf(output_fn)
+                return out[0]
+
+        of_md.__class__ = DeplayableModule
+        return of_md
+
+    unet = _get_of_module(pipe.unet, torch2flow)
+    d_unet = get_deployable(unet)
+    print(type(unet))
+    pipe.unet = d_unet
 
 for i in range(3):
     image = pipe(prompt=args.prompt).images[0]

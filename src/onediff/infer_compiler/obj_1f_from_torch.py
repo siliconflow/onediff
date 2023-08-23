@@ -2,6 +2,31 @@ import importlib
 import os
 import torch
 import oneflow as flow
+
+__of_mds = {}
+__convert_list = [
+    "diffusers.models.unet_2d_condition.UNet2DConditionModel",
+    "diffusers.models.embeddings.TimestepEmbedding",
+    "diffusers.models.embeddings.Timesteps",
+    "diffusers.models.resnet.ResnetBlock2D",
+    "diffusers.models.resnet.Downsample2D",
+    "diffusers.models.resnet.Upsample2D",
+    "diffusers.models.transformer_2d.Transformer2DModel",
+    "diffusers.models.unet_2d_blocks.CrossAttnDownBlock2D",
+    "diffusers.models.unet_2d_blocks.DownBlock2D",
+    "diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D",
+    "diffusers.models.unet_2d_blocks.UpBlock2D",
+    "diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D",
+    "diffusers.models.unet_2d_blocks.UNetMidBlock2DCrossAttn",
+]
+
+with flow.mock_torch.enable(lazy=False):
+    for md_name in __convert_list:
+        p, m = md_name.rsplit('.', 1)
+        md = importlib.import_module(p)
+        __of_mds[md_name] = getattr(md, m)
+        print(f"import {md_name}")
+
 import diffusers
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from .attention_1f import BasicTransformerBlock, FeedForward, GEGLU
@@ -32,6 +57,10 @@ def replace_class(cls):
         return LoRACompatibleLinear
     elif cls == diffusers.models.lora.LoRACompatibleConv:
         return LoRACompatibleConv
+    
+    full_cls_name = str(cls.__module__) + '.' + str(cls.__name__)
+    if full_cls_name in __of_mds:
+        return __of_mds[full_cls_name]
 
     if _is_diffusers_quant_available:
         if cls == diffusers_quant.FakeQuantModule:
@@ -152,10 +181,10 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
-            assert (
-                type(a).__module__.startswith("torch") == False
-                and type(a).__module__.startswith("diffusers") == False
-            ), "can't be a torch module at this point! But found " + str(type(a))
+            # assert (
+            #     type(a).__module__.startswith("torch") == False
+            #     and type(a).__module__.startswith("diffusers") == False
+            # ), "can't be a torch module at this point! But found " + str(type(a))
             return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
