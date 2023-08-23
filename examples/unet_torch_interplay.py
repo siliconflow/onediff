@@ -6,7 +6,8 @@ os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
 os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
 os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+# TODO(): open ONEFLOW_MLIR_GROUP_MATMUL will raise in SDXL, need be fixed.
+os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "0"
 os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
 
 os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
@@ -68,6 +69,7 @@ class UNetGraphWithCache(flow.nn.Graph):
         self.unet = unet
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
+        self.debug(0)
 
     def build(self, latent_model_input, t, text_embeddings, added_cond_kwargs=None):
         text_embeddings = flow._C.amp_white_identity(text_embeddings)
@@ -75,7 +77,7 @@ class UNetGraphWithCache(flow.nn.Graph):
             latent_model_input, t, encoder_hidden_states=text_embeddings, added_cond_kwargs=added_cond_kwargs,
         ).sample
 
-    def warmup_with_arg(self, arg_meta_of_sizes):
+    def warmup_with_arg(self, arg_meta_of_sizes, added):
         for arg_metas in arg_meta_of_sizes:
             print(f"warmup {arg_metas=}")
             arg_tensors = [
@@ -88,7 +90,7 @@ class UNetGraphWithCache(flow.nn.Graph):
                     dtype=arg_metas.gettype("cross_attention_dim"),
                 ).to("cuda"),
             ]
-            self(*arg_tensors)  # build and warmup
+            self(*arg_tensors, added)  # build and warmup
 
     def warmup_with_load(self, file_path):
         state_dict = flow.load(file_path)
@@ -186,6 +188,15 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
     # BATCH_SIZES = [4, 2]
 
     num_channels = 4
+    import torch
+    if model_id == "stabilityai/stable-diffusion-xl-base-1.0":
+        # sdxl needed
+        add_text_embeds = flow.utils.tensor.from_torch(floats_tensor((2, 1280)).to("cuda").to(torch.float16))
+        add_time_ids = flow.utils.tensor.from_torch(floats_tensor((2, 6)).to("cuda").to(torch.float16))
+        added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
+    else:
+        added_cond_kwargs = None
+
     # create a mocked unet graph
     with MockCtx():
         unet = get_unet(token, model_id, revision)
@@ -206,12 +217,9 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
             unet_graph.warmup_with_load(file)
         else:
             print("warmup with arguments...")
-            unet_graph.warmup_with_arg(warmup_meta_of_sizes)
+            unet_graph.warmup_with_arg(warmup_meta_of_sizes, added_cond_kwargs)
 
     # generate inputs with torch
-    #from diffusers.utils import floats_tensor
-    import torch
-
     time_step = torch.tensor([10]).to("cuda")
     encoder_hidden_states_of_sizes = {
         batch_size: floats_tensor((batch_size, 77, cross_attention_dim))
@@ -228,6 +236,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         k: flow.utils.tensor.from_torch(v)
         for k, v in encoder_hidden_states_of_sizes.items()
     }
+
     # convert to oneflow tensors
     time_step = flow.utils.tensor.from_torch(time_step)
 
@@ -240,7 +249,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
 
         noise = random.choice(noise_of_sizes)
         encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]
-        out = unet_graph(noise, time_step, encoder_hidden_states)
+        out = unet_graph(noise, time_step, encoder_hidden_states, added_cond_kwargs)
         # convert to torch tensors
         out = flow.utils.tensor.to_torch(out)
         if r == repeat - 1 or r % sync_interval == 0:

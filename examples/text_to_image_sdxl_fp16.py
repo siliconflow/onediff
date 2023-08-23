@@ -56,5 +56,5 @@ if args.compile:
 pipe.to("cuda")
 
 for i in range(3):
-    image = pipe(prompt=args.prompt).images[0]
+    image = pipe(prompt=args.prompt, height=96, width=128, num_inference_steps=1).images[0]
     image.save(f"{i}-{args.saved_image}")
