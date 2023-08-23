@@ -1,4 +1,5 @@
 import os
+import random
 
 os.environ["ONEFLOW_MLIR_CSE"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
@@ -45,13 +46,13 @@ class MockCtx(object):
         flow.mock_torch.disable()
 
 
-def get_unet(token, _model_id):
+def get_unet(token, _model_id, revision):
     from diffusers import UNet2DConditionModel
 
     unet = UNet2DConditionModel.from_pretrained(
         _model_id,
         use_auth_token=token,
-        revision="fp16",
+        revision=revision,
         torch_dtype=flow.float16,
         subfolder="unet",
     )
@@ -97,6 +98,27 @@ class UNetGraphWithCache(flow.nn.Graph):
         state_dict = self.runtime_state_dict()
         flow.save(state_dict, file_path)
 
+def get_deployable_unet(token, model_id, revision, ):
+    with MockCtx():
+        unet = get_unet(token, model_id, revision)
+        unet_graph = UNetGraphWithCache(unet)
+        cross_attention_dim = unet.config["cross_attention_dim"]
+        warmup_meta_of_sizes = get_arg_meta_of_sizes(
+            batch_sizes=BATCH_SIZES,
+            resolution_scales=RESOLUTION_SCALES,
+            num_channels=num_channels,
+            cross_attention_dim=cross_attention_dim,
+        )
+        for (i, m) in enumerate(warmup_meta_of_sizes):
+            print(f"warmup case #{i + 1}:", m)
+        if load == True:
+            print("loading graphs...")
+            unet_graph.warmup_with_load(file)
+        else:
+            print("warmup with arguments...")
+            unet_graph.warmup_with_arg(warmup_meta_of_sizes)
+
+
 
 def img_dim(i, start, stride):
     return start + stride * i
@@ -131,6 +153,22 @@ def get_arg_meta_of_sizes(
         for j in resolution_scales
     ]
 
+global_rng = random.Random()
+def floats_tensor(shape, scale=1.0, rng=None, name=None):
+    import torch
+    """Creates a random float32 tensor"""
+    if rng is None:
+        rng = global_rng
+
+    total_dims = 1
+    for dim in shape:
+        total_dims *= dim
+
+    values = []
+    for _ in range(total_dims):
+        values.append(rng.random() * scale)
+
+    return torch.tensor(data=values, dtype=torch.float).view(shape).contiguous()
 
 @click.command()
 @click.option("--token")
@@ -140,7 +178,8 @@ def get_arg_meta_of_sizes(
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
 @click.option("--model_id", type=str, default="runwayml/stable-diffusion-v1-5")
-def benchmark(token, repeat, sync_interval, save, load, file, model_id):
+@click.option("--revision", type=str, default="fp16")
+def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
     # TODO: reproduce bug caused by changing batch
@@ -149,7 +188,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id):
     num_channels = 4
     # create a mocked unet graph
     with MockCtx():
-        unet = get_unet(token, model_id)
+        unet = get_unet(token, model_id, revision)
         unet_graph = UNetGraphWithCache(unet)
         cross_attention_dim = unet.config["cross_attention_dim"]
         warmup_meta_of_sizes = get_arg_meta_of_sizes(
@@ -168,7 +207,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id):
             unet_graph.warmup_with_arg(warmup_meta_of_sizes)
 
     # generate inputs with torch
-    from diffusers.utils import floats_tensor
+    #from diffusers.utils import floats_tensor
     import torch
 
     time_step = torch.tensor([10]).to("cuda")
