@@ -6,7 +6,7 @@ import diffusers
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from .attention_1f import BasicTransformerBlock, FeedForward, GEGLU
 from .attention_processor_1f import Attention
-from .lora_1f import LoRACompatibleLinear
+from .lora_1f import LoRACompatibleLinear, LoRACompatibleConv
 
 _is_diffusers_quant_available = False
 try:
@@ -30,6 +30,8 @@ def replace_class(cls):
         return GEGLU
     elif cls == diffusers.models.lora.LoRACompatibleLinear:
         return LoRACompatibleLinear
+    elif cls == diffusers.models.lora.LoRACompatibleConv:
+        return LoRACompatibleConv
 
     if _is_diffusers_quant_available:
         if cls == diffusers_quant.FakeQuantModule:
