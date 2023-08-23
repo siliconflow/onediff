@@ -69,10 +69,10 @@ class UNetGraphWithCache(flow.nn.Graph):
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
-    def build(self, latent_model_input, t, text_embeddings):
+    def build(self, latent_model_input, t, text_embeddings, added_cond_kwargs=None):
         text_embeddings = flow._C.amp_white_identity(text_embeddings)
         return self.unet(
-            latent_model_input, t, encoder_hidden_states=text_embeddings
+            latent_model_input, t, encoder_hidden_states=text_embeddings, added_cond_kwargs=added_cond_kwargs,
         ).sample
 
     def warmup_with_arg(self, arg_meta_of_sizes):
@@ -191,6 +191,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         unet = get_unet(token, model_id, revision)
         unet_graph = UNetGraphWithCache(unet)
         cross_attention_dim = unet.config["cross_attention_dim"]
+
         warmup_meta_of_sizes = get_arg_meta_of_sizes(
             batch_sizes=BATCH_SIZES,
             resolution_scales=RESOLUTION_SCALES,
@@ -199,6 +200,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         )
         for (i, m) in enumerate(warmup_meta_of_sizes):
             print(f"warmup case #{i + 1}:", m)
+
         if load == True:
             print("loading graphs...")
             unet_graph.warmup_with_load(file)
