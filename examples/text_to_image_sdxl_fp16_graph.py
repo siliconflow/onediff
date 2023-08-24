@@ -83,6 +83,9 @@ if cmd_args.compile:
     d_unet = get_deployable(unet)
     pipe.unet = d_unet
 
-for i in range(3):
-    image = pipe(prompt=cmd_args.prompt, height=96, width=128, num_inference_steps=50).images[0]
-    image.save(f"{i}-{cmd_args.saved_image}")
+sizes = [1024, 896, 768]
+for h in sizes:
+    for w in sizes:
+        for i in range(2):
+            image = pipe(prompt=cmd_args.prompt, height=h, width=w, num_inference_steps=50).images[0]
+            image.save(f"h{h}-w{w}-i{i}-{cmd_args.saved_image}")
