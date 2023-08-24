@@ -25,7 +25,6 @@ with flow.mock_torch.enable(lazy=False):
         p, m = md_name.rsplit('.', 1)
         md = importlib.import_module(p)
         __of_mds[md_name] = getattr(md, m)
-        print(f"import {md_name}")
 
 import diffusers
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
