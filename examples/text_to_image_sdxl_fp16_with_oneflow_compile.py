@@ -24,7 +24,7 @@ parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
-parser.add_argument("--file", type=str, required=False, default="unet_graph")
+parser.add_argument("--file", type=str, required=False, default="unet_compiled")
 cmd_args = parser.parse_args()
 
 # Normal SDXL

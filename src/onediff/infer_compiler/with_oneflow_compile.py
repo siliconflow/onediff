@@ -11,7 +11,6 @@ class UNetGraph(flow.nn.Graph):
         self.unet = unet
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
-        self.debug(0)
 
         os.environ["ONEFLOW_MLIR_CSE"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
