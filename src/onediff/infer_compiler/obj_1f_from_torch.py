@@ -1,5 +1,6 @@
 import importlib
 import os
+from collections import OrderedDict
 import torch
 import oneflow as flow
 
@@ -180,10 +181,6 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
-            # assert (
-            #     type(a).__module__.startswith("torch") == False
-            #     and type(a).__module__.startswith("diffusers") == False
-            # ), "can't be a torch module at this point! But found " + str(type(a))
             return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
@@ -194,3 +191,66 @@ class ProxySubmodule:
             raise RuntimeError(
                 "can't find oneflow module for: " + str(type(self._1f_proxy_submod))
             )
+
+def _get_module_list(origin_mod, torch2flow):
+    assert isinstance(origin_mod, torch.nn.ModuleList)
+    if origin_mod in torch2flow:
+        return torch2flow[origin_mod]
+    of_md_list = flow.nn.ModuleList()
+    for m in origin_mod:
+        of_md_list.append(_get_module(m, torch2flow))
+    torch2flow[origin_mod] = of_md_list
+    return of_md_list
+
+
+def _get_module(origin_mod, torch2flow):
+    if origin_mod in torch2flow:
+        return torch2flow[origin_mod]
+
+    if isinstance(origin_mod, torch.nn.ModuleList):
+        return _get_module_list(origin_mod, torch2flow)
+
+    proxy_md = ProxySubmodule(origin_mod)
+    new_md_cls = replace_class(type(origin_mod))
+
+    def init(self):
+        self._parameters = OrderedDict()
+        self._buffers = OrderedDict()
+        self._modules = OrderedDict()
+        for (n, p) in list(proxy_md.named_parameters("", False)):
+            self._parameters[n] = flow.utils.tensor.from_torch(p.data)
+        for (n, b) in list(proxy_md.named_buffers("", False)):
+            self._buffers[n] = flow.utils.tensor.from_torch(b.data)
+        for (n, m) in proxy_md._modules.items():
+            self._modules[n] = _get_module(m, torch2flow)
+        
+        for k, v in proxy_md.__dict__.items():
+            if k not in self.__dict__:
+                try:
+                    attr = getattr(proxy_md, k)
+                except:
+                    continue
+                self.__dict__[k] = attr
+    
+    def proxy_getattr(self, attr):
+        if attr in ["_parameters", "_buffers", "_modules"]:
+            raise ValueError(f"missing attr {attr} in base class")
+        else:
+            return getattr(proxy_md, attr)
+
+    of_md_cls = type(
+        str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr},
+    )
+
+    new_md = of_md_cls()
+
+    torch2flow[origin_mod] = new_md
+    return new_md
+
+def _get_attr(gm, node, torch2flow):
+    attr = getattr(gm, node.target)
+    if attr in torch2flow:
+        return torch2flow[attr]
+    of_attr = replace_obj(attr)
+    torch2flow[attr] = of_attr
+    return of_attr
