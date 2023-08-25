@@ -45,10 +45,11 @@ if cmd_args.compile:
 
 # Normal SDXL call
 sizes = [1024, 896, 768]
+#sizes = [1024]
 for h in sizes:
     for w in sizes:
-        for i in range(1):
-            image = pipe(prompt=cmd_args.prompt, height=h, width=w, num_inference_steps=2).images[0]
+        for i in range(3):
+            image = pipe(prompt=cmd_args.prompt, height=h, width=w, num_inference_steps=30).images[0]
             image.save(f"h{h}-w{w}-i{i}-{cmd_args.saved_image}")
 
 # Save compiled unet with oneflow

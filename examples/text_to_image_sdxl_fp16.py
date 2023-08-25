@@ -41,8 +41,7 @@ if args.compile:
         os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-        # Open this will raise error
-        # os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
