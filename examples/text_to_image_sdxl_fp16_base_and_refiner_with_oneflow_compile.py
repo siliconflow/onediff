@@ -36,6 +36,7 @@ cmd_args = parser.parse_args()
 generator = torch.Generator("cuda")
 generator.manual_seed(cmd_args.seed)
 seed = generator
+
 # SDXL base: StableDiffusionXLPipeline
 base = DiffusionPipeline.from_pretrained(
     cmd_args.base,
