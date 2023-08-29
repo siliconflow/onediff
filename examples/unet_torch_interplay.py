@@ -1,4 +1,5 @@
 import os
+import random
 
 os.environ["ONEFLOW_MLIR_CSE"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
@@ -20,6 +21,9 @@ os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 
 import click
+# cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
+# Maybe bacause oneflow use a lower version of cv2
+import cv2
 import oneflow as flow
 from tqdm import tqdm
 from dataclasses import dataclass, fields
@@ -45,13 +49,13 @@ class MockCtx(object):
         flow.mock_torch.disable()
 
 
-def get_unet(token, _model_id):
+def get_unet(token, _model_id, revision):
     from diffusers import UNet2DConditionModel
 
     unet = UNet2DConditionModel.from_pretrained(
         _model_id,
         use_auth_token=token,
-        revision="fp16",
+        revision=revision,
         torch_dtype=flow.float16,
         subfolder="unet",
     )
@@ -67,14 +71,15 @@ class UNetGraphWithCache(flow.nn.Graph):
         self.unet = unet
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
+        self.debug(0)
 
-    def build(self, latent_model_input, t, text_embeddings):
+    def build(self, latent_model_input, t, text_embeddings, added_cond_kwargs=None):
         text_embeddings = flow._C.amp_white_identity(text_embeddings)
         return self.unet(
-            latent_model_input, t, encoder_hidden_states=text_embeddings
+            latent_model_input, t, encoder_hidden_states=text_embeddings, added_cond_kwargs=added_cond_kwargs,
         ).sample
 
-    def warmup_with_arg(self, arg_meta_of_sizes):
+    def warmup_with_arg(self, arg_meta_of_sizes, added):
         for arg_metas in arg_meta_of_sizes:
             print(f"warmup {arg_metas=}")
             arg_tensors = [
@@ -87,7 +92,7 @@ class UNetGraphWithCache(flow.nn.Graph):
                     dtype=arg_metas.gettype("cross_attention_dim"),
                 ).to("cuda"),
             ]
-            self(*arg_tensors)  # build and warmup
+            self(*arg_tensors, added)  # build and warmup
 
     def warmup_with_load(self, file_path):
         state_dict = flow.load(file_path)
@@ -131,7 +136,6 @@ def get_arg_meta_of_sizes(
         for j in resolution_scales
     ]
 
-
 @click.command()
 @click.option("--token")
 @click.option("--repeat", default=100)
@@ -140,37 +144,48 @@ def get_arg_meta_of_sizes(
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
 @click.option("--model_id", type=str, default="runwayml/stable-diffusion-v1-5")
-def benchmark(token, repeat, sync_interval, save, load, file, model_id):
+@click.option("--revision", type=str, default="fp16")
+def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
     # TODO: reproduce bug caused by changing batch
     # BATCH_SIZES = [4, 2]
 
-    num_channels = 4
     # create a mocked unet graph
+    # unet mock should be placed before importing any diffusers
     with MockCtx():
-        unet = get_unet(token, model_id)
+        unet = get_unet(token, model_id, revision)
         unet_graph = UNetGraphWithCache(unet)
-        cross_attention_dim = unet.config["cross_attention_dim"]
-        warmup_meta_of_sizes = get_arg_meta_of_sizes(
-            batch_sizes=BATCH_SIZES,
-            resolution_scales=RESOLUTION_SCALES,
-            num_channels=num_channels,
-            cross_attention_dim=cross_attention_dim,
-        )
-        for (i, m) in enumerate(warmup_meta_of_sizes):
-            print(f"warmup case #{i + 1}:", m)
-        if load == True:
-            print("loading graphs...")
-            unet_graph.warmup_with_load(file)
-        else:
-            print("warmup with arguments...")
-            unet_graph.warmup_with_arg(warmup_meta_of_sizes)
 
-    # generate inputs with torch
+    num_channels = 4
+    cross_attention_dim = unet.config["cross_attention_dim"]
     from diffusers.utils import floats_tensor
     import torch
+    if model_id == "stabilityai/stable-diffusion-xl-base-1.0":
+        # sdxl needed
+        add_text_embeds = flow.utils.tensor.from_torch(floats_tensor((2, 1280)).to("cuda").to(torch.float16))
+        add_time_ids = flow.utils.tensor.from_torch(floats_tensor((2, 6)).to("cuda").to(torch.float16))
+        added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
+    else:
+        added_cond_kwargs = None
 
+    warmup_meta_of_sizes = get_arg_meta_of_sizes(
+        batch_sizes=BATCH_SIZES,
+        resolution_scales=RESOLUTION_SCALES,
+        num_channels=num_channels,
+        cross_attention_dim=cross_attention_dim,
+    )
+    for (i, m) in enumerate(warmup_meta_of_sizes):
+        print(f"warmup case #{i + 1}:", m)
+
+    if load == True:
+        print("loading graphs...")
+        unet_graph.warmup_with_load(file)
+    else:
+        print("warmup with arguments...")
+        unet_graph.warmup_with_arg(warmup_meta_of_sizes, added_cond_kwargs)
+
+    # generate inputs with torch
     time_step = torch.tensor([10]).to("cuda")
     encoder_hidden_states_of_sizes = {
         batch_size: floats_tensor((batch_size, 77, cross_attention_dim))
@@ -187,6 +202,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id):
         k: flow.utils.tensor.from_torch(v)
         for k, v in encoder_hidden_states_of_sizes.items()
     }
+
     # convert to oneflow tensors
     time_step = flow.utils.tensor.from_torch(time_step)
 
@@ -199,7 +215,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id):
 
         noise = random.choice(noise_of_sizes)
         encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]
-        out = unet_graph(noise, time_step, encoder_hidden_states)
+        out = unet_graph(noise, time_step, encoder_hidden_states, added_cond_kwargs)
         # convert to torch tensors
         out = flow.utils.tensor.to_torch(out)
         if r == repeat - 1 or r % sync_interval == 0:

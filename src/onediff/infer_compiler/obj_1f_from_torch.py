@@ -1,7 +1,34 @@
 import importlib
 import os
+from collections import OrderedDict
 import torch
 import oneflow as flow
+import logging
+logger = logging.getLogger(__name__)
+
+__of_mds = {}
+with flow.mock_torch.enable(lazy=False):
+    __convert_list = [
+        "diffusers.models.unet_2d_condition.UNet2DConditionModel",
+        "diffusers.models.embeddings.TimestepEmbedding",
+        "diffusers.models.embeddings.Timesteps",
+        "diffusers.models.resnet.ResnetBlock2D",
+        "diffusers.models.resnet.Downsample2D",
+        "diffusers.models.resnet.Upsample2D",
+        "diffusers.models.transformer_2d.Transformer2DModel",
+        "diffusers.models.unet_2d_blocks.CrossAttnDownBlock2D",
+        "diffusers.models.unet_2d_blocks.DownBlock2D",
+        "diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D",
+        "diffusers.models.unet_2d_blocks.UpBlock2D",
+        "diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D",
+        "diffusers.models.unet_2d_blocks.UNetMidBlock2DCrossAttn",
+    ]
+
+    for md_name in __convert_list:
+        p, m = md_name.rsplit('.', 1)
+        md = importlib.import_module(p)
+        __of_mds[md_name] = getattr(md, m)
+
 import diffusers
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from .attention_1f import BasicTransformerBlock, FeedForward, GEGLU
@@ -32,6 +59,10 @@ def replace_class(cls):
         return LoRACompatibleLinear
     elif cls == diffusers.models.lora.LoRACompatibleConv:
         return LoRACompatibleConv
+    
+    full_cls_name = str(cls.__module__) + '.' + str(cls.__name__)
+    if full_cls_name in __of_mds:
+        return __of_mds[full_cls_name]
 
     if _is_diffusers_quant_available:
         if cls == diffusers_quant.FakeQuantModule:
@@ -152,6 +183,13 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
+
+            full_name = '.'.join((type(a).__module__, type(a).__name__))
+            if full_name == "diffusers.configuration_utils.FrozenDict":
+                return a
+            if full_name == "diffusers.models.attention_processor.AttnProcessor2_0":
+                return a
+
             assert (
                 type(a).__module__.startswith("torch") == False
                 and type(a).__module__.startswith("diffusers") == False
@@ -166,3 +204,63 @@ class ProxySubmodule:
             raise RuntimeError(
                 "can't find oneflow module for: " + str(type(self._1f_proxy_submod))
             )
+
+def _get_module_list(origin_mod, torch2flow):
+    assert isinstance(origin_mod, torch.nn.ModuleList)
+    if origin_mod in torch2flow:
+        return torch2flow[origin_mod]
+    of_md_list = flow.nn.ModuleList()
+    for m in origin_mod:
+        of_md_list.append(_get_module(m, torch2flow))
+    torch2flow[origin_mod] = of_md_list
+    return of_md_list
+
+
+def _get_module(origin_mod, torch2flow):
+    if origin_mod in torch2flow:
+        return torch2flow[origin_mod]
+
+    if isinstance(origin_mod, torch.nn.ModuleList):
+        return _get_module_list(origin_mod, torch2flow)
+
+    proxy_md = ProxySubmodule(origin_mod)
+    new_md_cls = replace_class(type(origin_mod))
+
+    def init(self):
+        self._parameters = OrderedDict()
+        self._buffers = OrderedDict()
+        self._modules = OrderedDict()
+        for (n, p) in list(proxy_md.named_parameters("", False)):
+            self._parameters[n] = flow.utils.tensor.from_torch(p.data)
+        for (n, b) in list(proxy_md.named_buffers("", False)):
+            self._buffers[n] = flow.utils.tensor.from_torch(b.data)
+        for (n, m) in proxy_md._modules.items():
+            self._modules[n] = _get_module(m, torch2flow)
+        
+        for k, v in proxy_md.__dict__.items():
+            if k not in self.__dict__:
+                attr = getattr(proxy_md, k)
+                self.__dict__[k] = attr
+    
+    def proxy_getattr(self, attr):
+        if attr in ["_parameters", "_buffers", "_modules"]:
+            raise ValueError(f"missing attr {attr} in base class")
+        else:
+            return getattr(proxy_md, attr)
+
+    of_md_cls = type(
+        str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr},
+    )
+
+    new_md = of_md_cls()
+
+    torch2flow[origin_mod] = new_md
+    return new_md
+
+def _get_attr(gm, node, torch2flow):
+    attr = getattr(gm, node.target)
+    if attr in torch2flow:
+        return torch2flow[attr]
+    of_attr = replace_obj(attr)
+    torch2flow[attr] = of_attr
+    return of_attr
