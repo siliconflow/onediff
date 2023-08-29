@@ -32,7 +32,11 @@ parser.add_argument("--file", type=str, required=False, default="unet_compiled")
 cmd_args = parser.parse_args()
 
 # Normal SDXL
-seed = torch.manual_seed(cmd_args.seed)
+# seed = torch.manual_seed(cmd_args.seed)
+generator = torch.Generator("cuda")
+generator.manual_seed(cmd_args.seed)
+seed = generator
+
 # SDXL base: StableDiffusionXLPipeline
 base = DiffusionPipeline.from_pretrained(
     cmd_args.base,
