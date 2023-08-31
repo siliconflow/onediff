@@ -4,7 +4,7 @@ import torch.fx as fx
 import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
-from .obj_1f_from_torch import replace_obj, replace_func, replace_class, ProxySubmodule
+from .obj_1f_from_torch import replace_obj, replace_func, _get_module, _get_attr
 
 def fx_node_tranform(gm):
     of_gm = to_of_transform(gm)
@@ -29,7 +29,6 @@ def fx_node_tranform(gm):
                 return self.fx_md(*args, **kwargs)
         
         of_g = OfGraph()
-        of_g.debug(0)
         oneflow_fn = lambda *args, **kwargs: of_g(*args, **kwargs)
 
     return oneflow_fn
@@ -69,6 +68,7 @@ def to_of_transform(
             raise ValueError(f"not valid node type{node.foramt_node()}")
 
     of_gm = flow.fx.GraphModule(name2obj, of_g)
+    of_gm.training = False
     of_gm.graph.lint()
     of_gm.recompile()
     return of_gm
