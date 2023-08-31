@@ -68,7 +68,7 @@ def to_of_transform(
             raise ValueError(f"not valid node type{node.foramt_node()}")
 
     of_gm = flow.fx.GraphModule(name2obj, of_g)
-    #of_gm.training = False
+    of_gm.training = False
     of_gm.graph.lint()
     of_gm.recompile()
     return of_gm
