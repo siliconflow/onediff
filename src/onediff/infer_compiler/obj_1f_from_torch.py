@@ -33,6 +33,7 @@ def replace_class(cls):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
+    # TODO https://github.com/Oneflow-Inc/oneflow/issues/10328
     elif cls == diffusers.models.attention_processor.Attention:
         return Attention
 
