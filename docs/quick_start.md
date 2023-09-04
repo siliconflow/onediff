@@ -133,10 +133,7 @@ python demo.py && python demo.py
 <details open>
 <summary> Output: sdxl-base-out.png </summary>
 
-<!-- ![sdxl-base-out.png](https://github.com/Oneflow-Inc/OneTeam/assets/109639975/a9f7bfe8-0f84-43ea-855b-efb4e0fde96f)
- -->
-
-![Alt text](image.png)
+![sdxl-base-out.png](https://github.com/Oneflow-Inc/OneTeam/assets/109639975/a9f7bfe8-0f84-43ea-855b-efb4e0fde96f)
 </details>
 
 
