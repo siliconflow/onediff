@@ -2,10 +2,10 @@
 
 ## Performance Comparison
 Timings for 30 steps at 1024x1024
-|                         | Baseline (torch.compile) | Optimized (oneflow.compile) | Percentage improvement |
-| ----------------------- | ------------------------ | --------------------------- | ---------------------- |
-| NVIDIA GeForce RTX 3090 | 7992 ms                  | 5161 ms                     | ~35%                   |
-| A100 40G PCIE           | 4039 ms                  | 3295 ms                     | ~18%                   |
+|                         | Baseline | Optimized (oneflow.compile) | Percentage improvement |
+| ----------------------- | -------- | --------------------------- | ---------------------- |
+| NVIDIA GeForce RTX 3090 | 8433 ms  | 5161 ms                     | ~38.7%                 |
+| A100 40G PCIE           | 4435 ms  | 3295 ms                     | ~25.7%                 |
 
 ## 🛠️ New Features 
 
@@ -30,7 +30,7 @@ Before you begin, ensure that you meet the following prerequisites:
 
     ```shell
     git clone https://github.com/Oneflow-Inc/diffusers.git
-    cd diffusers && git checkout refactor-backend
+    cd diffusers 
     pip install .
     ```
 
@@ -86,22 +86,6 @@ prompt = "A little white cat playing on the sea floor, the sun shining in, swimm
 saved_image = "sdxl-base-out.png"
 file_name = "unet_compiled"
 
-
-def compile_and_save_unet(model, file_name):
-    model.unet = oneflow_compile(model.unet)
-    print("unet is compiled to oneflow.")
-    pipe(prompt).images[0]
-    print(f"Saving the compiled unet model to {file_name}...")
-    model.unet._graph_save(file_name)
-
-
-def load_compiled_unet(model, file_name):
-    model.unet = oneflow_compile(model.unet)
-    print("unet is compiled to oneflow.")
-    model.unet._graph_load(file_name)
-    print(f"Loaded the compiled unet model from {file_name}.")
-
-
 pipe = StableDiffusionXLPipeline.from_pretrained(
     pretrained_model_name_or_path,
     torch_dtype=torch.float16,
@@ -110,12 +94,19 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
+pipe.unet = oneflow_compile(pipe.unet)
 if Path(file_name).exists():
-    load_compiled_unet(pipe, file_name)
-    image = pipe(prompt).images[0]
-    image.save(saved_image)
-else:
-    compile_and_save_unet(pipe, file_name)
+    print(f"Loading the compiled graph from {file_name}...")
+    pipe.unet._graph_load(file_name)
+
+
+image = pipe(prompt).images[0]
+print(f"Saved the image to {saved_image}.")
+image.save(saved_image)
+
+if not Path(file_name).exists():
+    pipe.unet._graph_save(file_name)
+    print(f"Saved the compiled graph to {file_name}.")
 
 ```
 </details>
@@ -136,16 +127,6 @@ python demo.py && python demo.py
 ![sdxl-base-out.png](https://github.com/Oneflow-Inc/OneTeam/assets/109639975/a9f7bfe8-0f84-43ea-855b-efb4e0fde96f)
 </details>
 
-
-
-**Note:**
-
-To enable CUDA graph for OneFlow, you can use the following flags for acceleration:
-
-```shell
-export ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH=1 && export ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH=1
-```
-When using Stable Diffusion XL (SDXL) on an A100 GPU with a resolution of 1024x1024 and 30 inference steps, you can expect a speedup of approximately 0.1 iterations per second. However, the performance improvement may not be significant on an RTX 3090. For smaller resolutions, such as 128x128, you may achieve a doubling of acceleration.
 
 ### related examples
 
