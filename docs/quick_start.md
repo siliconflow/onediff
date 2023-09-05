@@ -45,7 +45,7 @@ Before you begin, ensure that you meet the following prerequisites:
 - Install `OneFlow`:
 
     ```bash
-    python3 -m pip install --pre oneflow -f https://staging.oneflow.info/branch/master/cu117
+    python3 -m pip install --pre oneflow -f https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu117
     ```
 
 #### Install PyTorch
