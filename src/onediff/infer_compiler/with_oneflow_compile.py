@@ -26,6 +26,9 @@ class UNetGraph(flow.nn.Graph):
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+        os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
+
 
     def build(self, latent_model_input, t, encoder_hidden_states, cross_attention_kwargs, added_cond_kwargs=None, return_dict=False):
         encoder_hidden_states = flow._C.amp_white_identity(encoder_hidden_states)
