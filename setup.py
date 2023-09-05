@@ -11,7 +11,12 @@ setup(
     package_dir={"": "src"},
     packages=find_packages("src"),
     python_requires=">=3.7.0",
-    install_requires=["transformers>=4.26", "diffusers"],
+    install_requires=[
+        "transformers>=4.27.1",
+        "diffusers==0.19.3",
+        "chardet",
+        "opencv-python==4.8.0.76",
+    ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
