@@ -14,6 +14,7 @@ setup(
     install_requires=[
         "transformers>=4.27.1",
         "diffusers>=0.19.3",
+        "torch>=2",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
