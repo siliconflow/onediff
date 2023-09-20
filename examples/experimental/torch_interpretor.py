@@ -31,7 +31,9 @@ os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 
 
-pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
+pipe.unet = torch.compile(
+    pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend
+)
 pipe = pipe.to("cuda")
 
 prompt = "a photo of an astronaut riding a horse on mars"
@@ -39,4 +41,4 @@ with torch.autocast("cuda"):
     for i in range(3):
         images = pipe(prompt).images
         for j, image in enumerate(images):
-            image.save(f'{prompt}-of-{i}-{j}.png')
+            image.save(f"{prompt}-of-{i}-{j}.png")
