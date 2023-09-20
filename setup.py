@@ -13,9 +13,7 @@ setup(
     python_requires=">=3.7.0",
     install_requires=[
         "transformers>=4.27.1",
-        "diffusers==0.19.3",
-        "chardet",
-        "opencv-python==4.8.0.76",
+        "diffusers>=0.19.3",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
