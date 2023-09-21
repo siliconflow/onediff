@@ -82,7 +82,7 @@ if cmd_args.compile and cmd_args.load:
     if cmd_args.with_refiner:
         refiner.unet._graph_load("refiner_" + cmd_args.file)
 
-# Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be chaged later.
+# Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile2:
     print("unet is compiled to oneflow with torch.compile.")
     from onediff.infer_compiler import oneflow_backend
