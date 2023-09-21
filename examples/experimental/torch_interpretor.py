@@ -12,12 +12,12 @@ pipe = StableDiffusionPipeline.from_pretrained(
 )
 
 # run with interpreter mode to oneflow
-# ONFLOW_INTERPRETER's default value is 0
-os.environ["ONFLOW_INTERPRETER"] = "0"
+# ONEDIFF_INFER_COMPILER_USE_INTERPRETER's default value is 0
+os.environ["ONEDIFF_INFER_COMPILER_USE_INTERPRETER"] = "0"
 
 # optimize with oneflow graph
-# ONEFLOW_GRAPH's default value is 0
-os.environ["ONEFLOW_GRAPH"] = "1"
+# ONEDIFF_INFER_COMPILER_USE_GRAPH's default value is 0
+os.environ["ONEDIFF_INFER_COMPILER_USE_GRAPH"] = "1"
 
 
 pipe.unet = torch.compile(

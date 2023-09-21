@@ -9,7 +9,7 @@ from .obj_1f_from_torch import replace_obj, replace_func, _get_module, _get_attr
 def fx_node_tranform(gm):
     of_gm = to_of_transform(gm)
 
-    enable_graph = os.getenv("ONEFLOW_GRAPH", "True").lower() in (
+    enable_graph = os.getenv("ONEDIFF_INFER_COMPILER_USE_GRAPH", "True").lower() in (
         "true",
         "1",
         "t",
@@ -38,7 +38,6 @@ def fx_node_tranform(gm):
                 self.fx_md = of_gm
                 self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
-                self.debug(0)
             
             def build(self, *args, **kwargs):
                 return self.fx_md(*args, **kwargs)
