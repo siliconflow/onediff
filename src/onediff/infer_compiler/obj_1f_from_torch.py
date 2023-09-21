@@ -12,6 +12,9 @@ __of_mds = {}
 
 
 def __init_of_mds(package_names: list[str]):
+    import sys
+    if "diffusers" in sys.modules:
+        raise ImportError("onediff.infer_compiler must be imported before importing diffusers.")
     global __of_mds
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     with flow.mock_torch.enable(lazy=True):
