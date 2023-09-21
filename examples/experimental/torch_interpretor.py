@@ -2,7 +2,7 @@
 import os
 import torch
 from diffusers import StableDiffusionPipeline
-from onediff.infer_compiler import torchbackend
+from onediff.infer_compiler import oneflow_backend
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "CompVis/stable-diffusion-v1-4",
@@ -32,7 +32,7 @@ os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 
 
 pipe.unet = torch.compile(
-    pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend
+    pipe.unet, fullgraph=True, mode="reduce-overhead", backend=oneflow_backend
 )
 pipe = pipe.to("cuda")
 

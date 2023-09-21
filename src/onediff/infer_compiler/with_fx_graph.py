@@ -9,7 +9,7 @@ from .obj_1f_from_torch import replace_obj, replace_func, _get_module, _get_attr
 def fx_node_tranform(gm):
     of_gm = to_of_transform(gm)
 
-    enable_graph = os.getenv("with_graph", "False").lower() in (
+    enable_graph = os.getenv("ONEFLOW_GRAPH", "True").lower() in (
         "true",
         "1",
         "t",
@@ -18,12 +18,27 @@ def fx_node_tranform(gm):
     if not enable_graph:
         oneflow_fn = of_gm.forward
     else:
+        os.environ["ONEFLOW_MLIR_CSE"] = "1"
+        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+        os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
+        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
+        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+        os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+        os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+        os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
         class OfGraph(flow.nn.Graph):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
                 self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
+                self.debug(0)
             
             def build(self, *args, **kwargs):
                 return self.fx_md(*args, **kwargs)
