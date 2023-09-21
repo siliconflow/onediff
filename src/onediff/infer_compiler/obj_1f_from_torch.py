@@ -12,6 +12,9 @@ __of_mds = {}
 
 
 def __init_of_mds(package_names: list[str]):
+    import sys
+    if "diffusers" in sys.modules:
+        raise ImportError("onediff.infer_compiler must be imported before importing diffusers.")
     global __of_mds
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     with flow.mock_torch.enable(lazy=True):
@@ -49,6 +52,8 @@ def replace_class(cls):
         return Attention
 
     full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
+    # if full_cls_name == "diffusers.models.attention.GEGLU":
+    #     import pdb; pdb.set_trace()
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
 

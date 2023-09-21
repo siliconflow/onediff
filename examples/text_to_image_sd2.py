@@ -1,6 +1,7 @@
-from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
+import cv2
 import torch
 from onediff.infer_compiler import oneflow_compile
+from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 
 model_id = "stabilityai/stable-diffusion-2"
 # you can also use a local file directory like this here
