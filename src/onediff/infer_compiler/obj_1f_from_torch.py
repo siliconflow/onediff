@@ -52,8 +52,6 @@ def replace_class(cls):
         return Attention
 
     full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
-    # if full_cls_name == "diffusers.models.attention.GEGLU":
-    #     import pdb; pdb.set_trace()
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
 
