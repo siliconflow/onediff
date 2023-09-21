@@ -15,6 +15,7 @@ setup(
         "transformers>=4.27.1",
         "diffusers>=0.19.3",
         "torch",
+        "onefx",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
