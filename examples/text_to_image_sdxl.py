@@ -33,10 +33,11 @@ parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
-parser.add_argument("--compile2", action=argparse.BooleanOptionalAction)
+parser.add_argument("--dynamic_input_size", type=int, default=9)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
 parser.add_argument("--file", type=str, required=False, default="unet_compiled")
+parser.add_argument("--compile2", action=argparse.BooleanOptionalAction)
 cmd_args = parser.parse_args()
 
 # Normal SDXL pipeline init.
@@ -65,9 +66,13 @@ if cmd_args.with_refiner:
 # Compile unet with oneflow
 if cmd_args.compile:
     print("unet is compiled to oneflow.")
-    base.unet = oneflow_compile(base.unet)
+    base.unet = oneflow_compile(
+        base.unet, options={"size": cmd_args.dynamic_input_size}
+    )
     if cmd_args.with_refiner:
-        refiner.unet = oneflow_compile(refiner.unet)
+        refiner.unet = oneflow_compile(
+            refiner.unet, options={"size": cmd_args.dynamic_input_size}
+        )
         output_type = "latent"
 
 # Load compiled unet with oneflow
@@ -87,8 +92,8 @@ if cmd_args.compile2:
     )
 
 # Normal SDXL run
-sizes = [1024, 896, 768]
-# sizes = [1024]
+# sizes = [1024, 896, 768]
+sizes = [1024]
 for h in sizes:
     for w in sizes:
         for i in range(3):
