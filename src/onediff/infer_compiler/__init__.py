@@ -6,8 +6,8 @@ from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
 
 
-def torchbackend(gm, example_inputs):
-    with_interp = os.getenv("with_interp", "False").lower() in (
+def oneflow_backend(gm, example_inputs):
+    with_interp = os.getenv("ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False").lower() in (
         "true",
         "1",
         "t",

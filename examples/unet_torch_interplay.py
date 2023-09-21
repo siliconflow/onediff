@@ -71,7 +71,6 @@ class UNetGraphWithCache(flow.nn.Graph):
         self.unet = unet
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
-        self.debug(0)
 
     def build(self, latent_model_input, t, text_embeddings, added_cond_kwargs=None):
         text_embeddings = flow._C.amp_white_identity(text_embeddings)
