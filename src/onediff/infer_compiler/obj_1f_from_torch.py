@@ -9,11 +9,20 @@ logger = logging.getLogger(__name__)
 
 
 __of_mds = {}
-with flow.mock_torch.enable(lazy=False):
-    from .import_classes import get_classes_in_package
 
-    __of_mds = get_classes_in_package("diffusers.models")
 
+def __init_of_mds(package_names: list[str]):
+    global __of_mds
+    # https://docs.oneflow.org/master/cookies/oneflow_torch.html
+    with flow.mock_torch.enable(lazy=True):
+        from .import_classes import get_classes_in_package
+
+        for package_name in package_names:
+            __of_mds.update(get_classes_in_package(package_name))
+
+
+package_names = os.getenv("INIT_OF_MDS", "diffusers")
+__init_of_mds(package_names.split(","))  # export INIT_OF_MDS="diffusers,comfyui"
 
 import diffusers
 from typing import Any
@@ -29,6 +38,8 @@ except:
 
 
 def replace_class(cls):
+    global __of_mds
+
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
