@@ -16,7 +16,9 @@ parser.add_argument(
     type=str,
     default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
 )
-parser.add_argument("--saved_image", type=str, required=False, default="xl-base-out.png")
+parser.add_argument(
+    "--saved_image", type=str, required=False, default="xl-base-out.png"
+)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
 parser.add_argument("--graph", action=argparse.BooleanOptionalAction)
@@ -50,10 +52,14 @@ if args.compile:
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-    pipe.unet = torch.compile(pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend)
+    pipe.unet = torch.compile(
+        pipe.unet, fullgraph=True, mode="reduce-overhead", backend=torchbackend
+    )
 
 pipe.to("cuda")
 
 for i in range(3):
-    image = pipe(prompt=args.prompt, height=96, width=128, num_inference_steps=50).images[0]
+    image = pipe(
+        prompt=args.prompt, height=768, width=768, num_inference_steps=50
+    ).images[0]
     image.save(f"{i}-{args.saved_image}")
