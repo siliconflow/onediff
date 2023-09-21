@@ -4,6 +4,7 @@ import os
 import oneflow as flow
 import torch
 
+
 def get_unet_graph(size=9):
     class UNetGraph(flow.nn.Graph):
         @flow.nn.Graph.with_dynamic_input_shape(size=size)
@@ -30,8 +31,15 @@ def get_unet_graph(size=9):
             os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
             os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
-
-        def build(self, latent_model_input, t, encoder_hidden_states, cross_attention_kwargs, added_cond_kwargs=None, return_dict=False):
+        def build(
+            self,
+            latent_model_input,
+            t,
+            encoder_hidden_states,
+            cross_attention_kwargs,
+            added_cond_kwargs=None,
+            return_dict=False,
+        ):
             encoder_hidden_states = flow._C.amp_white_identity(encoder_hidden_states)
             pred = self.unet(
                 latent_model_input,
@@ -50,12 +58,15 @@ def get_unet_graph(size=9):
         def save_graph(self, file_path):
             state_dict = self.runtime_state_dict()
             flow.save(state_dict, file_path)
+
     return UNetGraph
+
 
 def oneflow_compile(torch_unet, *, use_graph=True, options={}):
     torch2flow = {}
     of_md = _get_module(torch_unet, torch2flow)
     from oneflow.framework.args_tree import ArgsTree
+
     def input_fn(value):
         if isinstance(value, torch.Tensor):
             return flow.utils.tensor.from_torch(value)
@@ -87,14 +98,13 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
             else:
                 output = super().__call__(*mapped_args, **mapped_kwargs)
 
-
             out_tree = ArgsTree((output, None), False)
             out = out_tree.map_leaf(output_fn)
             return out[0]
-        
+
         def _graph_load(self, file_path):
             self._dpl_graph.warmup_with_load(file_path)
-        
+
         def _graph_save(self, file_path):
             self._dpl_graph.save_graph(file_path)
 
