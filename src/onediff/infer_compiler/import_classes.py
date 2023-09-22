@@ -4,7 +4,7 @@ import inspect
 from typing import Dict
 import logging
 
-logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 
 def import_submodules(package, recursive=True):
