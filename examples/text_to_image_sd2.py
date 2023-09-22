@@ -1,18 +1,18 @@
-from onediff import OneFlowStableDiffusionPipeline
-
-import oneflow as flow
-flow.mock_torch.enable()
-
-from diffusers import EulerDiscreteScheduler
+import cv2
+import torch
+from onediff.infer_compiler import oneflow_compile
+from diffusers import StableDiffusionPipeline, EulerDiscreteScheduler
 
 model_id = "stabilityai/stable-diffusion-2"
+# you can also use a local file directory like this here
+# model_id = "/share_nfs/hf_models/stable-diffusion-2-1"
 # Use the Euler scheduler here instead
 scheduler = EulerDiscreteScheduler.from_pretrained(model_id, subfolder="scheduler")
-pipe = OneFlowStableDiffusionPipeline.from_pretrained(
-    model_id, scheduler=scheduler, revision="fp16", torch_dtype=flow.float16
+pipe = StableDiffusionPipeline.from_pretrained(
+    model_id, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
 )
 pipe = pipe.to("cuda")
-
+pipe.unet = oneflow_compile(pipe.unet)
 prompt = "a photo of an astronaut riding a horse on mars"
 image = pipe(prompt, height=768, width=768).images[0]
 

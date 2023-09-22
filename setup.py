@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="onediff",
-    version="0.9.0",
+    version="0.10.0.dev",
     description="OneFlow backend for diffusers",
     url="https://github.com/Oneflow-Inc/oneflow",
     author="OneFlow contributors",
@@ -11,7 +11,12 @@ setup(
     package_dir={"": "src"},
     packages=find_packages("src"),
     python_requires=">=3.7.0",
-    install_requires=["transformers>=4.26", "diffusers"],
+    install_requires=[
+        "transformers>=4.27.1",
+        "diffusers>=0.19.3",
+        "torch",
+        "onefx",
+    ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Intended Audience :: Developers",
