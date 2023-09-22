@@ -21,12 +21,15 @@ os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
 
 import click
+
 # cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
 # Maybe bacause oneflow use a lower version of cv2
 import cv2
 import oneflow as flow
+import torch
 from tqdm import tqdm
 from dataclasses import dataclass, fields
+from onediff.infer_compiler import oneflow_compile
 
 
 @dataclass
@@ -41,14 +44,6 @@ class TensorInput(object):
         return field_types[key]
 
 
-class MockCtx(object):
-    def __enter__(self):
-        flow.mock_torch.enable(lazy=True)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        flow.mock_torch.disable()
-
-
 def get_unet(token, _model_id, revision):
     from diffusers import UNet2DConditionModel
 
@@ -56,50 +51,12 @@ def get_unet(token, _model_id, revision):
         _model_id,
         use_auth_token=token,
         revision=revision,
-        torch_dtype=flow.float16,
+        torch_dtype=torch.float16,
         subfolder="unet",
     )
-    with flow.no_grad():
+    with torch.no_grad():
         unet = unet.to("cuda")
     return unet
-
-
-class UNetGraphWithCache(flow.nn.Graph):
-    @flow.nn.Graph.with_dynamic_input_shape(size=9)
-    def __init__(self, unet):
-        super().__init__(enable_get_runtime_state_dict=True)
-        self.unet = unet
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
-    def build(self, latent_model_input, t, text_embeddings, added_cond_kwargs=None):
-        text_embeddings = flow._C.amp_white_identity(text_embeddings)
-        return self.unet(
-            latent_model_input, t, encoder_hidden_states=text_embeddings, added_cond_kwargs=added_cond_kwargs,
-        ).sample
-
-    def warmup_with_arg(self, arg_meta_of_sizes, added):
-        for arg_metas in arg_meta_of_sizes:
-            print(f"warmup {arg_metas=}")
-            arg_tensors = [
-                flow.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to(
-                    "cuda"
-                ),
-                flow.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
-                flow.empty(
-                    arg_metas.cross_attention_dim,
-                    dtype=arg_metas.gettype("cross_attention_dim"),
-                ).to("cuda"),
-            ]
-            self(*arg_tensors, added)  # build and warmup
-
-    def warmup_with_load(self, file_path):
-        state_dict = flow.load(file_path)
-        self.load_runtime_state_dict(state_dict)
-
-    def save_graph(self, file_path):
-        state_dict = self.runtime_state_dict()
-        flow.save(state_dict, file_path)
 
 
 def img_dim(i, start, stride):
@@ -135,6 +92,7 @@ def get_arg_meta_of_sizes(
         for j in resolution_scales
     ]
 
+
 @click.command()
 @click.option("--token")
 @click.option("--repeat", default=100)
@@ -142,7 +100,9 @@ def get_arg_meta_of_sizes(
 @click.option("--save", is_flag=True)
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
-@click.option("--model_id", type=str, default="runwayml/stable-diffusion-v1-5")
+@click.option(
+    "--model_id", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
+)
 @click.option("--revision", type=str, default="fp16")
 def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision):
     RESOLUTION_SCALES = [2, 1, 0]
@@ -152,18 +112,21 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
 
     # create a mocked unet graph
     # unet mock should be placed before importing any diffusers
-    with MockCtx():
-        unet = get_unet(token, model_id, revision)
-        unet_graph = UNetGraphWithCache(unet)
+    unet = get_unet(token, model_id, revision)
+    unet_graph = oneflow_compile(unet)
 
     num_channels = 4
     cross_attention_dim = unet.config["cross_attention_dim"]
     from diffusers.utils import floats_tensor
     import torch
-    if model_id == "stabilityai/stable-diffusion-xl-base-1.0":
+
+    if (
+        model_id == "stabilityai/stable-diffusion-xl-base-1.0"
+        or "xl-base-1.0" in model_id
+    ):
         # sdxl needed
-        add_text_embeds = flow.utils.tensor.from_torch(floats_tensor((2, 1280)).to("cuda").to(torch.float16))
-        add_time_ids = flow.utils.tensor.from_torch(floats_tensor((2, 6)).to("cuda").to(torch.float16))
+        add_text_embeds = floats_tensor((2, 1280)).to("cuda").to(torch.float16)
+        add_time_ids = floats_tensor((2, 6)).to("cuda").to(torch.float16)
         added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
     else:
         added_cond_kwargs = None
@@ -174,7 +137,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         num_channels=num_channels,
         cross_attention_dim=cross_attention_dim,
     )
-    for (i, m) in enumerate(warmup_meta_of_sizes):
+    for i, m in enumerate(warmup_meta_of_sizes):
         print(f"warmup case #{i + 1}:", m)
 
     if load == True:
