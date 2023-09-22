@@ -59,6 +59,20 @@ def get_unet(token, _model_id, revision):
     return unet
 
 
+def warmup_with_arg(graph, arg_meta_of_sizes, added):
+    for arg_metas in arg_meta_of_sizes:
+        print(f"warmup {arg_metas=}")
+        arg_tensors = [
+            torch.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to("cuda"),
+            torch.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
+            torch.empty(
+                arg_metas.cross_attention_dim,
+                dtype=arg_metas.gettype("cross_attention_dim"),
+            ).to("cuda"),
+        ]
+        graph(*arg_tensors, added)  # build and warmup
+
+
 def img_dim(i, start, stride):
     return start + stride * i
 
@@ -91,20 +105,6 @@ def get_arg_meta_of_sizes(
         for i in resolution_scales
         for j in resolution_scales
     ]
-
-
-def warmup_with_arg(graph, arg_meta_of_sizes, added):
-    for arg_metas in arg_meta_of_sizes:
-        print(f"warmup {arg_metas=}")
-        arg_tensors = [
-            torch.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to("cuda"),
-            torch.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
-            torch.empty(
-                arg_metas.cross_attention_dim,
-                dtype=arg_metas.gettype("cross_attention_dim"),
-            ).to("cuda"),
-        ]
-        graph(*arg_tensors, added)  # build and warmup
 
 
 @click.command()
