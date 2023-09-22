@@ -36,7 +36,7 @@ def get_unet_graph(size=9):
             latent_model_input,
             t,
             encoder_hidden_states,
-            cross_attention_kwargs,
+            cross_attention_kwargs=None,
             added_cond_kwargs=None,
             return_dict=False,
         ):
