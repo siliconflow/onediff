@@ -10,6 +10,9 @@ import argparse
 import cv2
 import oneflow as flow
 import torch
+import logging
+
+logger = logging.getLogger(__name__)
 
 # oneflow_compile should be imported before importing any diffusers
 from onediff.infer_compiler import oneflow_compile
@@ -33,12 +36,15 @@ parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
+parser.add_argument("--compile_with_dynamo", action=argparse.BooleanOptionalAction)
 parser.add_argument("--num_dynamic_input_sizee", type=int, default=9)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
 parser.add_argument("--file", type=str, required=False, default="unet_compiled")
-parser.add_argument("--compile2", action=argparse.BooleanOptionalAction)
 cmd_args = parser.parse_args()
+
+if cmd_args.compile and cmd_args.compile_with_dynamo:
+    parser.error("--compile and --compile_with_dynamo cannot be used together.")
 
 # Normal SDXL pipeline init.
 seed = torch.Generator("cuda").manual_seed(cmd_args.seed)
@@ -83,8 +89,8 @@ if cmd_args.compile and cmd_args.load:
         refiner.unet._graph_load("refiner_" + cmd_args.file)
 
 # Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
-if cmd_args.compile2:
-    print("unet is compiled to oneflow with torch.compile.")
+if cmd_args.compile_with_dynamo:
+    logger.info("unet is compiled to oneflow with torch.compile.")
     from onediff.infer_compiler import oneflow_backend
 
     base.unet = torch.compile(

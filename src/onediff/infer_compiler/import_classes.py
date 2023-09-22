@@ -2,7 +2,7 @@ import pkgutil
 import importlib
 import inspect
 from typing import Dict
-from diffusers.utils import logging
+import logging
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
