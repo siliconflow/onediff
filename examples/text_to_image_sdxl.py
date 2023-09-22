@@ -84,9 +84,9 @@ if cmd_args.compile:
 # Load compiled unet with oneflow
 if cmd_args.compile and cmd_args.load:
     print("loading graphs...")
-    base.unet._graph_load("base_" + cmd_args.file)
+    base.unet.warmup_with_load("base_" + cmd_args.file)
     if cmd_args.with_refiner:
-        refiner.unet._graph_load("refiner_" + cmd_args.file)
+        refiner.unet.warmup_with_load("refiner_" + cmd_args.file)
 
 # Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile_with_dynamo:
@@ -123,6 +123,6 @@ for h in sizes:
 # Save compiled unet with oneflow
 if cmd_args.compile and cmd_args.save:
     print("saving graphs...")
-    base.unet._graph_save("base_" + cmd_args.file)
+    base.unet.save_graph("base_" + cmd_args.file)
     if cmd_args.with_refiner:
-        refiner.unet._graph_save("refiner_" + cmd_args.file)
+        refiner.unet.save_graph("refiner_" + cmd_args.file)

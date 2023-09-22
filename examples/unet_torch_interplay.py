@@ -34,9 +34,9 @@ from onediff.infer_compiler import oneflow_compile
 
 @dataclass
 class TensorInput(object):
-    noise: flow.float16
-    time: flow.int64
-    cross_attention_dim: flow.float16
+    noise: torch.float16
+    time: torch.int64
+    cross_attention_dim: torch.float16
 
     @classmethod
     def gettype(cls, key):
@@ -93,6 +93,20 @@ def get_arg_meta_of_sizes(
     ]
 
 
+def warmup_with_arg(graph, arg_meta_of_sizes, added):
+    for arg_metas in arg_meta_of_sizes:
+        print(f"warmup {arg_metas=}")
+        arg_tensors = [
+            torch.empty(arg_metas.noise, dtype=arg_metas.gettype("noise")).to("cuda"),
+            torch.empty(arg_metas.time, dtype=arg_metas.gettype("time")).to("cuda"),
+            torch.empty(
+                arg_metas.cross_attention_dim,
+                dtype=arg_metas.gettype("cross_attention_dim"),
+            ).to("cuda"),
+        ]
+        graph(*arg_tensors, added)  # build and warmup
+
+
 @click.command()
 @click.option("--token")
 @click.option("--repeat", default=100)
@@ -145,7 +159,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         unet_graph.warmup_with_load(file)
     else:
         print("warmup with arguments...")
-        unet_graph.warmup_with_arg(warmup_meta_of_sizes, added_cond_kwargs)
+        warmup_with_arg(unet_graph, warmup_meta_of_sizes, added_cond_kwargs)
 
     # generate inputs with torch
     time_step = torch.tensor([10]).to("cuda")
@@ -159,15 +173,6 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         floats_tensor(arg_metas.noise).to("cuda").to(torch.float16)
         for arg_metas in warmup_meta_of_sizes
     ]
-    noise_of_sizes = [flow.utils.tensor.from_torch(x) for x in noise_of_sizes]
-    encoder_hidden_states_of_sizes = {
-        k: flow.utils.tensor.from_torch(v)
-        for k, v in encoder_hidden_states_of_sizes.items()
-    }
-
-    # convert to oneflow tensors
-    time_step = flow.utils.tensor.from_torch(time_step)
-
     flow._oneflow_internal.eager.Sync()
     import time
 
@@ -178,8 +183,6 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         noise = random.choice(noise_of_sizes)
         encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]
         out = unet_graph(noise, time_step, encoder_hidden_states, added_cond_kwargs)
-        # convert to torch tensors
-        out = flow.utils.tensor.to_torch(out)
         if r == repeat - 1 or r % sync_interval == 0:
             flow._oneflow_internal.eager.Sync()
     print(f"{type(out)=}")
