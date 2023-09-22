@@ -37,7 +37,7 @@ parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
 parser.add_argument("--compile_with_dynamo", action=argparse.BooleanOptionalAction)
-parser.add_argument("--num_dynamic_input_sizee", type=int, default=9)
+parser.add_argument("--num_dynamic_input_size", type=int, default=9)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
 parser.add_argument("--file", type=str, required=False, default="unet_compiled")
@@ -73,11 +73,11 @@ if cmd_args.with_refiner:
 if cmd_args.compile:
     print("unet is compiled to oneflow.")
     base.unet = oneflow_compile(
-        base.unet, options={"size": cmd_args.num_dynamic_input_sizee}
+        base.unet, options={"size": cmd_args.num_dynamic_input_size}
     )
     if cmd_args.with_refiner:
         refiner.unet = oneflow_compile(
-            refiner.unet, options={"size": cmd_args.num_dynamic_input_sizee}
+            refiner.unet, options={"size": cmd_args.num_dynamic_input_size}
         )
         output_type = "latent"
 
