@@ -7,13 +7,13 @@ Timings for 30 steps at 1024x1024
 | NVIDIA GeForce RTX 3090 | 8433 ms  | 5161 ms                     | ~38.7%                 |
 | A100 40G PCIE           | 4435 ms  | 3295 ms                     | ~25.7%                 |
 
-## 🛠️ New Features 
+## 🛠️ New Features
 
 - Convert PyTorch models like UNet to OneFlow static graph in one function
-- Enable multi-resolution input with same compiled model 
+- Enable multi-resolution input with same compiled model
 - Save and load compiled static graph
-  
-## Installation Guide 🚀 NEW 
+
+## Installation Guide 🚀 NEW
 
 ### Prerequisites
 
@@ -30,7 +30,7 @@ Before you begin, ensure that you meet the following prerequisites:
 
     ```shell
     git clone https://github.com/Oneflow-Inc/diffusers.git
-    cd diffusers 
+    cd diffusers
     pip install .
     ```
 
@@ -60,7 +60,7 @@ conda install pytorch torchvision torchaudio pytorch-cuda=11.7 -c pytorch -c nvi
 
 
 - Using Pip:
-```bash 
+```bash
 pip3 install torch torchvision torchaudio
 ```
 
@@ -97,7 +97,7 @@ pipe.to("cuda")
 pipe.unet = oneflow_compile(pipe.unet)
 if Path(file_name).exists():
     print(f"Loading the compiled graph from {file_name}...")
-    pipe.unet._graph_load(file_name)
+    pipe.unet.warmup_with_load(file_name)
 
 
 image = pipe(prompt).images[0]
@@ -105,17 +105,17 @@ print(f"Saved the image to {saved_image}.")
 image.save(saved_image)
 
 if not Path(file_name).exists():
-    pipe.unet._graph_save(file_name)
+    pipe.unet.save_graph(file_name)
     print(f"Saved the compiled graph to {file_name}.")
 
 ```
 </details>
 
- 
+
 To test compiling and saving the UNet model, run the following command:
 
-```shell 
-python demo.py && python demo.py 
+```shell
+python demo.py && python demo.py
 # First: Compile and save the UNet model
 # Second: Load the compiled UNet model
 ```
@@ -133,7 +133,3 @@ python demo.py && python demo.py
 <a href="https://github.com/Oneflow-Inc/diffusers/blob/refactor-backend/examples/text_to_image_sdxl_fp16.py" target="_new">Example 1: <code>text_to_image_sdxl_fp16.py</code></a>
 
 <a href="https://github.com/Oneflow-Inc/diffusers/blob/refactor-backend/examples/text_to_image_sdxl_fp16_with_oneflow_compile.py" target="_new">Example 2: <code>text_to_image_sdxl_fp16_with_oneflow_compile.py</code></a>
-
-
-
-
