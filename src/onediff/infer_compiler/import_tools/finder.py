@@ -4,6 +4,7 @@ import inspect
 import logging
 from typing import Dict
 from .copier import PackageCopier
+from .printer import print_red
 
 logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
@@ -44,6 +45,7 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, object]:
         copier = PackageCopier(package, prefix=PREFIX, suffix=SUFFIX)
         copier()  # copy package
         package = copier.get_import_module()
+        print_red(f"Loading package {package.__name__}...")
 
     class_dict = {}
 
