@@ -7,21 +7,23 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+from .import_tools import get_classes_in_package, get_mock_cls_name, print_green
 
 __of_mds = {}
 
 
 def __init_of_mds(package_names: list[str]):
-    import sys
-    if "diffusers" in sys.modules:
-        raise ImportError("onediff.infer_compiler must be imported before importing diffusers.")
     global __of_mds
+    if __of_mds:
+        print_green("already initialized")
+        return __of_mds
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     with flow.mock_torch.enable(lazy=True):
-        from .import_classes import get_classes_in_package
 
         for package_name in package_names:
             __of_mds.update(get_classes_in_package(package_name))
+        print_green(f"init of mds done: {len(__of_mds)} \n {package_names=}")
+        return __of_mds
 
 
 package_names = os.getenv("INIT_OF_MDS", "diffusers")
@@ -51,7 +53,8 @@ def replace_class(cls):
     elif cls == diffusers.models.attention_processor.Attention:
         return Attention
 
-    full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
+    # full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
+    full_cls_name = get_mock_cls_name(str(cls.__module__) + "." + str(cls.__name__))
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
 
