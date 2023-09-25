@@ -124,8 +124,6 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
     # TODO: reproduce bug caused by changing batch
     # BATCH_SIZES = [4, 2]
 
-    # create a mocked unet graph
-    # unet mock should be placed before importing any diffusers
     unet = get_unet(token, model_id, revision)
     unet_graph = oneflow_compile(unet)
 
