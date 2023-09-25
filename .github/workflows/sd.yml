@@ -52,7 +52,7 @@ jobs:
           remove-haskell: "true"
           remove-codeql: "true"
           remove-docker-images: "true"
-          build-mount-path: /var/lib/docker
+          overprovision-lvm: "true"
       - name: Checkout
         uses: actions/checkout@v2
       - run: ls -al
