@@ -1,7 +1,6 @@
-from diffusers import StableDiffusionPipeline
-
-import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
+from diffusers import StableDiffusionPipeline
+import oneflow as flow
 
 model_id = "runwayml/stable-diffusion-v1-5"
 
