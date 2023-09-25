@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix-docker-2
 
   workflow_dispatch:
 # Environment variables available to all jobs and steps in this workflow.
@@ -26,7 +27,7 @@ jobs:
       matrix:
         image:
           - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:22.09-py3",
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
               suffix: "cu117",
               ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu117",
             }
