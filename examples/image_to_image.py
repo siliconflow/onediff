@@ -1,17 +1,36 @@
 from PIL import Image
 
-from onediff import OneFlowStableDiffusionImg2ImgPipeline
-import oneflow as flow
-flow.mock_torch.enable()
 
-pipe = OneFlowStableDiffusionImg2ImgPipeline.from_pretrained(
-    "stabilityai/stable-diffusion-2",
+import argparse
+from onediff.infer_compiler import oneflow_compile
+from diffusers import StableDiffusionImg2ImgPipeline
+import oneflow as flow
+import torch
+
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Simple demo of image generation.")
+    parser.add_argument(
+        "--model_id",
+        type=str,
+        default="stabilityai/stable-diffusion-2-1",
+    )
+    args = parser.parse_args()
+    return args
+
+
+args = parse_args()
+
+
+pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
+    args.model_id,
     use_auth_token=True,
     revision="fp16",
-    torch_dtype=flow.float16,
+    torch_dtype=torch.float16,
 )
 
 pipe = pipe.to("cuda")
+pipe.unet = oneflow_compile(pipe.unet)
 
 prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
