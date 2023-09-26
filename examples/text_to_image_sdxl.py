@@ -46,7 +46,7 @@ cmd_args = parser.parse_args()
 if cmd_args.compile and cmd_args.compile_with_dynamo:
     parser.error("--compile and --compile_with_dynamo cannot be used together.")
 
-def test_sdxl(device):
+def test_sdxl(device, origin_device=None):
     # Normal SDXL pipeline init.
     seed = torch.Generator("cuda").manual_seed(cmd_args.seed)
     output_type = "pil"
@@ -84,6 +84,11 @@ def test_sdxl(device):
     
     # Load compiled unet with oneflow
     if cmd_args.compile and cmd_args.load:
+        if origin_device is not None:
+            print("converting rsd")
+            origin_rsd = flow.load("base_" + cmd_args.file + origin_device)
+            rsd = flow.nn.Graph.runtime_state_dict_to(origin_rsd, device)
+            flow.save(rsd, "base_" + cmd_args.file + device)
         print("loading graphs...")
         base.unet.warmup_with_load("base_" + cmd_args.file + device)
         if cmd_args.with_refiner:
@@ -128,5 +133,5 @@ def test_sdxl(device):
         if cmd_args.with_refiner:
             refiner.unet.save_graph("refiner_" + cmd_args.file + device)
 
-test_sdxl("cuda")
-test_sdxl("cuda:1")
+#test_sdxl("cuda:2")
+test_sdxl("cuda:1", "cuda:2")
