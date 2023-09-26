@@ -34,6 +34,7 @@ pipe.unet = oneflow_compile(pipe.unet)
 
 prompt = args.prompt
 with flow.autocast("cuda"):
-    images = pipe(prompt).images
+    images = pipe(prompt, num_images_per_prompt=4).images
+    images = pipe(prompt, num_images_per_prompt=1).images
     for i, image in enumerate(images):
         image.save(f"{prompt}-of-{i}.png")
