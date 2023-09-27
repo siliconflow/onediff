@@ -1,33 +1,25 @@
-import importlib
 import os
-from collections import OrderedDict
 import torch
 import oneflow as flow
+import importlib
 import logging
 
+
 logger = logging.getLogger(__name__)
+from functools import singledispatch
+from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
+from onediff.infer_compiler.import_tools.finder import get_mock_cls_name
 
-from .import_tools import get_classes_in_package, get_mock_cls_name, print_green, print_red
+__all__ = [
+    "replace_class",
+    "replace_obj",
+    "replace_func",
+    "map_args",
+    "ProxySubmodule",
+]
 
-__all__ = ["replace_class", "replace_obj", "replace_func", "map_args", "ProxySubmodule"]
-__of_mds = {}
+from .globals import PROXY_OF_MDS as __of_mds
 
-def __init_of_mds(package_names: list[str]):
-    global __of_mds
-    if __of_mds:
-        print_green("already initialized")
-        return __of_mds
-    # https://docs.oneflow.org/master/cookies/oneflow_torch.html
-    with flow.mock_torch.enable(lazy=True):
-
-        for package_name in package_names:
-            __of_mds.update(get_classes_in_package(package_name))
-        print_green(f"init of mds done: {len(__of_mds)} \n {package_names=}")
-        return __of_mds
-
-
-# package_names = os.getenv("INIT_OF_MDS", "diffusers")
-# __init_of_mds(package_names.split(","))  # export INIT_OF_MDS="diffusers,comfyui"
 
 import diffusers
 from typing import Any
@@ -69,7 +61,8 @@ def replace_class(cls):
             return diffusers_quant.OneFlowStaticQuantLinearModule
         if cls == diffusers_quant.DynamicQuantLinearModule:
             return diffusers_quant.OneFlowDynamicLinearQuantModule
-
+        
+    raise RuntimeError("can't find oneflow module for: " + str(cls))
 
 def replace_obj(obj):
     cls = type(obj)
@@ -109,74 +102,10 @@ def replace_func(func):
     else:
         return func
 
-
 def map_args(args, kwargs):
     args = [replace_obj(a) for a in args]
     kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
     return (args, kwargs)
-
-class todo_Sequential:
-    def __init__(self, *args):
-        self.ops = args
-    def __call__(self, x):
-        try:
-            x = flow.utils.tensor.from_torch(x)
-        except:
-            pass 
-        _input = x.to("cuda")
-
-        try:
-            for op in self.ops:
-                _input = op(_input)
-        except:
-            print_red(f"error in {op}")
-            import pdb; pdb.set_trace()
-        return _input
-        
-    def __getitem__(self, index): # __getitem__
-        return self.ops[index]
-    def __len__(self):
-        return len(self.ops)
-    def __iter__(self):
-        return iter(self.ops)
-    def forward(self, x):
-        return self(x)
-    
-    @staticmethod
-    def from_torch(torch_sequential)-> list:
-        result = []
-        for m in torch_sequential:
-            if isinstance(m, torch.nn.modules.container.Sequential):
-                result.extend(todo_Sequential.from_torch(m))
-            else:
-                result.append(m)
-        return result
-
-"""
-    from comfy.ldm.modules.diffusionmodules.openaimodel import TimestepBlock
-    onediff/infer_compiler/obj_1f_from_torch.py
-    from onediff.infer_compiler.obj_1f_from_torch import is_instance
-    is_instance(layer, TimestepBlock)
-    """
-
-def is_instance(self, cls):
-    global __of_mds
-    # full_cls_name: str(cls.__module__) + "." + str(cls.__name__)
-    def import_class(full_cls_name: str):
-        module_name, cls_name = full_cls_name.rsplit(".", 1)
-        module = importlib.import_module(module_name)
-        cls = getattr(module, cls_name)
-        return cls
-    
-    full_name = str(cls.__module__) + "." + str(cls.__name__)
-    if full_name in __of_mds:
-        full_name = full_name.replace('mock_','')
-
-    cls = import_class(full_name)
-    if isinstance(self._1f_proxy_submod, cls):
-        return True
-    else:
-        return False
 
 
 
@@ -187,25 +116,39 @@ class ProxySubmodule:
         self._1f_proxy_parameters = dict()
         self._1f_proxy_children = dict()
     
+
     def __getitem__(self, index): # __getitem__
         from collections.abc import Iterable
         if isinstance(self._1f_proxy_submod,Iterable):
             submod = self._1f_proxy_submod[index]
-            return ProxySubmodule(submod)
+            from .register import torch2of
+            return torch2of(submod)
         else:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
         
     def __repr__(self) -> str:
         return self._1f_proxy_submod.__repr__() + " 1f_proxy"
-    
+
     def __getattribute__(self, attribute):
+        # import os 
+        # if os.environ.get('DEBUG_MODEL','-1') == '1':
+        #     print('DEBUG: checkpointing disabled')
+        #     import pdb; pdb.set_trace()
+
         if attribute.startswith("_1f_proxy"):
             return object.__getattribute__(self, attribute)
         elif attribute in ["forward", "_conv_forward"]:
-            replacement = replace_class(type(self._1f_proxy_submod))
-            return lambda *args, **kwargs: getattr(replacement, attribute)(
-                self, *args, **kwargs
-            )
+            from .register import torch2of
+            of_mod  =  torch2of(self._1f_proxy_submod)
+            return getattr(of_mod, attribute)
+            # replacement = replace_class(type(self._1f_proxy_submod))
+            # import os 
+            # if os.environ.get('DEBUG_MODEL','-1') == '1':
+            #     print('DEBUG: checkpointing disabled')
+            #     import pdb; pdb.set_trace()
+            # return lambda *args, **kwargs: getattr(replacement, attribute)(
+            #     self, *args, **kwargs
+            # )
         elif (
             isinstance(
                 self._1f_proxy_submod, diffusers.models.attention_processor.Attention
@@ -236,6 +179,7 @@ class ProxySubmodule:
             return "channels_first"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
+            # isinstance(getattr(self._1f_proxy_submod, attribute), torch.nn.Module)
             if isinstance(a, torch.Tensor):
                 a = flow.utils.tensor.from_torch(a.data)
             elif isinstance(a, torch.nn.parameter.Parameter):
@@ -248,14 +192,14 @@ class ProxySubmodule:
             elif isinstance(a, torch.nn.ModuleList):
                 a = [ProxySubmodule(m) for m in a]
             elif isinstance(a, torch.nn.modules.container.Sequential):
-                print("found sequential")
-                # a = todo_Sequential(*[ProxySubmodule(m) for m in a])
-                a = todo_Sequential.from_torch(a)
-                a = todo_Sequential(*[ProxySubmodule(m) for m in a])
+                from .register import torch2of
+                a = flow.nn.Sequential(*[torch2of(m) for m in a])
                 return a
             elif isinstance(a, torch.nn.Module):
                 if attribute not in self._1f_proxy_children:
-                    a = ProxySubmodule(a)
+                    # a = ProxySubmodule(a)
+                    from .register import torch2of
+                    a = torch2of(a)
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
@@ -279,6 +223,7 @@ class ProxySubmodule:
             #     # a = replace_obj(a)
             return a
 
+            
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))
 
@@ -289,77 +234,3 @@ class ProxySubmodule:
                 "can't find oneflow module for: " + str(type(self._1f_proxy_submod))
             )
 
-
-def _get_module_list(origin_mod, torch2flow):
-    assert isinstance(origin_mod, torch.nn.ModuleList)
-    if origin_mod in torch2flow:
-        return torch2flow[origin_mod]
-    of_md_list = flow.nn.ModuleList()
-    for m in origin_mod:
-        of_md_list.append(_get_module(m, torch2flow))
-    torch2flow[origin_mod] = of_md_list
-    return of_md_list
-def _get_module_sequential(origin_mod, torch2flow):
-    assert isinstance(origin_mod, torch.nn.Sequential)
-    if origin_mod in torch2flow:
-        return torch2flow[origin_mod]
-    of_md_list = []
-    for m in origin_mod:
-        of_md_list.append(_get_module(m, torch2flow))
-    of_md_seq = flow.nn.Sequential(*of_md_list)
-    torch2flow[origin_mod] = of_md_seq
-    return of_md_seq
-
-def _get_module(origin_mod, torch2flow):
-    if origin_mod in torch2flow:
-        return torch2flow[origin_mod]
-
-    if isinstance(origin_mod, torch.nn.ModuleList):
-        return _get_module_list(origin_mod, torch2flow)
-    elif isinstance(origin_mod, torch.nn.Sequential):
-        return _get_module_sequential(origin_mod, torch2flow)
-    
-    proxy_md = ProxySubmodule(origin_mod)
-    new_md_cls = replace_class(type(origin_mod))
-
-    def init(self):
-        self._parameters = OrderedDict()
-        self._buffers = OrderedDict()
-        self._modules = OrderedDict()
-        for (n, p) in list(proxy_md.named_parameters("", False)):
-            self._parameters[n] = flow.utils.tensor.from_torch(p.data)
-        for (n, b) in list(proxy_md.named_buffers("", False)):
-            self._buffers[n] = flow.utils.tensor.from_torch(b.data)
-        for (n, m) in proxy_md._modules.items():
-            self._modules[n] = _get_module(m, torch2flow)
-
-        for k, v in proxy_md.__dict__.items():
-            if k not in self.__dict__:
-                attr = getattr(proxy_md, k)
-                self.__dict__[k] = attr
-
-    def proxy_getattr(self, attr):
-        if attr in ["_parameters", "_buffers", "_modules"]:
-            raise ValueError(f"missing attr {attr} in base class")
-        else:
-            return getattr(proxy_md, attr)
-
-    of_md_cls = type(
-        str(new_md_cls),
-        (new_md_cls,),
-        {"__init__": init, "__getattr__": proxy_getattr},
-    )
-
-    new_md = of_md_cls()
-
-    torch2flow[origin_mod] = new_md
-    return new_md
-
-
-def _get_attr(gm, node, torch2flow):
-    attr = getattr(gm, node.target)
-    if attr in torch2flow:
-        return torch2flow[attr]
-    of_attr = replace_obj(attr)
-    torch2flow[attr] = of_attr
-    return of_attr
