@@ -1,24 +1,53 @@
-# register.py 
+""" Desc: register function for torch2of
+Usage:
+    >>> import torch
+    >>> from onediff.infer_compiler.convert_torch_to_of import torch2of
+    >>> x = torch.nn.Linear(3, 4)
+    >>> y = torch2of(x) # convert torch.nn.Linear to oneflow.nn.Linear
+    >>> y
+    <class 'oneflow.nn.modules.linear.Linear'>(in_features=3, out_features=4, bias=True)
+    
+### Support: 
+#### Basic:(register.py)
+
+torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential, torch.Tensor, 
+torch.nn.parameter.Parameter,
+list, tuple, dict, int, float, str, bool, None
+
+#### Advanced:(custom_register.py)
+
+"""
+from functools import singledispatch
 import torch
 import oneflow as flow
 from collections import OrderedDict
-from functools import singledispatch
+from typing import Union
 from .proxy import ProxySubmodule, replace_class
+from ._globals import TORCH_2_OF_CACHE_DICT as __cache_dict
+
+__all__ = ["torch2of"]
 
 
-@singledispatch  
-def torch2of(mod):
-    raise NotImplementedError(f"Unsupported module type: {type(mod)}")
+
+@singledispatch
+def torch2of(mod, *args, **kwargs):
+    # return _object_converter(mod, *args, **kwargs)
+    
+    raise NotImplementedError(f"Unsupported type: {type(mod)}")
+
+from .custom_register import * # noqa  used to register custom type
 
 @torch2of.register
-def _(mod: torch.nn.Module):
+def _(mod: torch.nn.Module, verbose=False):
+    if mod in __cache_dict:
+        return __cache_dict[mod]
+
     proxy_md = ProxySubmodule(mod)
-    
     # import pdb; pdb.set_trace()
     new_md_cls = replace_class(type(mod))
-    
+
     def init(self):
-        nonlocal proxy_md 
+        nonlocal proxy_md
 
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
@@ -33,7 +62,7 @@ def _(mod: torch.nn.Module):
         for k, v in proxy_md.__dict__.items():
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
-                self.__dict__[k] = attr
+                self.__dict__[k] = torch2of(attr)
 
     def proxy_getattr(self, attr):
         nonlocal proxy_md
@@ -42,34 +71,88 @@ def _(mod: torch.nn.Module):
             raise ValueError(f"missing attr {attr} in base class")
         else:
             return getattr(proxy_md, attr)
-    
+
     of_mod_cls = type(
-        str(new_md_cls),
-         (new_md_cls,), 
-         {
-        "__init__": init,
-        "__getattr__": proxy_getattr
-    })
+        str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
+    )
     of_mod = of_mod_cls()
+
+    if verbose:
+        print(f"convert {type(mod)} to {type(of_mod)}")
+
     return of_mod
 
 
 @torch2of.register
-def _(mod: torch.nn.ModuleList):
+def _(mod: torch.nn.ModuleList, verbose=False):
+    if mod in __cache_dict:
+        return __cache_dict[mod]
+
     of_mod_list = flow.nn.ModuleList()
     for original_submod in mod:
-        submod = torch2of(original_submod)
+        submod = torch2of(original_submod, verbose)
         of_mod_list.append(submod)
+
+    __cache_dict[mod] = of_mod_list
     return of_mod_list
 
+
 @torch2of.register
-def _(mod: torch.nn.Sequential):
-    
+def _(mod: torch.nn.Sequential, verbose=False):
+    if mod in __cache_dict:
+        return __cache_dict[mod]
+
     of_mod_list = []
     for original_submod in mod:
-        submod = torch2of(original_submod)
+        submod = torch2of(original_submod, verbose)
         of_mod_list.append(submod)
-    return flow.nn.Sequential(*of_mod_list)
-    
+    of_mod_seq = flow.nn.Sequential(*of_mod_list)
 
-# ...其他注册    
+    __cache_dict[mod] = of_mod_seq
+    return of_mod_seq
+
+
+@torch2of.register
+def _(mod: torch.nn.parameter.Parameter, verbose=False):
+    # TODO(oneflow): assert a.requires_grad == False
+    return flow.utils.tensor.from_torch(mod.data)
+
+
+
+@torch2of.register
+def _mod(mod: torch.Tensor, verbose=False) -> flow.Tensor:
+    return flow.utils.tensor.from_torch(mod)
+
+
+@torch2of.register
+def _mod(mod: list, verbose=False) -> list:
+    return [torch2of(m, verbose) for m in mod]
+
+
+@torch2of.register
+def _mod(mod: tuple, verbose=False) -> tuple:
+    return tuple(torch2of(m, verbose) for m in mod)
+
+
+@torch2of.register
+def _mod(mod: dict, verbose=False) -> dict:
+    return {k: torch2of(v, verbose) for k, v in mod.items()}
+
+@torch2of.register
+def _mod(mod: set, verbose=False) -> set:
+    return set(torch2of(m, verbose) for m in mod)
+
+@torch2of.register(int)
+@torch2of.register(float)
+@torch2of.register(str)
+@torch2of.register(bool)
+def _mod(mod, verbose=False) -> Union[int, float, str, bool]:
+    return mod
+
+
+@torch2of.register
+def _mod(mod: None, verbose=False) -> None:
+    return mod
+
+
+

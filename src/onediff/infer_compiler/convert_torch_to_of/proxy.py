@@ -6,9 +6,7 @@ import logging
 
 
 logger = logging.getLogger(__name__)
-from functools import singledispatch
-from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
-from onediff.infer_compiler.import_tools.finder import get_mock_cls_name
+from onediff.infer_compiler.import_tools import  print_green, print_red , get_mock_cls_name
 
 __all__ = [
     "replace_class",
@@ -18,12 +16,11 @@ __all__ = [
     "ProxySubmodule",
 ]
 
-from .globals import PROXY_OF_MDS as __of_mds
+from ._globals import PROXY_OF_MDS as __of_mds
 
 
 import diffusers
 from typing import Any
-from .attention_processor_1f import Attention
 
 _is_diffusers_quant_available = False
 try:
@@ -33,6 +30,7 @@ try:
 except:
     pass
 
+from .attention_processor_1f import Attention
 
 def replace_class(cls):
     global __of_mds
@@ -41,10 +39,11 @@ def replace_class(cls):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
-    # TODO https://github.com/Oneflow-Inc/oneflow/issues/10328
-    elif cls == diffusers.models.attention_processor.Attention:
-        return Attention
 
+
+    if cls == diffusers.models.attention_processor.Attention:
+        return Attention
+    
     # full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
     full_cls_name = get_mock_cls_name(str(cls.__module__) + "." + str(cls.__name__))
     if full_cls_name in __of_mds:
@@ -108,8 +107,16 @@ def map_args(args, kwargs):
     return (args, kwargs)
 
 
+def get_attr(gm, node, torch2flow={}):
+    attr = getattr(gm, node.target)
+    if attr in torch2flow:
+        return torch2flow[attr]
+    of_attr = replace_obj(attr)
+    torch2flow[attr] = of_attr
+    return of_attr
 
 
+_WARNING_MSG = set()
 class ProxySubmodule:
     def __init__(self, submod):
         self._1f_proxy_submod = submod
@@ -119,7 +126,7 @@ class ProxySubmodule:
 
     def __getitem__(self, index): # __getitem__
         from collections.abc import Iterable
-        if isinstance(self._1f_proxy_submod,Iterable):
+        if isinstance(self._1f_proxy_submod, Iterable):
             submod = self._1f_proxy_submod[index]
             from .register import torch2of
             return torch2of(submod)
@@ -130,25 +137,13 @@ class ProxySubmodule:
         return self._1f_proxy_submod.__repr__() + " 1f_proxy"
 
     def __getattribute__(self, attribute):
-        # import os 
-        # if os.environ.get('DEBUG_MODEL','-1') == '1':
-        #     print('DEBUG: checkpointing disabled')
-        #     import pdb; pdb.set_trace()
-
         if attribute.startswith("_1f_proxy"):
             return object.__getattribute__(self, attribute)
         elif attribute in ["forward", "_conv_forward"]:
-            from .register import torch2of
-            of_mod  =  torch2of(self._1f_proxy_submod)
-            return getattr(of_mod, attribute)
-            # replacement = replace_class(type(self._1f_proxy_submod))
-            # import os 
-            # if os.environ.get('DEBUG_MODEL','-1') == '1':
-            #     print('DEBUG: checkpointing disabled')
-            #     import pdb; pdb.set_trace()
-            # return lambda *args, **kwargs: getattr(replacement, attribute)(
-            #     self, *args, **kwargs
-            # )
+            replacement = replace_class(type(self._1f_proxy_submod))
+            return lambda *args, **kwargs: getattr(replacement, attribute)(
+                self, *args, **kwargs
+            )
         elif (
             isinstance(
                 self._1f_proxy_submod, diffusers.models.attention_processor.Attention
@@ -179,50 +174,36 @@ class ProxySubmodule:
             return "channels_first"
         else:
             a = getattr(self._1f_proxy_submod, attribute)
-            # isinstance(getattr(self._1f_proxy_submod, attribute), torch.nn.Module)
-            if isinstance(a, torch.Tensor):
-                a = flow.utils.tensor.from_torch(a.data)
-            elif isinstance(a, torch.nn.parameter.Parameter):
+
+            if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
+                from .register import torch2of
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
-                    a = flow.utils.tensor.from_torch(a.data)
+                    a = torch2of(a)
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
-            elif isinstance(a, torch.nn.ModuleList):
-                a = [ProxySubmodule(m) for m in a]
-            elif isinstance(a, torch.nn.modules.container.Sequential):
+            elif isinstance(a, (torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential)):
                 from .register import torch2of
-                a = flow.nn.Sequential(*[torch2of(m) for m in a])
-                return a
-            elif isinstance(a, torch.nn.Module):
                 if attribute not in self._1f_proxy_children:
-                    # a = ProxySubmodule(a)
-                    from .register import torch2of
                     a = torch2of(a)
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
 
             full_name = ".".join((type(a).__module__, type(a).__name__))
-            if full_name == "diffusers.configuration_utils.FrozenDict":
-                return a
-            if full_name == "diffusers.models.attention_processor.AttnProcessor2_0":
-                return a
-            
-            # if (
-            #     type(a).__module__.startswith("torch") == False
-            #     and type(a).__module__.startswith("diffusers") == False
-            # ): 
-            #     # print_red(f"found {type(a).__module__} {type(a).__name__} {attribute}")
-            #     #"can't be a torch module at this point! But found " + str(type(a))
-            #     print_green(f"found {type(a).__module__} {type(a).__name__} {attribute}")
-            # else:
-            #     print_red (f"found {type(a).__module__} {type(a).__name__} {attribute}")
-            #     # import pdb; pdb.set_trace()
-            #     # a = replace_obj(a)
+            if(
+                type(a).__module__.startswith("torch") == False
+                and type(a).__module__.startswith("diffusers") == False
+            ):
+                pass 
+            else:
+                msg = "Waring: get attr: " + attribute + " for: " + str(type(self._1f_proxy_submod)) + " -> " + full_name
+                if msg not in _WARNING_MSG:
+                    print_red(msg)
+                    _WARNING_MSG.add(msg)
+                
             return a
-
             
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))

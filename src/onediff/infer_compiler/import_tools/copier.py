@@ -117,10 +117,12 @@ class PackageCopier:
     def get_import_module(self):
         return importlib.import_module(self.new_pkg_name)
 
-    def __call__(self):
-        for fn in tqdm(
-            self.register_call, desc=f"Copy {self.old_pkg_name} to {self.new_pkg_name}"
-        ):
+    def __call__(self, verbose=False):
+        # for fn in tqdm(
+        #     self.register_call, desc=f"Copy {self.old_pkg_name} to {self.new_pkg_name}"
+        # ):
+        #     fn()
+        for fn in self.register_call:
             fn()
 
 

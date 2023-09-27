@@ -1,5 +1,3 @@
-from . import obj_1f_from_torch
-# from .obj_1f_from_torch import _get_module
 from .convert_torch_to_of.register import torch2of
 import os
 import oneflow as flow
@@ -64,9 +62,7 @@ def get_unet_graph(size=9):
 
 
 def oneflow_compile(torch_unet, *, use_graph=True, options={}):
-    # torch2flow = {}
-    # of_md = _get_module(torch_unet, torch2flow)
-    from .convert_torch_to_of.register import torch2of
+    
     of_md = torch2of(torch_unet)
     from oneflow.framework.args_tree import ArgsTree
 

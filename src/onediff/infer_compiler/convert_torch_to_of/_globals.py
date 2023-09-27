@@ -1,7 +1,8 @@
 import os 
+from functools import singledispatch, update_wrapper
 from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
 
-__all__ = ["PROXY_OF_MDS"]
+__all__ = ["PROXY_OF_MDS", "TORCH_2_OF_CACHE_DICT"]
 
 
  # {name: md} proxy of oneflow modules
@@ -18,7 +19,13 @@ def __init_of_mds(package_names: list[str]):
         return __of_mds
 
 
+
+
 package_names = os.getenv("INIT_OF_MDS", "diffusers")
-# 代理 of modules
 PROXY_OF_MDS = __init_of_mds(package_names.split(","))  # export INIT_OF_MDS="diffusers,comfyui"
-    
+TORCH_2_OF_CACHE_DICT = {}  # {torch_md: of_md}
+
+
+
+
+
