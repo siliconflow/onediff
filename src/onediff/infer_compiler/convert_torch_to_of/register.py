@@ -22,20 +22,41 @@ import torch
 import oneflow as flow
 from collections import OrderedDict
 from typing import Union
-from .proxy import ProxySubmodule, replace_class
+from .proxy import ProxySubmodule, replace_class, replace_obj
 from ._globals import TORCH_2_OF_CACHE_DICT as __cache_dict
 
-__all__ = ["torch2of"]
-
+__all__ = ["torch2of", "default_converter"]
 
 
 @singledispatch
 def torch2of(mod, *args, **kwargs):
     # return _object_converter(mod, *args, **kwargs)
-    
-    raise NotImplementedError(f"Unsupported type: {type(mod)}")
+    try:
+        print(f"default convert {type(mod)}...")
+        return default_converter(mod, *args, **kwargs)
+    except Exception as e:
+        print(f"convert {type(mod)} failed: {e}")
+        raise NotImplementedError(f"Unsupported type: {type(mod)}")
 
-from .custom_register import * # noqa  used to register custom type
+def default_converter(obj, verbose=False):
+    # ObjectConverter   obj -> of_obj
+    # find proxy class
+    new_obj_cls = replace_class(type(obj))
+
+    def init(self):
+        for k, v in obj.__dict__.items():
+            attr = getattr(obj, k)
+            self.__dict__[k] = torch2of(attr)
+
+    of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
+    of_obj = of_obj_cls()
+
+    if verbose:
+        print(f"convert {type(obj)} to {type(of_obj)}")
+    return of_obj
+
+from .custom_register import *  # noqa  used to register custom type
+
 
 @torch2of.register
 def _(mod: torch.nn.Module, verbose=False):
@@ -62,7 +83,11 @@ def _(mod: torch.nn.Module, verbose=False):
         for k, v in proxy_md.__dict__.items():
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
-                self.__dict__[k] = torch2of(attr)
+                try:
+                    self.__dict__[k] = torch2of(attr)
+                except Exception as e:
+                    print(f"convert attr {k} failed: {e}")
+                    import pdb; pdb.set_trace()
 
     def proxy_getattr(self, attr):
         nonlocal proxy_md
@@ -118,10 +143,23 @@ def _(mod: torch.nn.parameter.Parameter, verbose=False):
     return flow.utils.tensor.from_torch(mod.data)
 
 
-
 @torch2of.register
 def _mod(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
+
+
+# torch.dtype
+@torch2of.register
+def _mod(mod: torch.dtype, verbose=False) -> flow.dtype:
+    return {
+        "torch.float16": flow.float16,
+        "torch.float32": flow.float32,
+        "torch.double": flow.double,
+        "torch.int8": flow.int8,
+        "torch.int32": flow.int32,
+        "torch.int64": flow.int64,
+        "torch.uint8": flow.uint8,
+    }[str(mod)]
 
 
 @torch2of.register
@@ -138,9 +176,11 @@ def _mod(mod: tuple, verbose=False) -> tuple:
 def _mod(mod: dict, verbose=False) -> dict:
     return {k: torch2of(v, verbose) for k, v in mod.items()}
 
+
 @torch2of.register
 def _mod(mod: set, verbose=False) -> set:
     return set(torch2of(m, verbose) for m in mod)
+
 
 @torch2of.register(int)
 @torch2of.register(float)
@@ -150,9 +190,11 @@ def _mod(mod, verbose=False) -> Union[int, float, str, bool]:
     return mod
 
 
+from enum import Enum
+@torch2of.register
+def _mod(mod: Enum, verbose=False) -> Enum:
+    return mod
+
 @torch2of.register
 def _mod(mod: None, verbose=False) -> None:
     return mod
-
-
-

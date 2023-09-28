@@ -1,6 +1,7 @@
 import os 
 from functools import singledispatch, update_wrapper
 from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
+from typing import Dict
 
 __all__ = ["PROXY_OF_MDS", "TORCH_2_OF_CACHE_DICT"]
 
@@ -26,6 +27,7 @@ PROXY_OF_MDS = __init_of_mds(package_names.split(","))  # export INIT_OF_MDS="di
 TORCH_2_OF_CACHE_DICT = {}  # {torch_md: of_md}
 
 
-
-
-
+# Dict[str,object] class name to class type PROXY_OF_MDS
+def add_to_proxy_of_mds(new_mds: Dict[str,object]):
+    PROXY_OF_MDS.update(new_mds)
+    print_green(f"add to proxy of mds done: {len(new_mds)} \n {new_mds.keys()=}")
