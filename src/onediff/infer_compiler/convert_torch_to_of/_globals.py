@@ -1,4 +1,4 @@
-import os 
+import os
 from functools import singledispatch, update_wrapper
 from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
 from typing import Dict
@@ -6,11 +6,12 @@ from typing import Dict
 __all__ = ["PROXY_OF_MDS", "TORCH_2_OF_CACHE_DICT"]
 
 
- # {name: md} proxy of oneflow modules
+# {name: md} proxy of oneflow modules
 def __init_of_mds(package_names: list[str]):
-    print("====="*10, "init of mds: ",package_names, "====="*10)
+    print("=====" * 10, "init of mds: ", package_names, "=====" * 10)
     from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
-    import oneflow as flow 
+    import oneflow as flow
+
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     __of_mds = {}
     with flow.mock_torch.enable(lazy=True):
@@ -20,14 +21,17 @@ def __init_of_mds(package_names: list[str]):
         return __of_mds
 
 
-
-
 package_names = os.getenv("INIT_OF_MDS", "diffusers")
-PROXY_OF_MDS = __init_of_mds(package_names.split(","))  # export INIT_OF_MDS="diffusers,comfyui"
+PROXY_OF_MDS = __init_of_mds(
+    package_names.split(",")
+)  # export INIT_OF_MDS="diffusers,comfyui"
 TORCH_2_OF_CACHE_DICT = {}  # {torch_md: of_md}
 
 
-# Dict[str,object] class name to class type PROXY_OF_MDS
-def add_to_proxy_of_mds(new_mds: Dict[str,object]):
-    PROXY_OF_MDS.update(new_mds)
-    print_green(f"add to proxy of mds done: {len(new_mds)} \n {new_mds.keys()=}")
+def add_to_proxy_of_mds(new_module_proxies: Dict[str, type]):
+    """Add new module proxies to PROXY_OF_MDS"""
+    for module_name, module_proxy in new_module_proxies.items():
+        PROXY_OF_MDS[module_name] = module_proxy
+    print_green(
+        f"Added {len(new_module_proxies)} module proxies: {', '.join(new_module_proxies.keys())}"
+    )

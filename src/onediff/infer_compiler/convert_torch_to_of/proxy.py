@@ -1,4 +1,5 @@
 import os
+import types
 import torch
 import oneflow as flow
 import importlib
@@ -6,13 +7,19 @@ import logging
 
 
 logger = logging.getLogger(__name__)
-from onediff.infer_compiler.import_tools import  print_green, print_red , get_mock_cls_name
+from onediff.infer_compiler.import_tools import (
+    print_green,
+    print_red,
+    get_mock_cls_name,
+)
 
 __all__ = [
     "replace_class",
     "replace_obj",
     "replace_func",
     "map_args",
+    "get_attr",
+    "get_full_class_name",
     "ProxySubmodule",
 ]
 
@@ -32,6 +39,7 @@ except:
 
 from .attention_processor_1f import Attention
 
+
 def replace_class(cls):
     global __of_mds
 
@@ -40,10 +48,9 @@ def replace_class(cls):
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
-
     if cls == diffusers.models.attention_processor.Attention:
         return Attention
-    
+
     # full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
     full_cls_name = get_mock_cls_name(str(cls.__module__) + "." + str(cls.__name__))
     if full_cls_name in __of_mds:
@@ -60,8 +67,9 @@ def replace_class(cls):
             return diffusers_quant.OneFlowStaticQuantLinearModule
         if cls == diffusers_quant.DynamicQuantLinearModule:
             return diffusers_quant.OneFlowDynamicLinearQuantModule
-        
+
     raise RuntimeError("can't find oneflow module for: " + str(cls))
+
 
 def replace_obj(obj):
     cls = type(obj)
@@ -101,6 +109,7 @@ def replace_func(func):
     else:
         return func
 
+
 def map_args(args, kwargs):
     args = [replace_obj(a) for a in args]
     kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
@@ -116,23 +125,33 @@ def get_attr(gm, node, torch2flow={}):
     return of_attr
 
 
+def get_full_class_name(cls):
+    class_name = cls.__name__
+    module_name = cls.__module__
+    full_class_name = f"{module_name}.{class_name}"
+    return get_mock_cls_name(full_class_name)
+
+
 _WARNING_MSG = set()
+
+
 class ProxySubmodule:
     def __init__(self, submod):
         self._1f_proxy_submod = submod
         self._1f_proxy_parameters = dict()
         self._1f_proxy_children = dict()
-    
 
-    def __getitem__(self, index): # __getitem__
+    def __getitem__(self, index):  # __getitem__
         from collections.abc import Iterable
+
         if isinstance(self._1f_proxy_submod, Iterable):
             submod = self._1f_proxy_submod[index]
             from .register import torch2of
+
             return torch2of(submod)
         else:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
-        
+
     def __repr__(self) -> str:
         return self._1f_proxy_submod.__repr__() + " 1f_proxy"
 
@@ -177,14 +196,18 @@ class ProxySubmodule:
 
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
                 from .register import torch2of
+
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
                     a = torch2of(a)
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
-            elif isinstance(a, (torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential)):
+            elif isinstance(
+                a, (torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential)
+            ):
                 from .register import torch2of
+
                 if attribute not in self._1f_proxy_children:
                     a = torch2of(a)
                     self._1f_proxy_children[attribute] = a
@@ -192,19 +215,26 @@ class ProxySubmodule:
                     a = self._1f_proxy_children[attribute]
 
             full_name = ".".join((type(a).__module__, type(a).__name__))
-            if(
+            if (
                 type(a).__module__.startswith("torch") == False
                 and type(a).__module__.startswith("diffusers") == False
             ):
-                pass 
+                pass
             else:
-                msg = "Waring: get attr: " + attribute + " for: " + str(type(self._1f_proxy_submod)) + " -> " + full_name
+                msg = (
+                    "Waring: get attr: "
+                    + attribute
+                    + " for: "
+                    + str(type(self._1f_proxy_submod))
+                    + " -> "
+                    + full_name
+                )
                 if msg not in _WARNING_MSG:
                     print_red(msg)
                     _WARNING_MSG.add(msg)
-                
+
             return a
-            
+
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = replace_class(type(self._1f_proxy_submod))
 
@@ -214,4 +244,3 @@ class ProxySubmodule:
             raise RuntimeError(
                 "can't find oneflow module for: " + str(type(self._1f_proxy_submod))
             )
-

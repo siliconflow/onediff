@@ -10,9 +10,6 @@ Usage:
 ### Support: 
 #### Basic:(register.py)
 
-torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential, torch.Tensor, 
-torch.nn.parameter.Parameter,
-list, tuple, dict, int, float, str, bool, None
 
 #### Advanced:(custom_register.py)
 
@@ -38,6 +35,7 @@ def torch2of(mod, *args, **kwargs):
         print(f"convert {type(mod)} failed: {e}")
         raise NotImplementedError(f"Unsupported type: {type(mod)}")
 
+
 def default_converter(obj, verbose=False):
     # ObjectConverter   obj -> of_obj
     # find proxy class
@@ -54,6 +52,7 @@ def default_converter(obj, verbose=False):
     if verbose:
         print(f"convert {type(obj)} to {type(of_obj)}")
     return of_obj
+
 
 from .custom_register import *  # noqa  used to register custom type
 
@@ -87,7 +86,9 @@ def _(mod: torch.nn.Module, verbose=False):
                     self.__dict__[k] = torch2of(attr)
                 except Exception as e:
                     print(f"convert attr {k} failed: {e}")
-                    import pdb; pdb.set_trace()
+                    import pdb
+
+                    pdb.set_trace()
 
     def proxy_getattr(self, attr):
         nonlocal proxy_md
@@ -191,9 +192,12 @@ def _mod(mod, verbose=False) -> Union[int, float, str, bool]:
 
 
 from enum import Enum
+
+
 @torch2of.register
 def _mod(mod: Enum, verbose=False) -> Enum:
     return mod
+
 
 @torch2of.register
 def _mod(mod: None, verbose=False) -> None:
