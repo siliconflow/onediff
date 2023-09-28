@@ -145,13 +145,13 @@ def _(mod: torch.nn.parameter.Parameter, verbose=False):
 
 
 @torch2of.register
-def _mod(mod: torch.Tensor, verbose=False) -> flow.Tensor:
+def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
 # torch.dtype
 @torch2of.register
-def _mod(mod: torch.dtype, verbose=False) -> flow.dtype:
+def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     return {
         "torch.float16": flow.float16,
         "torch.float32": flow.float32,
@@ -164,22 +164,22 @@ def _mod(mod: torch.dtype, verbose=False) -> flow.dtype:
 
 
 @torch2of.register
-def _mod(mod: list, verbose=False) -> list:
+def _(mod: list, verbose=False) -> list:
     return [torch2of(m, verbose) for m in mod]
 
 
 @torch2of.register
-def _mod(mod: tuple, verbose=False) -> tuple:
+def _(mod: tuple, verbose=False) -> tuple:
     return tuple(torch2of(m, verbose) for m in mod)
 
 
 @torch2of.register
-def _mod(mod: dict, verbose=False) -> dict:
+def _(mod: dict, verbose=False) -> dict:
     return {k: torch2of(v, verbose) for k, v in mod.items()}
 
 
 @torch2of.register
-def _mod(mod: set, verbose=False) -> set:
+def _(mod: set, verbose=False) -> set:
     return set(torch2of(m, verbose) for m in mod)
 
 
@@ -187,7 +187,7 @@ def _mod(mod: set, verbose=False) -> set:
 @torch2of.register(float)
 @torch2of.register(str)
 @torch2of.register(bool)
-def _mod(mod, verbose=False) -> Union[int, float, str, bool]:
+def _(mod, verbose=False) -> Union[int, float, str, bool]:
     return mod
 
 
@@ -195,10 +195,10 @@ from enum import Enum
 
 
 @torch2of.register
-def _mod(mod: Enum, verbose=False) -> Enum:
+def _(mod: Enum, verbose=False) -> Enum:
     return mod
 
 
 @torch2of.register
-def _mod(mod: None, verbose=False) -> None:
+def _(mod: None, verbose=False) -> None:
     return mod
