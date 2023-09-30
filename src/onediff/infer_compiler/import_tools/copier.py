@@ -106,6 +106,12 @@ class PackageCopier:
                 content = content.replace(
                     f"import {self.old_pkg_name}", f"import {self.new_pkg_name}"
                 )
+
+                attn_old_code = r'''        out = (
+            out.transpose(1, 2).reshape(b, -1, self.heads * self.dim_head)
+        )'''
+                if str(pyfile).endswith("ldm/modules/attention.py"):
+                    content = content.replace(attn_old_code, "")
             with open(pyfile, "w") as fp:
                 fp.write(content)
 
