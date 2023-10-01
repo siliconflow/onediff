@@ -1,6 +1,6 @@
-print(f"\033[{32}m loading custom_interface_register.py \033[0m")
+from onediff.infer_compiler.import_tools import print_red, print_green
 from .register import torch2of, default_converter
-
+print_green("Importing custom_register.py")
 try:
     import diffusers
 
@@ -14,7 +14,7 @@ try:
 
 
 except ImportError as e:
-    print(f"\033[{31}m Warning: Failed to import {e=} \033[0m")
+    print_red(f"Warning: Failed to import {e=}")
 
 
 try:

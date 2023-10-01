@@ -24,6 +24,7 @@ __all__ = [
 ]
 
 from ._globals import PROXY_OF_MDS as __of_mds
+from ._globals import WARNING_MSG as _WARNING_MSG 
 
 
 import diffusers
@@ -52,7 +53,7 @@ def replace_class(cls):
         return Attention
 
     # full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
-    full_cls_name = get_mock_cls_name(str(cls.__module__) + "." + str(cls.__name__))
+    full_cls_name = get_mock_cls_name(f"{cls.__module__}.{cls.__name__}")
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
 
@@ -132,9 +133,6 @@ def get_full_class_name(cls):
     return get_mock_cls_name(full_class_name)
 
 
-_WARNING_MSG = set()
-
-
 class ProxySubmodule:
     def __init__(self, submod):
         self._1f_proxy_submod = submod
@@ -192,11 +190,10 @@ class ProxySubmodule:
         ):
             return "channels_first"
         else:
+            from .register import torch2of
             a = getattr(self._1f_proxy_submod, attribute)
 
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
-                from .register import torch2of
-
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
                     a = torch2of(a)
@@ -206,8 +203,6 @@ class ProxySubmodule:
             elif isinstance(
                 a, (torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential)
             ):
-                from .register import torch2of
-
                 if attribute not in self._1f_proxy_children:
                     a = torch2of(a)
                     self._1f_proxy_children[attribute] = a
@@ -221,15 +216,11 @@ class ProxySubmodule:
             ):
                 pass
             else:
-                msg = (
-                    "Waring: get attr: "
-                    + attribute
-                    + " for: "
-                    + str(type(self._1f_proxy_submod))
-                    + " -> "
-                    + full_name
-                )
-                if msg not in _WARNING_MSG:
+                msg = ("Waring: get attr: {} for: {} -> {} "
+                     "\n can register : in custom_register.py").format(attribute, 
+                        type(self._1f_proxy_submod), full_name)
+
+                if msg not in _WARNING_MSG and torch2of.registry.get(type(a), None) is None:
                     print_red(msg)
                     _WARNING_MSG.add(msg)
 

@@ -9,17 +9,14 @@ Usage:
     
 ### Support: 
 #### Basic:(register.py)
-
-
 #### Advanced:(custom_register.py)
-
 """
 from functools import singledispatch
 import torch
 import oneflow as flow
 from collections import OrderedDict
 from typing import Union
-from .proxy import ProxySubmodule, replace_class, replace_obj
+from .proxy import ProxySubmodule, replace_class
 from ._globals import TORCH_2_OF_CACHE_DICT as __cache_dict
 
 __all__ = ["torch2of", "default_converter"]
@@ -37,21 +34,23 @@ def torch2of(mod, *args, **kwargs):
 
 
 def default_converter(obj, verbose=False):
-    # ObjectConverter   obj -> of_obj
-    # find proxy class
-    new_obj_cls = replace_class(type(obj))
+    # ObjectConverter   obj -> of_obj find proxy class
+    try:
+        new_obj_cls = replace_class(type(obj))
 
-    def init(self):
-        for k, v in obj.__dict__.items():
-            attr = getattr(obj, k)
-            self.__dict__[k] = torch2of(attr)
+        def init(self):
+            for k, v in obj.__dict__.items():
+                attr = getattr(obj, k)
+                self.__dict__[k] = torch2of(attr)
 
-    of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
-    of_obj = of_obj_cls()
+        of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
+        of_obj = of_obj_cls()
 
-    if verbose:
-        print(f"convert {type(obj)} to {type(of_obj)}")
-    return of_obj
+        if verbose:
+            print(f"convert {type(obj)} to {type(of_obj)}")
+        return of_obj
+    except Exception as e:
+        raise NotImplementedError(f"Unsupported type: {type(obj)}")
 
 
 from .custom_register import *  # noqa  used to register custom type
@@ -63,7 +62,7 @@ def _(mod: torch.nn.Module, verbose=False):
         return __cache_dict[mod]
 
     proxy_md = ProxySubmodule(mod)
-    # import pdb; pdb.set_trace()
+
     new_md_cls = replace_class(type(mod))
 
     def init(self):

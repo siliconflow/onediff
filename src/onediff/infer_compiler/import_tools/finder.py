@@ -25,6 +25,7 @@ def import_submodules(package, recursive=True):
 
         except ImportError as e:
             logger.warning(f"Failed to import {full_name}: {e}")
+            
 
         if recursive and is_pkg:
             yield from import_submodules(full_name)

@@ -1,3 +1,20 @@
+## 📝 PyTorch to OneFlow Conversion Guide
+
+oneflow_compile is a function that converts PyTorch models to OneFlow models. 
+
+## 🛠️ New Features
+
+- [x] The `torch2of` function allows you to convert any PyTorch model object into a OneFlow model.
+- [x] flow._C.fused_multi_head_attention_inference_v2
+
+## Installation
+
+
+
+
+### 📝 Usage
+
+```python
 import torch
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
@@ -34,7 +51,6 @@ class OneFlowModel(flow.nn.Module):
 cls_key = get_full_class_name(PyTorchModel)
 add_to_proxy_of_mds({cls_key: OneFlowModel})
 
-
 # Compile PyTorch model to OneFlow
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 pytorch_model = PyTorchModel().to(device)
@@ -69,3 +85,4 @@ print(
     [ 0.1292, -0.1496,  1.1743, -0.4726],
     [ 0.2691,  0.2332,  0.1492,  0.5211]], device='cuda:0')
 """
+```
