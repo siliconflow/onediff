@@ -90,15 +90,6 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
                     output = super().apply_model(*mapped_args, **mapped_kwargs)
                 return self.process_output(output)
 
-        def forward(self, *args, **kwargs):
-            if hasattr(super(), "forward"):
-                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-                if use_graph:
-                    output = self._dpl_graph(*mapped_args, **mapped_kwargs)
-                else:
-                    output = super().forward(*mapped_args, **mapped_kwargs)
-                return self.process_output(output)
-
         def __call__(self, *args, **kwargs):
             if hasattr(super(), "__call__"):
                 mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
