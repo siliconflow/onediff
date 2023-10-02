@@ -45,7 +45,7 @@ def get_unet_graph(size=9):
 
 
 def oneflow_compile(torch_unet, *, use_graph=True, options={}):
-    
+
     of_md = torch2of(torch_unet)
     from oneflow.framework.args_tree import ArgsTree
 
@@ -69,27 +69,51 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
         dpl_graph = get_unet_graph(size)(of_md)
 
     class DeplayableModule(of_md.__class__):
-        def __call__(self, *args, **kwargs):
+        def process_input(self, *args, **kwargs):
             args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
             out = args_tree.map_leaf(input_fn)
             mapped_args = out[0]
             mapped_kwargs = out[1]
-            
-            if use_graph:
-                output = self._dpl_graph(*mapped_args, **mapped_kwargs)
-            else:
-                output = super().__call__(*mapped_args, **mapped_kwargs)
+            return mapped_args, mapped_kwargs
 
+        def process_output(self, output):
             out_tree = ArgsTree((output, None), False)
             out = out_tree.map_leaf(output_fn)
             return out[0]
+
+        def apply_model(self, *args, **kwargs):
+            if hasattr(super(), "apply_model"):
+                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+                if use_graph:
+                    output = self._dpl_graph(*mapped_args, **mapped_kwargs)
+                else:
+                    output = super().apply_model(*mapped_args, **mapped_kwargs)
+                return self.process_output(output)
+
+        def forward(self, *args, **kwargs):
+            if hasattr(super(), "forward"):
+                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+                if use_graph:
+                    output = self._dpl_graph(*mapped_args, **mapped_kwargs)
+                else:
+                    output = super().forward(*mapped_args, **mapped_kwargs)
+                return self.process_output(output)
+
+        def __call__(self, *args, **kwargs):
+            if hasattr(super(), "__call__"):
+                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+                if use_graph:
+                    output = self._dpl_graph(*mapped_args, **mapped_kwargs)
+                else:
+                    output = super().__call__(*mapped_args, **mapped_kwargs)
+                return self.process_output(output)
 
         def _graph_load(self, file_path):
             self._dpl_graph.warmup_with_load(file_path)
 
         def _graph_save(self, file_path):
             self._dpl_graph.save_graph(file_path)
-    
+
     of_md.__class__ = DeplayableModule
     if use_graph:
         of_md._dpl_graph = dpl_graph

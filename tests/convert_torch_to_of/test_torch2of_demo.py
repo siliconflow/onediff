@@ -20,6 +20,9 @@ class PyTorchModel(torch.nn.Module):
     def forward(self, x):
         return self.linear(x)
 
+    def apply_model(self, x):
+        return self.forward(x)
+
 
 class OneFlowModel(flow.nn.Module):
     def __init__(self):
@@ -28,6 +31,9 @@ class OneFlowModel(flow.nn.Module):
 
     def forward(self, x):
         return self.linear(x)
+
+    def apply_model(self, x):
+        return self.forward(x)
 
 
 # Register PyTorch model to OneDiff
@@ -44,6 +50,11 @@ of_model = oneflow_compile(pytorch_model, use_graph=False)
 # Verify conversion
 x = torch.randn(4, 4).to(device)
 
+#### 1. Use apply_model method
+y_pt = pytorch_model.apply_model(x)
+y_of = of_model.apply_model(x)
+
+#### 2. Use __call__ method
 y_pt = pytorch_model(x)
 y_of = of_model(x)
 
