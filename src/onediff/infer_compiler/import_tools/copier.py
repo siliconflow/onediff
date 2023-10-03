@@ -110,8 +110,12 @@ class PackageCopier:
                 attn_old_code = r'''        out = (
             out.transpose(1, 2).reshape(b, -1, self.heads * self.dim_head)
         )'''
+                attn_new_code = r'''        if out.ndim !=3:
+            out = (
+                out.transpose(1, 2).reshape(b, -1, self.heads * self.dim_head)
+            )'''            
                 if str(pyfile).endswith("ldm/modules/attention.py"):
-                    content = content.replace(attn_old_code, "")
+                    content = content.replace(attn_old_code, attn_new_code)
             with open(pyfile, "w") as fp:
                 fp.write(content)
 
