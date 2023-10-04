@@ -61,8 +61,11 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, object]:
     return class_dict
 
 
-def get_mock_cls_name(full_cls_name):
-    return PREFIX + full_cls_name + SUFFIX
+def get_mock_cls_name(cls):
+    if isinstance(cls, type):
+        cls = f"{cls.__module__}.{cls.__name__}"
+        
+    return PREFIX + cls + SUFFIX
 
 
 

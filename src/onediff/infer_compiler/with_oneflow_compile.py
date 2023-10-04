@@ -27,8 +27,8 @@ def get_unet_graph(size=9):
             os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
             os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
             os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-            os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
-            os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
+            # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
+            # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
         def build(self, *args, **kwargs):
             return self.unet(*args, **kwargs)

@@ -1,5 +1,4 @@
 import os
-import types
 import torch
 import oneflow as flow
 import importlib
@@ -38,8 +37,6 @@ try:
 except:
     pass
 
-from .attention_processor_1f import Attention
-
 
 def replace_class(cls):
     global __of_mds
@@ -48,15 +45,12 @@ def replace_class(cls):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
-
-    if cls == diffusers.models.attention_processor.Attention:
-        return Attention
-
+    
     # full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
     full_cls_name = get_mock_cls_name(f"{cls.__module__}.{cls.__name__}")
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
-
+    
     if _is_diffusers_quant_available:
         if cls == diffusers_quant.FakeQuantModule:
             return diffusers_quant.OneFlowFakeQuantModule
