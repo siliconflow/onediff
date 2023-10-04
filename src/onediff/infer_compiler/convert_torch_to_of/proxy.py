@@ -7,7 +7,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 from onediff.infer_compiler.import_tools import (
-    print_green,
     print_red,
     get_mock_cls_name,
 )
@@ -120,7 +119,7 @@ def get_attr(gm, node, torch2flow={}):
     return of_attr
 
 
-def get_full_class_name(cls):
+def get_full_class_name(cls: type):
     class_name = cls.__name__
     module_name = cls.__module__
     full_class_name = f"{module_name}.{class_name}"
