@@ -1,6 +1,7 @@
 # Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
 # Compile and save to oneflow graph example: python examples/text_to_image_sdxl.py --compile --save
 # Compile and load to oneflow graph example: python examples/text_to_image_sdxl.py --compile --load
+# Compile and load to new device example: python examples/text_to_image_sdxl.py --compile --load_cuda1
 
 import os
 import argparse
@@ -40,11 +41,19 @@ parser.add_argument("--compile_with_dynamo", action=argparse.BooleanOptionalActi
 parser.add_argument("--num_dynamic_input_size", type=int, default=9)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
+parser.add_argument("--load_cuda1", action=argparse.BooleanOptionalAction)
 parser.add_argument("--file", type=str, required=False, default="unet_compiled")
 cmd_args = parser.parse_args()
 
 if cmd_args.compile and cmd_args.compile_with_dynamo:
     parser.error("--compile and --compile_with_dynamo cannot be used together.")
+
+if cmd_args.compile and cmd_args.load:
+    if origin_device is not None:
+        print("converting rsd")
+        origin_rsd = flow.load("base_" + cmd_args.file + origin_device)
+        rsd = flow.nn.Graph.runtime_state_dict_to(origin_rsd, device)
+        flow.save(rsd, "base_" + cmd_args.file + device)
 
 # Normal SDXL pipeline init.
 seed = torch.Generator("cuda").manual_seed(cmd_args.seed)
@@ -56,7 +65,7 @@ base = DiffusionPipeline.from_pretrained(
     variant=cmd_args.variant,
     use_safetensors=True,
 )
-base.to("cuda")
+base.to(device)
 if cmd_args.with_refiner:
     # SDXL refiner: StableDiffusionXLImg2ImgPipeline
     refiner = DiffusionPipeline.from_pretrained(
@@ -84,9 +93,9 @@ if cmd_args.compile:
 # Load compiled unet with oneflow
 if cmd_args.compile and cmd_args.load:
     print("loading graphs...")
-    base.unet.warmup_with_load("base_" + cmd_args.file)
+    base.unet.warmup_with_load("base_" + cmd_args.file + device)
     if cmd_args.with_refiner:
-        refiner.unet.warmup_with_load("refiner_" + cmd_args.file)
+        refiner.unet.warmup_with_load("refiner_" + cmd_args.file + device)
 
 # Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile_with_dynamo:
@@ -126,3 +135,6 @@ if cmd_args.compile and cmd_args.save:
     base.unet.save_graph("base_" + cmd_args.file)
     if cmd_args.with_refiner:
         refiner.unet.save_graph("refiner_" + cmd_args.file)
+
+#test_sdxl("cuda:2")
+test_sdxl("cuda:1", "cuda:2")
