@@ -35,8 +35,10 @@ def get_unet_graph(size=9):
         def build(self, *args, **kwargs):
             return self.unet(*args, **kwargs)
 
-        def warmup_with_load(self, file_path):
+        def warmup_with_load(self, file_path, device=None):
             state_dict = flow.load(file_path)
+            if device is not None:
+                state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
             self.load_runtime_state_dict(state_dict)
 
         def save_graph(self, file_path):
@@ -86,8 +88,8 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
             out = out_tree.map_leaf(output_fn)
             return out[0]
 
-        def warmup_with_load(self, file_path):
-            self._dpl_graph.warmup_with_load(file_path)
+        def warmup_with_load(self, file_path, device=None):
+            self._dpl_graph.warmup_with_load(file_path, device)
 
         def save_graph(self, file_path):
             self._dpl_graph.save_graph(file_path)
