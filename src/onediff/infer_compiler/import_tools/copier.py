@@ -1,6 +1,7 @@
 import sys
 import shutil
 import importlib
+import tempfile
 from tqdm import tqdm
 from pathlib import Path
 from typing import List, Tuple, Union
@@ -8,10 +9,13 @@ from .printer import print_red, print_green
 
 
 class PackageCopier:
-    def __init__(self, old_pkg: Union[str, Path], prefix="mock_", suffix=""):
+    def __init__(self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir = True):
         self.old_pkg_name, self.old_pkg_path = self._get_path(old_pkg)
         self.new_pkg_name = prefix + self.old_pkg_name + suffix
-        self.new_pkg_path = self.old_pkg_path.parent / self.new_pkg_name
+        if use_temp_dir:
+            self.new_pkg_path = Path(tempfile.gettempdir()) / self.new_pkg_name
+        else:
+            self.new_pkg_path = self.old_pkg_path.parent / self.new_pkg_name
         assert self.old_pkg_path.exists(), f"{self.old_pkg_path} not exists"
         self.register_call = [
             self.copy_package,
@@ -112,7 +116,7 @@ class PackageCopier:
     def test_import(self):
         sys.path.insert(0, str(self.new_pkg_path.parent))
         importlib.import_module(self.new_pkg_name)
-        print_green(f"import {self.new_pkg_name} success")
+        print_green(f"Test import {self.new_pkg_name} succeed!")
 
     def get_import_module(self):
         return importlib.import_module(self.new_pkg_name)
