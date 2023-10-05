@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - fix-docker-2
 
   workflow_dispatch:
 # Environment variables available to all jobs and steps in this workflow.
@@ -26,12 +27,12 @@ jobs:
       matrix:
         image:
           - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:22.09-py3",
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
               suffix: "cu117",
               ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu117",
             }
           - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:22.09-py3",
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
               suffix: "cu118",
               ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu118",
             }
@@ -41,6 +42,17 @@ jobs:
       TAG: ${{ matrix.image.suffix }}
       DOCKER_BUILDKIT: 1
     steps:
+      - name: Maximize build space
+        uses: easimon/maximize-build-space@master
+        with:
+          root-reserve-mb: 512
+          swap-size-mb: 1024
+          remove-dotnet: "true"
+          remove-android: "true"
+          remove-haskell: "true"
+          remove-codeql: "true"
+          remove-docker-images: "true"
+          overprovision-lvm: "true"
       - name: Checkout
         uses: actions/checkout@v2
       - run: ls -al
