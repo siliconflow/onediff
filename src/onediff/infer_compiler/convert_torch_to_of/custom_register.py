@@ -39,3 +39,19 @@ try:
     
 except ImportError as e:
     print(f"\033[{31}m Warning: Failed to import {e=} \033[0m")
+
+
+
+try:
+    import diffusers_quant    
+    cls_key_value = {
+        get_mock_cls_name(diffusers_quant.FakeQuantModule):diffusers_quant.OneFlowFakeQuantModule,
+        get_mock_cls_name(diffusers_quant.StaticQuantConvModule):diffusers_quant.OneFlowStaticQuantConvModule,
+        get_mock_cls_name(diffusers_quant.DynamicQuantConvModule):diffusers_quant.OneFlowDynamicQuantConvModule,
+        get_mock_cls_name(diffusers_quant.StaticQuantLinearModule):diffusers_quant.OneFlowStaticQuantLinearModule,
+        get_mock_cls_name(diffusers_quant.DynamicQuantLinearModule):diffusers_quant.OneFlowDynamicLinearQuantModule,
+
+    }
+    add_to_proxy_of_mds(cls_key_value)
+except:
+    print_red("Warning: Failed to import diffusers_quant")
