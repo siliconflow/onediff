@@ -17,7 +17,6 @@ __all__ = [
     "replace_func",
     "map_args",
     "get_attr",
-    "get_full_class_name",
     "ProxySubmodule",
 ]
 
@@ -44,11 +43,6 @@ def replace_class(cls):
     raise RuntimeError("can't find oneflow module for: " + str(cls))
 
 
-def get_full_class_name(cls: type):
-    class_name = cls.__name__
-    module_name = cls.__module__
-    full_class_name = f"{module_name}.{class_name}"
-    return get_mock_cls_name(full_class_name)
 
 
 class ProxySubmodule:

@@ -3,7 +3,7 @@ from functools import singledispatch, update_wrapper
 from onediff.infer_compiler.import_tools import get_classes_in_package, print_green, print_red
 from typing import Dict
 
-__all__ = ["PROXY_OF_MDS", "TORCH_2_OF_CACHE_DICT"]
+__all__ = ["PROXY_OF_MDS", "WARNING_MSG", "add_to_proxy_of_mds"]
 
 
 # {name: md} proxy of oneflow modules
@@ -25,11 +25,9 @@ package_names = os.getenv("INIT_OF_MDS", "diffusers")
 PROXY_OF_MDS = __init_of_mds(
     package_names.split(",")
 )  # export INIT_OF_MDS="diffusers,comfyui"
-TORCH_2_OF_CACHE_DICT = {}  # {torch_md: of_md}
 WARNING_MSG = set()
 
 
-    
 
 def add_to_proxy_of_mds(new_module_proxies: Dict[str, type]):
     """Add new module proxies to PROXY_OF_MDS"""

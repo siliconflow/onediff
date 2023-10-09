@@ -17,14 +17,12 @@ import oneflow as flow
 from collections import OrderedDict
 from typing import Union
 from .proxy import ProxySubmodule, replace_class
-from ._globals import TORCH_2_OF_CACHE_DICT as __cache_dict
 
 __all__ = ["torch2of", "default_converter"]
 
 
 @singledispatch
 def torch2of(mod, *args, **kwargs):
-    # return _object_converter(mod, *args, **kwargs)
     try:
         print(f"default convert {type(mod)}...")
         return default_converter(mod, *args, **kwargs)
@@ -33,6 +31,7 @@ def torch2of(mod, *args, **kwargs):
         raise NotImplementedError(f"Unsupported type: {type(mod)}")
 
 
+@torch.no_grad()
 def default_converter(obj, verbose=False):
     # ObjectConverter   obj -> of_obj find proxy class
     try:
@@ -58,12 +57,10 @@ from .custom_register import *  # noqa  used to register custom type
 
 @torch2of.register
 def _(mod: torch.nn.Module, verbose=False):
-    if mod in __cache_dict:
-        return __cache_dict[mod]
-
     proxy_md = ProxySubmodule(mod)
 
     new_md_cls = replace_class(type(mod))
+
 
     def init(self):
         nonlocal proxy_md
@@ -85,9 +82,6 @@ def _(mod: torch.nn.Module, verbose=False):
                     self.__dict__[k] = torch2of(attr)
                 except Exception as e:
                     print(f"convert attr {k} failed: {e}")
-                    import pdb
-
-                    pdb.set_trace()
 
     def proxy_getattr(self, attr):
         nonlocal proxy_md
@@ -110,30 +104,23 @@ def _(mod: torch.nn.Module, verbose=False):
 
 @torch2of.register
 def _(mod: torch.nn.ModuleList, verbose=False):
-    if mod in __cache_dict:
-        return __cache_dict[mod]
-
     of_mod_list = flow.nn.ModuleList()
     for original_submod in mod:
         submod = torch2of(original_submod, verbose)
         of_mod_list.append(submod)
 
-    __cache_dict[mod] = of_mod_list
     return of_mod_list
 
 
 @torch2of.register
 def _(mod: torch.nn.Sequential, verbose=False):
-    if mod in __cache_dict:
-        return __cache_dict[mod]
-
+   
     of_mod_list = []
     for original_submod in mod:
         submod = torch2of(original_submod, verbose)
         of_mod_list.append(submod)
     of_mod_seq = flow.nn.Sequential(*of_mod_list)
 
-    __cache_dict[mod] = of_mod_seq
     return of_mod_seq
 
 
@@ -187,14 +174,6 @@ def _(mod: set, verbose=False) -> set:
 @torch2of.register(str)
 @torch2of.register(bool)
 def _(mod, verbose=False) -> Union[int, float, str, bool]:
-    return mod
-
-
-from enum import Enum
-
-
-@torch2of.register
-def _(mod: Enum, verbose=False) -> Enum:
     return mod
 
 

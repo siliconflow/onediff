@@ -61,7 +61,7 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, object]:
     return class_dict
 
 
-def get_mock_cls_name(cls):
+def get_mock_cls_name(cls)->str:
     if isinstance(cls, type):
         cls = f"{cls.__module__}.{cls.__name__}"
         

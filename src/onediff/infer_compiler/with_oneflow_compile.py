@@ -49,8 +49,9 @@ def get_unet_graph(size=9):
     return UNetGraph
 
 
+@torch.no_grad()
 def oneflow_compile(torch_unet, *, use_graph=True, options={}):
-
+    
     of_md = torch2of(torch_unet)
 
     from oneflow.framework.args_tree import ArgsTree
@@ -76,18 +77,13 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
 
     class DeplayableModule(of_md.__class__):
         def process_input(self, *args, **kwargs):
-
-        def __call__(self, *args, **kwargs):
-
+            args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+            out = args_tree.map_leaf(input_fn)
+            mapped_args = out[0]
+            mapped_kwargs = out[1]
             return mapped_args, mapped_kwargs
 
         def process_output(self, output):
-
-            if use_graph:
-                output = self._dpl_graph(*mapped_args, **mapped_kwargs)
-            else:
-                output = super().__call__(*mapped_args, **mapped_kwargs)
-
             out_tree = ArgsTree((output, None), False)
             out = out_tree.map_leaf(output_fn)
             return out[0]
@@ -110,8 +106,8 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
                     output = super().__call__(*mapped_args, **mapped_kwargs)
                 return self.process_output(output)
 
-        def _graph_load(self, file_path):
-            self._dpl_graph.warmup_with_load(file_path)
+        def _graph_load(self, file_path, device=None):
+            self._dpl_graph.warmup_with_load(file_path, device)
             
 
         def warmup_with_load(self, file_path, device=None):
