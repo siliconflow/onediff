@@ -1,4 +1,5 @@
 from .convert_torch_to_of.register import torch2of
+
 import os
 import oneflow as flow
 import torch
@@ -35,8 +36,10 @@ def get_unet_graph(size=9):
             return self.unet(*args, **kwargs)
 
 
-        def warmup_with_load(self, file_path):
+        def warmup_with_load(self, file_path, device=None):
             state_dict = flow.load(file_path)
+            if device is not None:
+                state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
             self.load_runtime_state_dict(state_dict)
 
         def save_graph(self, file_path):
@@ -49,6 +52,7 @@ def get_unet_graph(size=9):
 def oneflow_compile(torch_unet, *, use_graph=True, options={}):
 
     of_md = torch2of(torch_unet)
+
     from oneflow.framework.args_tree import ArgsTree
 
     def input_fn(value):
@@ -72,13 +76,18 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
 
     class DeplayableModule(of_md.__class__):
         def process_input(self, *args, **kwargs):
-            args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-            out = args_tree.map_leaf(input_fn)
-            mapped_args = out[0]
-            mapped_kwargs = out[1]
+
+        def __call__(self, *args, **kwargs):
+
             return mapped_args, mapped_kwargs
 
         def process_output(self, output):
+
+            if use_graph:
+                output = self._dpl_graph(*mapped_args, **mapped_kwargs)
+            else:
+                output = super().__call__(*mapped_args, **mapped_kwargs)
+
             out_tree = ArgsTree((output, None), False)
             out = out_tree.map_leaf(output_fn)
             return out[0]
@@ -104,8 +113,9 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
         def _graph_load(self, file_path):
             self._dpl_graph.warmup_with_load(file_path)
             
-        def warmup_with_load(self, file_path):
-            self._dpl_graph.warmup_with_load(file_path)
+
+        def warmup_with_load(self, file_path, device=None):
+            self._dpl_graph.warmup_with_load(file_path, device)
 
         def save_graph(self, file_path):
             self._dpl_graph.save_graph(file_path)

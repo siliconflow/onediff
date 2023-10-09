@@ -1,4 +1,6 @@
 import os
+import cv2
+from onediff.infer_compiler import oneflow_compile
 
 os.environ["ONEFLOW_MLIR_CSE"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
@@ -19,10 +21,10 @@ os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 
 import click
 import oneflow as flow
-flow.mock_torch.enable()
 from diffusers import UNet2DConditionModel
 from diffusers.utils import floats_tensor
 from tqdm import tqdm
+import torch
 
 
 class UNetGraph(flow.nn.Graph):
@@ -43,17 +45,18 @@ class UNetGraph(flow.nn.Graph):
 @click.option("--token")
 @click.option("--repeat", default=1000)
 @click.option("--sync_interval", default=50)
-def benchmark(token, repeat, sync_interval):
+@click.option("--model_id", default="runwayml/stable-diffusion-v1-5")
+def benchmark(token, repeat, sync_interval, model_id):
     with flow.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
-            "runwayml/stable-diffusion-v1-5",
+            model_id,
             use_auth_token=token,
             revision="fp16",
-            torch_dtype=flow.float16,
+            torch_dtype=torch.float16,
             subfolder="unet",
         )
         unet = unet.to("cuda")
-        unet_graph = UNetGraph(unet)
+        unet_graph = oneflow_compile(unet)
 
         batch_size = 2
         num_channels = 4
@@ -61,11 +64,11 @@ def benchmark(token, repeat, sync_interval):
         noise = (
             floats_tensor((batch_size, num_channels) + sizes)
             .to("cuda")
-            .to(flow.float16)
+            .to(torch.float16)
         )
         time_step = flow.tensor([10]).to("cuda")
         encoder_hidden_states = (
-            floats_tensor((batch_size, 77, 768)).to("cuda").to(flow.float16)
+            floats_tensor((batch_size, 77, 768)).to("cuda").to(torch.float16)
         )
         unet_graph(noise, time_step, encoder_hidden_states)
         flow._oneflow_internal.eager.Sync()

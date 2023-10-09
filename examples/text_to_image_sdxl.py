@@ -10,9 +10,6 @@ import argparse
 import cv2
 import oneflow as flow
 import torch
-import logging
-
-logger = logging.getLogger(__name__)
 
 # oneflow_compile should be imported before importing any diffusers
 from onediff.infer_compiler import oneflow_compile

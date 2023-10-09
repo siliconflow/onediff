@@ -1,12 +1,10 @@
 import os
 import torch
 import oneflow as flow
-print("oneflow version:", flow.__version__)
-print("torch version:", torch.__version__)
-print(f'.temp_fix_compile_impl: {__file__}')
-from .temp_fix_compile_impl import * # TODO:
 
+from .temp_fix_compile_impl import * # TODO:
 from .convert_torch_to_of import torch2of 
+
 from .with_oneflow_compile import oneflow_compile 
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform

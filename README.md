@@ -40,8 +40,9 @@ python3 examples/text_to_image.py
 - run examples to check it works
 
   ```bash
-  python3 examples/text_to_image.py
-  python3 examples/text_to_image_dpmsolver.py
+  python3 examples/text_to_image.py --model_id=...
+  python3 examples/text_to_image_sdxl.py --base ...
+  bash examples/unet_save_and_load.sh --model_id=...
   ```
 
 - bump version in these files:

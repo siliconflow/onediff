@@ -20,3 +20,4 @@ prompt = "a photo of an astronaut riding a horse on mars"
 images = pipe(prompt).images
 for i, image in enumerate(images):
     image.save(f"{prompt}-of-{i}.png")
+
