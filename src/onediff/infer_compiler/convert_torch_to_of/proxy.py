@@ -3,9 +3,9 @@ import torch
 import oneflow as flow
 import importlib
 from typing import Any
-import diffusers 
+import diffusers
 from ._globals import PROXY_OF_MDS as __of_mds
-from ._globals import WARNING_MSG as _WARNING_MSG 
+from ._globals import WARNING_MSG as _WARNING_MSG
 from onediff.infer_compiler.import_tools import (
     print_red,
     get_mock_cls_name,
@@ -21,22 +21,22 @@ __all__ = [
 ]
 
 
-
 def proxy_class(cls: type):
     global __of_mds
-    
+
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
-    
+
     full_cls_name = get_mock_cls_name(cls)
+
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
 
-    raise RuntimeError("can't find oneflow module for: " + str(cls))
-
-
+    raise RuntimeError(
+        f"can't find oneflow module for: {str(cls)} please register in custom_register.py!"
+    )
 
 
 class ProxySubmodule:
@@ -57,7 +57,7 @@ class ProxySubmodule:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
 
     def __repr__(self) -> str:
-        return  " 1f_proxy: " + self._1f_proxy_submod.__repr__() 
+        return " 1f_proxy: " + self._1f_proxy_submod.__repr__()
 
     def __getattribute__(self, attribute):
         if attribute.startswith("_1f_proxy"):
@@ -97,8 +97,9 @@ class ProxySubmodule:
             return "channels_first"
         else:
             from .register import torch2of
+
             a = getattr(self._1f_proxy_submod, attribute)
-            
+
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
@@ -122,15 +123,19 @@ class ProxySubmodule:
             ):
                 pass
             else:
-                msg = ("Waring: get attr: {} for: {} -> {} "
-                     "\n can register : in custom_register.py").format(attribute, 
-                        type(self._1f_proxy_submod), full_name)
+                msg = (
+                    "Waring: get attr: {} for: {} -> {} "
+                    "\n can register : in custom_register.py"
+                ).format(attribute, type(self._1f_proxy_submod), full_name)
 
-                if msg not in _WARNING_MSG and torch2of.registry.get(type(a), None) is None:
+                if (
+                    msg not in _WARNING_MSG
+                    and torch2of.registry.get(type(a), None) is None
+                ):
                     print_red(msg)
                     _WARNING_MSG.add(msg)
-            
-            return a 
+
+            return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         replacement = proxy_class(type(self._1f_proxy_submod))
@@ -144,6 +149,8 @@ class ProxySubmodule:
 
 
 ############################################## with fx ##############################################
+
+
 def replace_obj(obj):
     cls = type(obj)
     if cls == torch.dtype:

@@ -1,15 +1,14 @@
+import inspect
 import pkgutil
 import importlib
-import inspect
-import logging
 from typing import Dict
 from .copier import PackageCopier
 from .printer import print_red
 
-logger = logging.getLogger(__name__)  # pylint: disable=invalid-name
 
 PREFIX = "mock_"
 SUFFIX = ""
+
 
 
 def import_submodules(package, recursive=True):
@@ -24,7 +23,8 @@ def import_submodules(package, recursive=True):
             yield good_import
 
         except ImportError as e:
-            logger.warning(f"Failed to import {full_name}: {e}")
+            # logger.debug(f"Failed to import {full_name}: {e}")
+            pass # ignore
             
 
         if recursive and is_pkg:
@@ -46,7 +46,6 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, object]:
         copier = PackageCopier(package, prefix=PREFIX, suffix=SUFFIX)
         copier()  # copy package
         package = copier.get_import_module()
-        print_red(f"Loading package {package.__name__}...")
 
     class_dict = {}
 
@@ -57,6 +56,7 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, object]:
             ):
                 full_name = f"{obj.__module__}.{name}"
                 class_dict[full_name] = obj
+    
 
     return class_dict
 
@@ -66,6 +66,8 @@ def get_mock_cls_name(cls)->str:
         cls = f"{cls.__module__}.{cls.__name__}"
         
     return PREFIX + cls + SUFFIX
+
+
 
 
 

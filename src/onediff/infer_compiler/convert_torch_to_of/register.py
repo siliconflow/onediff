@@ -11,11 +11,11 @@ Usage:
 #### Basic:(register.py)
 #### Advanced:(custom_register.py)
 """
-from functools import singledispatch
 import torch
 import oneflow as flow
-from collections import OrderedDict
 from typing import Union
+from collections import OrderedDict
+from functools import singledispatch
 from .proxy import ProxySubmodule, proxy_class
 
 __all__ = ["torch2of", "default_converter"]
@@ -52,8 +52,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         raise NotImplementedError(f"Unsupported type: {type(obj)}")
 
 
-from .custom_register import *  # noqa  used to register custom type
-
+from .custom_register import * # noqa: F401,F403
 
 @torch2of.register
 def _(mod: torch.nn.Module, verbose=False):

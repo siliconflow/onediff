@@ -1,8 +1,7 @@
-from .convert_torch_to_of.register import torch2of
-
 import os
-import oneflow as flow
 import torch
+import oneflow as flow
+from .convert_torch_to_of.register import torch2of
 
 
 def get_unet_graph(size=9):

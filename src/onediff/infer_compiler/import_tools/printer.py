@@ -1,3 +1,7 @@
+import sys
+from pathlib import Path
+
+
 class Printer:
     def __init__(self, color):
         self.color = color
@@ -5,9 +9,8 @@ class Printer:
     def __call__(self, *args, **kwargs):
         print(f"\033[{self.color}m", end="")
         print(*args, **kwargs)
-        print("\033[0m", end="")
-                 
-
+        print("\033[0m")
+       
 
 def colorize(color):
     def decorator(func):
@@ -39,6 +42,7 @@ def print_yellow(*args, **kwargs):
 @colorize(34)
 def print_blue(*args, **kwargs):
     print(*args, **kwargs)
+
 
 
 if __name__ == "__main__":

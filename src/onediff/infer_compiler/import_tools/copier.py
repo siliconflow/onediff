@@ -54,7 +54,6 @@ class PackageCopier:
         shutil.copytree(src, dest)
 
     def add_init_files(self):
-        # Add to the directory and its subdirectories __init__.py file
 
         directory = self.new_pkg_path
         if not directory.is_dir():
@@ -83,7 +82,6 @@ class PackageCopier:
             else:
                 with open(path, "w") as fp:
                     result = find_directories_with_init(path.parent)
-                    # print(f"find_directories_with_init({path.parent}) = {result}")
                     if result:
                         fp.write("# This file is created by PackageCopier\n")
                         fp.write("# Add the following lines to your code:\n")
@@ -122,10 +120,6 @@ class PackageCopier:
         return importlib.import_module(self.new_pkg_name)
 
     def __call__(self, verbose=False):
-        # for fn in tqdm(
-        #     self.register_call, desc=f"Copy {self.old_pkg_name} to {self.new_pkg_name}"
-        # ):
-        #     fn()
         for fn in self.register_call:
             fn()
 
