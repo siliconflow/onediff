@@ -37,7 +37,7 @@ parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
 parser.add_argument("--compile_with_dynamo", action=argparse.BooleanOptionalAction)
-parser.add_argument("--num_dynamic_input_sizee", type=int, default=9)
+parser.add_argument("--num_dynamic_input_size", type=int, default=9)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
 parser.add_argument("--file", type=str, required=False, default="unet_compiled")
@@ -73,20 +73,20 @@ if cmd_args.with_refiner:
 if cmd_args.compile:
     print("unet is compiled to oneflow.")
     base.unet = oneflow_compile(
-        base.unet, options={"size": cmd_args.num_dynamic_input_sizee}
+        base.unet, options={"size": cmd_args.num_dynamic_input_size}
     )
     if cmd_args.with_refiner:
         refiner.unet = oneflow_compile(
-            refiner.unet, options={"size": cmd_args.num_dynamic_input_sizee}
+            refiner.unet, options={"size": cmd_args.num_dynamic_input_size}
         )
         output_type = "latent"
 
 # Load compiled unet with oneflow
 if cmd_args.compile and cmd_args.load:
     print("loading graphs...")
-    base.unet._graph_load("base_" + cmd_args.file)
+    base.unet.warmup_with_load("base_" + cmd_args.file)
     if cmd_args.with_refiner:
-        refiner.unet._graph_load("refiner_" + cmd_args.file)
+        refiner.unet.warmup_with_load("refiner_" + cmd_args.file)
 
 # Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile_with_dynamo:
@@ -123,6 +123,6 @@ for h in sizes:
 # Save compiled unet with oneflow
 if cmd_args.compile and cmd_args.save:
     print("saving graphs...")
-    base.unet._graph_save("base_" + cmd_args.file)
+    base.unet.save_graph("base_" + cmd_args.file)
     if cmd_args.with_refiner:
-        refiner.unet._graph_save("refiner_" + cmd_args.file)
+        refiner.unet.save_graph("refiner_" + cmd_args.file)

@@ -27,11 +27,13 @@ def get_unet_graph(size=9):
             os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
             os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
             os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+            # TODO: enable this will cause the failure of multi resolution warmup
             # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
             # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
         def build(self, *args, **kwargs):
             return self.unet(*args, **kwargs)
+
 
         def warmup_with_load(self, file_path):
             state_dict = flow.load(file_path)
@@ -101,8 +103,11 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
 
         def _graph_load(self, file_path):
             self._dpl_graph.warmup_with_load(file_path)
+            
+        def warmup_with_load(self, file_path):
+            self._dpl_graph.warmup_with_load(file_path)
 
-        def _graph_save(self, file_path):
+        def save_graph(self, file_path):
             self._dpl_graph.save_graph(file_path)
 
     of_md.__class__ = DeplayableModule
