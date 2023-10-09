@@ -2,41 +2,35 @@ import os
 import torch
 import oneflow as flow
 import importlib
-import logging
-
-
-logger = logging.getLogger(__name__)
+from typing import Any
+import diffusers 
+from ._globals import PROXY_OF_MDS as __of_mds
+from ._globals import WARNING_MSG as _WARNING_MSG 
 from onediff.infer_compiler.import_tools import (
     print_red,
     get_mock_cls_name,
 )
 
 __all__ = [
-    "replace_class",
+    "proxy_class",
+    "ProxySubmodule",
     "replace_obj",
     "replace_func",
     "map_args",
     "get_attr",
-    "ProxySubmodule",
 ]
 
-from ._globals import PROXY_OF_MDS as __of_mds
-from ._globals import WARNING_MSG as _WARNING_MSG 
 
 
-import diffusers
-from typing import Any
-
-def replace_class(cls):
+def proxy_class(cls: type):
     global __of_mds
-
+    
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
     
-    # full_cls_name = str(cls.__module__) + "." + str(cls.__name__)
-    full_cls_name = get_mock_cls_name(f"{cls.__module__}.{cls.__name__}")
+    full_cls_name = get_mock_cls_name(cls)
     if full_cls_name in __of_mds:
         return __of_mds[full_cls_name]
 
@@ -63,13 +57,13 @@ class ProxySubmodule:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
 
     def __repr__(self) -> str:
-        return self._1f_proxy_submod.__repr__() + " 1f_proxy"
+        return  " 1f_proxy: " + self._1f_proxy_submod.__repr__() 
 
     def __getattribute__(self, attribute):
         if attribute.startswith("_1f_proxy"):
             return object.__getattribute__(self, attribute)
         elif attribute in ["forward", "_conv_forward"]:
-            replacement = replace_class(type(self._1f_proxy_submod))
+            replacement = proxy_class(type(self._1f_proxy_submod))
             return lambda *args, **kwargs: getattr(replacement, attribute)(
                 self, *args, **kwargs
             )
@@ -79,7 +73,7 @@ class ProxySubmodule:
             )
             and attribute == "get_attention_scores"
         ):
-            replacement = replace_class(type(self._1f_proxy_submod))
+            replacement = proxy_class(type(self._1f_proxy_submod))
             return lambda *args, **kwargs: getattr(replacement, attribute)(
                 self, *args, **kwargs
             )
@@ -135,11 +129,11 @@ class ProxySubmodule:
                 if msg not in _WARNING_MSG and torch2of.registry.get(type(a), None) is None:
                     print_red(msg)
                     _WARNING_MSG.add(msg)
-
-            return a
+            
+            return a 
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        replacement = replace_class(type(self._1f_proxy_submod))
+        replacement = proxy_class(type(self._1f_proxy_submod))
 
         if replacement is not None:
             return replacement.__call__(self, *args, **kwargs)
@@ -164,7 +158,7 @@ def replace_obj(obj):
         }[str(obj)]
     if cls == torch.fx.immutable_collections.immutable_list:
         return [e for e in obj]
-    replacement = replace_class(cls)
+    replacement = proxy_class(cls)
     if replacement is not None:
         if cls in [torch.device]:
             return replacement(str(obj))

@@ -38,7 +38,7 @@ try:
 
     
 except ImportError as e:
-    print(f"\033[{31}m Warning: Failed to import {e=} \033[0m")
+    print_red(f"Warning: Failed to import {e=}")
 
 
 

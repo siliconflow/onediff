@@ -84,7 +84,7 @@ class CrossAttentionPytorch(nn.Module):
         if exists(mask):
             raise NotImplementedError
 
-        if out.ndim != 3:
-            print("out.ndim !=3")
-            out = out.transpose(1, 2).reshape(b, -1, self.heads * self.dim_head)
+        # if out.ndim != 3:
+        #     print("out.ndim !=3")
+        #     out = out.transpose(1, 2).reshape(b, -1, self.heads * self.dim_head)
         return self.to_out(out)

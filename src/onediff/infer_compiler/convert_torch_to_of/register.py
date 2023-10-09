@@ -16,7 +16,7 @@ import torch
 import oneflow as flow
 from collections import OrderedDict
 from typing import Union
-from .proxy import ProxySubmodule, replace_class
+from .proxy import ProxySubmodule, proxy_class
 
 __all__ = ["torch2of", "default_converter"]
 
@@ -24,7 +24,7 @@ __all__ = ["torch2of", "default_converter"]
 @singledispatch
 def torch2of(mod, *args, **kwargs):
     try:
-        print(f"default convert {type(mod)}...")
+        
         return default_converter(mod, *args, **kwargs)
     except Exception as e:
         print(f"convert {type(mod)} failed: {e}")
@@ -32,10 +32,10 @@ def torch2of(mod, *args, **kwargs):
 
 
 @torch.no_grad()
-def default_converter(obj, verbose=False):
-    # ObjectConverter   obj -> of_obj find proxy class
+def default_converter(obj, verbose=False, *, proxy_cls=None):
+    # ObjectConverter   obj -> of_obj find proxy class 
     try:
-        new_obj_cls = replace_class(type(obj))
+        new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
         def init(self):
             for k, v in obj.__dict__.items():
@@ -59,7 +59,7 @@ from .custom_register import *  # noqa  used to register custom type
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
 
-    new_md_cls = replace_class(type(mod))
+    new_md_cls = proxy_class(type(mod))
 
 
     def init(self):
@@ -79,9 +79,10 @@ def _(mod: torch.nn.Module, verbose=False):
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
                 try:
-                    self.__dict__[k] = torch2of(attr)
+                    self.__dict__[k] = torch2of(attr) 
                 except Exception as e:
-                    print(f"convert attr {k} failed: {e}")
+                    print_red(f'convert {type(attr)} failed: {e}')
+                    raise NotImplementedError(f"Unsupported type: {type(attr)}")
 
     def proxy_getattr(self, attr):
         nonlocal proxy_md

@@ -106,7 +106,7 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
                     output = super().__call__(*mapped_args, **mapped_kwargs)
                 return self.process_output(output)
 
-        def _graph_load(self, file_path, device=None):
+        def graph_load(self, file_path, device=None):
             self._dpl_graph.warmup_with_load(file_path, device)
             
 

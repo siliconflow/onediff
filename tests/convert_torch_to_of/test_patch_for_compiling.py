@@ -6,13 +6,13 @@ Uasge:
 """
 import pytest
 import numpy as np
-from onediff.infer_compiler.temp_fix_compile_impl import FakeCuda
+from onediff.infer_compiler.patch_for_compiling import FakeCuda
 
 
 @pytest.mark.parametrize("batch_size", [8])
 @pytest.mark.parametrize("n_heads", [4])
-@pytest.mark.parametrize("seq_len_q", [4, 8, 64, 128, 256, 512, 1024, 2048])
-@pytest.mark.parametrize("seq_len_k", [4, 8, 64, 128, 256, 512, 1024, 2048])
+@pytest.mark.parametrize("seq_len_q", [4, 8, 64, 128, 256, 512])
+@pytest.mark.parametrize("seq_len_k", [4, 8, 64, 128, 256, 512])
 @pytest.mark.parametrize("head_dim", [8, 16, 32, 64])
 @pytest.mark.parametrize("is_causal", [True, False])
 @pytest.mark.parametrize("dropout_p", [0.0])

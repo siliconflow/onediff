@@ -2,7 +2,7 @@ import os
 import torch
 import oneflow as flow
 
-from .temp_fix_compile_impl import * # TODO:
+from .patch_for_compiling import * # TODO:
 from .convert_torch_to_of import torch2of 
 
 from .with_oneflow_compile import oneflow_compile 

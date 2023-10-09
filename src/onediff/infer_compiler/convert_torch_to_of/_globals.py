@@ -1,5 +1,5 @@
 import os
-from functools import singledispatch, update_wrapper
+import oneflow as flow
 from onediff.infer_compiler.import_tools import get_classes_in_package, print_green, print_red
 from typing import Dict
 
@@ -9,9 +9,6 @@ __all__ = ["PROXY_OF_MDS", "WARNING_MSG", "add_to_proxy_of_mds"]
 # {name: md} proxy of oneflow modules
 def __init_of_mds(package_names: list[str]):
     print_red(f'=> Loading modules: {package_names}')
-    from onediff.infer_compiler.import_tools import get_classes_in_package, print_green
-    import oneflow as flow
-
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     __of_mds = {}
     with flow.mock_torch.enable(lazy=True):
@@ -26,7 +23,6 @@ PROXY_OF_MDS = __init_of_mds(
     package_names.split(",")
 )  # export INIT_OF_MDS="diffusers,comfyui"
 WARNING_MSG = set()
-
 
 
 def add_to_proxy_of_mds(new_module_proxies: Dict[str, type]):

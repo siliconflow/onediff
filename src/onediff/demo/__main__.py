@@ -2,12 +2,9 @@ import argparse
 import os
 
 os.environ["ONEFLOW_NNGRAPH_ENABLE_PROGRESS_BAR"] = "1"
-import oneflow as flow
+import torch
 from onediff.infer_compiler import oneflow_compile
 from diffusers import StableDiffusionPipeline
-
-import torch
-
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
@@ -26,6 +23,7 @@ def parse_args():
     )
     parser.add_argument(
         "--model_id",
+        "-m",
         type=str,
         default="runwayml/stable-diffusion-v1-5",
     )
@@ -48,9 +46,8 @@ pipe.unet = oneflow_compile(pipe.unet)
 
 os.makedirs(args.output_dir, exist_ok=True)
 prompt = "a photo of an astronaut riding a horse on mars"
-with flow.autocast("cuda"):
-    for n in range(args.n):
-        images = pipe(args.prompt).images
-        for i, image in enumerate(images):
-            dst = os.path.join(args.output_dir, f"{prompt[:100]}-{n}-{i}.png")
-            image.save(dst)
+for n in range(args.n):
+    images = pipe(args.prompt).images
+    for i, image in enumerate(images):
+        dst = os.path.join(args.output_dir, f"{prompt[:100]}-{n}-{i}.png")
+        image.save(dst)
