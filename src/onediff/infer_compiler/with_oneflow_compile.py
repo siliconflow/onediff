@@ -32,28 +32,13 @@ def get_unet_graph(size=9):
             # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
             # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
-        def build(
-            self,
-            latent_model_input,
-            t,
-            encoder_hidden_states,
-            cross_attention_kwargs=None,
-            added_cond_kwargs=None,
-            return_dict=False,
-        ):
-            encoder_hidden_states = flow._C.amp_white_identity(encoder_hidden_states)
-            pred = self.unet(
-                latent_model_input,
-                t,
-                encoder_hidden_states=encoder_hidden_states,
-                cross_attention_kwargs=cross_attention_kwargs,
-                added_cond_kwargs=added_cond_kwargs,
-                return_dict=return_dict,
-            )
-            return pred
+        def build(self, *args, **kwargs):
+            return self.unet(*args, **kwargs)
 
-        def warmup_with_load(self, file_path):
+        def warmup_with_load(self, file_path, device=None):
             state_dict = flow.load(file_path)
+            if device is not None:
+                state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
             self.load_runtime_state_dict(state_dict)
 
         def save_graph(self, file_path):
@@ -103,8 +88,8 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
             out = out_tree.map_leaf(output_fn)
             return out[0]
 
-        def warmup_with_load(self, file_path):
-            self._dpl_graph.warmup_with_load(file_path)
+        def warmup_with_load(self, file_path, device=None):
+            self._dpl_graph.warmup_with_load(file_path, device)
 
         def save_graph(self, file_path):
             self._dpl_graph.save_graph(file_path)
