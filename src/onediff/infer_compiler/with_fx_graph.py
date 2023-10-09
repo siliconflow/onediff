@@ -71,7 +71,7 @@ def to_of_transform(
             name2node[node.name] = of_node
         elif node.op == "call_module":
             torch_md = modules[node.target]
-            name2obj[node.target] = torch2of(torch_md) #  _get_module(torch_md, torch2flow)
+            name2obj[node.target] = torch2of(torch_md)
             of_node = of_g.create_node('call_module', node.target, args=node_replace_args(node.args, name2node), kwargs=node_replace_args(node.kwargs, name2node))
             name2node[node.name] = of_node
         elif node.op == "get_attr":
