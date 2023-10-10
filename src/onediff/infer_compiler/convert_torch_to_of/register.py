@@ -24,7 +24,7 @@ __all__ = ["torch2of", "default_converter"]
 @singledispatch
 def torch2of(mod, *args, **kwargs):
     try:
-        
+
         return default_converter(mod, *args, **kwargs)
     except Exception as e:
         print(f"convert {type(mod)} failed: {e}")
@@ -33,7 +33,7 @@ def torch2of(mod, *args, **kwargs):
 
 @torch.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
-    # ObjectConverter   obj -> of_obj find proxy class 
+    # ObjectConverter   obj -> of_obj find proxy class
     try:
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
@@ -52,14 +52,14 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         raise NotImplementedError(f"Unsupported type: {type(obj)}")
 
 
-from .custom_register import * # noqa: F401,F403
+from .custom_register import *  # noqa: F401,F403
+
 
 @torch2of.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
 
     new_md_cls = proxy_class(type(mod))
-
 
     def init(self):
         nonlocal proxy_md
@@ -78,9 +78,9 @@ def _(mod: torch.nn.Module, verbose=False):
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
                 try:
-                    self.__dict__[k] = torch2of(attr) 
+                    self.__dict__[k] = torch2of(attr)
                 except Exception as e:
-                    print_red(f'convert {type(attr)} failed: {e}')
+                    print_red(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")
 
     def proxy_getattr(self, attr):
@@ -114,7 +114,7 @@ def _(mod: torch.nn.ModuleList, verbose=False):
 
 @torch2of.register
 def _(mod: torch.nn.Sequential, verbose=False):
-   
+
     of_mod_list = []
     for original_submod in mod:
         submod = torch2of(original_submod, verbose)

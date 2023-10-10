@@ -7,4 +7,4 @@ from .proxy import (
     replace_func,
     get_attr,
 )
-from ._globals import add_to_proxy_of_mds
+from ._globals import update_class_proxies

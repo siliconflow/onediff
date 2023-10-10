@@ -1,35 +1,54 @@
 import os
 import oneflow as flow
-from onediff.infer_compiler.import_tools import get_classes_in_package, print_green, print_red 
+from onediff.infer_compiler.import_tools import (
+    get_classes_in_package,
+    print_green,
+    print_red,
+)
 from typing import Dict
 
-__all__ = ["PROXY_OF_MDS", "WARNING_MSG", "add_to_proxy_of_mds"]
+__all__ = [
+    "ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES",
+    "WARNING_MSG",
+    "update_class_proxies",
+]
 
 
-# {name: md} proxy of oneflow modules
-def __init_of_mds(package_names: list[str]):
-    print_red(f'==> Loading modules: {package_names}')
+def __load_class_proxies(package_names: list[str]):
+    print_red(f"==> Loading modules: {package_names}")
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     __of_mds = {}
     with flow.mock_torch.enable(lazy=True):
         for package_name in package_names:
             __of_mds.update(get_classes_in_package(package_name))
 
-    print_green(f' 🚀 Loaded Mock Torch {len(__of_mds)} classes: {package_names} 🚀 <== ')
+    print_green(f" 🚀 Loaded Mock Torch {len(__of_mds)} classes: {package_names} 🚀 <== ")
     return __of_mds
 
 
-package_names = os.getenv("INIT_OF_MDS", "diffusers")
-PROXY_OF_MDS = __init_of_mds(
-    package_names.split(",")
-)  # export INIT_OF_MDS="diffusers,comfyui"
+_initial_package_names = os.getenv(
+    "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers"
+).split(",")
+# Dictionary containing class proxies from various packages
+ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(
+    _initial_package_names
+)  # export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES="diffusers,comfyui"
 WARNING_MSG = set()
 
 
-def add_to_proxy_of_mds(new_module_proxies: Dict[str, type]):
-    """Add new module proxies to PROXY_OF_MDS"""
-    for module_name, module_proxy in new_module_proxies.items():
-        PROXY_OF_MDS[module_name] = module_proxy
+def update_class_proxies(class_proxy_dict: Dict[str, type]):
+    """
+    Update the CLASS_PROXIES_FROM_VARIOUS_PACKAGES with the given class_proxy_dict.
+
+    Args:
+        class_proxy_dict (Dict[str, type]): a dictionary of class proxies obtained from various packages.
+        
+        example: class_proxy_dict = {
+             "mock_torch.nn.linear": flow.nn.Linear,
+        }
+    """
+    for module_name, module_proxy in class_proxy_dict.items():
+        ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES[module_name] = module_proxy
     print_green(
-        f"Added {len(new_module_proxies)} module proxies: {', '.join(new_module_proxies.keys())}"
+        f" 🚀 Loaded Mock Torch {len(class_proxy_dict)} classes: {class_proxy_dict.keys()} 🚀 <== "
     )

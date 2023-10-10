@@ -4,8 +4,8 @@ import oneflow as flow
 import importlib
 from typing import Any
 import diffusers
-from ._globals import PROXY_OF_MDS as __of_mds
 from ._globals import WARNING_MSG as _WARNING_MSG
+from ._globals import ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
 from onediff.infer_compiler.import_tools import (
     print_red,
     get_mock_cls_name,
