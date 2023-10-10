@@ -3,9 +3,6 @@ import torch
 import oneflow as flow
 
 from .patch_for_compiling import * # TODO:
-
-from .convert_torch_to_of import torch2of 
-
 from .with_oneflow_compile import oneflow_compile 
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform

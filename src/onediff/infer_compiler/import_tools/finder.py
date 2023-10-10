@@ -31,7 +31,7 @@ def import_submodules(package, recursive=True):
             yield from import_submodules(full_name)
 
 
-def get_classes_in_package(package, base_class=None) -> Dict[str, object]:
+def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
     """
     Get all classes in a package and its submodules.
 

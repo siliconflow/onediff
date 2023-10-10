@@ -14,6 +14,7 @@ setup(
     install_requires=[
         "transformers>=4.27.1",
         "diffusers>=0.19.3",
+        "accelerate",
         "torch",
         "onefx",
     ],

@@ -1,7 +1,7 @@
+from .convert_torch_to_of.register import torch2of
 import os
 import torch
 import oneflow as flow
-from .convert_torch_to_of.register import torch2of
 
 
 def get_unet_graph(size=9):
@@ -105,7 +105,7 @@ def oneflow_compile(torch_unet, *, use_graph=True, options={}):
                     output = super().__call__(*mapped_args, **mapped_kwargs)
                 return self.process_output(output)
 
-        def graph_load(self, file_path, device=None):
+        def load_graph(self, file_path, device=None):
             self._dpl_graph.warmup_with_load(file_path, device)
             
 

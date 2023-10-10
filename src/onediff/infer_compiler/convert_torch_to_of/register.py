@@ -16,24 +16,32 @@ import oneflow as flow
 from typing import Union
 from collections import OrderedDict
 from functools import singledispatch
+from onediff.infer_compiler.import_tools import print_red
 from .proxy import ProxySubmodule, proxy_class
+from ._globals import WARNING_MSG as _WARNING_MSG
 
 __all__ = ["torch2of", "default_converter"]
 
 
 @singledispatch
 def torch2of(mod, *args, **kwargs):
-    try:
 
-        return default_converter(mod, *args, **kwargs)
-    except Exception as e:
-        print(f"convert {type(mod)} failed: {e}")
-        raise NotImplementedError(f"Unsupported type: {type(mod)}")
+    msg = (
+        f"Warning: No torch2of conversion interface found for: {type(mod)=}, "
+        f"Default attribute retrieval method will be used. \n"
+        f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
+    )
+
+    if type(mod) not in _WARNING_MSG and torch2of.registry.get(type(mod), None) is None:
+        print_red(msg)
+        _WARNING_MSG.add(type(mod))
+
+    return default_converter(mod, *args, **kwargs)
 
 
 @torch.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
-    # ObjectConverter   obj -> of_obj find proxy class
+    """Convert torch object to oneflow object."""
     try:
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
@@ -160,8 +168,8 @@ def _(mod: tuple, verbose=False) -> tuple:
 
 
 @torch2of.register
-def _(mod: dict, verbose=False) -> dict:
-    return {k: torch2of(v, verbose) for k, v in mod.items()}
+def _(mod: OrderedDict, verbose=False) -> dict:
+    return default_converter(mod, verbose, proxy_cls=OrderedDict)
 
 
 @torch2of.register

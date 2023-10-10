@@ -20,10 +20,6 @@ try:
     def _(mod: diffusers.models.attention_processor.AttnProcessor2_0, verbose=False):
         return default_converter(mod, verbose=verbose)
 
-    @torch2of.register
-    def _(mod: diffusers.configuration_utils.FrozenDict, verbose=False):
-        return default_converter(mod, verbose=verbose)
-
 
 except ImportError as e:
     print_red(f"Failed to import diffusers {e=}")
@@ -45,7 +41,7 @@ try:
 except Exception as e:
     if "comfy" not in _initial_package_names:
         print_red(
-            "skipping import comfy,"
+            "Skipping import comfy,"
             "comfy not found in initial package names. "
             "Please export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES=diffusers,comfy, "
             "where 'diffusers' and 'comfy' are package names separated by commas."
@@ -81,7 +77,7 @@ try:
 except Exception as e:
     if "diffusers_quant" not in _initial_package_names:
         print_red(
-            "skipping import diffusers_quant,"
+            "Skipping import diffusers_quant,"
             "diffusers_quant not found in initial package names. "
             "Please export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES=diffusers_quant, "
             "where 'diffusers_quant' is a package name."

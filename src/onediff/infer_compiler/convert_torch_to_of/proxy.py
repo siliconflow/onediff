@@ -4,10 +4,8 @@ import oneflow as flow
 import importlib
 from typing import Any
 import diffusers
-from ._globals import WARNING_MSG as _WARNING_MSG
 from ._globals import ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
 from onediff.infer_compiler.import_tools import (
-    print_red,
     get_mock_cls_name,
 )
 
@@ -51,7 +49,6 @@ class ProxySubmodule:
         if isinstance(self._1f_proxy_submod, Iterable):
             submod = self._1f_proxy_submod[index]
             from .register import torch2of
-
             return torch2of(submod)
         else:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
@@ -116,24 +113,6 @@ class ProxySubmodule:
                 else:
                     a = self._1f_proxy_children[attribute]
 
-            full_name = ".".join((type(a).__module__, type(a).__name__))
-            if (
-                type(a).__module__.startswith("torch") == False
-                and type(a).__module__.startswith("diffusers") == False
-            ):
-                pass
-            else:
-                msg = (
-                    "Waring: get attr: {} for: {} -> {} "
-                    "\n can register : in custom_register.py"
-                ).format(attribute, type(self._1f_proxy_submod), full_name)
-
-                if (
-                    msg not in _WARNING_MSG
-                    and torch2of.registry.get(type(a), None) is None
-                ):
-                    print_red(msg)
-                    _WARNING_MSG.add(msg)
 
             return a
 
