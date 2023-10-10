@@ -1,4 +1,4 @@
-from onediff.infer_compiler.import_tools import (
+from ..import_tools import (
     print_red,
     print_green,
     get_mock_cls_name,

@@ -16,7 +16,7 @@ import oneflow as flow
 from typing import Union
 from collections import OrderedDict
 from functools import singledispatch
-from onediff.infer_compiler.import_tools import print_red
+from ..import_tools import print_red
 from .proxy import ProxySubmodule, proxy_class
 from ._globals import WARNING_MSG as _WARNING_MSG
 

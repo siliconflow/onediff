@@ -1,11 +1,11 @@
 import os
+from typing import Dict
 import oneflow as flow
-from onediff.infer_compiler.import_tools import (
+from ..import_tools import (
     get_classes_in_package,
     print_green,
     print_red,
 )
-from typing import Dict
 
 __all__ = [
     "ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES",

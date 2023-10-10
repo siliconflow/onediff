@@ -5,7 +5,7 @@ import importlib
 from typing import Any
 import diffusers
 from ._globals import ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
-from onediff.infer_compiler.import_tools import (
+from ..import_tools import (
     get_mock_cls_name,
 )
 
