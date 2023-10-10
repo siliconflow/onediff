@@ -18,14 +18,15 @@ from collections import OrderedDict
 from functools import singledispatch
 from ..import_tools import print_red
 from .proxy import ProxySubmodule, proxy_class
-from ._globals import WARNING_MSG as _WARNING_MSG
+from ._globals import _WARNING_MSG
 
 __all__ = ["torch2of", "default_converter"]
 
 
 @singledispatch
 def torch2of(mod, *args, **kwargs):
-
+    global _WARNING_MSG
+    
     msg = (
         f"Warning: No torch2of conversion interface found for: {type(mod)=}, "
         f"Default attribute retrieval method will be used. \n"

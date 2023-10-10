@@ -4,7 +4,7 @@ import oneflow as flow
 import importlib
 from typing import Any
 import diffusers
-from ._globals import ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
+from ._globals import _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
 from ..import_tools import (
     get_mock_cls_name,
 )

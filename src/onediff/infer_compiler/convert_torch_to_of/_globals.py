@@ -8,8 +8,6 @@ from ..import_tools import (
 )
 
 __all__ = [
-    "ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES",
-    "WARNING_MSG",
     "update_class_proxies",
 ]
 
@@ -30,10 +28,10 @@ _initial_package_names = os.getenv(
     "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers"
 ).split(",")
 # Dictionary containing class proxies from various packages
-ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(
+_ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(
     _initial_package_names
 )  # export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES="diffusers,comfyui"
-WARNING_MSG = set()
+_WARNING_MSG = set()
 
 
 def update_class_proxies(class_proxy_dict: Dict[str, type]):
@@ -48,7 +46,7 @@ def update_class_proxies(class_proxy_dict: Dict[str, type]):
         }
     """
     for module_name, module_proxy in class_proxy_dict.items():
-        ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES[module_name] = module_proxy
+        _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES[module_name] = module_proxy
     print_green(
         f" 🚀 Loaded Mock Torch {len(class_proxy_dict)} classes: {class_proxy_dict.keys()} 🚀 <== "
     )
