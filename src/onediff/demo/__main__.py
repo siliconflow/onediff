@@ -23,7 +23,6 @@ def parse_args():
     )
     parser.add_argument(
         "--model_id",
-        "-m",
         type=str,
         default="runwayml/stable-diffusion-v1-5",
     )
