@@ -13,8 +13,11 @@ __of_mds = {}
 
 def __init_of_mds(package_names: list[str]):
     import sys
+
     if "diffusers" in sys.modules:
-        raise ImportError("onediff.infer_compiler must be imported before importing diffusers.")
+        raise ImportError(
+            "onediff.infer_compiler must be imported before importing diffusers."
+        )
     global __of_mds
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     with flow.mock_torch.enable(lazy=True):
@@ -180,12 +183,20 @@ class ProxySubmodule:
                 return a
             if full_name == "diffusers.models.attention_processor.AttnProcessor2_0":
                 return AttnProcessor()
-            if full_name == "diffusers_quant.models.attention_processor.TrtAttnProcessor":
+            if (
+                full_name
+                == "diffusers_quant.models.attention_processor.TrtAttnProcessor"
+            ):
                 if _is_diffusers_quant_available:
-                    from diffusers_quant.models.attention_processor_oneflow import OneFlowTrtAttnProcessor
+                    from diffusers_quant.models.attention_processor_oneflow import (
+                        OneFlowTrtAttnProcessor,
+                    )
+
                     return OneFlowTrtAttnProcessor(self)
                 else:
-                    raise RuntimeError("diffusers_quant package is not found but required for TrtAttnProcessor")
+                    raise RuntimeError(
+                        "diffusers_quant package is not found but required for TrtAttnProcessor"
+                    )
 
             assert (
                 type(a).__module__.startswith("torch") == False
@@ -228,11 +239,11 @@ def _get_module(origin_mod, torch2flow):
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
-        for (n, p) in list(proxy_md.named_parameters("", False)):
+        for n, p in list(proxy_md.named_parameters("", False)):
             self._parameters[n] = flow.utils.tensor.from_torch(p.data)
-        for (n, b) in list(proxy_md.named_buffers("", False)):
+        for n, b in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
-        for (n, m) in proxy_md._modules.items():
+        for n, m in proxy_md._modules.items():
             self._modules[n] = _get_module(m, torch2flow)
 
         for k, v in proxy_md.__dict__.items():
