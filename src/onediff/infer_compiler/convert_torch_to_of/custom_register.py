@@ -71,6 +71,10 @@ try:
         get_mock_cls_name(
             diffusers_quant.DynamicQuantLinearModule
         ): diffusers_quant.OneFlowDynamicLinearQuantModule,
+        
+        get_mock_cls_name(
+            diffusers_quant.models.attention_processor.TrtAttnProcessor
+        ): diffusers_quant.models.attention_processor_oneflow.OneFlowTrtAttnProcessor,
     }
     update_class_proxies(cls_key_value)
 
