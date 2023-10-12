@@ -29,7 +29,7 @@ __init_of_mds(package_names.split(","))  # export INIT_OF_MDS="diffusers,comfyui
 
 import diffusers
 from typing import Any
-from .attention_processor_1f import Attention
+from .attention_processor_1f import Attention, AttnProcessor
 
 _is_diffusers_quant_available = False
 try:
@@ -179,7 +179,13 @@ class ProxySubmodule:
             if full_name == "diffusers.configuration_utils.FrozenDict":
                 return a
             if full_name == "diffusers.models.attention_processor.AttnProcessor2_0":
-                return a
+                return AttnProcessor()
+            if full_name == "diffusers_quant.models.attention_processor.TrtAttnProcessor":
+                if _is_diffusers_quant_available:
+                    from diffusers_quant.models.attention_processor_oneflow import OneFlowTrtAttnProcessor
+                    return OneFlowTrtAttnProcessor(self)
+                else:
+                    raise RuntimeError("diffusers_quant package is not found but required for TrtAttnProcessor")
 
             assert (
                 type(a).__module__.startswith("torch") == False
