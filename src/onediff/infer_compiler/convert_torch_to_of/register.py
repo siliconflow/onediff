@@ -189,3 +189,9 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 @torch2of.register
 def _(mod: None, verbose=False) -> None:
     return mod
+
+
+# TODO 
+@torch2of.register
+def _(mod: flow.Tensor, verbose=False) -> None:
+    return mod

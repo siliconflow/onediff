@@ -1,0 +1,1 @@
+from .quant_diffusion_pipeline import QuantDiffusionPipeline
