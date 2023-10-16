@@ -104,6 +104,10 @@ def _(mod: torch.nn.Module, verbose=False):
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
     of_mod = of_mod_cls()
+    if of_mod.training:
+        of_mod.training = False
+        if verbose:
+            print(f"warning: {type(of_mod)} is in training mode and is turned into eval mode which is good for infrence optimation.")
 
     if verbose:
         print(f"convert {type(mod)} to {type(of_mod)}")

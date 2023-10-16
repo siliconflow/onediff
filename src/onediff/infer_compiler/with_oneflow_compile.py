@@ -13,6 +13,7 @@ def get_unet_graph(size=9):
             self.config.enable_cudnn_conv_heuristic_search_algo(False)
             self.config.allow_fuse_add_to_output(True)
 
+            os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
             os.environ["ONEFLOW_MLIR_CSE"] = "1"
             os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
             os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
