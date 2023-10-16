@@ -9,7 +9,7 @@ from .printer import print_red, print_green
 
 
 class PackageCopier:
-    def __init__(self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir = True):
+    def __init__(self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir = False):
         self.old_pkg_name, self.old_pkg_path = self._get_path(old_pkg)
         self.new_pkg_name = prefix + self.old_pkg_name + suffix
         if use_temp_dir:

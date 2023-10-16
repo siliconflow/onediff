@@ -22,7 +22,7 @@ def import_submodules(package, recursive=True):
             good_import = importlib.import_module(full_name)
             yield good_import
 
-        except ImportError as e:
+        except Exception as e:
             # logger.debug(f"Failed to import {full_name}: {e}")
             pass # ignore
             
@@ -50,12 +50,15 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
     class_dict = {}
 
     for module in import_submodules(package):
-        for name, obj in inspect.getmembers(module, inspect.isclass):
-            if inspect.isclass(obj) and (
-                base_class is None or issubclass(obj, base_class)
-            ):
-                full_name = f"{obj.__module__}.{name}"
-                class_dict[full_name] = obj
+        try:
+            for name, obj in inspect.getmembers(module, inspect.isclass):
+                if inspect.isclass(obj) and (
+                    base_class is None or issubclass(obj, base_class)
+                ):
+                    full_name = f"{obj.__module__}.{name}"
+                    class_dict[full_name] = obj
+        except Exception as e:
+            pass
     
 
     return class_dict

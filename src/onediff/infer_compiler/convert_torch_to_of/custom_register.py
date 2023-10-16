@@ -20,6 +20,9 @@ try:
     def _(mod: diffusers.models.attention_processor.AttnProcessor2_0, verbose=False):
         return default_converter(mod, verbose=verbose)
 
+    import transformers
+    cls_key = get_mock_cls_name(transformers.models.clip.configuration_clip.CLIPTextConfig)
+    update_class_proxies({cls_key: transformers.models.clip.configuration_clip.CLIPTextConfig})
 
 except ImportError as e:
     print_red(f"Failed to import diffusers {e=}")
