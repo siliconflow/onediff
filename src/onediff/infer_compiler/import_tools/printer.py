@@ -22,6 +22,11 @@ def print_green(*args, **kwargs):
     print(output)
 
 
+def print_yellow(*args, **kwargs):
+    output = Printer(33)(*args, **kwargs)
+    print(output)
+
+
 if __name__ == "__main__":
     print_red("This is red text")
     print_green("This is green text")

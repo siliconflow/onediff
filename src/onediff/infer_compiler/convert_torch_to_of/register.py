@@ -11,6 +11,7 @@ Usage:
 #### Basic:(register.py)
 #### Advanced:(custom_register.py)
 """
+import importlib
 import torch
 import oneflow as flow
 from typing import Union
@@ -24,26 +25,33 @@ __all__ = ["torch2of", "default_converter"]
 
 
 @singledispatch
-def torch2of(mod, *args, **kwargs):
+def torch2of(obj, *args, **kwargs):
     global _WARNING_MSG
-    
+
     msg = (
-        f"Warning: No torch2of conversion interface found for: {type(mod)=}, "
+        f"Warning: No torch2of conversion interface found for: {type(obj)=}, "
         f"Default attribute retrieval method will be used. \n"
-        f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
+        f"You can register {type(obj)} a  conversion method in custom_register.py to suppress this warning."
     )
 
-    if type(mod) not in _WARNING_MSG and torch2of.registry.get(type(mod), None) is None:
+    if type(obj) not in _WARNING_MSG and torch2of.registry.get(type(obj), None) is None:
         print_yellow(msg)
-        _WARNING_MSG.add(type(mod))
+        _WARNING_MSG.add(type(obj))
 
-    return default_converter(mod, *args, **kwargs)
+    return default_converter(obj, *args, **kwargs)
 
 
 @torch.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
     """Convert torch object to oneflow object."""
     try:
+        if hasattr(obj, "__module__") and obj.__module__.startswith("torch._C._nn"):
+            mod_name = obj.__module__.replace(
+                "torch._C._nn", "oneflow._oneflow_internal._C"
+            )
+            mod = importlib.import_module(mod_name)
+            return getattr(mod, obj.__name__)
+
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
         def init(self):
@@ -108,7 +116,9 @@ def _(mod: torch.nn.Module, verbose=False):
     if of_mod.training:
         of_mod.training = False
         if verbose:
-            print(f"warning: {type(of_mod)} is in training mode and is turned into eval mode which is good for infrence optimation.")
+            print(
+                f"warning: {type(of_mod)} is in training mode and is turned into eval mode which is good for infrence optimation."
+            )
 
     if verbose:
         print(f"convert {type(mod)} to {type(of_mod)}")
@@ -196,7 +206,7 @@ def _(mod: None, verbose=False) -> None:
     return mod
 
 
-# TODO 
+# TODO
 @torch2of.register
 def _(mod: flow.Tensor, verbose=False) -> None:
     return mod
