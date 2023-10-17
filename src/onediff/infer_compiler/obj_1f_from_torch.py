@@ -4,6 +4,7 @@ from collections import OrderedDict
 import torch
 import oneflow as flow
 import logging
+from typing import List
 
 logger = logging.getLogger(__name__)
 
@@ -11,7 +12,7 @@ logger = logging.getLogger(__name__)
 __of_mds = {}
 
 
-def __init_of_mds(package_names: list[str]):
+def __init_of_mds(package_names: List[str]):
     import sys
 
     if "diffusers" in sys.modules:
