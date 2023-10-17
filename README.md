@@ -13,7 +13,6 @@ Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to
 
 ### Clone and install
 ```
-python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 python3 -m pip install --pre oneflow -f https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu117
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 python3 -m pip uninstall accelerate -y
