@@ -99,7 +99,7 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
             return out[0]
 
         def apply_model(self, *args, **kwargs):
-            if hasattr(super(), "apply_model"):
+            with oneflow_graph_mode():
                 mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
                 if use_graph:
                     output = self._oneflow_module._dpl_graph(

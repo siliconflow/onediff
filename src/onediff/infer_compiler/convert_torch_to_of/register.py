@@ -12,6 +12,7 @@ Usage:
 #### Advanced:(custom_register.py)
 """
 import importlib
+import types
 import torch
 import oneflow as flow
 from typing import Union
@@ -25,33 +26,26 @@ __all__ = ["torch2of", "default_converter"]
 
 
 @singledispatch
-def torch2of(obj, *args, **kwargs):
+def torch2of(mod, *args, **kwargs):
     global _WARNING_MSG
 
     msg = (
-        f"Warning: No torch2of conversion interface found for: {type(obj)=}, "
+        f"Warning: No torch2of conversion interface found for: {type(mod)=}, "
         f"Default attribute retrieval method will be used. \n"
-        f"You can register {type(obj)} a  conversion method in custom_register.py to suppress this warning."
+        f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
     )
 
-    if type(obj) not in _WARNING_MSG and torch2of.registry.get(type(obj), None) is None:
+    if type(mod) not in _WARNING_MSG and torch2of.registry.get(type(mod), None) is None:
         print_yellow(msg)
-        _WARNING_MSG.add(type(obj))
+        _WARNING_MSG.add(type(mod))
 
-    return default_converter(obj, *args, **kwargs)
+    return default_converter(mod, *args, **kwargs)
 
 
 @torch.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
     """Convert torch object to oneflow object."""
     try:
-        if hasattr(obj, "__module__") and obj.__module__.startswith("torch._C._nn"):
-            mod_name = obj.__module__.replace(
-                "torch._C._nn", "oneflow._oneflow_internal._C"
-            )
-            mod = importlib.import_module(mod_name)
-            return getattr(mod, obj.__name__)
-
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
         def init(self):
@@ -210,3 +204,24 @@ def _(mod: None, verbose=False) -> None:
 @torch2of.register
 def _(mod: flow.Tensor, verbose=False) -> None:
     return mod
+
+
+@torch2of.register
+def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
+    if hasattr(mod, "__module__"):
+        mod_name = None
+        if mod.__module__.startswith("torch._C._nn"):
+            mod_name = mod.__module__.replace(
+                "torch._C._nn", "oneflow._oneflow_internal._C"
+            )
+        elif mod.__module__.startswith("torch"):
+            try:
+                if getattr(torch.nn.functional, mod.__name__) == mod:
+                    mod_name = "oneflow.nn.functional"
+            except:
+                mod_name = mod.__module__.replace("torch", "oneflow")
+        if mod_name is not None:
+            m = importlib.import_module(mod_name)
+            return getattr(m, mod.__name__)
+
+    return default_converter(mod, *args, **kwargs)
