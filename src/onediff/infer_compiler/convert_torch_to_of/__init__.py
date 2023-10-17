@@ -1,3 +1,11 @@
+import os
+
+if os.environ.get("ONEDIFF_SUPPRESS_WARNINGS", "1") == "1":
+    import warnings
+
+    warnings.simplefilter("ignore", category=UserWarning)
+    warnings.simplefilter("ignore", category=FutureWarning)
+
 from .register import torch2of, default_converter
 from .proxy import (
     ProxySubmodule,
