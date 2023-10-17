@@ -25,7 +25,7 @@ def __load_class_proxies(package_names: list[str]):
 
 
 _initial_package_names = os.getenv(
-    "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers"
+    "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers,transformers"
 ).split(",")
 # Dictionary containing class proxies from various packages
 _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(

@@ -11,12 +11,14 @@ Usage:
 #### Basic:(register.py)
 #### Advanced:(custom_register.py)
 """
+import importlib
+import types
 import torch
 import oneflow as flow
 from typing import Union
 from collections import OrderedDict
 from functools import singledispatch
-from ..import_tools import print_red
+from ..import_tools import print_red, print_yellow
 from .proxy import ProxySubmodule, proxy_class
 from ._globals import _WARNING_MSG
 
@@ -26,7 +28,7 @@ __all__ = ["torch2of", "default_converter"]
 @singledispatch
 def torch2of(mod, *args, **kwargs):
     global _WARNING_MSG
-    
+
     msg = (
         f"Warning: No torch2of conversion interface found for: {type(mod)=}, "
         f"Default attribute retrieval method will be used. \n"
@@ -34,7 +36,7 @@ def torch2of(mod, *args, **kwargs):
     )
 
     if type(mod) not in _WARNING_MSG and torch2of.registry.get(type(mod), None) is None:
-        print_red(msg)
+        print_yellow(msg)
         _WARNING_MSG.add(type(mod))
 
     return default_converter(mod, *args, **kwargs)
@@ -58,7 +60,8 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             print(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        raise NotImplementedError(f"Unsupported type: {type(obj)}")
+        # raise NotImplementedError(f"Unsupported type: {type(obj)}")
+        return obj
 
 
 from .custom_register import *  # noqa: F401,F403
@@ -107,7 +110,9 @@ def _(mod: torch.nn.Module, verbose=False):
     if of_mod.training:
         of_mod.training = False
         if verbose:
-            print(f"warning: {type(of_mod)} is in training mode and is turned into eval mode which is good for infrence optimation.")
+            print(
+                f"warning: {type(of_mod)} is in training mode and is turned into eval mode which is good for infrence optimation."
+            )
 
     if verbose:
         print(f"convert {type(mod)} to {type(of_mod)}")
@@ -195,7 +200,28 @@ def _(mod: None, verbose=False) -> None:
     return mod
 
 
-# TODO 
+# TODO
 @torch2of.register
 def _(mod: flow.Tensor, verbose=False) -> None:
     return mod
+
+
+@torch2of.register
+def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
+    if hasattr(mod, "__module__"):
+        mod_name = None
+        if mod.__module__.startswith("torch._C._nn"):
+            mod_name = mod.__module__.replace(
+                "torch._C._nn", "oneflow._oneflow_internal._C"
+            )
+        elif mod.__module__.startswith("torch"):
+            try:
+                if getattr(torch.nn.functional, mod.__name__) == mod:
+                    mod_name = "oneflow.nn.functional"
+            except:
+                mod_name = mod.__module__.replace("torch", "oneflow")
+        if mod_name is not None:
+            m = importlib.import_module(mod_name)
+            return getattr(m, mod.__name__)
+
+    return default_converter(mod, *args, **kwargs)
