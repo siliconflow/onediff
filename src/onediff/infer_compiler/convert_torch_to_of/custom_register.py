@@ -38,13 +38,16 @@ def import_diffusers():
 def import_comfy():
     try:
         import comfy
-        from .mock_comfy import CrossAttentionPytorch, Linear
+        from .mock_comfy import CrossAttentionPytorch, SpatialTransformer, Linear
 
         cls_key = get_mock_cls_name(comfy.ldm.modules.attention.CrossAttentionPytorch)
         update_class_proxies({cls_key: CrossAttentionPytorch})
 
         cls_key = get_mock_cls_name(comfy.ops.Linear)
         update_class_proxies({cls_key: Linear})
+
+        cls_key = get_mock_cls_name(comfy.ldm.modules.attention.SpatialTransformer)
+        update_class_proxies({cls_key: SpatialTransformer})
 
         @torch2of.register
         def _(mod: comfy.latent_formats.SDXL, verbose=False):

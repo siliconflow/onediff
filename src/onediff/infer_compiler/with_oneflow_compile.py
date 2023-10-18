@@ -132,9 +132,6 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
             else:
                 return getattr(self._torch_module, name)
 
-        def load_graph(self, file_path, device=None):
-            self._oneflow_module._dpl_graph.warmup_with_load(file_path, device)
-
         def warmup_with_load(self, file_path, device=None):
             self._oneflow_module._dpl_graph.warmup_with_load(file_path, device)
 
