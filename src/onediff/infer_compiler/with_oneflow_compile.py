@@ -3,12 +3,159 @@ from .convert_torch_to_of.register import torch2of
 import os
 import torch
 import oneflow as flow
+from oneflow.framework.args_tree import ArgsTree
 
 from .utils import (
     oneflow_graph_mode,
     oneflow_graph_mode_enabled,
     register_args_tree_relaxed_types,
 )
+
+register_args_tree_relaxed_types()
+
+
+class DualModule(torch.nn.Module):
+    def __init__(self, torch_module, oneflow_module):
+        super().__init__()
+        self._torch_module = torch_module
+        self._oneflow_module = oneflow_module
+
+    def to(self, *args, **kwargs):
+        if oneflow_graph_mode_enabled():
+            self._oneflow_module.to(*args, **kwargs)
+        else:
+            self._torch_module.to(*args, **kwargs)
+            args = [torch2of(v) for v in args]
+            kwargs = {k: torch2of(v) for k, v in kwargs.items()}
+            self._oneflow_module.to(*args, **kwargs)
+
+    def __getattr__(self, name):
+        if name == "_torch_module":
+            return self._modules[name]
+        if name == "_oneflow_module":
+            return super().__getattribute__(name)
+
+        torch_attr = getattr(self._torch_module, name)
+        oneflow_attr = getattr(self._oneflow_module, name)
+        if isinstance(torch_attr, torch.nn.ModuleList):
+            return DualModuleList(torch_attr, oneflow_attr)
+        elif isinstance(torch_attr, torch.nn.Module):
+            return DualModule(torch_attr, oneflow_attr)
+        else:
+            return oneflow_attr if oneflow_graph_mode_enabled() else torch_attr
+
+
+class DualModuleList(torch.nn.ModuleList):
+    def __init__(self, torch_module, oneflow_module):
+        super().__init__()
+        self.torch_module = torch_module
+        self.oneflow_module = oneflow_module
+
+    def __getitem__(self, idx):
+        return DualModule(self.torch_module[idx], self.oneflow_module[idx])
+
+
+class DeployableModule(torch.nn.Module):
+    def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
+        super().__init__()
+        self._deployable_module_model = DualModule(torch_module, oneflow_module)
+        self._deployable_module_use_graph = use_graph
+        self._deployable_module_options = options
+        self._deployable_module_dpl_graph = None
+
+    def process_input(self, *args, **kwargs):
+        def input_fn(value):
+            if isinstance(value, torch.Tensor):
+                return flow.utils.tensor.from_torch(value)
+            else:
+                return value
+
+        args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+        out = args_tree.map_leaf(input_fn)
+        mapped_args = out[0]
+        mapped_kwargs = out[1]
+        return mapped_args, mapped_kwargs
+
+    def process_output(self, output):
+        def output_fn(value):
+            if isinstance(value, flow.Tensor):
+                return flow.utils.tensor.to_torch(value)
+            else:
+                return value
+
+        out_tree = ArgsTree((output, None), False)
+        out = out_tree.map_leaf(output_fn)
+        return out[0]
+
+    def get_graph(self):
+        if self._deployable_module_dpl_graph is not None:
+            return self._deployable_module_dpl_graph
+        if "size" in self._deployable_module_options:
+            size = self._deployable_module_options["size"]
+        else:
+            size = 9
+        self._deployable_module_dpl_graph = get_oneflow_graph(size)(
+            self._deployable_module_model._oneflow_module
+        )
+        return self._deployable_module_dpl_graph
+
+    def apply_model(self, *args, **kwargs):
+        with oneflow_graph_mode():
+            mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+            if self._deployable_module_use_graph:
+                dpl_graph = self.get_graph()
+                output = dpl_graph(*mapped_args, **mapped_kwargs)
+            else:
+                output = self._deployable_module_model._oneflow_module.apply_model(
+                    *mapped_args, **mapped_kwargs
+                )
+            return self.process_output(output)
+
+    def to(self, *args, **kwargs):
+        self._deployable_module_model.to(*args, **kwargs)
+
+    def __call__(self, *args, **kwargs):
+        with oneflow_graph_mode():
+            mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+            if self._deployable_module_use_graph:
+                dpl_graph = self.get_graph()
+                output = dpl_graph(*mapped_args, **mapped_kwargs)
+            else:
+                output = self._deployable_module_model._oneflow_module(
+                    *mapped_args, **mapped_kwargs
+                )
+        return self.process_output(output)
+
+    def decode(self, *args, **kwargs):
+        with oneflow_graph_mode():
+            mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+            if self._deployable_module_use_graph:
+
+                def _build(graph, *args, **kwargs):
+                    return graph.model.decode(*args, **kwargs)
+
+                dpl_graph = self.get_graph()
+                dpl_graph.build = types.MethodType(_build, dpl_graph)
+                output = dpl_graph(*mapped_args, **mapped_kwargs)
+            else:
+                output = self._deployable_module_model._oneflow_module.decode(
+                    *mapped_args, **mapped_kwargs
+                )
+        return self.process_output(output)
+
+    def __getattr__(self, name):
+        if name in self._modules:
+            return self._modules[name]
+        return getattr(self._deployable_module_model, name)
+
+    def load_graph(self, file_path, device=None):
+        self.get_graph().warmup_with_load(file_path, device)
+
+    def warmup_with_load(self, file_path, device=None):
+        self.get_graph().warmup_with_load(file_path, device)
+
+    def save_graph(self, file_path):
+        self.get_graph().save_graph(file_path)
 
 
 def get_oneflow_graph(size=9):
@@ -61,115 +208,5 @@ def get_oneflow_graph(size=9):
 
 @torch.no_grad()
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
-
     oneflow_module = torch2of(torch_module)
-
-    from oneflow.framework.args_tree import ArgsTree
-
-    register_args_tree_relaxed_types()
-
-    def input_fn(value):
-        if isinstance(value, torch.Tensor):
-            return flow.utils.tensor.from_torch(value)
-        else:
-            return value
-
-    def output_fn(value):
-        if isinstance(value, flow.Tensor):
-            return flow.utils.tensor.to_torch(value)
-        else:
-            return value
-
-    if use_graph:
-        if "size" in options:
-            size = options["size"]
-        else:
-            size = 9
-        dpl_graph = get_oneflow_graph(size)(oneflow_module)
-
-    class DeployableModule(torch.nn.Module):
-        def __init__(self, torch_module, oneflow_module):
-            super().__init__()
-            self._torch_module = torch_module
-            self._oneflow_module = oneflow_module
-
-        def process_input(self, *args, **kwargs):
-            args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-            out = args_tree.map_leaf(input_fn)
-            mapped_args = out[0]
-            mapped_kwargs = out[1]
-            return mapped_args, mapped_kwargs
-
-        def process_output(self, output):
-            out_tree = ArgsTree((output, None), False)
-            out = out_tree.map_leaf(output_fn)
-            return out[0]
-
-        def apply_model(self, *args, **kwargs):
-            with oneflow_graph_mode():
-                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-                if use_graph:
-                    output = self._oneflow_module._dpl_graph(
-                        *mapped_args, **mapped_kwargs
-                    )
-                else:
-                    output = self._oneflow_module.apply_model(
-                        *mapped_args, **mapped_kwargs
-                    )
-                return self.process_output(output)
-
-        def to(self, *args, **kwargs):
-            self._torch_module.to(*args, **kwargs)
-            self._oneflow_module.to(*args, **kwargs)
-
-        def __call__(self, *args, **kwargs):
-            with oneflow_graph_mode():
-                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-                if use_graph:
-                    output = self._oneflow_module._dpl_graph(
-                        *mapped_args, **mapped_kwargs
-                    )
-                else:
-                    output = self._oneflow_module(*mapped_args, **mapped_kwargs)
-            return self.process_output(output)
-
-        def decode(self, *args, **kwargs):
-            with oneflow_graph_mode():
-                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-                if use_graph:
-
-                    def _build(graph, *args, **kwargs):
-                        return graph.model.decode(*args, **kwargs)
-
-                    self._oneflow_module._dpl_graph.build = types.MethodType(
-                        _build, self._oneflow_module._dpl_graph
-                    )
-                    output = self._oneflow_module._dpl_graph(
-                        *mapped_args, **mapped_kwargs
-                    )
-                else:
-                    output = self._oneflow_module.decode(*mapped_args, **mapped_kwargs)
-            return self.process_output(output)
-
-        def __getattr__(self, name):
-            if name == "_torch_module":
-                return self._modules[name]
-            if name == "_oneflow_module":
-                return super().__getattribute__(name)
-            if oneflow_graph_mode_enabled():
-                return getattr(self._oneflow_module, name)
-            else:
-                return getattr(self._torch_module, name)
-
-        def load_graph(self, file_path, device=None):
-            self._oneflow_module._dpl_graph.warmup_with_load(file_path, device)
-
-        def warmup_with_load(self, file_path, device=None):
-            self._oneflow_module._dpl_graph.warmup_with_load(file_path, device)
-
-        def save_graph(self, file_path):
-            self._oneflow_module._dpl_graph.save_graph(file_path)
-
-    if use_graph:
-        oneflow_module._dpl_graph = dpl_graph
-    return DeployableModule(torch_module, oneflow_module)
+    return DeployableModule(torch_module, oneflow_module, use_graph, options)
