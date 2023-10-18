@@ -76,11 +76,17 @@ def _(mod: torch.nn.Module, verbose=False):
     def init(self):
         nonlocal proxy_md
 
+        # call the super `__init__` may cause unnecessary memory allocation, so we call the nn.Module `__init__` instead.
+        # super(type(self), self).__init__()
+        flow.nn.Module.__init__(self)
+
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
         for (n, p) in list(proxy_md.named_parameters("", False)):
-            self._parameters[n] = flow.utils.tensor.from_torch(p.data)
+            self._parameters[n] = flow.nn.Parameter(
+                flow.utils.tensor.from_torch(p.data), requires_grad=p.requires_grad
+            )
         for (n, b) in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for (n, m) in proxy_md._modules.items():

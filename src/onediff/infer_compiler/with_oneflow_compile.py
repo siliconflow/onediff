@@ -1,9 +1,14 @@
+import types
 from .convert_torch_to_of.register import torch2of
 import os
 import torch
 import oneflow as flow
 
-from .utils import oneflow_graph_mode, oneflow_graph_mode_enabled
+from .utils import (
+    oneflow_graph_mode,
+    oneflow_graph_mode_enabled,
+    register_args_tree_relaxed_types,
+)
 
 
 def get_oneflow_graph(size=9):
@@ -61,6 +66,8 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
     from oneflow.framework.args_tree import ArgsTree
 
+    register_args_tree_relaxed_types()
+
     def input_fn(value):
         if isinstance(value, torch.Tensor):
             return flow.utils.tensor.from_torch(value)
@@ -111,6 +118,10 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
                     )
                 return self.process_output(output)
 
+        def to(self, *args, **kwargs):
+            self._torch_module.to(*args, **kwargs)
+            self._oneflow_module.to(*args, **kwargs)
+
         def __call__(self, *args, **kwargs):
             with oneflow_graph_mode():
                 mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
@@ -120,6 +131,24 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
                     )
                 else:
                     output = self._oneflow_module(*mapped_args, **mapped_kwargs)
+            return self.process_output(output)
+
+        def decode(self, *args, **kwargs):
+            with oneflow_graph_mode():
+                mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+                if use_graph:
+
+                    def _build(graph, *args, **kwargs):
+                        return graph.model.decode(*args, **kwargs)
+
+                    self._oneflow_module._dpl_graph.build = types.MethodType(
+                        _build, self._oneflow_module._dpl_graph
+                    )
+                    output = self._oneflow_module._dpl_graph(
+                        *mapped_args, **mapped_kwargs
+                    )
+                else:
+                    output = self._oneflow_module.decode(*mapped_args, **mapped_kwargs)
             return self.process_output(output)
 
         def __getattr__(self, name):
