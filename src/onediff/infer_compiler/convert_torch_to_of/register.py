@@ -104,10 +104,17 @@ def _(mod: torch.nn.Module, verbose=False):
     def proxy_getattr(self, attr):
         nonlocal proxy_md
 
-        if attr in ["_parameters", "_buffers", "_modules"]:
-            raise ValueError(f"missing attr {attr} in base class")
-        else:
-            return getattr(proxy_md, attr)
+        try:
+            return super().__getattribute__(attr)
+        except:
+            if attr in self._modules:
+                return self._modules[attr]
+            if attr in self._parameters:
+                return self._parameters[attr]
+            elif attr in self._buffers:
+                return self._buffers[attr]
+            else:
+                return getattr(proxy_md, attr)
 
     of_mod_cls = type(
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}

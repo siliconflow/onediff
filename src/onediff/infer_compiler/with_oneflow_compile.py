@@ -100,44 +100,48 @@ class DeployableModule(torch.nn.Module):
         return self._deployable_module_dpl_graph
 
     def apply_model(self, *args, **kwargs):
-        with oneflow_graph_mode():
-            mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-            if self._deployable_module_use_graph:
-                dpl_graph = self.get_graph()
+        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+        if self._deployable_module_use_graph:
+            dpl_graph = self.get_graph()
+            with oneflow_graph_mode():
                 output = dpl_graph(*mapped_args, **mapped_kwargs)
-            else:
+        else:
+            with oneflow_graph_mode():
                 output = self._deployable_module_model._oneflow_module.apply_model(
                     *mapped_args, **mapped_kwargs
                 )
-            return self.process_output(output)
+        return self.process_output(output)
 
     def to(self, *args, **kwargs):
         self._deployable_module_model.to(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
-        with oneflow_graph_mode():
-            mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-            if self._deployable_module_use_graph:
-                dpl_graph = self.get_graph()
+        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+        if self._deployable_module_use_graph:
+            dpl_graph = self.get_graph()
+            with oneflow_graph_mode():
                 output = dpl_graph(*mapped_args, **mapped_kwargs)
-            else:
+        else:
+            with oneflow_graph_mode():
                 output = self._deployable_module_model._oneflow_module(
                     *mapped_args, **mapped_kwargs
                 )
         return self.process_output(output)
 
+    # TODO(): Just for transformers VAE decoder
     def decode(self, *args, **kwargs):
-        with oneflow_graph_mode():
-            mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-            if self._deployable_module_use_graph:
+        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+        if self._deployable_module_use_graph:
 
-                def _build(graph, *args, **kwargs):
-                    return graph.model.decode(*args, **kwargs)
+            def _build(graph, *args, **kwargs):
+                return graph.model.decode(*args, **kwargs)
 
-                dpl_graph = self.get_graph()
-                dpl_graph.build = types.MethodType(_build, dpl_graph)
+            dpl_graph = self.get_graph()
+            dpl_graph.build = types.MethodType(_build, dpl_graph)
+            with oneflow_graph_mode():
                 output = dpl_graph(*mapped_args, **mapped_kwargs)
-            else:
+        else:
+            with oneflow_graph_mode():
                 output = self._deployable_module_model._oneflow_module.decode(
                     *mapped_args, **mapped_kwargs
                 )
