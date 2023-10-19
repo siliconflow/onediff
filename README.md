@@ -5,6 +5,10 @@
 
 OneFlow backend support for diffusers
 
+## Business inquiry
+
+If you need ComfyUI or quant support, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
+
 ## Use within docker or install with pip
 
 Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to-Run-OneFlow-Stable-Diffusion)
