@@ -8,7 +8,7 @@ from .utils import oneflow_graph_mode, oneflow_graph_mode_enabled
 
 def get_oneflow_graph(size=9):
     class OneflowGraph(flow.nn.Graph):
-        @flow.nn.Graph.with_dynamic_input_shape(size=size)
+        @flow.nn.Graph.with_dynamic_input_shape(size=size) 
         def __init__(self, model):
             super().__init__(enable_get_runtime_state_dict=True)
             self.model = model

@@ -7,7 +7,6 @@ from ..import_tools import (
 from .register import torch2of, default_converter
 from ._globals import update_class_proxies, _initial_package_names
 
-
 def import_diffusers():
     try:
         import diffusers
@@ -32,11 +31,12 @@ def import_diffusers():
 
     except ImportError as e:
         print_red(f"Failed to import diffusers {e=}")
-        raise e
 
 
 def import_comfy():
     try:
+        import sys 
+        sys.path.append("/home/fengwen/worksplace/comfy_int8/ComfyUI")
         import comfy
         from .mock_comfy import CrossAttentionPytorch, Linear
 
@@ -51,16 +51,7 @@ def import_comfy():
             return default_converter(mod, verbose=verbose)
 
     except Exception as e:
-        if "comfy" not in _initial_package_names:
-            print_red(
-                "Skipping import comfy,"
-                "comfy not found in initial package names. "
-                "Please export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES=diffusers,comfy, "
-                "where 'diffusers' and 'comfy' are package names separated by commas."
-            )
-        else:
-            print_red(f"Failed  {e=}")
-            raise e
+        print_red(f"Failed to import comfy {e=}")
 
 
 def import_diffusers_quant():
