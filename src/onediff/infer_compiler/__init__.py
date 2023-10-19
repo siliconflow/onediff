@@ -2,18 +2,16 @@ import os
 import torch
 import oneflow as flow
 
-from .patch_for_compiling import * # TODO:
-from .with_oneflow_compile import oneflow_compile 
+from .patch_for_compiling import *  # TODO:
+from .with_oneflow_compile import oneflow_compile, oneflow_compile_lazy
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
 
 
 def oneflow_backend(gm, example_inputs):
-    with_interp = os.getenv("ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False").lower() in (
-        "true",
-        "1",
-        "t",
-    )
+    with_interp = os.getenv(
+        "ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False"
+    ).lower() in ("true", "1", "t",)
     if not with_interp:
         transformed_fn = fx_node_tranform(gm)
 
@@ -30,4 +28,3 @@ def oneflow_backend(gm, example_inputs):
         return flow.utils.tensor.to_torch(output)
 
     return wrapped_forward
-

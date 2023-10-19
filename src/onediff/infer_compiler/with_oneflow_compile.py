@@ -144,3 +144,50 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
     if use_graph:
         oneflow_module._dpl_graph = dpl_graph
     return DeployableModule(torch_module, oneflow_module)
+
+
+@torch.no_grad()
+def oneflow_compile_lazy(torch_module, *, use_graph=True, options={}):
+    """Lazy compilation of torch module to oneflow module.
+
+    Calling the `__call__` method of LazyOneFlowModule will trigger compilation.
+
+    Example:
+        >>> import torch
+        >>> from onediff.infer_compiler import oneflow_compile_lazy
+        >>> torch_module = torch.nn.Linear(3, 4)
+        >>> oneflow_module = oneflow_compile_lazy(torch_module, use_graph=True)
+        >>> torch_module.to("cuda")
+        >>> input = torch.randn(2, 3).to("cuda")
+        >>> oneflow_module(input)
+        
+        oneflow_compile_lazy __call__ ...
+
+        tensor([[-0.6069, -0.5079, -0.1984, -0.1253],
+                [ 0.0041, -0.0595,  0.1333, -0.4581]], device='cuda:0')
+    """
+
+    class LazyOneFlowModule:
+        def __init__(self, torch_module):
+            self._torch_module = torch_module
+            self._lazy_convert = True
+            self._oneflow_module = None
+
+        def __getattribute__(self, __name: str):
+            if __name in ("_torch_module", "_lazy_convert", "_oneflow_module"):
+                return super().__getattribute__(__name)
+            if self._lazy_convert:
+                return getattr(self._torch_module, __name)
+            else:
+                return getattr(self._oneflow_module, __name)
+
+        def __call__(self, *args, **kwargs):
+            if self._oneflow_module is None:
+                print("oneflow_compile_lazy __call__ ...")
+                self._oneflow_module = oneflow_compile(
+                    self._torch_module, use_graph=use_graph, options=options
+                )
+                self._lazy_convert = False
+            return self._oneflow_module(*args, **kwargs)
+
+    return LazyOneFlowModule(torch_module)

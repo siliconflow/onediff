@@ -6,7 +6,7 @@ Uasge:
 """
 import torch
 import oneflow as flow
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile_lazy
 from onediff.infer_compiler.convert_torch_to_of import (
     update_class_proxies
 )
@@ -50,8 +50,8 @@ def test_torch2of_demo():
 
     # Compile PyTorch model to OneFlow
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    of_model = oneflow_compile_lazy(pytorch_model, use_graph=True)
     pytorch_model = PyTorchModel().to(device)
-    of_model = oneflow_compile(pytorch_model, use_graph=False)
 
 
     # Verify conversion
