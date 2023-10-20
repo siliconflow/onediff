@@ -1,2 +1,2 @@
-from .attention import CrossAttentionPytorch
+from .attention import CrossAttentionPytorch, SpatialTransformer
 from .linear import Linear

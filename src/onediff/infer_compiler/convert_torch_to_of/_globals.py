@@ -13,7 +13,7 @@ __all__ = [
 
 
 def __load_class_proxies(package_names: list[str]):
-    print_red(f"==> Loading modules: {package_names}")
+    print_green(f"==> Loading modules: {package_names}")
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     __of_mds = {}
     with flow.mock_torch.enable(lazy=True):
@@ -22,8 +22,6 @@ def __load_class_proxies(package_names: list[str]):
 
     print_green(f" 🚀 Loaded Mock Torch {len(__of_mds)} classes: {package_names} 🚀 <== ")
     return __of_mds
-
-
 _initial_package_names = os.getenv(
     "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers,transformers"
 ).split(",")
