@@ -59,7 +59,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             print(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        print_red(f"Unsupported type: {type(obj)}")
+        print_yellow(f"Unsupported type: {type(obj)}")
         return obj
 
 
