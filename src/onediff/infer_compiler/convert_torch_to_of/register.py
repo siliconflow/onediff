@@ -42,7 +42,7 @@ def torch2of(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
 
-@torch.no_grad()
+@flow.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
     """Convert torch object to oneflow object."""
     try:
@@ -76,11 +76,17 @@ def _(mod: torch.nn.Module, verbose=False):
     def init(self):
         nonlocal proxy_md
 
+        # call the super `__init__` may cause unnecessary memory allocation, so we call the nn.Module `__init__` instead.
+        # super(type(self), self).__init__()
+        flow.nn.Module.__init__(self)
+
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
         for (n, p) in list(proxy_md.named_parameters("", False)):
-            self._parameters[n] = flow.utils.tensor.from_torch(p.data)
+            self._parameters[n] = flow.nn.Parameter(
+                flow.utils.tensor.from_torch(p.data), requires_grad=p.requires_grad
+            )
         for (n, b) in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for (n, m) in proxy_md._modules.items():
@@ -98,10 +104,17 @@ def _(mod: torch.nn.Module, verbose=False):
     def proxy_getattr(self, attr):
         nonlocal proxy_md
 
-        if attr in ["_parameters", "_buffers", "_modules"]:
-            raise ValueError(f"missing attr {attr} in base class")
-        else:
-            return getattr(proxy_md, attr)
+        try:
+            return super().__getattribute__(attr)
+        except:
+            if attr in self._modules:
+                return self._modules[attr]
+            if attr in self._parameters:
+                return self._parameters[attr]
+            elif attr in self._buffers:
+                return self._buffers[attr]
+            else:
+                return getattr(proxy_md, attr)
 
     of_mod_cls = type(
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
