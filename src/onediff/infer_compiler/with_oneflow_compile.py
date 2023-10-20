@@ -15,6 +15,7 @@ def get_oneflow_graph(size=9):
             self.config.enable_cudnn_conv_heuristic_search_algo(False)
             self.config.allow_fuse_add_to_output(True)
 
+            self.debug(0, max_py_stack_depth=40)
             os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
             os.environ["ONEFLOW_MLIR_CSE"] = "1"
             os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
@@ -57,7 +58,7 @@ def get_oneflow_graph(size=9):
 @torch.no_grad()
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
-    oneflow_module = torch2of(torch_module)
+    oneflow_module = torch2of(torch_module, verbose=True)
 
     from oneflow.framework.args_tree import ArgsTree
 

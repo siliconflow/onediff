@@ -2,6 +2,7 @@
 code from https://github.com/comfyanonymous/ComfyUI/blob/4103f7fad5be7e22ed61843166b72b7c41671d75/comfy/ldm/modules/attention.py#L450-L490
 """
 import mock_comfy as comfy
+from einops import rearrange
 import oneflow as torch
 import oneflow.nn as nn
 from typing import Optional, Any
@@ -132,6 +133,7 @@ class SpatialTransformer(nn.Module):
         self.use_linear = use_linear
 
     def forward(self, x, context=None, transformer_options={}):
+        print("===> customed SpatialTransformer")
         # note: if no context is given, cross-attention defaults to self-attention
         if not isinstance(context, list):
             context = [context] * len(self.transformer_blocks)
@@ -142,8 +144,8 @@ class SpatialTransformer(nn.Module):
             x = self.proj_in(x)
         # NOTE: rearrange in ComfyUI is replaced with reshape and use -1 to enable for
         # dynamic shape inference (multi resolution compilation)
-        # x = rearrange(x, 'b c h w -> b (h w) c').contiguous()
-        x = x.reshape(b, c, -1).permute(0, 2, 1)
+        #x = x.reshape(b, c, -1).permute(0, 2, 1)
+        x = rearrange(x, 'b c h w -> b (h w) c').contiguous()
         if self.use_linear:
             x = self.proj_in(x)
         for i, block in enumerate(self.transformer_blocks):
@@ -152,8 +154,8 @@ class SpatialTransformer(nn.Module):
         if self.use_linear:
             x = self.proj_out(x)
         # NOTE: rearrange in ComfyUI is replaced with permute
-        # x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()
-        x = x.permute(0, 2, 1).reshape_as(x_in)
+        #x = x.permute(0, 2, 1).reshape_as(x_in)
+        x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()
         if not self.use_linear:
             x = self.proj_out(x)
         return x + x_in

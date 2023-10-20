@@ -54,7 +54,11 @@ def import_comfy():
             return default_converter(mod, verbose=verbose)
 
     except Exception as e:
-        if "comfy" not in _initial_package_names:
+        comfy_imported = False 
+        for pkg in _initial_package_names:
+            if "comfy" in pkg:
+                comfy_imported = True
+        if not comfy_imported:
             print_red(
                 "Skipping import comfy,"
                 "comfy not found in initial package names. "
@@ -62,7 +66,7 @@ def import_comfy():
                 "where 'diffusers' and 'comfy' are package names separated by commas."
             )
         else:
-            print_red(f"Failed  {e=}")
+            print_red(f"Failed at importing customed comfy modules: {e=}")
             raise e
 
 
