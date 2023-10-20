@@ -23,7 +23,7 @@ def __load_class_proxies(package_names: list[str]):
     print_green(f" 🚀 Loaded Mock Torch {len(__of_mds)} classes: {package_names} 🚀 <== ")
     return __of_mds
 _initial_package_names = os.getenv(
-    "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers,/data/home/xuxiaoyu/ComfyUI/comfy"
+    "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers,transformers"
 ).split(",")
 # Dictionary containing class proxies from various packages
 _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(

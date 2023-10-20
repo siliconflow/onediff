@@ -60,8 +60,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             print(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        # raise NotImplementedError(f"Unsupported type: {type(obj)}")
-        print(f"Unsupported type: {type(obj)}")
+        print_red(f"Unsupported type: {type(obj)}")
         return obj
 
 
@@ -209,7 +208,6 @@ def _(mod: flow.Tensor, verbose=False) -> None:
 
 @torch2of.register
 def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
-    print(f"try to get function type mod {mod}")
     if hasattr(mod, "__module__"):
         mod_name = None
         if mod.__module__.startswith("torch._C._nn"):
