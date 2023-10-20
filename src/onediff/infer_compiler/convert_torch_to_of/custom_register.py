@@ -38,7 +38,7 @@ def import_diffusers():
 def import_comfy():
     try:
         import comfy
-        from .mock_comfy import CrossAttentionPytorch, Linear
+        from .mock_comfy import CrossAttentionPytorch, SpatialTransformer, Linear
 
         cls_key = get_mock_cls_name(comfy.ldm.modules.attention.CrossAttentionPytorch)
         update_class_proxies({cls_key: CrossAttentionPytorch})
@@ -46,12 +46,19 @@ def import_comfy():
         cls_key = get_mock_cls_name(comfy.ops.Linear)
         update_class_proxies({cls_key: Linear})
 
+        cls_key = get_mock_cls_name(comfy.ldm.modules.attention.SpatialTransformer)
+        update_class_proxies({cls_key: SpatialTransformer})
+
         @torch2of.register
         def _(mod: comfy.latent_formats.SDXL, verbose=False):
             return default_converter(mod, verbose=verbose)
 
     except Exception as e:
-        if "comfy" not in _initial_package_names:
+        comfy_imported = False 
+        for pkg in _initial_package_names:
+            if "comfy" in pkg:
+                comfy_imported = True
+        if not comfy_imported:
             print_red(
                 "Skipping import comfy,"
                 "comfy not found in initial package names. "
@@ -59,7 +66,7 @@ def import_comfy():
                 "where 'diffusers' and 'comfy' are package names separated by commas."
             )
         else:
-            print_red(f"Failed  {e=}")
+            print_red(f"Failed at importing customed comfy modules: {e=}")
             raise e
 
 

@@ -42,7 +42,6 @@ def torch2of(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
 
-@torch.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
     """Convert torch object to oneflow object."""
     try:
@@ -60,7 +59,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             print(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        # raise NotImplementedError(f"Unsupported type: {type(obj)}")
+        print_yellow(f"Unsupported type: {type(obj)}")
         return obj
 
 

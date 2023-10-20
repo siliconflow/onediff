@@ -6,8 +6,8 @@ import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
 
 from .utils import (
-    oneflow_graph_mode,
-    oneflow_graph_mode_enabled,
+    oneflow_exec_mode,
+    oneflow_exec_mode_enabled,
     register_args_tree_relaxed_types,
 )
 
@@ -21,7 +21,7 @@ class DualModule(torch.nn.Module):
         self._oneflow_module = oneflow_module
 
     def to(self, *args, **kwargs):
-        if oneflow_graph_mode_enabled():
+        if oneflow_exec_mode_enabled():
             self._oneflow_module.to(*args, **kwargs)
         else:
             self._torch_module.to(*args, **kwargs)
@@ -42,7 +42,7 @@ class DualModule(torch.nn.Module):
         elif isinstance(torch_attr, torch.nn.Module):
             return DualModule(torch_attr, oneflow_attr)
         else:
-            return oneflow_attr if oneflow_graph_mode_enabled() else torch_attr
+            return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
 
 
 class DualModuleList(torch.nn.ModuleList):
@@ -103,10 +103,10 @@ class DeployableModule(torch.nn.Module):
         mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
-            with oneflow_graph_mode():
+            with oneflow_exec_mode():
                 output = dpl_graph(*mapped_args, **mapped_kwargs)
         else:
-            with oneflow_graph_mode():
+            with oneflow_exec_mode():
                 output = self._deployable_module_model._oneflow_module.apply_model(
                     *mapped_args, **mapped_kwargs
                 )
@@ -119,10 +119,10 @@ class DeployableModule(torch.nn.Module):
         mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
-            with oneflow_graph_mode():
+            with oneflow_exec_mode():
                 output = dpl_graph(*mapped_args, **mapped_kwargs)
         else:
-            with oneflow_graph_mode():
+            with oneflow_exec_mode():
                 output = self._deployable_module_model._oneflow_module(
                     *mapped_args, **mapped_kwargs
                 )
@@ -138,10 +138,10 @@ class DeployableModule(torch.nn.Module):
 
             dpl_graph = self.get_graph()
             dpl_graph.build = types.MethodType(_build, dpl_graph)
-            with oneflow_graph_mode():
+            with oneflow_exec_mode():
                 output = dpl_graph(*mapped_args, **mapped_kwargs)
         else:
-            with oneflow_graph_mode():
+            with oneflow_exec_mode():
                 output = self._deployable_module_model._oneflow_module.decode(
                     *mapped_args, **mapped_kwargs
                 )
@@ -210,7 +210,6 @@ def get_oneflow_graph(size=9):
     return OneflowGraph
 
 
-@torch.no_grad()
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
     oneflow_module = torch2of(torch_module)
     return DeployableModule(torch_module, oneflow_module, use_graph, options)
