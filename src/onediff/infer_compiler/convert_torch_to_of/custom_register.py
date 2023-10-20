@@ -35,8 +35,6 @@ def import_diffusers():
 
 def import_comfy():
     try:
-        import sys 
-        sys.path.append("/home/fengwen/worksplace/comfy_int8/ComfyUI")
         import comfy
         from .mock_comfy import CrossAttentionPytorch, SpatialTransformer, Linear
 
