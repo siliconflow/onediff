@@ -214,7 +214,7 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
     oneflow_module = torch2of(torch_module)
     return DeployableModule(torch_module, oneflow_module, use_graph, options)
 
-  
+# TODO() model_patcher https://github.com/siliconflow/comfyui-speedup/blob/ad8b2d4b31272543f97aef80cb92ae22d88066ae/nodes.py#L25
 def oneflow_compile_lazy(torch_module, *, use_graph=True, options={}):
     """Lazy compilation of torch module to oneflow module.
 
