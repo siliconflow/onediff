@@ -1,6 +1,8 @@
 import oneflow as torch
+from ..proxy import proxy_class
+import comfy
 
-class Linear(torch.nn.Module):
+class Linear(proxy_class(comfy.ops.Linear)):
     def __init__(self, in_features: int, out_features: int, bias: bool = True,
                  device=None, dtype=None) -> None:
         factory_kwargs = {'device': device, 'dtype': dtype}

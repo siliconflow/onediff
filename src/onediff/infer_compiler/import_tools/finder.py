@@ -19,6 +19,7 @@ def import_submodules(package, recursive=True):
     for _, name, is_pkg in pkgutil.walk_packages(package.__path__):
         full_name = package.__name__ + "." + name
         try:
+            # TODO(): Avoid copy, rename comfy.x.x.x with mocked_comfy.x.x.x
             good_import = importlib.import_module(full_name)
             yield good_import
 
