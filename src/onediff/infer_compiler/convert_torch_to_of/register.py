@@ -42,7 +42,6 @@ def torch2of(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
 
-@flow.no_grad()
 def default_converter(obj, verbose=False, *, proxy_cls=None):
     """Convert torch object to oneflow object."""
     try:
