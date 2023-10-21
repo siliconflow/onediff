@@ -5,6 +5,7 @@ import importlib
 from typing import Any
 import diffusers
 from ._globals import _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
+from ._globals import _initial_package_names
 from ..import_tools import (
     get_mock_cls_name,
 )
@@ -33,7 +34,11 @@ def proxy_class(cls: type):
         return __of_mds[full_cls_name]
 
     raise RuntimeError(
-        f"can't find oneflow module for: {str(cls)} please register in custom_register.py!"
+        f"""
+        1. Replace can't find proxy oneflow module for: {str(cls)} \n 
+        2. Check if the initial package {_initial_package_names} contains the package where {str(cls)} is located, 
+        if not, you need to add it. 
+        """
     )
 
 

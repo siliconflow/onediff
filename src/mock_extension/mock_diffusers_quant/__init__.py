@@ -1,0 +1,50 @@
+# ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP = { PYTORCH_MODEL_CLASS: ONEFLOW_MODEL_CLASS }
+# ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = { Function :  TYPE }
+import oneflow as flow
+import diffusers_quant
+
+ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP = {
+    diffusers_quant.FakeQuantModule: diffusers_quant.OneFlowFakeQuantModule,
+    diffusers_quant.StaticQuantConvModule: diffusers_quant.OneFlowStaticQuantConvModule,
+    diffusers_quant.DynamicQuantConvModule: diffusers_quant.OneFlowDynamicQuantConvModule,
+    diffusers_quant.StaticQuantLinearModule: diffusers_quant.OneFlowStaticQuantLinearModule,
+    diffusers_quant.DynamicQuantLinearModule: diffusers_quant.OneFlowDynamicLinearQuantModule,
+    diffusers_quant.models.attention_processor.TrtAttnProcessor: diffusers_quant.models.attention_processor_oneflow.OneFlowTrtAttnProcessor,
+}
+
+
+def convert_func(mod: flow.Tensor, verbose=False):
+    return mod
+
+
+ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = {
+    convert_func: flow.Tensor,
+}
+
+#         import diffusers_quant
+
+#         cls_key_value = {
+#             get_mock_cls_name(
+#                 diffusers_quant.FakeQuantModule
+#             ): diffusers_quant.OneFlowFakeQuantModule,
+#             get_mock_cls_name(
+#                 diffusers_quant.StaticQuantConvModule
+#             ): diffusers_quant.OneFlowStaticQuantConvModule,
+#             get_mock_cls_name(
+#                 diffusers_quant.DynamicQuantConvModule
+#             ): diffusers_quant.OneFlowDynamicQuantConvModule,
+#             get_mock_cls_name(
+#                 diffusers_quant.StaticQuantLinearModule
+#             ): diffusers_quant.OneFlowStaticQuantLinearModule,
+#             get_mock_cls_name(
+#                 diffusers_quant.DynamicQuantLinearModule
+#             ): diffusers_quant.OneFlowDynamicLinearQuantModule,
+#             get_mock_cls_name(
+#                 diffusers_quant.models.attention_processor.TrtAttnProcessor
+#             ): diffusers_quant.models.attention_processor_oneflow.OneFlowTrtAttnProcessor,
+#         }
+#         update_class_proxies(cls_key_value)
+
+#         @torch2of.register
+#         def _(mod: flow.Tensor, verbose=False):
+#             return mod

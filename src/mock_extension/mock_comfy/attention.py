@@ -5,7 +5,9 @@ import comfy
 import oneflow as torch
 import oneflow.nn as nn
 from typing import Optional, Any
-from ..proxy import proxy_class
+
+# from ..proxy import proxy_class
+from onediff.infer_compiler.convert_torch_to_of.proxy import proxy_class
 
 
 def exists(val):
@@ -22,7 +24,9 @@ def default(val, d):
     return d
 
 
-class CrossAttentionPytorch(proxy_class(comfy.ldm.modules.attention.CrossAttentionPytorch)):
+class CrossAttentionPytorch(
+    proxy_class(comfy.ldm.modules.attention.CrossAttentionPytorch)
+):
     def __init__(
         self,
         query_dim,
@@ -90,6 +94,7 @@ class CrossAttentionPytorch(proxy_class(comfy.ldm.modules.attention.CrossAttenti
         #     out = out.transpose(1, 2).reshape(b, -1, self.heads * self.dim_head)
         return self.to_out(out)
 
+
 class SpatialTransformer(proxy_class(comfy.ldm.modules.attention.SpatialTransformer)):
     """
     Transformer block for image-like data.
@@ -99,10 +104,22 @@ class SpatialTransformer(proxy_class(comfy.ldm.modules.attention.SpatialTransfor
     Finally, reshape to image
     NEW: use_linear for more efficiency instead of the 1x1 convs
     """
-    def __init__(self, in_channels, n_heads, d_head,
-                 depth=1, dropout=0., context_dim=None,
-                 disable_self_attn=False, use_linear=False,
-                 use_checkpoint=True, dtype=None, device=None, operations=comfy.ops):
+
+    def __init__(
+        self,
+        in_channels,
+        n_heads,
+        d_head,
+        depth=1,
+        dropout=0.0,
+        context_dim=None,
+        disable_self_attn=False,
+        use_linear=False,
+        use_checkpoint=True,
+        dtype=None,
+        device=None,
+        operations=comfy.ops,
+    ):
         super().__init__()
         if exists(context_dim) and not isinstance(context_dim, list):
             context_dim = [context_dim] * depth
@@ -110,26 +127,51 @@ class SpatialTransformer(proxy_class(comfy.ldm.modules.attention.SpatialTransfor
         inner_dim = n_heads * d_head
         self.norm = Normalize(in_channels, dtype=dtype, device=device)
         if not use_linear:
-            self.proj_in = operations.Conv2d(in_channels,
-                                     inner_dim,
-                                     kernel_size=1,
-                                     stride=1,
-                                     padding=0, dtype=dtype, device=device)
+            self.proj_in = operations.Conv2d(
+                in_channels,
+                inner_dim,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+                dtype=dtype,
+                device=device,
+            )
         else:
-            self.proj_in = operations.Linear(in_channels, inner_dim, dtype=dtype, device=device)
+            self.proj_in = operations.Linear(
+                in_channels, inner_dim, dtype=dtype, device=device
+            )
 
         self.transformer_blocks = nn.ModuleList(
-            [BasicTransformerBlock(inner_dim, n_heads, d_head, dropout=dropout, context_dim=context_dim[d],
-                                   disable_self_attn=disable_self_attn, checkpoint=use_checkpoint, dtype=dtype, device=device, operations=operations)
-                for d in range(depth)]
+            [
+                BasicTransformerBlock(
+                    inner_dim,
+                    n_heads,
+                    d_head,
+                    dropout=dropout,
+                    context_dim=context_dim[d],
+                    disable_self_attn=disable_self_attn,
+                    checkpoint=use_checkpoint,
+                    dtype=dtype,
+                    device=device,
+                    operations=operations,
+                )
+                for d in range(depth)
+            ]
         )
         if not use_linear:
-            self.proj_out = operations.Conv2d(inner_dim,in_channels,
-                                                  kernel_size=1,
-                                                  stride=1,
-                                                  padding=0, dtype=dtype, device=device)
+            self.proj_out = operations.Conv2d(
+                inner_dim,
+                in_channels,
+                kernel_size=1,
+                stride=1,
+                padding=0,
+                dtype=dtype,
+                device=device,
+            )
         else:
-            self.proj_out = operations.Linear(in_channels, inner_dim, dtype=dtype, device=device)
+            self.proj_out = operations.Linear(
+                in_channels, inner_dim, dtype=dtype, device=device
+            )
         self.use_linear = use_linear
 
     def forward(self, x, context=None, transformer_options={}):
@@ -154,7 +196,7 @@ class SpatialTransformer(proxy_class(comfy.ldm.modules.attention.SpatialTransfor
             x = self.proj_out(x)
         # NOTE: rearrange in ComfyUI is replaced with permute
         x = x.permute(0, 2, 1).reshape_as(x_in)
-        #x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()
+        # x = rearrange(x, 'b (h w) c -> b c h w', h=h, w=w).contiguous()
         if not self.use_linear:
             x = self.proj_out(x)
         return x + x_in
