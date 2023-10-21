@@ -212,12 +212,6 @@ def _(mod: None, verbose=False) -> None:
     return mod
 
 
-# TODO
-@torch2of.register
-def _(mod: flow.Tensor, verbose=False) -> None:
-    return mod
-
-
 @torch2of.register
 def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
     if hasattr(mod, "__module__"):
@@ -236,4 +230,9 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
             m = importlib.import_module(mod_name)
             return getattr(m, mod.__name__)
 
-    return default_converter(mod, *args, **kwargs)
+    return default_converter(mod, verbose)
+
+@torch2of.register
+def _(mod: torch.device, verbose=False) -> None:
+    index = mod.index if mod.index is not None else 0
+    return flow.device(mod.type, index)
