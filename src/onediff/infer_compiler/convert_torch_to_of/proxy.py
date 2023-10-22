@@ -6,9 +6,7 @@ from typing import Any
 import diffusers
 from ._globals import _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
 from ._globals import _initial_package_names
-from ..import_tools import (
-    get_mock_cls_name,
-)
+from ..import_tools import get_mock_cls_name
 
 __all__ = [
     "proxy_class",
@@ -54,6 +52,7 @@ class ProxySubmodule:
         if isinstance(self._1f_proxy_submod, Iterable):
             submod = self._1f_proxy_submod[index]
             from .register import torch2of
+
             return torch2of(submod)
         else:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
@@ -117,7 +116,6 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
-
 
             return a
 
