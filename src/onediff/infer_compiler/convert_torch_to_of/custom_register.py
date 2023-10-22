@@ -7,7 +7,6 @@ from ..import_tools import (
 from .register import torch2of, default_converter
 from ._globals import update_class_proxies, _initial_package_names
 
-
 def import_diffusers():
     try:
         import diffusers
@@ -32,7 +31,6 @@ def import_diffusers():
 
     except ImportError as e:
         print_red(f"Failed to import diffusers {e=}")
-        raise e
 
 
 def import_comfy():
