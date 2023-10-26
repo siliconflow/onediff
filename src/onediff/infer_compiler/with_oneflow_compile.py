@@ -234,7 +234,7 @@ def oneflow_compile_lazy(torch_module, *, use_graph=True, options={}):
         tensor([[-0.6069, -0.5079, -0.1984, -0.1253],
                 [ 0.0041, -0.0595,  0.1333, -0.4581]], device='cuda:0')
     """
-
+    
     class LazyOneFlowModule:
         def __init__(self, torch_module):
             self._torch_module = torch_module
@@ -257,5 +257,8 @@ def oneflow_compile_lazy(torch_module, *, use_graph=True, options={}):
                 )
                 self._lazy_convert = False
             return self._oneflow_module(*args, **kwargs)
-
+        
+    if "oneflow_compile_lazy.<locals>.LazyOneFlowModule" in str(type(torch_module)):
+        return LazyOneFlowModule(torch_module._torch_module)
+    
     return LazyOneFlowModule(torch_module)
