@@ -18,7 +18,7 @@ import oneflow.nn.functional as F
 from oneflow import nn
 
 import diffusers
-from diffusers.utils import deprecate, logging, maybe_allow_in_graph
+from diffusers.utils import deprecate, logging
 
 
 def is_xformers_available():
