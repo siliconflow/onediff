@@ -17,7 +17,7 @@ If you need ComfyUI or quant support or any other more advanced features, please
 | ComfyUI              |                     | Yes         |
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
-| Dynamic Shape        | Limited             | Yes         |
+| Multiple Resolutions | Limited             | Yes         |
 | Technical Support    | Community           | Yes         |
 
 ## Use within docker or install with pip
