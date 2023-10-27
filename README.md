@@ -9,15 +9,15 @@ OneFlow backend support for diffusers
 
 If you need ComfyUI or quant support or any other more advanced feature, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
 
-|                    | Open Source | Pro |
-| ------------------ | ----------- | --- |
-| diffusers API      | Yes         | Yes |
-| UNet Compilation   | Yes         | Yes |
-| ComfyUI            |             | Yes |
-| Quantization       |             | Yes |
-| Source Code Access |             | Yes |
-| Dynamic Shape      | Limited     | Yes |
-| Technical Support  | Community   | Yes |
+|                    | OneFlow Open Source | OneFlow Pro |
+| ------------------ | ------------------- | ----------- |
+| diffusers API      | Yes                 | Yes         |
+| UNet Compilation   | Yes                 | Yes         |
+| ComfyUI            |                     | Yes         |
+| Quantization       |                     | Yes         |
+| Source Code Access |                     | Yes         |
+| Dynamic Shape      | Limited             | Yes         |
+| Technical Support  | Community           | Yes         |
 
 ## Use within docker or install with pip
 
