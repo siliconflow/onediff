@@ -7,7 +7,7 @@ OneFlow backend support for diffusers
 
 ## Business inquiry
 
-If you need ComfyUI or quant support or any other more advanced feature, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
+If you need ComfyUI or quant support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
 
 |                    | OneFlow Open Source | OneFlow Pro |
 | ------------------ | ------------------- | ----------- |
