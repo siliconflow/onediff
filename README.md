@@ -7,7 +7,18 @@ OneFlow backend support for diffusers
 
 ## Business inquiry
 
-If you need ComfyUI or quant support, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
+If you need ComfyUI or quant support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
+
+|                      | OneFlow Open Source | OneFlow Pro |
+| -------------------- | ------------------- | ----------- |
+| diffusers API        | Yes                 | Yes         |
+| UNet/VAE Compilation | Yes                 | Yes         |
+| LoRA                 |                     | Yes         |
+| ComfyUI              |                     | Yes         |
+| Quantization         |                     | Yes         |
+| Source Code Access   |                     | Yes         |
+| Multiple Resolutions | Limited             | Yes         |
+| Technical Support    | Community           | Yes         |
 
 ## Use within docker or install with pip
 
@@ -16,6 +27,7 @@ Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to
 ## Install from source
 
 ### Clone and install
+
 ```
 python3 -m pip install --pre oneflow -f https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu117
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
