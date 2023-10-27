@@ -26,7 +26,9 @@ pipe = StableDiffusionPipeline.from_pretrained(
     args.model_id,
     use_auth_token=True,
     revision="fp16",
+    variant="fp16",
     torch_dtype=torch.float16,
+    safety_checker=None,
 )
 
 pipe = pipe.to("cuda")
