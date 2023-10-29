@@ -1,5 +1,5 @@
 import os
-from typing import Dict
+from typing import Dict,List
 import oneflow as flow
 from ..import_tools import (
     get_classes_in_package,
@@ -12,7 +12,7 @@ __all__ = [
 ]
 
 
-def __load_class_proxies(package_names: list[str]):
+def __load_class_proxies(package_names: List[str]):
     print_green(f"==> Loading modules: {package_names}")
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     __of_mds = {}

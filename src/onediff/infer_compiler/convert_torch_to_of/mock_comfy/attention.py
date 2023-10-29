@@ -22,7 +22,7 @@ def default(val, d):
     return d
 
 
-class CrossAttentionPytorch(proxy_class(comfy.ldm.modules.attention.CrossAttentionPytorch)):
+class CrossAttentionPytorch(proxy_class(comfy.ldm.modules.attention.CrossAttention)):
     def __init__(
         self,
         query_dim,

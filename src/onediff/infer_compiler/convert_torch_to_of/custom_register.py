@@ -38,7 +38,7 @@ def import_comfy():
         import comfy
         from .mock_comfy import CrossAttentionPytorch, SpatialTransformer, Linear
 
-        cls_key = get_mock_cls_name(comfy.ldm.modules.attention.CrossAttentionPytorch)
+        cls_key = get_mock_cls_name(comfy.ldm.modules.attention.CrossAttention)
         update_class_proxies({cls_key: CrossAttentionPytorch})
 
         cls_key = get_mock_cls_name(comfy.ops.Linear)
