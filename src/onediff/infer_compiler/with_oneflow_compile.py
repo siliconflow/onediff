@@ -114,6 +114,7 @@ class DeployableModule(torch.nn.Module):
 
     def to(self, *args, **kwargs):
         self._deployable_module_model.to(*args, **kwargs)
+        return self
 
     def __call__(self, *args, **kwargs):
         mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
