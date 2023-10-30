@@ -27,7 +27,10 @@ def import_submodules(package, recursive=True):
             
 
         if recursive and is_pkg:
-            yield from import_submodules(full_name)
+            try:
+                yield from import_submodules(full_name)
+            except Exception as e:
+                pass # ignore
 
 
 def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
