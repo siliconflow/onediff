@@ -28,6 +28,7 @@ class DualModule(torch.nn.Module):
             args = [torch2of(v) for v in args]
             kwargs = {k: torch2of(v) for k, v in kwargs.items()}
             self._oneflow_module.to(*args, **kwargs)
+        return self
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -113,8 +114,7 @@ class DeployableModule(torch.nn.Module):
         return self.process_output(output)
 
     def to(self, *args, **kwargs):
-        self._deployable_module_model.to(*args, **kwargs)
-        return self
+        return self._deployable_module_model.to(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
         mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
