@@ -1,5 +1,5 @@
 import os
-from typing import Dict,List
+from typing import Dict, List
 import oneflow as flow
 from ..import_tools import (
     get_classes_in_package,
