@@ -3,7 +3,6 @@ from .convert_torch_to_of.register import torch2of
 import os
 import torch
 import oneflow as flow
-import copy
 from oneflow.framework.args_tree import ArgsTree
 
 from .utils import (
