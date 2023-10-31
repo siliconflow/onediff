@@ -3,6 +3,7 @@ from .convert_torch_to_of.register import torch2of
 import os
 import torch
 import oneflow as flow
+import copy
 from oneflow.framework.args_tree import ArgsTree
 
 from .utils import (
@@ -19,6 +20,17 @@ class DualModule(torch.nn.Module):
         super().__init__()
         self._torch_module = torch_module
         self._oneflow_module = oneflow_module
+
+    # def to(self, *args, **kwargs):
+    #     if oneflow_exec_mode_enabled():
+    #         new_oneflow_module = self._oneflow_module.to(*args, **kwargs)
+    #         return DualModule(self._torch_module, new_oneflow_module)
+    #     else:
+    #         new_torch_module = self._torch_module.to(*args, **kwargs)
+    #         args = [torch2of(v) for v in args]
+    #         kwargs = {k: torch2of(v) for k, v in kwargs.items()}
+    #         new_oneflow_module = self._oneflow_module.to(*args, **kwargs)
+    #         return DualModule(new_torch_module, new_oneflow_module)
 
     def to(self, *args, **kwargs):
         if oneflow_exec_mode_enabled():
@@ -114,7 +126,8 @@ class DeployableModule(torch.nn.Module):
         return self.process_output(output)
 
     def to(self, *args, **kwargs):
-        return self._deployable_module_model.to(*args, **kwargs)
+        DualModule = self._deployable_module_model.to(*args, **kwargs)
+        return self.__class__(DualModule._torch_module, DualModule._oneflow_module, self._deployable_module_use_graph, self._deployable_module_options)
 
     def __call__(self, *args, **kwargs):
         mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
