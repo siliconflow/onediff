@@ -103,7 +103,3 @@ flow.cuda.current_device = FakeCuda.current_device
 flow.cuda.mem_get_info = FakeCuda.mem_get_info
 flow.nn.functional.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
 F.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
-
-
-
-

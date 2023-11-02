@@ -38,8 +38,8 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             self._torch_module.to(*args, **kwargs)
-            args = [torch2of(v) for v in args]
-            kwargs = {k: torch2of(v) for k, v in kwargs.items()}
+            args = [torch2onef(v) for v in args]
+            kwargs = {k: torch2onef(v) for k, v in kwargs.items()}
             self._oneflow_module.to(*args, **kwargs)
         return self
 
