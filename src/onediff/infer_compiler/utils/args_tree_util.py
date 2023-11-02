@@ -15,19 +15,19 @@ except:
 
 
 def register_args_tree_relaxed_types():
-    global _ONEDIFF_LOADED_PACKAGES
-
     transformers_mocked = False
     if "transformers" in _ONEDIFF_LOADED_PACKAGES:
         transformers_mocked = True
+
     if _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API and transformers_mocked:
-        import transformers
+        from transformers.modeling_outputs import BaseModelOutputWithPooling
+        from transformers.models.clip.modeling_clip import CLIPTextModelOutput
 
         register_relaxed_type(
-            proxy_class(transformers.modeling_outputs.BaseModelOutputWithPooling)
+            proxy_class(BaseModelOutputWithPooling)
         )
         register_relaxed_type(
-            proxy_class(transformers.models.clip.modeling_clip.CLIPTextModelOutput)
+            proxy_class(CLIPTextModelOutput)
         )
     else:
         pass
