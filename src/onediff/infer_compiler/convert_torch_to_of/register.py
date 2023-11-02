@@ -35,7 +35,10 @@ def torch2onef(mod, *args, **kwargs):
         f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
     )
 
-    if type(mod) not in _WARNING_MSG and torch2onef.registry.get(type(mod), None) is None:
+    if (
+        type(mod) not in _WARNING_MSG
+        and torch2onef.registry.get(type(mod), None) is None
+    ):
         print_yellow(msg)
         _WARNING_MSG.add(type(mod))
 
@@ -237,3 +240,10 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 def _(mod: torch.device, verbose=False) -> None:
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
+
+
+# def convert_func(func):
+#     return default_converter(func)
+
+
+# ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = {convert_func: AttnProcessor2_0}

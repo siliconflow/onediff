@@ -23,7 +23,7 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
-        print("Convert torch module to oneflow module ...")
+        print("Compile torch module to oneflow module ...")
         self._oneflow_module = torch2onef(self._torch_module)
         return self._oneflow_module
 
@@ -65,6 +65,7 @@ def handle_deployable_exception(func):
             return func(self, *args, **kwargs)
         except Exception as e:
             print(f"Exception in {func.__name__} of {self.__class__.__name__}: {e}")
+            print("Recompile oneflow module ...")
             del self._deployable_module_model.oneflow_module
             self._deployable_module_dpl_graph = None
             return func(self, *args, **kwargs)
