@@ -144,23 +144,23 @@ class DeployableModule(torch.nn.Module):
         return self.process_output(output)
 
     # TODO(): Just for transformers VAE decoder
-    # def decode(self, *args, **kwargs):
-    #     mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-    #     if self._deployable_module_use_graph:
+    def decode(self, *args, **kwargs):
+        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+        if self._deployable_module_use_graph:
 
-    #         def _build(graph, *args, **kwargs):
-    #             return graph.model.decode(*args, **kwargs)
+            def _build(graph, *args, **kwargs):
+                return graph.model.decode(*args, **kwargs)
 
-    #         dpl_graph = self.get_graph()
-    #         dpl_graph.build = types.MethodType(_build, dpl_graph)
-    #         with oneflow_exec_mode():
-    #             output = dpl_graph(*mapped_args, **mapped_kwargs)
-    #     else:
-    #         with oneflow_exec_mode():
-    #             output = self._deployable_module_model._oneflow_module.decode(
-    #                 *mapped_args, **mapped_kwargs
-    #             )
-    #     return self.process_output(output)
+            dpl_graph = self.get_graph()
+            dpl_graph.build = types.MethodType(_build, dpl_graph)
+            with oneflow_exec_mode():
+                output = dpl_graph(*mapped_args, **mapped_kwargs)
+        else:
+            with oneflow_exec_mode():
+                output = self._deployable_module_model._oneflow_module.decode(
+                    *mapped_args, **mapped_kwargs
+                )
+        return self.process_output(output)
 
     def __getattr__(self, name):
         if name in self._modules:
