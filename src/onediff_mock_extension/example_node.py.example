@@ -1,10 +1,10 @@
-# ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP : specifies the mapping relationship between PyTorch model classes and OneFlow model classes.
+# ONEDIFF_TORCH_TO_ONEF_CLASS_MAP : specifies the mapping relationship between PyTorch model classes and OneFlow model classes.
 # ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP:  specifies how to convert some PyTorch obj through custom convert functions.
 
 
 from onediff.infer_compiler.convert_torch_to_of.register import default_converter
 
-ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP = {
+ONEDIFF_TORCH_TO_ONEF_CLASS_MAP = {
   PyTorchModelClass: YourOneFlowModelClass,
   ...
 }
