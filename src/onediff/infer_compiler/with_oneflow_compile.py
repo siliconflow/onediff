@@ -38,10 +38,10 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             self._torch_module.to(*args, **kwargs)
-            if self._oneflow_module:
-                args = [torch2onef(v) for v in args]
-                kwargs = {k: torch2onef(v) for k, v in kwargs.items()}
-                self._oneflow_module.to(*args, **kwargs)
+            args = [torch2of(v) for v in args]
+            kwargs = {k: torch2of(v) for k, v in kwargs.items()}
+            self._oneflow_module.to(*args, **kwargs)
+        return self
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -105,8 +105,7 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def to(self, *args, **kwargs):
-        self._deployable_module_model.to(*args, **kwargs)
-        return self
+        return self._deployable_module_model.to(*args, **kwargs)
 
     # TODO(): Just for transformers VAE decoder
     @input_output_processor
