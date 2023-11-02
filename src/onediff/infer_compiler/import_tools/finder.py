@@ -9,7 +9,7 @@ from .printer import print_red
 
 
 PREFIX = "mock_"
-SUFFIX = "_1f"
+SUFFIX = "_onef"
 
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 

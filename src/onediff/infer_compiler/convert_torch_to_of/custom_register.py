@@ -1,5 +1,5 @@
 """ Custom node converters for torch2of.
-ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP = { PYTORCH_MODEL_CLASS: ONEFLOW_MODEL_CLASS }
+ONEDIFF_TORCH_TO_ONEF_CLASS_MAP = { PYTORCH_MODEL_CLASS: ONEFLOW_MODEL_CLASS }
 ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = { Function :  TYPE }
 Function: custom function
 TYPE: custom function args_0_type : (torch.Tensor, flow.Tensor) -> torch.Tensor
@@ -16,13 +16,13 @@ from .register import torch2of
 from ._globals import update_class_proxies
 
 
-def load_custom_node(module_path):
+def load_custom_type_map(module_path):
     try:
         module = import_module_from_path(module_path)
 
         if (
-            hasattr(module, "ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP")
-            and getattr(module, "ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP") is not None
+            hasattr(module, "ONEDIFF_TORCH_TO_ONEF_CLASS_MAP")
+            and getattr(module, "ONEDIFF_TORCH_TO_ONEF_CLASS_MAP") is not None
         ):
             for cls, replacement in module.ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP.items():
                 key = get_mock_cls_name(cls)
@@ -64,12 +64,12 @@ def _init_custom_register():
     ]
     custom_node_paths.sort()
     for path in custom_node_paths:
-        load_custom_node(path)
+        load_custom_type_map(path)
 
     custom_register_path = os.getenv("ONEDIFF_CUSTOM_REGISTER_PATH", None)
     if custom_register_path is not None:
         for path in custom_register_path.split(":"):
-            load_custom_node(path)
+            load_custom_type_map(path)
 
 
 _init_custom_register()
