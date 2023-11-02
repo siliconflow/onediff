@@ -88,10 +88,24 @@ class DeployableModule(torch.nn.Module):
             size = self._deployable_module_options["size"]
         else:
             size = 9
-        self._deployable_module_dpl_graph = get_oneflow_graph(size)(
-            self._deployable_module_model.oneflow_module
+        self._deployable_module_dpl_graph = get_oneflow_graph(
+            self._deployable_module_model.oneflow_module, size
         )
         return self._deployable_module_dpl_graph
+
+    @input_output_processor
+    @handle_deployable_exception
+    def apply_model(self, *args, **kwargs):
+        if self._deployable_module_use_graph:
+            dpl_graph = self.get_graph()
+            with oneflow_exec_mode():
+                output = dpl_graph(*args, **kwargs)
+        else:
+            with oneflow_exec_mode():
+                output = self._deployable_module_model.oneflow_module.apply_model(
+                    *args, **kwargs
+                )
+        return output
 
     @input_output_processor
     @handle_deployable_exception
@@ -144,52 +158,55 @@ class DeployableModule(torch.nn.Module):
         self.get_graph().save_graph(file_path)
 
 
-def get_oneflow_graph(size=9):
-    class OneflowGraph(flow.nn.Graph):
-        @flow.nn.Graph.with_dynamic_input_shape(size=size)
-        def __init__(self, model):
-            super().__init__(enable_get_runtime_state_dict=True)
-            self.model = model
-            self.config.enable_cudnn_conv_heuristic_search_algo(False)
-            self.config.allow_fuse_add_to_output(True)
+class OneflowGraph(flow.nn.Graph):
+    @flow.nn.Graph.with_dynamic_input_shape()
+    def __init__(self, model):
+        super().__init__(enable_get_runtime_state_dict=True)
+        self.model = model
+        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.config.allow_fuse_add_to_output(True)
 
-            os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
-            os.environ["ONEFLOW_MLIR_CSE"] = "1"
-            os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-            os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-            os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-            os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-            os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-            os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-            os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-            os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-            os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-            os.environ["ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-            os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-            os.environ["ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL"] = "1"
-            os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-            os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-            os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-            os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
-            os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
-            # TODO: enable this will cause the failure of multi resolution warmup
-            # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
-            # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
+        os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
+        os.environ["ONEFLOW_MLIR_CSE"] = "1"
+        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+        os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
+        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
+        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
+        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+        os.environ["ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+        os.environ["ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL"] = "1"
+        os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+        os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+        os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+        os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
+        os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
+        # TODO: enable this will cause the failure of multi resolution warmup
+        # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
+        # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
-        def build(self, *args, **kwargs):
-            return self.model(*args, **kwargs)
+    def build(self, *args, **kwargs):
+        return self.model(*args, **kwargs)
 
-        def warmup_with_load(self, file_path, device=None):
-            state_dict = flow.load(file_path)
-            if device is not None:
-                state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
-            self.load_runtime_state_dict(state_dict)
+    def warmup_with_load(self, file_path, device=None):
+        state_dict = flow.load(file_path)
+        if device is not None:
+            state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
+        self.load_runtime_state_dict(state_dict)
 
-        def save_graph(self, file_path):
-            state_dict = self.runtime_state_dict()
-            flow.save(state_dict, file_path)
+    def save_graph(self, file_path):
+        state_dict = self.runtime_state_dict()
+        flow.save(state_dict, file_path)
 
-    return OneflowGraph
+
+def get_oneflow_graph(model, size=9):
+    g = OneflowGraph(model)
+    g._dynamic_input_graph_cache.set_cache_size(size)
+    return g
 
 
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
