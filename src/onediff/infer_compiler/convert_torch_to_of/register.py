@@ -11,37 +11,22 @@ Usage:
 #### Basic:(register.py)
 #### Advanced:(custom_register.py)
 """
+from functools import singledispatch
+from collections import OrderedDict
+from typing import Union
 import importlib
 import types
 import torch
 import oneflow as flow
-from typing import Union
-from collections import OrderedDict
-from functools import singledispatch
 from ..import_tools import print_red, print_yellow
 from .proxy import ProxySubmodule, proxy_class
-from ._globals import _WARNING_MSG
 
 __all__ = ["torch2onef", "default_converter"]
 
 
 @singledispatch
 def torch2onef(mod, *args, **kwargs):
-    global _WARNING_MSG
-
-    msg = (
-        f"Warning: No torch2onef conversion interface found for: {type(mod)=}, "
-        f"Default attribute retrieval method will be used. \n"
-        f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
-    )
-
-    if (
-        type(mod) not in _WARNING_MSG
-        and torch2onef.registry.get(type(mod), None) is None
-    ):
-        print_yellow(msg)
-        _WARNING_MSG.add(type(mod))
-
+    """Convert torch object to oneflow object."""
     return default_converter(mod, *args, **kwargs)
 
 
@@ -64,9 +49,6 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
     except Exception as e:
         print_yellow(f"Unsupported type: {type(obj)}")
         return obj
-
-
-from .custom_register import *  # noqa: F401,F403
 
 
 @torch2onef.register
@@ -169,8 +151,8 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
 
 
 # torch.dtype
-@torch2onef.register
-def _(mod: torch.dtype, verbose=False) -> flow.dtype:
+@torch2onef.register 
+def _(mod: torch.dtype, verbose=False) -> flow.dtype: # E1101
     return {
         "torch.float16": flow.float16,
         "torch.float32": flow.float32,

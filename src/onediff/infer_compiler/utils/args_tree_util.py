@@ -1,10 +1,9 @@
 import torch
 import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
-
-from typing import Any
-from ..convert_torch_to_of._globals import _initial_package_names
+from ..convert_torch_to_of._globals import _ONEDIFF_LOADED_PACKAGES
 from ..convert_torch_to_of.proxy import proxy_class
+
 
 _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = False
 try:
@@ -16,10 +15,11 @@ except:
 
 
 def register_args_tree_relaxed_types():
+    global _ONEDIFF_LOADED_PACKAGES
+
     transformers_mocked = False
-    for pkg in _initial_package_names:
-        if "transformers" in pkg:
-            transformers_mocked = True
+    if "transformers" in _ONEDIFF_LOADED_PACKAGES:
+        transformers_mocked = True
     if _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API and transformers_mocked:
         import transformers
 
@@ -31,7 +31,6 @@ def register_args_tree_relaxed_types():
         )
     else:
         pass
-
 
 def input_output_processor(func):
     def process_input(*args, **kwargs):

@@ -15,4 +15,4 @@ from .proxy import (
     replace_func,
     get_attr,
 )
-from ._globals import update_class_proxies
+from ._globals import update_class_proxies, load_class_proxies_from_packages

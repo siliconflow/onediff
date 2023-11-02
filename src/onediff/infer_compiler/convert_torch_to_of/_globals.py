@@ -1,18 +1,22 @@
 import os
-from typing import Dict
 import oneflow as flow
+from typing import Dict, List, Union
+from pathlib import Path
 from ..import_tools import (
     get_classes_in_package,
     print_green,
-    print_red,
 )
 
 __all__ = [
-    "update_class_proxies",
+    "update_class_proxies", "load_class_proxies_from_packages"
 ]
+# Dictionary containing class proxies from various packages
+_ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = {}
+_ONEDIFF_LOADED_PACKAGES = []
 
+def load_class_proxies_from_packages(package_names: List[Union[Path,str]]):
+    global _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES
 
-def __load_class_proxies(package_names: list[str]):
     print_green(f"==> Loading modules: {package_names}")
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     __of_mds = {}
@@ -21,17 +25,9 @@ def __load_class_proxies(package_names: list[str]):
             __of_mds.update(get_classes_in_package(package_name))
 
     print_green(f" 🚀 Loaded Mock Torch {len(__of_mds)} classes: {package_names} 🚀 <== ")
-    return __of_mds
 
-
-_initial_package_names = os.getenv(
-    "ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES", "diffusers,transformers"
-).split(",")
-# Dictionary containing class proxies from various packages
-_ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(
-    _initial_package_names
-)  # export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES="diffusers,path/to/ComfyUI/comfy"
-_WARNING_MSG = set()
+    _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES.update(__of_mds)
+    _ONEDIFF_LOADED_PACKAGES.extend(package_names)
 
 
 def update_class_proxies(class_proxy_dict: Dict[str, type]):
@@ -45,8 +41,12 @@ def update_class_proxies(class_proxy_dict: Dict[str, type]):
              "mock_torch.nn.linear": flow.nn.Linear,
         }
     """
+    global _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES
     for module_name, module_proxy in class_proxy_dict.items():
         _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES[module_name] = module_proxy
     print_green(
         f" Loaded expand {len(class_proxy_dict)} classes: {class_proxy_dict.keys()} <== "
     )
+
+
+

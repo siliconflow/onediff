@@ -1,16 +1,20 @@
 import types
 from .convert_torch_to_of.register import torch2onef
+from .convert_torch_to_of._globals import load_class_proxies_from_packages  
+from .convert_torch_to_of.custom_register import register_torch2of_class, register_custom_torch2of_func
 import os
 import torch
 import oneflow as flow
 from functools import wraps
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Union
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import (
     register_args_tree_relaxed_types,
     input_output_processor,
 )
 
-register_args_tree_relaxed_types()
+
 
 
 class DualModule(torch.nn.Module):
@@ -217,3 +221,20 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
         )
     else:
         return DeployableModule(torch_module, oneflow_module, use_graph, options)
+
+
+def registry(package_names: Optional[List[Union[Path,str] ]] = None, 
+            torch2of_class_map: Dict[type, type] = {},
+            torch2of_funcs: Optional[List[Callable]] = None):
+    if package_names:
+        load_class_proxies_from_packages(package_names)
+        if "transformers" in package_names: 
+            register_args_tree_relaxed_types()
+    
+    for torch_cls, of_cls in torch2of_class_map.items():
+        register_torch2of_class(torch_cls, of_cls)
+    
+    if torch2of_funcs:
+        for func in torch2of_funcs:
+            register_custom_torch2of_func(func)
+        
