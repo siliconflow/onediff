@@ -31,7 +31,7 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module:
             del self._oneflow_module
-            self._oneflow_module = None
+            setattr(self, "_oneflow_module", None)
 
     def to(self, *args, **kwargs):
         if oneflow_exec_mode_enabled():
