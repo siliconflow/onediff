@@ -3,6 +3,7 @@ from .convert_torch_to_of.register import torch2of
 import os
 import torch
 import oneflow as flow
+import copy
 from oneflow.framework.args_tree import ArgsTree
 
 from .utils import (
@@ -20,17 +21,6 @@ class DualModule(torch.nn.Module):
         self._torch_module = torch_module
         self._oneflow_module = oneflow_module
 
-    # def to(self, *args, **kwargs):
-    #     if oneflow_exec_mode_enabled():
-    #         new_oneflow_module = self._oneflow_module.to(*args, **kwargs)
-    #         return DualModule(self._torch_module, new_oneflow_module)
-    #     else:
-    #         new_torch_module = self._torch_module.to(*args, **kwargs)
-    #         args = [torch2of(v) for v in args]
-    #         kwargs = {k: torch2of(v) for k, v in kwargs.items()}
-    #         new_oneflow_module = self._oneflow_module.to(*args, **kwargs)
-    #         return DualModule(new_torch_module, new_oneflow_module)
-
     def to(self, *args, **kwargs):
         if oneflow_exec_mode_enabled():
             self._oneflow_module.to(*args, **kwargs)
@@ -39,7 +29,6 @@ class DualModule(torch.nn.Module):
             args = [torch2of(v) for v in args]
             kwargs = {k: torch2of(v) for k, v in kwargs.items()}
             self._oneflow_module.to(*args, **kwargs)
-        return self
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -74,6 +63,7 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
+        self._deployable_module_dpl_graph_host = None
 
     def process_input(self, *args, **kwargs):
         def input_fn(value):
@@ -109,6 +99,11 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(size)(
             self._deployable_module_model._oneflow_module
         )
+        copy_module = copy.deepcopy(self._deployable_module_model._oneflow_module)
+
+        self._deployable_module_dpl_graph_host = get_oneflow_graph(size)(
+            copy_module.to("cpu")
+        )
         return self._deployable_module_dpl_graph
 
     def apply_model(self, *args, **kwargs):
@@ -125,8 +120,15 @@ class DeployableModule(torch.nn.Module):
         return self.process_output(output)
 
     def to(self, *args, **kwargs):
-        DualModule = self._deployable_module_model.to(*args, **kwargs)
-        return self.__class__(DualModule._torch_module, DualModule._oneflow_module, self._deployable_module_use_graph, self._deployable_module_options)
+        self._deployable_module_model.to(*args, **kwargs)
+
+        copy_dpl_graph = copy.deepcopy(self._deployable_module_dpl_graph)
+        if args[0] == torch.device('cpu'):
+            self._deployable_module_dpl_graph = copy.deepcopy(self._deployable_module_dpl_graph_host)
+        else:
+            self._deployable_module_dpl_graph = copy_dpl_graph
+
+        return self
 
     def __call__(self, *args, **kwargs):
         mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
@@ -142,23 +144,23 @@ class DeployableModule(torch.nn.Module):
         return self.process_output(output)
 
     # TODO(): Just for transformers VAE decoder
-    def decode(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
+    # def decode(self, *args, **kwargs):
+    #     mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
+    #     if self._deployable_module_use_graph:
 
-            def _build(graph, *args, **kwargs):
-                return graph.model.decode(*args, **kwargs)
+    #         def _build(graph, *args, **kwargs):
+    #             return graph.model.decode(*args, **kwargs)
 
-            dpl_graph = self.get_graph()
-            dpl_graph.build = types.MethodType(_build, dpl_graph)
-            with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
-        else:
-            with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.decode(
-                    *mapped_args, **mapped_kwargs
-                )
-        return self.process_output(output)
+    #         dpl_graph = self.get_graph()
+    #         dpl_graph.build = types.MethodType(_build, dpl_graph)
+    #         with oneflow_exec_mode():
+    #             output = dpl_graph(*mapped_args, **mapped_kwargs)
+    #     else:
+    #         with oneflow_exec_mode():
+    #             output = self._deployable_module_model._oneflow_module.decode(
+    #                 *mapped_args, **mapped_kwargs
+    #             )
+    #     return self.process_output(output)
 
     def __getattr__(self, name):
         if name in self._modules:
