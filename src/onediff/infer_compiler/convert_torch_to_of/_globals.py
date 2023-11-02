@@ -30,7 +30,7 @@ _initial_package_names = os.getenv(
 # Dictionary containing class proxies from various packages
 _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES = __load_class_proxies(
     _initial_package_names
-)  # export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES="diffusers,comfyui"
+)  # export ONEDIFF_INITIAL_PACKAGE_NAMES_FOR_CLASS_PROXIES="diffusers,path/to/ComfyUI/comfy"
 _WARNING_MSG = set()
 
 

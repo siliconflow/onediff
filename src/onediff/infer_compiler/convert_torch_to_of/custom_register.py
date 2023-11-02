@@ -1,4 +1,4 @@
-""" Custom node converters for torch2of.
+""" Custom node converters for torch2onef.
 ONEDIFF_TORCH_TO_ONEF_CLASS_MAP = { PYTORCH_MODEL_CLASS: ONEFLOW_MODEL_CLASS }
 ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = { Function :  TYPE }
 Function: custom function
@@ -12,7 +12,7 @@ from ..import_tools import (
     get_mock_cls_name,
     import_module_from_path,
 )
-from .register import torch2of
+from .register import torch2onef
 from ._globals import update_class_proxies
 
 
@@ -24,7 +24,7 @@ def load_custom_type_map(module_path):
             hasattr(module, "ONEDIFF_TORCH_TO_ONEF_CLASS_MAP")
             and getattr(module, "ONEDIFF_TORCH_TO_ONEF_CLASS_MAP") is not None
         ):
-            for cls, replacement in module.ONEDIFF_MODEL_CLASS_REPLACEMENT_MAP.items():
+            for cls, replacement in module.ONEDIFF_TORCH_TO_ONEF_CLASS_MAP.items():
                 key = get_mock_cls_name(cls)
                 update_class_proxies({key: replacement})
 
@@ -36,12 +36,12 @@ def load_custom_type_map(module_path):
                 func,
                 args_0_type,
             ) in module.ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP.items():
-                if torch2of.registry.get(args_0_type, None) is not None:
+                if torch2onef.registry.get(args_0_type, None) is not None:
                     print_yellow(
                         f"Custom register {func=} {args_0_type=} already exists, skip"
                     )
                     continue
-                torch2of.register(args_0_type)(func)
+                torch2onef.register(args_0_type)(func)
         return module
 
     except ImportError as e:

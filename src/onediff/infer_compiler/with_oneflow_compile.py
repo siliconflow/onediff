@@ -1,5 +1,5 @@
 import types
-from .convert_torch_to_of.register import torch2of
+from .convert_torch_to_of.register import torch2onef
 import os
 import torch
 import oneflow as flow
@@ -24,7 +24,7 @@ class DualModule(torch.nn.Module):
         if self._oneflow_module is not None:
             return self._oneflow_module
         print("Convert torch module to oneflow module ...")
-        self._oneflow_module = torch2of(self._torch_module)
+        self._oneflow_module = torch2onef(self._torch_module)
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -39,8 +39,8 @@ class DualModule(torch.nn.Module):
         else:
             self._torch_module.to(*args, **kwargs)
             if self._oneflow_module:
-                args = [torch2of(v) for v in args]
-                kwargs = {k: torch2of(v) for k, v in kwargs.items()}
+                args = [torch2onef(v) for v in args]
+                kwargs = {k: torch2onef(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
 
     def __getattr__(self, name):

@@ -5,7 +5,7 @@ import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from .convert_torch_to_of import replace_obj, replace_func, get_attr, torch2of
+from .convert_torch_to_of import replace_obj, replace_func, get_attr, torch2onef
 
 
 def fx_node_tranform(gm):
@@ -73,7 +73,7 @@ def to_of_transform(
             name2node[node.name] = of_node
         elif node.op == "call_module":
             torch_md = modules[node.target]
-            name2obj[node.target] = torch2of(torch_md)
+            name2obj[node.target] = torch2onef(torch_md)
 
             of_node = of_g.create_node('call_module', node.target, args=node_replace_args(node.args, name2node), kwargs=node_replace_args(node.kwargs, name2node))
             name2node[node.name] = of_node
