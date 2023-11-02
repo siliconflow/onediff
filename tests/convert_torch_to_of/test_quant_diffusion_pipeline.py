@@ -1,9 +1,7 @@
 import pytest
 import torch
-from onediff.infer_compiler.convert_torch_to_of.mock_diffusers_quant import (
-    QuantDiffusionPipeline,
-)
 from onediff.infer_compiler import oneflow_compile
+from mock_diffusers_quant import QuantDiffusionPipeline
 
 
 @pytest.mark.parametrize("model", ["/ssd/home/hanbinbin/sdxl-1.0-base-int8"])
@@ -21,4 +19,5 @@ def test_quant_diffusion_pipeline(model, fake_quant, static, bits, graph, prompt
     )
     pipe.to("cuda")
     pipe.unet = oneflow_compile(pipe.unet)
-    pipe(prompt, height=512, width=512)
+    image = pipe(prompt, height=512, width=512).images[0]
+    image.save("test_quant_diffusion_pipeline.png")
