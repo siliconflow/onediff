@@ -106,7 +106,8 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def to(self, *args, **kwargs):
-        return self._deployable_module_model.to(*args, **kwargs)
+        self._deployable_module_model.to(*args, **kwargs)
+        return self
 
     # TODO(): Just for transformers VAE decoder
     @input_output_processor
