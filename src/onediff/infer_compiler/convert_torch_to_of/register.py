@@ -1,9 +1,9 @@
-""" Desc: register function for torch2of
+""" Desc: register function for torch2onef
 Usage:
     >>> import torch
-    >>> from onediff.infer_compiler.convert_torch_to_of import torch2of
+    >>> from onediff.infer_compiler.convert_torch_to_of import torch2onef
     >>> x = torch.nn.Linear(3, 4)
-    >>> y = torch2of(x) # convert torch.nn.Linear to oneflow.nn.Linear
+    >>> y = torch2onef(x) # convert torch.nn.Linear to oneflow.nn.Linear
     >>> y
     <class 'oneflow.nn.modules.linear.Linear'>(in_features=3, out_features=4, bias=True)
     
@@ -22,20 +22,23 @@ from ..import_tools import print_red, print_yellow
 from .proxy import ProxySubmodule, proxy_class
 from ._globals import _WARNING_MSG
 
-__all__ = ["torch2of", "default_converter"]
+__all__ = ["torch2onef", "default_converter"]
 
 
 @singledispatch
-def torch2of(mod, *args, **kwargs):
+def torch2onef(mod, *args, **kwargs):
     global _WARNING_MSG
 
     msg = (
-        f"Warning: No torch2of conversion interface found for: {type(mod)=}, "
+        f"Warning: No torch2onef conversion interface found for: {type(mod)=}, "
         f"Default attribute retrieval method will be used. \n"
         f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
     )
 
-    if type(mod) not in _WARNING_MSG and torch2of.registry.get(type(mod), None) is None:
+    if (
+        type(mod) not in _WARNING_MSG
+        and torch2onef.registry.get(type(mod), None) is None
+    ):
         print_yellow(msg)
         _WARNING_MSG.add(type(mod))
 
@@ -50,7 +53,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         def init(self):
             for k, v in obj.__dict__.items():
                 attr = getattr(obj, k)
-                self.__dict__[k] = torch2of(attr)
+                self.__dict__[k] = torch2onef(attr)
 
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
@@ -66,7 +69,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
 from .custom_register import *  # noqa: F401,F403
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
 
@@ -89,13 +92,13 @@ def _(mod: torch.nn.Module, verbose=False):
         for (n, b) in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for (n, m) in proxy_md._modules.items():
-            self._modules[n] = torch2of(m)
+            self._modules[n] = torch2onef(m)
 
         for k, v in proxy_md.__dict__.items():
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
                 try:
-                    self.__dict__[k] = torch2of(attr)
+                    self.__dict__[k] = torch2onef(attr)
                 except Exception as e:
                     print_red(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")
@@ -132,41 +135,41 @@ def _(mod: torch.nn.Module, verbose=False):
     return of_mod
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.nn.ModuleList, verbose=False):
     of_mod_list = flow.nn.ModuleList()
     for original_submod in mod:
-        submod = torch2of(original_submod, verbose)
+        submod = torch2onef(original_submod, verbose)
         of_mod_list.append(submod)
 
     return of_mod_list
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.nn.Sequential, verbose=False):
 
     of_mod_list = []
     for original_submod in mod:
-        submod = torch2of(original_submod, verbose)
+        submod = torch2onef(original_submod, verbose)
         of_mod_list.append(submod)
     of_mod_seq = flow.nn.Sequential(*of_mod_list)
 
     return of_mod_seq
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.nn.parameter.Parameter, verbose=False):
     # TODO(oneflow): assert a.requires_grad == False
     return flow.utils.tensor.from_torch(mod.data)
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
 # torch.dtype
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     return {
         "torch.float16": flow.float16,
@@ -179,40 +182,40 @@ def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     }[str(mod)]
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: list, verbose=False) -> list:
-    return [torch2of(m, verbose) for m in mod]
+    return [torch2onef(m, verbose) for m in mod]
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: tuple, verbose=False) -> tuple:
-    return tuple(torch2of(m, verbose) for m in mod)
+    return tuple(torch2onef(m, verbose) for m in mod)
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: OrderedDict, verbose=False) -> dict:
     return default_converter(mod, verbose, proxy_cls=OrderedDict)
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: set, verbose=False) -> set:
-    return set(torch2of(m, verbose) for m in mod)
+    return set(torch2onef(m, verbose) for m in mod)
 
 
-@torch2of.register(int)
-@torch2of.register(float)
-@torch2of.register(str)
-@torch2of.register(bool)
+@torch2onef.register(int)
+@torch2onef.register(float)
+@torch2onef.register(str)
+@torch2onef.register(bool)
 def _(mod, verbose=False) -> Union[int, float, str, bool]:
     return mod
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: None, verbose=False) -> None:
     return mod
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
     if hasattr(mod, "__module__"):
         mod_name = None
@@ -233,7 +236,8 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
     return default_converter(mod, verbose)
 
 
-@torch2of.register
+@torch2onef.register
 def _(mod: torch.device, verbose=False) -> None:
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
+

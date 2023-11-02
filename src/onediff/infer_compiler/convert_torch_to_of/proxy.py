@@ -51,9 +51,9 @@ class ProxySubmodule:
 
         if isinstance(self._1f_proxy_submod, Iterable):
             submod = self._1f_proxy_submod[index]
-            from .register import torch2of
+            from .register import torch2onef
 
-            return torch2of(submod)
+            return torch2onef(submod)
         else:
             raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
 
@@ -97,14 +97,14 @@ class ProxySubmodule:
         ):
             return "channels_first"
         else:
-            from .register import torch2of
+            from .register import torch2onef
 
             a = getattr(self._1f_proxy_submod, attribute)
 
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
-                    a = torch2of(a)
+                    a = torch2onef(a)
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
@@ -112,7 +112,7 @@ class ProxySubmodule:
                 a, (torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential)
             ):
                 if attribute not in self._1f_proxy_children:
-                    a = torch2of(a)
+                    a = torch2onef(a)
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
