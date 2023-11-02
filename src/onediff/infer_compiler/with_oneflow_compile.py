@@ -1,4 +1,5 @@
 import types
+from typing import Any
 from .convert_torch_to_of.register import torch2onef
 import os
 import torch
@@ -140,6 +141,12 @@ class DeployableModule(torch.nn.Module):
                     *args, **kwargs
                 )
         return output
+    
+    # def __getattribute__(self, __name: str) -> Any:
+    #     return super().__getattribute__(__name)
+    
+    # def __setattr__(self, __name: str, __value: Any) -> None:
+    #     return super().__setattr__(__name, __value)
 
     def __getattr__(self, name):
         if name in self._modules:

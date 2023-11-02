@@ -1,3 +1,4 @@
+"""Copier for package"""
 import os
 import sys
 import shutil
@@ -9,7 +10,9 @@ from typing import List, Tuple, Union
 from .printer import print_red, print_green
 
 
-def get_matched_files(root, ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]):
+def get_matched_files(
+    root: Union[str, Path], ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]
+):
     ignore_rules = []
     ignore_file = Path(root) / ignore_file
     if ignore_file.exists():
@@ -28,7 +31,9 @@ def get_matched_files(root, ignore_file=".gitignore", extra_ignore_rules=["*setu
             if len(ignore_rules) == 0:
                 matches.append(filepath)
                 continue
-            if not any(fnmatch.fnmatch(filepath, rule) for rule in ignore_rules):
+
+            is_match = any(fnmatch.fnmatch(filepath, rule) for rule in ignore_rules)
+            if not is_match:
                 matches.append(filepath)
 
     return matches
@@ -69,7 +74,10 @@ class PackageCopier:
         ]
 
     def __repr__(self):
-        return f"PackageCopier({self.old_pkg_name} -> {self.new_pkg_name} \ \n {self.old_pkg_path} -> {self.new_pkg_path})"
+        return (
+            f"PackageCopier({self.old_pkg_name} -> {self.new_pkg_name}"
+            f"\n{self.old_pkg_path} -> {self.new_pkg_path})"
+        )
 
     def _get_path(self, pkg) -> Tuple[str, Path]:
         try:
@@ -83,7 +91,7 @@ class PackageCopier:
                 pkg_name = pkg_path.name
                 return pkg_name, pkg_path
             else:
-                raise Exception(f"{pkg} not found")
+                raise RuntimeError(f"{pkg} not found") from e
 
     def copy_package(self):
         src = Path(self.old_pkg_path)
