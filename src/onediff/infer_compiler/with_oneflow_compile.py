@@ -81,6 +81,15 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = None
 
     def get_graph(self):
+        if (
+            hasattr(self, "_deferred_graph_loading_config")
+            and self._deferred_graph_loading_config is not None
+        ):
+            file_path, device = self._deferred_graph_loading_config
+            del self._deferred_graph_loading_config
+            print(f"Start lazily load graph from {file_path} ...")
+            self.warmup_with_load(file_path, device)
+
         if self._deployable_module_dpl_graph is not None:
             return self._deployable_module_dpl_graph
         if "size" in self._deployable_module_options:
@@ -148,7 +157,14 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
+        if not next(self.parameters()).is_cuda:
+            print(
+                f"Not support load graph on cpu mode"
+                f"Will lazily load graph from {file_path} ..."
+            )
+            setattr(self, "_deferred_graph_loading_config", (file_path, device))
+        else:
+            self.get_graph().warmup_with_load(file_path, device)
 
     def warmup_with_load(self, file_path, device=None):
         self.get_graph().warmup_with_load(file_path, device)
