@@ -89,8 +89,8 @@ class DeployableModule(torch.nn.Module):
             size = self._deployable_module_options["size"]
         else:
             size = 9
-        self._deployable_module_dpl_graph = get_oneflow_graph(size)(
-            self._deployable_module_model._oneflow_module
+        self._deployable_module_dpl_graph = get_oneflow_graph(
+            self._deployable_module_model.oneflow_module, size
         )
 
         return self._deployable_module_dpl_graph
@@ -141,7 +141,7 @@ class DeployableModule(torch.nn.Module):
                 output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.decode(
+                output = self._deployable_module_model.oneflow_module.decode(
                     *args, **kwargs
                 )
 
@@ -164,7 +164,7 @@ class DeployableModule(torch.nn.Module):
                 dpl_graph = self.get_graph(reload=True)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.encode(
+                output = self._deployable_module_model.oneflow_module.encode(
                     *args, **kwargs
                 )
 
