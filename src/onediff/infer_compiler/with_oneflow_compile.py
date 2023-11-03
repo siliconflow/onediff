@@ -141,12 +141,6 @@ class DeployableModule(torch.nn.Module):
                     *args, **kwargs
                 )
         return output
-    
-    # def __getattribute__(self, __name: str) -> Any:
-    #     return super().__getattribute__(__name)
-    
-    # def __setattr__(self, __name: str, __value: Any) -> None:
-    #     return super().__setattr__(__name, __value)
 
     def __getattr__(self, name):
         if name in self._modules:
