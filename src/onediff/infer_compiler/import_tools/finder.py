@@ -4,6 +4,7 @@ import inspect
 import pkgutil
 import importlib
 from typing import Dict, Union
+from types import ModuleType
 from pathlib import Path
 from .copier import PackageCopier
 
@@ -14,7 +15,7 @@ SUFFIX = "_oneflow"
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 
 
-def import_module_from_path(module_path: Union[str, Path]):
+def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     if isinstance(module_path, Path):
         module_path = str(module_path)
     module_name = os.path.basename(module_path)
