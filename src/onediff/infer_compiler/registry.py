@@ -28,7 +28,7 @@ def set_default_registry():
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
         warnings.warn(f"Failed to register_diffusers {e=}")
-    
+
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except:
@@ -38,7 +38,7 @@ def set_default_registry():
 def register(
     *,
     package_names: Optional[List[Union[Path, str]]] = None,
-    torch2of_class_map: Dict[type, type] = None,
+    torch2of_class_map: Optional[Dict[type, type]] = None,
     torch2of_funcs: Optional[List[Callable]] = None,
 ):
     if package_names:
