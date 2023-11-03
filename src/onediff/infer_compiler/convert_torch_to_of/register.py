@@ -83,9 +83,10 @@ def _(mod: torch.nn.Module, verbose=False):
                 return self._modules[attr]
             if attr in self._parameters:
                 return self._parameters[attr]
-            if attr in self._buffers:
+            elif attr in self._buffers:
                 return self._buffers[attr]
-        return getattr(proxy_md, attr)
+            else:
+                return getattr(proxy_md, attr)
 
     of_mod_cls = type(
         str(new_md_cls),
@@ -143,7 +144,7 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
 
 
 @torch2onef.register
-def _(mod: torch.dtype, verbose=False) -> flow.dtype:  # E1101
+def _(mod: torch.dtype, verbose=False) -> flow.dtype:  
     return {
         "torch.float16": flow.float16,
         "torch.float32": flow.float32,
