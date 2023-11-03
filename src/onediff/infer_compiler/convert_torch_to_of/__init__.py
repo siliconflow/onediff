@@ -14,5 +14,5 @@ from .proxy import (
 from ._globals import update_class_proxies, load_class_proxies_from_packages
 
 if os.environ.get("ONEDIFF_SUPPRESS_WARNINGS", "1") == "1":
-  warnings.simplefilter("ignore", category=UserWarning)
-  warnings.simplefilter("ignore", category=FutureWarning)
+    warnings.simplefilter("ignore", category=UserWarning)
+    warnings.simplefilter("ignore", category=FutureWarning)

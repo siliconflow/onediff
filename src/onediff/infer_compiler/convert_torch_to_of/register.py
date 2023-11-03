@@ -56,8 +56,7 @@ def _(mod: torch.nn.Module, verbose=False):
         self._modules = OrderedDict()
         for (n, p) in list(proxy_md.named_parameters("", False)):
             self._parameters[n] = flow.nn.Parameter(
-                flow.utils.tensor.from_torch(p.data),
-                requires_grad=p.requires_grad
+                flow.utils.tensor.from_torch(p.data), requires_grad=p.requires_grad
             )
         for (n, b) in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
@@ -89,9 +88,7 @@ def _(mod: torch.nn.Module, verbose=False):
                 return getattr(proxy_md, attr)
 
     of_mod_cls = type(
-        str(new_md_cls),
-        (new_md_cls,),
-        {"__init__": init, "__getattr__": proxy_getattr}
+        str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
     of_mod = of_mod_cls()
     if of_mod.training:
@@ -144,7 +141,7 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
 
 
 @torch2onef.register
-def _(mod: torch.dtype, verbose=False) -> flow.dtype:  
+def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     return {
         "torch.float16": flow.float16,
         "torch.float32": flow.float32,

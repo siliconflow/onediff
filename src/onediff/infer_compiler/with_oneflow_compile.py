@@ -8,6 +8,7 @@ from functools import wraps
 from pathlib import Path
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
+from .registry import set_default_config
 
 
 class DualModule(torch.nn.Module):
@@ -157,6 +158,7 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None):
+        # TODO: Just for ComfyUI pipeline
         if not next(self.parameters()).is_cuda:
             print(
                 f"Not support load graph on cpu mode"
@@ -225,6 +227,8 @@ def get_oneflow_graph(model, size=9):
 
 
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
+
+    set_default_config()
     oneflow_module = None
     if isinstance(torch_module, DeployableModule):
         return DeployableModule(

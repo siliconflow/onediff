@@ -23,14 +23,11 @@ def register_args_tree_relaxed_types():
         from transformers.modeling_outputs import BaseModelOutputWithPooling
         from transformers.models.clip.modeling_clip import CLIPTextModelOutput
 
-        register_relaxed_type(
-            proxy_class(BaseModelOutputWithPooling)
-        )
-        register_relaxed_type(
-            proxy_class(CLIPTextModelOutput)
-        )
+        register_relaxed_type(proxy_class(BaseModelOutputWithPooling))
+        register_relaxed_type(proxy_class(CLIPTextModelOutput))
     else:
         pass
+
 
 def input_output_processor(func):
     def process_input(*args, **kwargs):
