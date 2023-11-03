@@ -8,7 +8,7 @@ from functools import wraps
 from pathlib import Path
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
-from .registry import set_default_config
+from .registry import set_default_registry 
 
 
 class DualModule(torch.nn.Module):
@@ -212,7 +212,7 @@ def get_oneflow_graph(model, size=9):
 
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
-    set_default_config()
+    set_default_registry()
     oneflow_module = None
     if isinstance(torch_module, DeployableModule):
         return DeployableModule(

@@ -1,4 +1,5 @@
 """Registry for compiler inference functions."""
+import warnings
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 from .import_tools import import_module_from_path
@@ -15,9 +16,9 @@ from .convert_torch_to_of.custom_register import (
 __all__ = ["register"]
 
 
-def set_default_config():
+def set_default_registry():
     global _ONEDIFF_LOADED_PACKAGES
-    if _ONEDIFF_LOADED_PACKAGES:
+    if len(_ONEDIFF_LOADED_PACKAGES) > 0:
         return  # already set
 
     # compiler_registry_path
@@ -26,11 +27,12 @@ def set_default_config():
     try:
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
-        print(f"Failed to import register_diffusers_quant {e=}")
+        warnings.warn(f"Failed to register_diffusers {e=}")
+    
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except:
-        print(f"Failed to import register_diffusers_quant {e=}")
+        warnings.warn(f"Failed to register_diffusers_quant {e=}")
 
 
 def register(
