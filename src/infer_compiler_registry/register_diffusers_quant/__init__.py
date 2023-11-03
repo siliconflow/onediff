@@ -1,9 +1,9 @@
-# ONEDIFF_TORCH_TO_ONEF_CLASS_MAP = { PYTORCH_MODEL_CLASS: ONEFLOW_MODEL_CLASS }
-# ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = { Function :  TYPE }
+from onediff.infer_compiler.registry import register
+
 import oneflow as flow
 import diffusers_quant
 
-ONEDIFF_TORCH_TO_ONEF_CLASS_MAP = {
+torch2of_class_map = {
     diffusers_quant.FakeQuantModule: diffusers_quant.OneFlowFakeQuantModule,
     diffusers_quant.StaticQuantConvModule: diffusers_quant.OneFlowStaticQuantConvModule,
     diffusers_quant.DynamicQuantConvModule: diffusers_quant.OneFlowDynamicQuantConvModule,
@@ -16,6 +16,6 @@ ONEDIFF_TORCH_TO_ONEF_CLASS_MAP = {
 def convert_func(mod: flow.Tensor, verbose=False):
     return mod
 
-ONEDIFF_CUSTOM_TORCH2OF_FUNC_TYPE_MAP = {
-    convert_func: flow.Tensor,
-}
+
+register(torch2of_class_map=torch2of_class_map, 
+         torch2of_funcs=[convert_func])

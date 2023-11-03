@@ -1,16 +1,14 @@
 import types
+from typing import Any
 from .convert_torch_to_of.register import torch2onef
 import os
 import torch
 import oneflow as flow
 from functools import wraps
+from pathlib import Path
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
-from .utils.args_tree_util import (
-    register_args_tree_relaxed_types,
-    input_output_processor,
-)
-
-register_args_tree_relaxed_types()
+from .utils.args_tree_util import input_output_processor
+from .registry import set_default_registry 
 
 
 class DualModule(torch.nn.Module):
@@ -64,7 +62,9 @@ def handle_deployable_exception(func):
         try:
             return func(self, *args, **kwargs)
         except Exception as e:
-            print(f"Exception in {func.__name__} of {self.__class__.__name__}: {e}")
+            print(
+                f"Exception in {func.__name__} of " f"{self.__class__.__name__}: {e=}"
+            )
             print("Recompile oneflow module ...")
             del self._deployable_module_model.oneflow_module
             self._deployable_module_dpl_graph = None
@@ -82,6 +82,7 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = None
 
     def get_graph(self):
+
         if self._deployable_module_dpl_graph is not None:
             return self._deployable_module_dpl_graph
         if "size" in self._deployable_module_options:
@@ -210,6 +211,8 @@ def get_oneflow_graph(model, size=9):
 
 
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
+
+    set_default_registry()
     oneflow_module = None
     if isinstance(torch_module, DeployableModule):
         return DeployableModule(

@@ -1,10 +1,6 @@
+"""Module to convert PyTorch code to OneFlow."""
 import os
-
-if os.environ.get("ONEDIFF_SUPPRESS_WARNINGS", "1") == "1":
-    import warnings
-
-    warnings.simplefilter("ignore", category=UserWarning)
-    warnings.simplefilter("ignore", category=FutureWarning)
+import warnings
 
 from .register import torch2onef, default_converter
 from .proxy import (
@@ -15,4 +11,8 @@ from .proxy import (
     replace_func,
     get_attr,
 )
-from ._globals import update_class_proxies
+from ._globals import update_class_proxies, load_class_proxies_from_packages
+
+if os.environ.get("ONEDIFF_SUPPRESS_WARNINGS", "1") == "1":
+    warnings.simplefilter("ignore", category=UserWarning)
+    warnings.simplefilter("ignore", category=FutureWarning)

@@ -1,11 +1,12 @@
+"""Proxy module for converting torch.nn.Module to oneflow.nn.Module"""
 import os
 import torch
 import oneflow as flow
 import importlib
 from typing import Any
+from collections.abc import Iterable
 import diffusers
-from ._globals import _ONEDIFF_CLASS_PROXIES_FROM_VARIOUS_PACKAGES as __of_mds
-from ._globals import _initial_package_names
+from ._globals import _ONEDIFF_TORCH_TO_OF_CLASS_MAP as __of_mds
 from ..import_tools import get_mock_cls_name
 
 __all__ = [
@@ -34,7 +35,6 @@ def proxy_class(cls: type):
     raise RuntimeError(
         f"""
         1. Replace can't find proxy oneflow module for: {str(cls)} \n 
-        2. Check if the initial package {_initial_package_names} contains the package where {str(cls)} is located, 
         if not, you need to add it. 
         """
     )
@@ -47,15 +47,13 @@ class ProxySubmodule:
         self._1f_proxy_children = dict()
 
     def __getitem__(self, index):  # __getitem__
-        from collections.abc import Iterable
+        from .register import torch2onef
 
         if isinstance(self._1f_proxy_submod, Iterable):
             submod = self._1f_proxy_submod[index]
-            from .register import torch2onef
-
             return torch2onef(submod)
-        else:
-            raise RuntimeError("can't getitem for: " + str(type(self._1f_proxy_submod)))
+
+        raise RuntimeError(f"can't getitem for: {type(self._1f_proxy_submod)}")
 
     def __repr__(self) -> str:
         return " 1f_proxy: " + self._1f_proxy_submod.__repr__()

@@ -3,18 +3,21 @@ import sys
 import inspect
 import pkgutil
 import importlib
-from typing import Dict
+from typing import Dict, Union
+from types import ModuleType
+from pathlib import Path
 from .copier import PackageCopier
-from .printer import print_red
 
 
 PREFIX = "mock_"
-SUFFIX = "_onef"
+SUFFIX = "_oneflow"
 
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 
 
-def import_module_from_path(module_path):
+def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
+    if isinstance(module_path, Path):
+        module_path = str(module_path)
     module_name = os.path.basename(module_path)
     if os.path.isfile(module_path):
         sp = os.path.splitext(module_path)
@@ -39,7 +42,10 @@ def import_submodules(package, recursive=True):
     """Import all submodules of a module, recursively, including subpackages"""
     if isinstance(package, str):
         package = importlib.import_module(package)
-    for _, full_name, is_pkg in pkgutil.walk_packages(package.__path__, package.__name__ + "."):
+
+    for _, full_name, is_pkg in pkgutil.walk_packages(
+        package.__path__, package.__name__ + "."
+    ):
         try:
             # TODO(): Avoid copy, rename comfy.x.x.x with mocked_comfy.x.x.x
             good_import = importlib.import_module(full_name)
@@ -53,7 +59,7 @@ def import_submodules(package, recursive=True):
             try:
                 yield from import_submodules(full_name)
             except Exception as e:
-                pass # ignore
+                pass  # ignore
 
 
 def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
@@ -67,7 +73,7 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
     Returns:
         dict: A dictionary mapping full class names to class objects.
     """
-    if isinstance(package, str):
+    if isinstance(package, (str, Path)):
         copier = PackageCopier(package, prefix=PREFIX, suffix=SUFFIX)
         copier()  # copy package
         package = copier.get_import_module()

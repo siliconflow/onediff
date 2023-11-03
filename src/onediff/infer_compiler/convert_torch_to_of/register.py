@@ -1,57 +1,28 @@
-""" Desc: register function for torch2onef
-Usage:
-    >>> import torch
-    >>> from onediff.infer_compiler.convert_torch_to_of import torch2onef
-    >>> x = torch.nn.Linear(3, 4)
-    >>> y = torch2onef(x) # convert torch.nn.Linear to oneflow.nn.Linear
-    >>> y
-    <class 'oneflow.nn.modules.linear.Linear'>(in_features=3, out_features=4, bias=True)
-    
-### Support: 
-#### Basic:(register.py)
-#### Advanced:(custom_register.py)
-"""
+"""Convert torch object to oneflow object."""
+from functools import singledispatch
+from collections import OrderedDict
+from typing import Union
 import importlib
 import types
 import torch
 import oneflow as flow
-from typing import Union
-from collections import OrderedDict
-from functools import singledispatch
 from ..import_tools import print_red, print_yellow
 from .proxy import ProxySubmodule, proxy_class
-from ._globals import _WARNING_MSG
 
 __all__ = ["torch2onef", "default_converter"]
 
 
 @singledispatch
 def torch2onef(mod, *args, **kwargs):
-    global _WARNING_MSG
-
-    msg = (
-        f"Warning: No torch2onef conversion interface found for: {type(mod)=}, "
-        f"Default attribute retrieval method will be used. \n"
-        f"You can register {type(mod)} a  conversion method in custom_register.py to suppress this warning."
-    )
-
-    if (
-        type(mod) not in _WARNING_MSG
-        and torch2onef.registry.get(type(mod), None) is None
-    ):
-        print_yellow(msg)
-        _WARNING_MSG.add(type(mod))
-
     return default_converter(mod, *args, **kwargs)
 
 
 def default_converter(obj, verbose=False, *, proxy_cls=None):
-    """Convert torch object to oneflow object."""
     try:
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
         def init(self):
-            for k, v in obj.__dict__.items():
+            for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
                 self.__dict__[k] = torch2onef(attr)
 
@@ -66,9 +37,6 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return obj
 
 
-from .custom_register import *  # noqa: F401,F403
-
-
 @torch2onef.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
@@ -78,7 +46,8 @@ def _(mod: torch.nn.Module, verbose=False):
     def init(self):
         nonlocal proxy_md
 
-        # call the super `__init__` may cause unnecessary memory allocation, so we call the nn.Module `__init__` instead.
+        # call the super `__init__` may cause unnecessary memory allocation,
+        # so we call the nn.Module `__init__` instead.
         # super(type(self), self).__init__()
         flow.nn.Module.__init__(self)
 
@@ -94,7 +63,7 @@ def _(mod: torch.nn.Module, verbose=False):
         for (n, m) in proxy_md._modules.items():
             self._modules[n] = torch2onef(m)
 
-        for k, v in proxy_md.__dict__.items():
+        for k, _ in proxy_md.__dict__.items():
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
                 try:
@@ -126,7 +95,10 @@ def _(mod: torch.nn.Module, verbose=False):
         of_mod.training = False
         if verbose:
             print(
-                f"warning: {type(of_mod)} is in training mode and is turned into eval mode which is good for infrence optimation."
+                f"""
+            Warning: {type(of_mod)} is in training mode 
+            and is turned into eval mode which is good for infrence optimation.
+            """
             )
 
     if verbose:
@@ -168,7 +140,6 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
-# torch.dtype
 @torch2onef.register
 def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     return {
@@ -240,4 +211,3 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 def _(mod: torch.device, verbose=False) -> None:
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
-
