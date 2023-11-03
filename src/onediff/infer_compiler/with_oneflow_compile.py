@@ -82,9 +82,9 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = None
 
     def get_graph(self, reload=False):
-
         if not reload and self._deployable_module_dpl_graph is not None:
             return self._deployable_module_dpl_graph
+
         if "size" in self._deployable_module_options:
             size = self._deployable_module_options["size"]
         else:
