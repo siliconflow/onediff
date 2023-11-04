@@ -1,283 +1,101 @@
-import types
-from .convert_torch_to_of.register import torch2of
-import os
-import torch
-import oneflow as flow
-from oneflow.framework.args_tree import ArgsTree
+from ._config import *
+from .utils import replace_module_with_quantizable_module
 
-from .utils import (
-    oneflow_exec_mode,
-    oneflow_exec_mode_enabled,
-    register_args_tree_relaxed_types,
-)
+from copy import copy
 
-register_args_tree_relaxed_types()
+import comfy
+import folder_paths
+from comfy import model_management
+import comfy.model_patcher
+from pathlib import Path
 
 
-class DualModule(torch.nn.Module):
-    def __init__(self, torch_module, oneflow_module):
-        super().__init__()
-        self._torch_module = torch_module
-        self._oneflow_module = oneflow_module
-
-    def to(self, *args, **kwargs):
-        if oneflow_exec_mode_enabled():
-            self._oneflow_module.to(*args, **kwargs)
+class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
+    def __init__(self, model, load_device, offload_device, size=0, current_device=None, static_mode=None):
+        from onediff.infer_compiler import oneflow_compile
+        use_graph = static_mode == "enable"
+        self.size = size
+        self.model = copy(model)
+        self.model.__dict__['_modules'] = copy(model.__dict__['_modules'])
+        self.model.__dict__['_modules']['diffusion_model'] = oneflow_compile(
+            self.model.diffusion_model, use_graph=use_graph
+        )
+        self.patches = {}
+        self.backup = {}
+        self.model_options = {"transformer_options":{}}
+        self.model_size()
+        self.load_device = load_device
+        self.offload_device = offload_device
+        if current_device is None:
+            self.current_device = self.offload_device
         else:
-            self._torch_module.to(*args, **kwargs)
-            args = [torch2of(v) for v in args]
-            kwargs = {k: torch2of(v) for k, v in kwargs.items()}
-            self._oneflow_module.to(*args, **kwargs)
-
-    def __getattr__(self, name):
-        if name == "_torch_module":
-            return self._modules[name]
-        if name == "_oneflow_module":
-            return super().__getattribute__(name)
-
-        torch_attr = getattr(self._torch_module, name)
-        oneflow_attr = getattr(self._oneflow_module, name)
-        if isinstance(torch_attr, torch.nn.ModuleList):
-            return DualModuleList(torch_attr, oneflow_attr)
-        elif isinstance(torch_attr, torch.nn.Module):
-            return DualModule(torch_attr, oneflow_attr)
-        else:
-            return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
+            self.current_device = current_device
 
 
-class DualModuleList(torch.nn.ModuleList):
-    def __init__(self, torch_module, oneflow_module):
-        super().__init__()
-        self.torch_module = torch_module
-        self.oneflow_module = oneflow_module
+class ComfySpeedup:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "vae": ("VAE",),
+                "clip": ("CLIP",),
+                "static_mode": (["enable", "disable"],),
+            },
+        }
 
-    def __getitem__(self, idx):
-        return DualModule(self.torch_module[idx], self.oneflow_module[idx])
+    RETURN_TYPES = ("MODEL","VAE","CLIP")
+    FUNCTION = "speedup"
+    CATEGORY = "utils"
 
-
-class DeployableModule(torch.nn.Module):
-    def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
-        super().__init__()
-        self._deployable_module_model = DualModule(torch_module, oneflow_module)
-        self._deployable_module_use_graph = use_graph
-        self._deployable_module_options = options
-        self._deployable_module_dpl_graph = None
-
-    def process_input(self, *args, **kwargs):
-        def input_fn(value):
-            if isinstance(value, torch.Tensor):
-                return flow.utils.tensor.from_torch(value)
-            else:
-                return value
-
-        args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-        out = args_tree.map_leaf(input_fn)
-        mapped_args = out[0]
-        mapped_kwargs = out[1]
-        return mapped_args, mapped_kwargs
-
-    def process_output(self, output):
-        def output_fn(value):
-            if isinstance(value, flow.Tensor):
-                return flow.utils.tensor.to_torch(value)
-            else:
-                return value
-
-        out_tree = ArgsTree((output, None), False)
-        out = out_tree.map_leaf(output_fn)
-        return out[0]
-
-    def get_graph(self, reload=False):
-        if not reload and self._deployable_module_dpl_graph is not None:
-            return self._deployable_module_dpl_graph
-
-        if "size" in self._deployable_module_options:
-            size = self._deployable_module_options["size"]
-        else:
-            size = 9
-        self._deployable_module_dpl_graph = get_oneflow_graph(
-            self._deployable_module_model._oneflow_module, size
+    def speedup(self, model, vae, clip, static_mode):
+        from onediff.infer_compiler import oneflow_compile
+        offload_device = model_management.unet_offload_device()
+        oneflow_model = OneFlowSpeedUpModelPatcher(
+            model.model,
+            load_device=model_management.get_torch_device(),
+            offload_device=offload_device,
+            static_mode=static_mode,
         )
 
-        return self._deployable_module_dpl_graph
+        vae.vae_dtype = torch.float32 
+        vae.first_stage_model.to(torch.float32)
+        vae.first_stage_model = oneflow_compile(vae.first_stage_model, use_graph=True)
+        # TODO compile clip...
 
-    def apply_model(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
-            dpl_graph = self.get_graph()
-            with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
-        else:
-            with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.apply_model(
-                    *mapped_args, **mapped_kwargs
-                )
-        return self.process_output(output)
-
-    def to(self, *args, **kwargs):
-        self._deployable_module_model.to(*args, **kwargs)
-        return self
-
-    def __call__(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
-            dpl_graph = self.get_graph()
-            with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
-        else:
-            with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module(
-                    *mapped_args, **mapped_kwargs
-                )
-        return self.process_output(output)
-
-    def decode(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
-
-            dpl_graph = self.get_graph(reload=False)
-
-            with oneflow_exec_mode():
-                output = dpl_graph.model.decode(*mapped_args, **mapped_kwargs)
-        else:
-            with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.decode(
-                    *mapped_args, **mapped_kwargs
-                )
-        return self.process_output(output)
-
-    def encode(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
-
-            def _build_encode(graph, *args, **kwargs):
-                return graph.model.encode(*args, **kwargs)
-
-            dpl_graph = self.get_graph(reload=False)
-            dpl_graph.build = types.MethodType(_build_encode, dpl_graph)
-            with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
-                dpl_graph = self.get_graph(reload=True)
-        else:
-            with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.encode(
-                    *mapped_args, **mapped_kwargs
-                )
-        return self.process_output(output)
-
-    def __getattr__(self, name):
-        if name in self._modules:
-            return self._modules[name]
-        return getattr(self._deployable_module_model, name)
-
-    def load_graph(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
-
-    def warmup_with_load(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
-
-    def save_graph(self, file_path):
-        self.get_graph().save_graph(file_path)
+        return (oneflow_model,vae,clip,)
 
 
-class OneflowGraph(flow.nn.Graph):
-    @flow.nn.Graph.with_dynamic_input_shape()
-    def __init__(self, model):
-        super().__init__(enable_get_runtime_state_dict=True)
-        self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
+class UNETLoaderInt8:
+    @classmethod
+    def INPUT_TYPES(cls):
+        paths = []
+        for search_path in folder_paths.get_folder_paths("unet_int8"):
+            if os.path.exists(search_path):
+                for root, subdir, files in os.walk(search_path, followlinks=True):
+                    if "calibrate_info.txt" in files:
+                        paths.append(os.path.relpath(root, start=search_path))
 
-        os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
-        os.environ["ONEFLOW_MLIR_CSE"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-        os.environ["ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL"] = "1"
-        os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-        os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
-        os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
-        # TODO: enable this will cause the failure of multi resolution warmup
-        # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
-        # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
+        return {"required": {"model_path": (paths,),}}
 
-    def build(self, *args, **kwargs):
-        return self.model(*args, **kwargs)
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "load_unet_int8"
 
-    def warmup_with_load(self, file_path, device=None):
-        state_dict = flow.load(file_path)
-        if device is not None:
-            state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
-        self.load_runtime_state_dict(state_dict)
+    CATEGORY = "advanced/loaders"
 
-    def save_graph(self, file_path):
-        state_dict = self.runtime_state_dict()
-        flow.save(state_dict, file_path)
+    def load_unet_int8(self, model_path):
+        for search_path in folder_paths.get_folder_paths("unet_int8"):
+            if os.path.exists(search_path):
+                path = os.path.join(search_path, model_path)
+                if os.path.exists(path):
+                    model_path = path
+                    break
 
+        unet_sd_path = os.path.join(model_path, "unet_int8.safetensors")
+        calibrate_info_path = os.path.join(model_path, "calibrate_info.txt")
 
-def get_oneflow_graph(model, size=9):
-    g = OneflowGraph(model)
-    g._dynamic_input_graph_cache.set_cache_size(size)
-    return g
-
-
-def oneflow_compile(torch_module, *, use_graph=True, options={}):
-    oneflow_module = torch2of(torch_module)
-    return DeployableModule(torch_module, oneflow_module, use_graph, options)
-
-
-# TODO() model_patcher https://github.com/siliconflow/comfyui-speedup/blob/ad8b2d4b31272543f97aef80cb92ae22d88066ae/nodes.py#L25
-def oneflow_compile_lazy(torch_module, *, use_graph=True, options={}):
-    """Lazy compilation of torch module to oneflow module.
-
-    Calling the `__call__` method of LazyOneFlowModule will trigger compilation.
-
-    Example:
-        >>> import torch
-        >>> from onediff.infer_compiler import oneflow_compile_lazy
-        >>> torch_module = torch.nn.Linear(3, 4)
-        >>> oneflow_module = oneflow_compile_lazy(torch_module, use_graph=True)
-        >>> torch_module.to("cuda")
-        >>> input = torch.randn(2, 3).to("cuda")
-        >>> oneflow_module(input)
-        
-        oneflow_compile_lazy __call__ ...
-
-        tensor([[-0.6069, -0.5079, -0.1984, -0.1253],
-                [ 0.0041, -0.0595,  0.1333, -0.4581]], device='cuda:0')
-    """
-
-    class LazyOneFlowModule:
-        def __init__(self, torch_module):
-            self._torch_module = torch_module
-            self._lazy_convert = True
-            self._oneflow_module = None
-
-        def __getattribute__(self, __name: str):
-            if __name in ("_torch_module", "_lazy_convert", "_oneflow_module"):
-                return super().__getattribute__(__name)
-            if self._lazy_convert:
-                return getattr(self._torch_module, __name)
-            else:
-                return getattr(self._oneflow_module, __name)
-
-        def __call__(self, *args, **kwargs):
-            if self._oneflow_module is None:
-                print("oneflow_compile_lazy __call__ ...")
-                self._oneflow_module = oneflow_compile(
-                    self._torch_module, use_graph=use_graph, options=options
-                )
-                self._lazy_convert = False
-            return self._oneflow_module(*args, **kwargs)
-
-    return LazyOneFlowModule(torch_module)
+        model = comfy.sd.load_unet(unet_sd_path)
+        replace_module_with_quantizable_module(
+            model.model.diffusion_model, calibrate_info_path
+        )
+        return (model,)
