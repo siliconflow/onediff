@@ -130,9 +130,9 @@ def _(mod: torch.nn.Sequential, verbose=False):
 
 
 @torch2onef.register
-def _(mod: torch.nn.parameter.Parameter, verbose=False):
-    # TODO(oneflow): assert a.requires_grad == False
-    return flow.utils.tensor.from_torch(mod.data)
+def _(mod: torch.nn.parameter.Parameter, verbose=False) -> flow.nn.Parameter:
+    data = flow.utils.tensor.from_torch(mod.data)
+    return flow.nn.Parameter(data, requires_grad=mod.requires_grad)
 
 
 @torch2onef.register

@@ -1,14 +1,13 @@
-import types
 from typing import Any
+from functools import wraps
 from .convert_torch_to_of.register import torch2onef
 import os
+import types
 import torch
 import oneflow as flow
-from functools import wraps
-from pathlib import Path
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
-from .registry import set_default_registry 
+from .registry import set_default_registry
 
 
 class DualModule(torch.nn.Module):
@@ -35,11 +34,12 @@ class DualModule(torch.nn.Module):
         if oneflow_exec_mode_enabled():
             self._oneflow_module.to(*args, **kwargs)
         else:
-            self._torch_module.to(*args, **kwargs)
             if self._oneflow_module is not None:
                 args = [torch2onef(v) for v in args]
                 kwargs = {k: torch2onef(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
+            else:
+                self._torch_module.to(*args, **kwargs)
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -47,13 +47,25 @@ class DualModule(torch.nn.Module):
         if name == "_oneflow_module":
             return super().__getattribute__(name)
 
-        if self._oneflow_module is None:
-            return getattr(self._torch_module, name)
-
-        if oneflow_exec_mode_enabled():
-            return getattr(self._oneflow_module, name)
+        torch_attr = getattr(self._torch_module, name)
+        oneflow_attr = (
+            None
+            if self._oneflow_module is None
+            else getattr(self._oneflow_module, name)
+        )
+        if isinstance(torch_attr, torch.nn.Module):
+            return DualModule(torch_attr, oneflow_attr)
         else:
-            return getattr(self._torch_module, name)
+            return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
+
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in ["_torch_module", "_oneflow_module"]:
+            super().__setattr__(name, value)
+        else:  # TODO: aviod memory up when set attr
+            if self._oneflow_module is not None:
+                setattr(self._oneflow_module, name, torch2onef(value))
+            else:
+                setattr(self._torch_module, name, value)
 
 
 def handle_deployable_exception(func):
