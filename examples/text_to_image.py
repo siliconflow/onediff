@@ -1,5 +1,6 @@
 import argparse
 from onediff.infer_compiler import oneflow_compile
+from onediff import EulerDiscreteScheduler
 from diffusers import StableDiffusionPipeline
 import oneflow as flow
 import torch
@@ -21,9 +22,10 @@ def parse_args():
 
 args = parse_args()
 
-
+scheduler = EulerDiscreteScheduler.from_pretrained(args.model_id, subfolder="scheduler")
 pipe = StableDiffusionPipeline.from_pretrained(
     args.model_id,
+    scheduler=scheduler,
     use_auth_token=True,
     revision="fp16",
     torch_dtype=torch.float16,
