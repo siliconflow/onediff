@@ -425,6 +425,7 @@ class Attention(nn.Module):
         del attention_scores
 
         attention_probs = attention_probs.to(dtype)
+
         return attention_probs
 
     def prepare_attention_mask(
