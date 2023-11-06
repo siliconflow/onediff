@@ -4,15 +4,11 @@
 import os
 import argparse
 
-# cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
-# Maybe bacause oneflow use a lower version of cv2
-import cv2
 import oneflow as flow
 import torch
 
-# oneflow_compile should be imported before importing any diffusers
-from onediff.infer_compiler import oneflow_compile
 from diffusers import DiffusionPipeline
+from onediff.infer_compiler import oneflow_compile
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -59,7 +55,7 @@ if cmd_args.compile:
 
 # Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile_with_dynamo:
-    logger.info("unet is compiled to oneflow with torch.compile.")
+    print("unet is compiled to oneflow with torch.compile.")
     from onediff.infer_compiler import oneflow_backend
 
     base.unet = torch.compile(
