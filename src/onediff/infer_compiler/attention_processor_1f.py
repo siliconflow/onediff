@@ -45,7 +45,7 @@ else:
     xformers = None
 
 def parse_boolean_from_env(env_var, default_value):
-    if env_var is None:
+    if os.getenv(env_var) is None:
         return default_value
     return (
         env_var == "1"
@@ -399,10 +399,11 @@ class Attention(nn.Module):
 
     def get_attention_scores(self, query, key, attention_mask=None):
         if self.upcast_attention and parse_boolean_from_env(
-            os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"), True
+            "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
         ):
             warnings.warn(
-                f"Skip upcast in attention to to ensure performance! Don't worry, the accuracy is guaranteed!"
+                f"Skip upcast in attention to to ensure performance! "
+                f"Don't worry, the accuracy is guaranteed!"
             )
             os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
