@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
-import warnings
 from typing import Callable, Optional, Union
 
 import oneflow as torch
@@ -44,18 +42,6 @@ if is_xformers_available():
 else:
     xformers = None
 
-def parse_boolean_from_env(env_var, default_value):
-    env_var = os.getenv(env_var)
-    if env_var is None:
-        return default_value
-    env_var = env_var.lower()
-    return (
-        env_var == "1"
-        or env_var == "true"
-        or env_var == "yes"
-        or env_var == "on"
-        or env_var == "y"
-    )
 
 class Attention(nn.Module):
     r"""
@@ -400,15 +386,10 @@ class Attention(nn.Module):
         return tensor
 
     def get_attention_scores(self, query, key, attention_mask=None):
-        if self.upcast_attention and parse_boolean_from_env(
-            "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
-        ):
-            warnings.warn(
-                f"Skip upcast in attention to to ensure performance! "
-                f"Don't worry, the accuracy is guaranteed!"
-            )
-            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
+        if self.upcast_attention:
+            query = query.float()
+            key = key.float()
 
         if attention_mask is None:
             baddbmm_input = torch.empty(
