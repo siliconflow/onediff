@@ -12,7 +12,7 @@ Updated on Nov 6, 2023.
 > | 3090           | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
 > | 4090           | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
 > | A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
-> | A100-SXM4-80GB | 58.68it/s       | 58.02it/s       | 11.80it/s                 |
+> | A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
 
 
 ## Business inquiry
