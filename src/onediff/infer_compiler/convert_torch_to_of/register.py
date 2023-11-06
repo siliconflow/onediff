@@ -232,7 +232,20 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 
     return default_converter(mod, verbose)
 
+
 @torch2of.register
 def _(mod: torch.device, verbose=False) -> None:
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
+
+
+try:
+    from onediff.optimization.attention_processor import FusedSelfAttnProcessor
+
+    @torch2of.register
+    def _(mod: FusedSelfAttnProcessor, verbose=False) -> FusedSelfAttnProcessor:
+        return mod
+
+
+except:
+    pass

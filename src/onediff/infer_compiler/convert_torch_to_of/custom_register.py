@@ -7,6 +7,7 @@ from ..import_tools import (
 from .register import torch2of, default_converter
 from ._globals import update_class_proxies, _initial_package_names
 
+
 def import_diffusers():
     try:
         import diffusers
@@ -52,7 +53,7 @@ def import_comfy():
             return default_converter(mod, verbose=verbose)
 
     except Exception as e:
-        comfy_imported = False 
+        comfy_imported = False
         for pkg in _initial_package_names:
             if "comfy" in pkg:
                 comfy_imported = True
@@ -89,9 +90,6 @@ def import_diffusers_quant():
             get_mock_cls_name(
                 diffusers_quant.DynamicQuantLinearModule
             ): diffusers_quant.OneFlowDynamicLinearQuantModule,
-            get_mock_cls_name(
-                diffusers_quant.models.attention_processor.TrtAttnProcessor
-            ): diffusers_quant.models.attention_processor_oneflow.OneFlowTrtAttnProcessor,
         }
         update_class_proxies(cls_key_value)
 
