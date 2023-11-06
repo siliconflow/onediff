@@ -4,7 +4,9 @@ import torch.fx as fx
 import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
-from .obj_1f_from_torch import replace_obj, replace_func, _get_module, _get_attr
+
+from .convert_torch_to_of import replace_obj, replace_func, get_attr, torch2of
+
 
 def fx_node_tranform(gm):
     of_gm = to_of_transform(gm)
@@ -71,13 +73,14 @@ def to_of_transform(
             name2node[node.name] = of_node
         elif node.op == "call_module":
             torch_md = modules[node.target]
-            name2obj[node.target] = _get_module(torch_md, torch2flow)
+            name2obj[node.target] = torch2of(torch_md)
+
             of_node = of_g.create_node('call_module', node.target, args=node_replace_args(node.args, name2node), kwargs=node_replace_args(node.kwargs, name2node))
             name2node[node.name] = of_node
         elif node.op == "get_attr":
             of_node = of_g.create_node('get_attr', node.target)
             name2node[node.name] = of_node
-            name2obj[node.target] = _get_attr(gm, node, torch2flow)
+            name2obj[node.target] = get_attr(gm, node, torch2flow)
         else:
             raise ValueError(f"not valid node type{node.foramt_node()}")
 
