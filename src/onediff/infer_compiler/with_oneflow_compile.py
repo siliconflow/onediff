@@ -63,7 +63,8 @@ class DualModule(torch.nn.Module):
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
             if self._oneflow_module is not None:
-                setattr(self._oneflow_module, name, torch2onef(value))
+                obj = getattr(self._oneflow_module, name)
+                obj.copy_(torch2onef(value))
             else:
                 setattr(self._torch_module, name, value)
 
