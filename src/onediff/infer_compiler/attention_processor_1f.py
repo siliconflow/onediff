@@ -422,7 +422,10 @@ class Attention(nn.Module):
 
         attention_probs = attention_probs.to(dtype)
         if self.upcast_attention:
-            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = org_enable_trt_flash_attn
+            if org_enable_trt_flash_attn = None:
+                os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+            else:
+                os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = org_enable_trt_flash_attn
         return attention_probs
 
     def prepare_attention_mask(
