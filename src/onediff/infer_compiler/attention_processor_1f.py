@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import os
 from typing import Callable, Optional, Union
 
 import oneflow as torch
@@ -386,10 +387,10 @@ class Attention(nn.Module):
         return tensor
 
     def get_attention_scores(self, query, key, attention_mask=None):
+        org_enable_trt_flash_attn = os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL")
+        if self.upcast_attention and os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL") != "0":
+            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
-        if self.upcast_attention:
-            query = query.float()
-            key = key.float()
 
         if attention_mask is None:
             baddbmm_input = torch.empty(
@@ -420,7 +421,8 @@ class Attention(nn.Module):
         del attention_scores
 
         attention_probs = attention_probs.to(dtype)
-
+        if self.upcast_attention:
+            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = org_enable_trt_flash_attn
         return attention_probs
 
     def prepare_attention_mask(
