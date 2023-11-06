@@ -5,7 +5,7 @@
 
 OneFlow backend support for diffusers
 ## Performance
-06/11/2023 updated.
+Updated on Nov 6, 2023.
 
 > |                | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
 > | -------------- | --------------- | --------------- | ------------------------- |
