@@ -8,7 +8,7 @@ import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff import EulerDiscreteScheduler
+from onediff import EulerDiscreteScheduler, rewrite_self_attention
 from diffusers import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
@@ -27,7 +27,9 @@ parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
+parser.add_argument(
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
 args = parser.parse_args()
 
 # Normal SDXL pipeline init.
@@ -47,6 +49,7 @@ base.to("cuda")
 # Compile unet with oneflow
 if args.compile:
     print("unet is compiled to oneflow.")
+    rewrite_self_attention(base.unet)
     base.unet = oneflow_compile(base.unet)
 
 # Warmup
