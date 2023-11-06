@@ -10,6 +10,7 @@ from .utils.args_tree_util import input_output_processor
 from .registry import set_default_registry
 
 
+
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         super().__init__()
@@ -40,6 +41,7 @@ class DualModule(torch.nn.Module):
                 self._oneflow_module.to(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
+
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -86,6 +88,7 @@ def handle_deployable_exception(func):
     return wrapper
 
 
+
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
         super().__init__()
@@ -95,7 +98,6 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = None
 
     def get_graph(self):
-
         if self._deployable_module_dpl_graph is not None:
             return self._deployable_module_dpl_graph
         if "size" in self._deployable_module_options:
@@ -156,6 +158,7 @@ class DeployableModule(torch.nn.Module):
                     *args, **kwargs
                 )
         return output
+
 
     def __getattr__(self, name):
         if name in self._modules:
@@ -233,3 +236,4 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
         )
     else:
         return DeployableModule(torch_module, oneflow_module, use_graph, options)
+

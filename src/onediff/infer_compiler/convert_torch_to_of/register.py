@@ -2,6 +2,7 @@
 from functools import singledispatch
 from collections import OrderedDict
 from typing import Union
+
 import importlib
 import types
 import torch
@@ -48,6 +49,7 @@ def _(mod: torch.nn.Module, verbose=False):
 
         # call the super `__init__` may cause unnecessary memory allocation,
         # so we call the nn.Module `__init__` instead.
+
         # super(type(self), self).__init__()
         flow.nn.Module.__init__(self)
 
@@ -68,6 +70,7 @@ def _(mod: torch.nn.Module, verbose=False):
                 attr = getattr(proxy_md, k)
                 try:
                     self.__dict__[k] = torch2onef(attr)
+
                 except Exception as e:
                     print_red(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")
@@ -99,6 +102,7 @@ def _(mod: torch.nn.Module, verbose=False):
             Warning: {type(of_mod)} is in training mode 
             and is turned into eval mode which is good for infrence optimation.
             """
+
             )
 
     if verbose:
@@ -135,7 +139,7 @@ def _(mod: torch.nn.parameter.Parameter, verbose=False) -> flow.nn.Parameter:
     return flow.nn.Parameter(data, requires_grad=mod.requires_grad)
 
 
-@torch2onef.register
+@torch2of.register
 def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
@@ -208,6 +212,6 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 
 
 @torch2onef.register
-def _(mod: torch.device, verbose=False) -> None:
+def _(mod: torch.device, verbose=False):
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)

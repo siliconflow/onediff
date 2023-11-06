@@ -1,4 +1,5 @@
 """Proxy module for converting torch.nn.Module to oneflow.nn.Module"""
+
 import os
 import torch
 import oneflow as flow
@@ -8,6 +9,7 @@ from collections.abc import Iterable
 import diffusers
 from ._globals import _ONEDIFF_TORCH_TO_OF_CLASS_MAP as __of_mds
 from ..import_tools import get_mock_cls_name
+
 
 __all__ = [
     "proxy_class",
@@ -55,6 +57,7 @@ class ProxySubmodule:
 
         raise RuntimeError(f"can't getitem for: {type(self._1f_proxy_submod)}")
 
+
     def __repr__(self) -> str:
         return " 1f_proxy: " + self._1f_proxy_submod.__repr__()
 
@@ -97,12 +100,14 @@ class ProxySubmodule:
         else:
             from .register import torch2onef
 
+
             a = getattr(self._1f_proxy_submod, attribute)
 
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
                 # TODO(oneflow): assert a.requires_grad == False
                 if attribute not in self._1f_proxy_parameters:
                     a = torch2onef(a)
+
                     self._1f_proxy_parameters[attribute] = a
                 else:
                     a = self._1f_proxy_parameters[attribute]
@@ -111,9 +116,11 @@ class ProxySubmodule:
             ):
                 if attribute not in self._1f_proxy_children:
                     a = torch2onef(a)
+
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
+
 
             return a
 

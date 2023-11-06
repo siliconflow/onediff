@@ -31,7 +31,6 @@ def get_matched_files(
             if len(ignore_rules) == 0:
                 matches.append(filepath)
                 continue
-
             is_match = any(fnmatch.fnmatch(filepath, rule) for rule in ignore_rules)
             if not is_match:
                 matches.append(filepath)

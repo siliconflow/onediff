@@ -30,3 +30,4 @@ def register_custom_torch2of_func(func, first_param_type=None, verbose=True):
             print_green(f"Register {func=} {first_param_type=}")
     except Exception as e:
         print_yellow(f"Cannot register {func=} {first_param_type=}. {e=}")
+

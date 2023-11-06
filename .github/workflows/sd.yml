@@ -28,11 +28,6 @@ jobs:
         image:
           - {
               BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
-              suffix: "cu117",
-              ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu117",
-            }
-          - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
               suffix: "cu118",
               ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu118",
             }
