@@ -44,6 +44,16 @@ if is_xformers_available():
 else:
     xformers = None
 
+def parse_boolean_from_env(env_var, default_value):
+    if env_var is None:
+        return default_value
+    return (
+        env_var == "1"
+        or env_var == "true"
+        or env_var == "yes"
+        or env_var == "on"
+        or env_var == "y"
+    )
 
 class Attention(nn.Module):
     r"""
@@ -388,7 +398,9 @@ class Attention(nn.Module):
         return tensor
 
     def get_attention_scores(self, query, key, attention_mask=None):
-        if self.upcast_attention and os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL") != "0":
+        if self.upcast_attention and parse_boolean_from_env(
+            os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"), True
+        ):
             warnings.warn(
                 f"Skip upcast in attention to to ensure performance! Don't worry, the accuracy is guaranteed!"
             )
