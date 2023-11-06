@@ -388,7 +388,6 @@ class Attention(nn.Module):
         return tensor
 
     def get_attention_scores(self, query, key, attention_mask=None):
-        org_enable_trt_flash_attn = os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL")
         if self.upcast_attention and os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL") != "0":
             warnings.warn(
                 f"Skip upcast in attention to to ensure performance! Don't worry, the accuracy is guaranteed!"
