@@ -45,7 +45,8 @@ else:
     xformers = None
 
 def parse_boolean_from_env(env_var, default_value):
-    if os.getenv(env_var) is None:
+    env_var = os.getenv(env_var)
+    if env_var is None:
         return default_value
     return (
         env_var == "1"
