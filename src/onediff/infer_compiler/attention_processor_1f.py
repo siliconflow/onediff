@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
+import warnings
 from typing import Callable, Optional, Union
 
 import oneflow as torch
@@ -389,6 +390,9 @@ class Attention(nn.Module):
     def get_attention_scores(self, query, key, attention_mask=None):
         org_enable_trt_flash_attn = os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL")
         if self.upcast_attention and os.getenv("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL") != "0":
+            warnings.warn(
+                f"Skip upcast in attention to to ensure performance! Don't worry, the accuracy is guaranteed!"
+            )
             os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
 
@@ -423,7 +427,7 @@ class Attention(nn.Module):
         attention_probs = attention_probs.to(dtype)
         if self.upcast_attention:
             if org_enable_trt_flash_attn is None:
-                os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+                os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "true"
             else:
                 os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = org_enable_trt_flash_attn
         return attention_probs
