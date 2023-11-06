@@ -4,13 +4,9 @@
 import os
 import argparse
 
-# cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
-# Maybe bacause oneflow use a lower version of cv2
-import cv2
 import oneflow as flow
 import torch
 
-# oneflow_compile should be imported before importing any diffusers
 from onediff.infer_compiler import oneflow_compile
 from diffusers import DiffusionPipeline
 
