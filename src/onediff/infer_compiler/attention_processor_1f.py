@@ -48,6 +48,7 @@ def parse_boolean_from_env(env_var, default_value):
     env_var = os.getenv(env_var)
     if env_var is None:
         return default_value
+    env_var = env_var.lower()
     return (
         env_var == "1"
         or env_var == "true"
