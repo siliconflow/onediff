@@ -112,7 +112,7 @@ class Attention(nn.Module):
         self._from_deprecated_attn_block = _from_deprecated_attn_block
 
         self.scale_qk = scale_qk
-        self.scale = dim_head**-0.5 if self.scale_qk else 1.0
+        self.scale = dim_head ** -0.5 if self.scale_qk else 1.0
 
         self.heads = heads
         # for slice_size > 0 the attention score computation
@@ -204,8 +204,7 @@ class Attention(nn.Module):
         attention_op: Optional[Callable] = None,
     ):
         is_lora = hasattr(self, "processor") and isinstance(
-            self.processor,
-            LORA_ATTENTION_PROCESSORS,
+            self.processor, LORA_ATTENTION_PROCESSORS,
         )
         is_custom_diffusion = hasattr(self, "processor") and isinstance(
             self.processor,
@@ -371,6 +370,7 @@ class Attention(nn.Module):
         # The `Attention` class can call different attention processors / attention functions
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
+        
         return self.processor(
             self,
             hidden_states,
@@ -424,11 +424,7 @@ class Attention(nn.Module):
             beta = 1
 
         attention_scores = torch.baddbmm(
-            baddbmm_input,
-            query,
-            key.transpose(-1, -2),
-            beta=beta,
-            alpha=self.scale,
+            baddbmm_input, query, key.transpose(-1, -2), beta=beta, alpha=self.scale,
         )
         del baddbmm_input
 
@@ -2093,9 +2089,7 @@ class SpatialNorm(nn.Module):
     """
 
     def __init__(
-        self,
-        f_channels,
-        zq_channels,
+        self, f_channels, zq_channels,
     ):
         super().__init__()
         self.norm_layer = nn.GroupNorm(
