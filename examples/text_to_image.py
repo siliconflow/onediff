@@ -1,6 +1,6 @@
 import argparse
 from onediff.infer_compiler import oneflow_compile
-from onediff import EulerDiscreteScheduler
+from onediff import EulerDiscreteScheduler, rewrite_self_attention
 from diffusers import StableDiffusionPipeline
 import oneflow as flow
 import torch
@@ -35,8 +35,9 @@ pipe = StableDiffusionPipeline.from_pretrained(
     torch_dtype=torch.float16,
     safety_checker=None,
 )
-
 pipe = pipe.to("cuda")
+
+rewrite_self_attention(pipe.unet)
 pipe.unet = oneflow_compile(pipe.unet)
 
 prompt = args.prompt
