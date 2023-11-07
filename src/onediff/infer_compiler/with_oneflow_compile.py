@@ -258,5 +258,5 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
             return DeployableModule(module, None, use_graph, options)
 
     model = wrap_module(torch_module)
-    model._register_load_state_dict_pre_hook(state_dict_hook)
+    model._register_state_dict_hook(state_dict_hook)
     return model
