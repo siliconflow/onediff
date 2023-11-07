@@ -97,9 +97,10 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
 
-    def get_graph(self):
-        if self._deployable_module_dpl_graph is not None:
+    def get_graph(self, reload=False):
+        if not reload and self._deployable_module_dpl_graph is not None:
             return self._deployable_module_dpl_graph
+
         if "size" in self._deployable_module_options:
             size = self._deployable_module_options["size"]
         else:
@@ -107,6 +108,7 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module, size
         )
+
         return self._deployable_module_dpl_graph
 
     @input_output_processor
@@ -139,19 +141,16 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_model.to(*args, **kwargs)
         return self
 
-    # TODO(): Just for transformers VAE decoder
+
     @input_output_processor
     @handle_deployable_exception
     def decode(self, *args, **kwargs):
         if self._deployable_module_use_graph:
 
-            def _build(graph, *args, **kwargs):
-                return graph.model.decode(*args, **kwargs)
+            dpl_graph = self.get_graph(reload=False)
 
-            dpl_graph = self.get_graph()
-            dpl_graph.build = types.MethodType(_build, dpl_graph)
             with oneflow_exec_mode():
-                output = dpl_graph(*args, **kwargs)
+                output = dpl_graph.model.decode(*args, **kwargs)
         else:
             with oneflow_exec_mode():
                 output = self._deployable_module_model.oneflow_module.decode(
@@ -159,6 +158,21 @@ class DeployableModule(torch.nn.Module):
                 )
         return output
 
+    @input_output_processor
+    @handle_deployable_exception
+    def encode(self, *args, **kwargs):
+        if self._deployable_module_use_graph:
+
+            dpl_graph = self.get_graph(reload=False)
+            
+            with oneflow_exec_mode():
+                output = dpl_graph.model.encode(args, **kwargs)
+        else:
+            with oneflow_exec_mode():
+                output = self._deployable_module_model.oneflow_module.encode(
+                    *args, **kwargs
+                )
+        return self.output
 
     def __getattr__(self, name):
         if name in self._modules:
