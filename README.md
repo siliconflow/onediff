@@ -22,12 +22,11 @@ Run it by yourself using Docker:
 docker pull oneflowinc/onediff:20231106
 ```
 
-
 ## Business inquiry
 
 If you need ComfyUI or quant support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
 
-|                      | OneFlow Open Source | OneFlow Pro |
+|                      | OneDiff Open Source | OneDiff Pro |
 | -------------------- | ------------------- | ----------- |
 | diffusers API        | Yes                 | Yes         |
 | UNet/VAE Compilation | Yes                 | Yes         |
