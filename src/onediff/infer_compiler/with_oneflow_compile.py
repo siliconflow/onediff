@@ -96,15 +96,13 @@ class DeployableModule(torch.nn.Module):
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, options=None):
-        if use_graph is None:
-            use_graph = existing_module._deployable_module_use_graph
-        if options is None:
-            options = existing_module._deployable_module_options
-
         torch_module = existing_module._deployable_module_model._torch_module
         oneflow_module = existing_module._deployable_module_model._oneflow_module
-
-        return cls(torch_module, oneflow_module, use_graph, options)
+        instance = cls(torch_module, oneflow_module, use_graph, options)
+        instance._deployable_module_dpl_graph = (
+            existing_module._deployable_module_dpl_graph if use_graph else None
+        )
+        return instance
 
     def get_graph(self):
         if self._deployable_module_dpl_graph is not None:
