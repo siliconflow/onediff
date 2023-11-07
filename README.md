@@ -24,7 +24,7 @@ docker pull oneflowinc/onediff:20231106
 
 ## Business inquiry
 
-If you need ComfyUI or quant support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
+If you need ComfyUI or quant support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your **use case, deployment scale and requirements**!!
 
 |                      | OneDiff Open Source | OneDiff Pro |
 | -------------------- | ------------------- | ----------- |
