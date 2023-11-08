@@ -22,7 +22,7 @@ Run it by yourself using Docker:
 docker pull oneflowinc/onediff:20231106
 ```
 
-OneDiff Pro deliver performance even higher than results above and second-to-none deployment flexibility.
+OneDiff Pro delivers performance even higher than results above and second-to-none deployment flexibility.
 
 ## Business inquiry
 
