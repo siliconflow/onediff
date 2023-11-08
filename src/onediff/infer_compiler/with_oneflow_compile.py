@@ -166,7 +166,7 @@ class DeployableModule(torch.nn.Module):
             dpl_graph = self.get_graph(reload=False)
             
             with oneflow_exec_mode():
-                output = dpl_graph.model.encode(args, **kwargs)
+                output = dpl_graph.model.encode(*args, **kwargs)
         else:
             with oneflow_exec_mode():
                 output = self._deployable_module_model.oneflow_module.encode(
