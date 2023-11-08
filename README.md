@@ -26,7 +26,7 @@ OneDiff Pro deliver performance even higher than results above and second-to-non
 
 ## Business inquiry
 
-If you need **LoRA**, **ComfyUI** or **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your **use case, deployment scale and requirements**!!
+If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wiki/Run-ComfyUI-with-OneDiff) or **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your **use case, deployment scale and requirements**!!
 
 |                      | OneDiff Open Source | OneDiff Pro |
 | -------------------- | ------------------- | ----------- |
