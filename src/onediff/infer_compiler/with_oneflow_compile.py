@@ -172,7 +172,7 @@ class DeployableModule(torch.nn.Module):
                 output = self._deployable_module_model.oneflow_module.encode(
                     *args, **kwargs
                 )
-        return self.output
+        return output
 
     def __getattr__(self, name):
         if name in self._modules:
