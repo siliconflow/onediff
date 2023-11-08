@@ -1,5 +1,5 @@
 """Convert torch object to oneflow object."""
-from functools import singledispatch
+from functools import singledispatch, partial
 from collections import OrderedDict
 from typing import Union
 
@@ -7,9 +7,9 @@ import importlib
 import types
 import torch
 import oneflow as flow
-from ..import_tools import print_red, print_yellow, get_mock_cls_name 
+from ..import_tools import print_red, print_yellow
 from .proxy import ProxySubmodule, proxy_class
-from ._globals import _ONEDIFF_TORCH_TO_OF_CLASS_MAP
+from ._globals import get_of_proxy_class
 
 __all__ = ["torch2onef", "default_converter"]
 
@@ -37,7 +37,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
     except Exception as e:
         print_yellow(f"Unsupported type: {type(obj)}")
         # RuntimeError(f"Unsupported type: {type(obj)}")
-        return obj 
+        return obj
 
 
 @torch2onef.register
@@ -104,7 +104,6 @@ def _(mod: torch.nn.Module, verbose=False):
             Warning: {type(of_mod)} is in training mode 
             and is turned into eval mode which is good for infrence optimation.
             """
-
             )
 
     if verbose:
@@ -194,7 +193,7 @@ def _(mod: None, verbose=False) -> None:
 
 @torch2onef.register
 def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
-        
+
     if hasattr(mod, "__module__"):
         mod_name = None
         if mod.__module__.startswith("torch._C._nn"):
@@ -225,14 +224,13 @@ def _(mod: dict, verbose=False) -> dict:
     return {torch2onef(k): torch2onef(v, verbose) for k, v in mod.items()}
 
 
-@torch2onef.register 
+@torch2onef.register
 def _(func: types.FunctionType, verbose=False):
-    mock_name = get_mock_cls_name(func)
-    proxy_obj = _ONEDIFF_TORCH_TO_OF_CLASS_MAP[mock_name]
+    proxy_obj = get_of_proxy_class(func)
     new_func = getattr(proxy_obj, func.__name__)
     return new_func
 
-from functools import partial
+
 @torch2onef.register
 def _(mod: partial, verbose=False):
     # https://docs.python.org/3/library/functools.html?highlight=partial#functools.partial

@@ -7,8 +7,7 @@ import importlib
 from typing import Any
 from collections.abc import Iterable
 import diffusers
-from ._globals import _ONEDIFF_TORCH_TO_OF_CLASS_MAP as __of_mds
-from ..import_tools import get_mock_cls_name
+from ._globals import get_of_proxy_class
 
 
 __all__ = [
@@ -22,24 +21,13 @@ __all__ = [
 
 
 def proxy_class(cls: type):
-    global __of_mds
 
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
-    full_cls_name = get_mock_cls_name(cls)
-
-    if full_cls_name in __of_mds:
-        return __of_mds[full_cls_name]
-
-    raise RuntimeError(
-        f"""
-        1. Replace can't find proxy oneflow module for: {str(cls)} \n 
-        if not, you need to add it. 
-        """
-    )
+    return get_of_proxy_class(cls)
 
 
 class ProxySubmodule:
@@ -56,7 +44,6 @@ class ProxySubmodule:
             return torch2onef(submod)
 
         raise RuntimeError(f"can't getitem for: {type(self._1f_proxy_submod)}")
-
 
     def __repr__(self) -> str:
         return " 1f_proxy: " + self._1f_proxy_submod.__repr__()
@@ -100,7 +87,6 @@ class ProxySubmodule:
         else:
             from .register import torch2onef
 
-
             a = getattr(self._1f_proxy_submod, attribute)
 
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
@@ -120,7 +106,6 @@ class ProxySubmodule:
                     self._1f_proxy_children[attribute] = a
                 else:
                     a = self._1f_proxy_children[attribute]
-
 
             return a
 

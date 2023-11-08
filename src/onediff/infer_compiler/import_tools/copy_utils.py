@@ -16,10 +16,17 @@ except ImportError as e:
 
 import astor
 
-__all__ = ["copy_files", "get_matched_files", "convert_funcs_to_classes", "get_proxy_func_name"]
+__all__ = [
+    "copy_files",
+    "get_matched_files",
+    "convert_funcs_to_classes",
+    "get_proxy_func_name",
+]
+
 
 def get_proxy_func_name(name):
     return f"{FUNC_PREFIX}{name}{FUNC_SUFFIX}"
+
 
 def get_matched_files(
     root: Union[str, Path], ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]
@@ -65,11 +72,10 @@ def copy_files(src_dir, dst_dir, filelist):
             print(f"{src} does not exist!")
 
 
-
 def parse_file(file_path: Union[str, Path]) -> ast.AST:
     with open(file_path, "r") as f:
         code = f.read()
-    return ast.parse(code)
+        return ast.parse(code)
 
 
 def find_function_nodes(tree: ast.AST) -> List[ast.FunctionDef]:
@@ -83,15 +89,16 @@ def find_function_nodes(tree: ast.AST) -> List[ast.FunctionDef]:
             first_def_funcs.add(line.split(" ")[1].split("(")[0].strip())
 
     for node in ast.walk(tree):
-        if isinstance(node, ast.ClassDef):
+
+        if isinstance(node, ast.ClassDef) and node.name in first_def_funcs:
             for node in ast.walk(node):
                 if isinstance(node, ast.FunctionDef):
                     class_funcs.add(node)
 
-        if isinstance(node, ast.FunctionDef):
+        if isinstance(node, ast.FunctionDef) and node.name in first_def_funcs:
             funcs.append(node)
 
-    return [func for func in funcs if func not in class_funcs and func.name in first_def_funcs]
+    return [func for func in funcs if func not in class_funcs]
 
 
 def generate_class_definition(node):
@@ -105,11 +112,11 @@ def generate_class_definition(node):
         keywords=[],
         body=[
             class_docstring,
-            ast.FunctionDef(                
-                name=class_name, 
-                args=node.args, 
-                body=node.body, 
-                decorator_list=[ast.Name(id='staticmethod', ctx=ast.Load())]
+            ast.FunctionDef(
+                name=class_name,
+                args=node.args,
+                body=node.body,
+                decorator_list=[ast.Name(id="staticmethod", ctx=ast.Load())],
             ),
         ],
         decorator_list=[],
@@ -121,7 +128,9 @@ def classdef_to_python(classdef):
     return astor.to_source(classdef)
 
 
-def convert_funcs_to_classes(input_file: Union[str,Path], output_file: Union[str,Path]):
+def convert_funcs_to_classes(
+    input_file: Union[str, Path], output_file: Union[str, Path]
+):
     """Convert functions into classes of the same name automatically"""
     tree = parse_file(input_file)
     source_code = astor.to_source(tree)
@@ -129,9 +138,10 @@ def convert_funcs_to_classes(input_file: Union[str,Path], output_file: Union[str
     for node in function_nodes:
         class_def = generate_class_definition(node)
         source_code += classdef_to_python(class_def)
-    
+
     with open(output_file, "w") as f:
         f.write(source_code)
+
 
 if __name__ == "__main__":
     input_file = "test_fake_torch/_fake_torch.py"  # 输入Python文件名

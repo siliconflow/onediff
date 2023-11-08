@@ -39,6 +39,7 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     module_spec.loader.exec_module(module)
     return module
 
+
 def import_submodules(package, recursive=True):
     """Import all submodules of a module, recursively, including subpackages"""
     if isinstance(package, str):
@@ -56,7 +57,6 @@ def import_submodules(package, recursive=True):
             # logger.debug(f"Failed to import {full_name}: {e}")
             pass  # ignore
 
-
         if recursive and is_pkg:
             try:
                 yield from import_submodules(full_name)
@@ -64,7 +64,9 @@ def import_submodules(package, recursive=True):
                 pass  # ignore
 
 
-def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
+def get_classes_in_package(
+    package: Union[str, Path], base_class=None
+) -> Dict[str, type]:
     """
     Get all classes in a package and its submodules.
 
@@ -96,11 +98,17 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
     return class_dict
 
 
+def _validate_package_name(package_name) -> bool:
+    return package_name.startswith(PREFIX) and package_name.endswith(SUFFIX)
+
+
 def _format_package_name(package_name):
+    if _validate_package_name(package_name):
+        return package_name
     return PREFIX + package_name + SUFFIX
 
 
-def get_mock_cls_name(cls) -> str:
+def get_mock_cls_name(cls: str | type | types.FunctionType) -> str:
     if isinstance(cls, type):
         cls = f"{cls.__module__}.{cls.__name__}"
 
@@ -108,8 +116,7 @@ def get_mock_cls_name(cls) -> str:
         module = inspect.getmodule(cls)
         func_name = get_proxy_func_name(cls.__name__)
         cls = f"{module.__name__}.{func_name}"
-        
+
     pkg_name, cls_ = cls.split(".", 1)
     pkg_name = _format_package_name(pkg_name)
     return f"{pkg_name}.{cls_}"
-
