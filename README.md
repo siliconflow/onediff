@@ -48,7 +48,6 @@ Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to
 ```
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu118
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
-python3 -m pip uninstall accelerate -y
 git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff && python3 -m pip install -e .
 ```
