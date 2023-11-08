@@ -1,12 +1,14 @@
 import os
 import sys
 import inspect
+import types
 import pkgutil
 import importlib
 from typing import Dict, Union
 from types import ModuleType
 from pathlib import Path
 from .copier import PackageCopier
+from .copy_utils import get_proxy_func_name
 
 
 PREFIX = "mock_"
@@ -102,8 +104,12 @@ def get_mock_cls_name(cls) -> str:
     if isinstance(cls, type):
         cls = f"{cls.__module__}.{cls.__name__}"
 
+    elif isinstance(cls, types.FunctionType):
+        module = inspect.getmodule(cls)
+        func_name = get_proxy_func_name(cls.__name__)
+        cls = f"{module.__name__}.{func_name}"
+        
     pkg_name, cls_ = cls.split(".", 1)
-
     pkg_name = _format_package_name(pkg_name)
     return f"{pkg_name}.{cls_}"
 

@@ -7,8 +7,9 @@ import importlib
 import types
 import torch
 import oneflow as flow
-from ..import_tools import print_red, print_yellow
+from ..import_tools import print_red, print_yellow, get_mock_cls_name 
 from .proxy import ProxySubmodule, proxy_class
+from ._globals import _ONEDIFF_TORCH_TO_OF_CLASS_MAP
 
 __all__ = ["torch2onef", "default_converter"]
 
@@ -35,7 +36,8 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return of_obj
     except Exception as e:
         print_yellow(f"Unsupported type: {type(obj)}")
-        return obj
+        # RuntimeError(f"Unsupported type: {type(obj)}")
+        return obj 
 
 
 @torch2onef.register
@@ -192,6 +194,7 @@ def _(mod: None, verbose=False) -> None:
 
 @torch2onef.register
 def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
+        
     if hasattr(mod, "__module__"):
         mod_name = None
         if mod.__module__.startswith("torch._C._nn"):
@@ -215,3 +218,25 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 def _(mod: torch.device, verbose=False):
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
+
+
+@torch2onef.register
+def _(mod: dict, verbose=False) -> dict:
+    return {torch2onef(k): torch2onef(v, verbose) for k, v in mod.items()}
+
+
+@torch2onef.register 
+def _(func: types.FunctionType, verbose=False):
+    mock_name = get_mock_cls_name(func)
+    proxy_obj = _ONEDIFF_TORCH_TO_OF_CLASS_MAP[mock_name]
+    new_func = getattr(proxy_obj, func.__name__)
+    return new_func
+
+from functools import partial
+@torch2onef.register
+def _(mod: partial, verbose=False):
+    # https://docs.python.org/3/library/functools.html?highlight=partial#functools.partial
+    func = torch2onef(mod.func)
+    args = torch2onef(mod.args)
+    keywords = torch2onef(mod.keywords)
+    return partial(func, *args, **keywords)
