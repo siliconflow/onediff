@@ -1,13 +1,13 @@
-from typing import Any
-from functools import wraps
-from .torch_to_oflow.register import torch2oflow
 import os
 import types
 import torch
 import oneflow as flow
+from typing import Any
+from functools import wraps
+from .transform.custom_transform import set_default_registry
+from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
-from .registry import set_default_registry
 
 
 class DualModule(torch.nn.Module):

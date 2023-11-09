@@ -1,33 +1,6 @@
 import torch
 import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
-from ..torch_to_oflow._globals import _ONEDIFF_LOADED_PACKAGES
-from ..torch_to_oflow.proxy import proxy_class
-
-
-_ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = False
-try:
-    from oneflow.framework.args_tree import register_relaxed_type
-
-    _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = True
-except:
-    pass
-
-
-def register_args_tree_relaxed_types():
-    transformers_mocked = False
-    if "transformers" in _ONEDIFF_LOADED_PACKAGES:
-        transformers_mocked = True
-
-    if _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API and transformers_mocked:
-        from transformers.modeling_outputs import BaseModelOutputWithPooling
-        from transformers.models.clip.modeling_clip import CLIPTextModelOutput
-
-        register_relaxed_type(proxy_class(BaseModelOutputWithPooling))
-        register_relaxed_type(proxy_class(CLIPTextModelOutput))
-    else:
-        pass
-
 
 def input_output_processor(func):
     def process_input(*args, **kwargs):

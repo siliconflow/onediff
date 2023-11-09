@@ -2,9 +2,11 @@
 import os
 import warnings
 
-from .register import torch2oflow, default_converter
+from .manager import transform_mgr
+from .builtin_transform import torch2oflow, default_converter
+from .custom_transform import register
 
-from .proxy import (
+from .builtin_transform import (
     ProxySubmodule,
     proxy_class,
     replace_obj,
@@ -13,9 +15,7 @@ from .proxy import (
     get_attr,
 )
 
-from ._globals import update_class_proxies, load_class_proxies_from_packages
-
-if os.environ.get("ONEDIFF_SUPPRESS_WARNINGS", "1") == "1":
+if os.environ.get("ONEDIFF_DEBUG", "0") != "1":
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
 

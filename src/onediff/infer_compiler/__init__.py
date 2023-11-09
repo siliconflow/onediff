@@ -3,7 +3,7 @@ import torch
 import oneflow as flow
 
 from .utils.patch_for_compiler import *  # TODO:
-from .registry import register
+from .transform.custom_transform import register
 from .with_oneflow_compile import oneflow_compile
 
 from .with_fx_interpreter import OneFlowInterpreter

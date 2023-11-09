@@ -5,8 +5,7 @@ import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from .torch_to_oflow import replace_obj, replace_func, get_attr, torch2oflow
-
+from .transform import replace_obj, replace_func, get_attr, torch2oflow
 
 
 def fx_node_tranform(gm):

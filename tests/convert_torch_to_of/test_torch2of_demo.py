@@ -7,9 +7,7 @@ Uasge:
 import torch
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.torch_to_oflow import (
-    update_class_proxies
-)
+from onediff.infer_compiler.transform import transform_mgr
 from onediff.infer_compiler.import_tools import get_mock_cls_name
 
 
@@ -45,7 +43,7 @@ class OneFlowModel(flow.nn.Module):
 def test_torch2of_demo():
     # Register PyTorch model to OneDiff
     cls_key = get_mock_cls_name(PyTorchModel)
-    update_class_proxies({cls_key: OneFlowModel})
+    transform_mgr.update_class_proxies({cls_key: OneFlowModel})
 
 
     # Compile PyTorch model to OneFlow
