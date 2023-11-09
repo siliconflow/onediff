@@ -4,4 +4,4 @@ transformers==4.27.1
 diffusers[torch]==0.19.3
 onediff
 chardet
-opencv-python==4.8.0.76
+opencv-python==4.8.0.74

@@ -4,11 +4,11 @@ from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 from .import_tools import import_module_from_path
 from .utils.args_tree_util import register_args_tree_relaxed_types
-from .convert_torch_to_of._globals import (
+from .torch_to_oflow._globals import (
     load_class_proxies_from_packages,
     _ONEDIFF_LOADED_PACKAGES,
 )
-from .convert_torch_to_of.custom_register import (
+from .torch_to_oflow.custom_register import (
     register_torch2of_class,
     register_custom_torch2of_func,
 )
@@ -22,7 +22,7 @@ def set_default_registry():
         return  # already set
 
     # compiler_registry_path
-    registry_path = Path(__file__).parents[2] / "compiler_registry"
+    registry_path = Path(__file__).parents[2] / "infer_compiler_registry"
 
     try:
         import_module_from_path(registry_path / "register_diffusers")
@@ -31,15 +31,15 @@ def set_default_registry():
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
-    except:
+    except Exception as e:
         warnings.warn(f"Failed to register_diffusers_quant {e=}")
 
 
 def register(
     *,
     package_names: Optional[List[Union[Path, str]]] = None,
-    torch2of_class_map: Optional[Dict[type, type]] = None,
-    torch2of_funcs: Optional[List[Callable]] = None,
+    torch2oflow_class_map: Optional[Dict[type, type]] = None,
+    torch2oflow_funcs: Optional[List[Callable]] = None,
 ):
     if package_names:
         load_class_proxies_from_packages(package_names)
@@ -48,10 +48,10 @@ def register(
                 register_args_tree_relaxed_types()
                 break
 
-    if torch2of_class_map:
-        for torch_cls, of_cls in torch2of_class_map.items():
+    if torch2oflow_class_map:
+        for torch_cls, of_cls in torch2oflow_class_map.items():
             register_torch2of_class(torch_cls, of_cls)
 
-    if torch2of_funcs:
-        for func in torch2of_funcs:
+    if torch2oflow_funcs:
+        for func in torch2oflow_funcs:
             register_custom_torch2of_func(func)

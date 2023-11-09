@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import os
-import warnings
 from typing import Callable, Optional, Union
 
 import oneflow as torch
@@ -403,10 +402,6 @@ class Attention(nn.Module):
         if self.upcast_attention and parse_boolean_from_env(
             "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
         ):
-            warnings.warn(
-                f"Skip upcast in attention to to ensure performance! "
-                f"Don't worry, the accuracy is guaranteed!"
-            )
             os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
 

@@ -4,9 +4,6 @@
 import os
 import argparse
 
-# cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
-# Maybe bacause oneflow use a lower version of cv2
-import cv2
 import oneflow as flow
 import torch
 
@@ -30,9 +27,8 @@ cmd_args = parser.parse_args()
 
 
 def run_sd(cmd_args, device):
-    # oneflow_compile should be imported before importing any diffusers
-    from onediff.infer_compiler import oneflow_compile
     from diffusers import DiffusionPipeline
+    from onediff.infer_compiler import oneflow_compile
 
     # Normal SDXL pipeline init.
     seed = torch.Generator(device).manual_seed(cmd_args.seed)
@@ -60,7 +56,7 @@ def run_sd(cmd_args, device):
     sizes = [1024]
     for h in sizes:
         for w in sizes:
-            for i in range(3):
+            for i in range(1):
                 image = base(
                     prompt=cmd_args.prompt,
                     height=h,
@@ -92,3 +88,4 @@ if __name__ == '__main__':
 
         for p in procs:
             p.join()
+            print(p)

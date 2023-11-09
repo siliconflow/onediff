@@ -10,11 +10,11 @@ import oneflow as flow
 from ..import_tools import print_red, print_yellow
 from .proxy import ProxySubmodule, proxy_class
 
-__all__ = ["torch2onef", "default_converter"]
+__all__ = ["torch2oflow", "default_converter"]
 
 
 @singledispatch
-def torch2onef(mod, *args, **kwargs):
+def torch2oflow(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
 
@@ -25,7 +25,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         def init(self):
             for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
-                self.__dict__[k] = torch2onef(attr)
+                self.__dict__[k] = torch2oflow(attr)
 
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
@@ -38,7 +38,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return obj
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
 
@@ -63,13 +63,13 @@ def _(mod: torch.nn.Module, verbose=False):
         for (n, b) in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for (n, m) in proxy_md._modules.items():
-            self._modules[n] = torch2onef(m)
+            self._modules[n] = torch2oflow(m)
 
         for k, _ in proxy_md.__dict__.items():
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
                 try:
-                    self.__dict__[k] = torch2onef(attr)
+                    self.__dict__[k] = torch2oflow(attr)
 
                 except Exception as e:
                     print_red(f"convert {type(attr)} failed: {e}")
@@ -111,40 +111,40 @@ def _(mod: torch.nn.Module, verbose=False):
     return of_mod
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: torch.nn.ModuleList, verbose=False):
     of_mod_list = flow.nn.ModuleList()
     for original_submod in mod:
-        submod = torch2onef(original_submod, verbose)
+        submod = torch2oflow(original_submod, verbose)
         of_mod_list.append(submod)
 
     return of_mod_list
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: torch.nn.Sequential, verbose=False):
 
     of_mod_list = []
     for original_submod in mod:
-        submod = torch2onef(original_submod, verbose)
+        submod = torch2oflow(original_submod, verbose)
         of_mod_list.append(submod)
     of_mod_seq = flow.nn.Sequential(*of_mod_list)
 
     return of_mod_seq
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: torch.nn.parameter.Parameter, verbose=False) -> flow.nn.Parameter:
     data = flow.utils.tensor.from_torch(mod.data)
     return flow.nn.Parameter(data, requires_grad=mod.requires_grad)
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     return {
         "torch.float16": flow.float16,
@@ -157,40 +157,40 @@ def _(mod: torch.dtype, verbose=False) -> flow.dtype:
     }[str(mod)]
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: list, verbose=False) -> list:
-    return [torch2onef(m, verbose) for m in mod]
+    return [torch2oflow(m, verbose) for m in mod]
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: tuple, verbose=False) -> tuple:
-    return tuple(torch2onef(m, verbose) for m in mod)
+    return tuple(torch2oflow(m, verbose) for m in mod)
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: OrderedDict, verbose=False) -> dict:
     return default_converter(mod, verbose, proxy_cls=OrderedDict)
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: set, verbose=False) -> set:
-    return set(torch2onef(m, verbose) for m in mod)
+    return set(torch2oflow(m, verbose) for m in mod)
 
 
-@torch2onef.register(int)
-@torch2onef.register(float)
-@torch2onef.register(str)
-@torch2onef.register(bool)
+@torch2oflow.register(int)
+@torch2oflow.register(float)
+@torch2oflow.register(str)
+@torch2oflow.register(bool)
 def _(mod, verbose=False) -> Union[int, float, str, bool]:
     return mod
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: None, verbose=False) -> None:
     return mod
 
 
-@torch2onef.register
+@torch2oflow.register
 def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
     if hasattr(mod, "__module__"):
         mod_name = None
@@ -211,7 +211,19 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
     return default_converter(mod, verbose)
 
 
-@torch2onef.register
-def _(mod: torch.device, verbose=False):
+@torch2oflow.register
+def _(mod: torch.device, verbose=False) -> None:
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
+
+
+try:
+    from onediff.optimization.attention_processor import FusedSelfAttnProcessor
+
+    @torch2oflow.register
+    def _(mod: FusedSelfAttnProcessor, verbose=False) -> FusedSelfAttnProcessor:
+        return mod
+
+
+except:
+    pass

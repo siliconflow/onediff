@@ -19,13 +19,13 @@ def load_class_proxies_from_packages(package_names: List[Union[Path, str]]):
     global _ONEDIFF_TORCH_TO_OF_CLASS_MAP
     global _ONEDIFF_LOADED_PACKAGES
 
-    print_green(f"==> Loading modules: {package_names}")
+    print_green(f"Loading modules: {package_names}")
     of_mds = {}
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     with flow.mock_torch.enable(lazy=True):
         for package_name in package_names:
             of_mds.update(get_classes_in_package(package_name))
-    print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names} <==")
+    print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names}")
     _ONEDIFF_TORCH_TO_OF_CLASS_MAP.update(of_mds)
     _ONEDIFF_LOADED_PACKAGES.extend(package_names)
 
@@ -43,6 +43,6 @@ def update_class_proxies(class_proxy_dict: Dict[str, type], verbose=True):
 
     if verbose:
         print_green(
-            f"==> Loaded Mock Torch {len(class_proxy_dict)} "
+            f"Loaded Mock Torch {len(class_proxy_dict)} "
             f"classes: {class_proxy_dict.keys()}... "
         )

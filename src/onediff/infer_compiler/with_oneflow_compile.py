@@ -1,6 +1,6 @@
 from typing import Any
 from functools import wraps
-from .convert_torch_to_of.register import torch2onef
+from .torch_to_oflow.register import torch2oflow
 import os
 import types
 import torch
@@ -8,7 +8,6 @@ import oneflow as flow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
 from .registry import set_default_registry
-
 
 
 class DualModule(torch.nn.Module):
@@ -21,8 +20,7 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
-        print("Compile torch module to oneflow module ...")
-        self._oneflow_module = torch2onef(self._torch_module)
+        self._oneflow_module = torch2oflow(self._torch_module)
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -36,12 +34,11 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             if self._oneflow_module is not None:
-                args = [torch2onef(v) for v in args]
-                kwargs = {k: torch2onef(v) for k, v in kwargs.items()}
+                args = [torch2oflow(v) for v in args]
+                kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
-
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -66,7 +63,7 @@ class DualModule(torch.nn.Module):
         else:  # TODO: aviod memory up when set attr
             if self._oneflow_module is not None:
                 obj = getattr(self._oneflow_module, name)
-                obj.copy_(torch2onef(value))
+                obj.copy_(torch2oflow(value))
             else:
                 setattr(self._torch_module, name, value)
 
@@ -88,7 +85,6 @@ def handle_deployable_exception(func):
     return wrapper
 
 
-
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
         super().__init__()
@@ -96,6 +92,16 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
+
+    @classmethod
+    def from_existing(cls, existing_module, use_graph=None, options=None):
+        torch_module = existing_module._deployable_module_model._torch_module
+        oneflow_module = existing_module._deployable_module_model._oneflow_module
+        instance = cls(torch_module, oneflow_module, use_graph, options)
+        instance._deployable_module_dpl_graph = (
+            existing_module._deployable_module_dpl_graph if use_graph else None
+        )
+        return instance
 
     def get_graph(self, reload=False):
         if not reload and self._deployable_module_dpl_graph is not None:
@@ -240,14 +246,29 @@ def get_oneflow_graph(model, size=9):
     return g
 
 
+def state_dict_hook(module, state_dict, prefix, local_metadata):
+    pytorch_key_prefix = "_deployable_module_model._torch_module."
+    new_state_dict = type(state_dict)()
+    for k, v in state_dict.items():
+        # key_filter
+        # _deployable_module_model._torch_module.out.2.weight => out.2.weight
+        if k.startswith(pytorch_key_prefix):
+            new_k = k[len(pytorch_key_prefix) :]
+            new_state_dict[new_k] = v
+        else:
+            new_state_dict[k] = v
+    return new_state_dict
+
+
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
-
     set_default_registry()
-    oneflow_module = None
-    if isinstance(torch_module, DeployableModule):
-        return DeployableModule(
-            torch_module._torch_module, oneflow_module, use_graph, options
-        )
-    else:
-        return DeployableModule(torch_module, oneflow_module, use_graph, options)
 
+    def wrap_module(module):
+        if isinstance(module, DeployableModule):
+            return DeployableModule.from_existing(module, use_graph, options)
+        else:
+            return DeployableModule(module, None, use_graph, options)
+
+    model = wrap_module(torch_module)
+    model._register_state_dict_hook(state_dict_hook)
+    return model

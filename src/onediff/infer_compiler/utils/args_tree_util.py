@@ -1,8 +1,8 @@
 import torch
 import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
-from ..convert_torch_to_of._globals import _ONEDIFF_LOADED_PACKAGES
-from ..convert_torch_to_of.proxy import proxy_class
+from ..torch_to_oflow._globals import _ONEDIFF_LOADED_PACKAGES
+from ..torch_to_oflow.proxy import proxy_class
 
 
 _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = False

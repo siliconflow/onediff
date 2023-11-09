@@ -2,7 +2,7 @@
 import os
 import warnings
 
-from .register import torch2onef, default_converter
+from .register import torch2oflow, default_converter
 
 from .proxy import (
     ProxySubmodule,
