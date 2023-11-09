@@ -11,12 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import os
 from typing import Callable, Optional, Union
 
 import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
+import os
 
 import diffusers
 from diffusers.utils import deprecate, logging
@@ -369,7 +369,7 @@ class Attention(nn.Module):
         # The `Attention` class can call different attention processors / attention functions
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
-        
+
         return self.processor(
             self,
             hidden_states,
@@ -404,6 +404,9 @@ class Attention(nn.Module):
         ):
             os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
+        # if self.upcast_attention:
+        #     query = query.float()
+        #     key = key.float()
 
         if attention_mask is None:
             baddbmm_input = torch.empty(
