@@ -54,7 +54,6 @@ class ProxySubmodule:
 
         raise RuntimeError(f"can't getitem for: {type(self._oflow_proxy_submod)}")
 
-
     def __repr__(self) -> str:
         return " oflow_proxy: " + self._oflow_proxy_submod.__repr__()
 
@@ -114,7 +113,6 @@ class ProxySubmodule:
                     self._oflow_proxy_children[attribute] = a
                 else:
                     a = self._oflow_proxy_children[attribute]
-
 
             return a
 
@@ -181,6 +179,7 @@ def get_attr(gm, node, torch2flow={}):
     of_attr = replace_obj(attr)
     torch2flow[attr] = of_attr
     return of_attr
+
 
 @singledispatch
 def torch2oflow(mod, *args, **kwargs):
@@ -271,7 +270,6 @@ def _(mod: torch.nn.Module, verbose=False):
             Warning: {type(of_mod)} is in training mode 
             and is turned into eval mode which is good for infrence optimation.
             """
-
             )
 
     if verbose:

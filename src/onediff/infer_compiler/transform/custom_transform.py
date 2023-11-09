@@ -3,11 +3,17 @@ import warnings
 import inspect
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
-from ..import_tools import print_yellow, print_green, get_mock_cls_name, import_module_from_path
+from ..import_tools import (
+    print_yellow,
+    print_green,
+    get_mock_cls_name,
+    import_module_from_path,
+)
 from .manager import transform_mgr
 from .builtin_transform import torch2oflow
 
 __all__ = ["register"]
+
 
 def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
     try:

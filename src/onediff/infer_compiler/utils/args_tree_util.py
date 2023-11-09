@@ -2,6 +2,7 @@ import torch
 import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
 
+
 def input_output_processor(func):
     def process_input(*args, **kwargs):
         def input_fn(value):
@@ -33,4 +34,3 @@ def input_output_processor(func):
         return process_output(output)
 
     return wrapper
-

@@ -11,6 +11,7 @@ from .copier import PackageCopier
 
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 
+
 def gen_unique_id():
     timestamp = int(time.time() * 1000)
     process_id = os.getpid()
@@ -19,8 +20,10 @@ def gen_unique_id():
     unique_id = f"{timestamp}{process_id}"
     return unique_id
 
+
 PREFIX = "mock_"
 SUFFIX = "_oflow_" + gen_unique_id()
+
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     if isinstance(module_path, Path):
@@ -44,6 +47,7 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     module_spec.loader.exec_module(module)
     return module
 
+
 def import_submodules(package, recursive=True):
     """Import all submodules of a module, recursively, including subpackages"""
     if isinstance(package, str):
@@ -60,7 +64,6 @@ def import_submodules(package, recursive=True):
         except Exception as e:
             # logger.debug(f"Failed to import {full_name}: {e}")
             pass  # ignore
-
 
         if recursive and is_pkg:
             try:
@@ -113,4 +116,3 @@ def get_mock_cls_name(cls) -> str:
 
     pkg_name = _format_package_name(pkg_name)
     return f"{pkg_name}.{cls_}"
-

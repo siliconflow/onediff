@@ -8,7 +8,8 @@ from ..import_tools import (
 
 __all__ = ["transform_mgr"]
 
-class TransformManager():
+
+class TransformManager:
     def __init__(self):
         self._torch_to_oflow_cls_map = {}
         self._torch_to_oflow_packages_list = []
@@ -23,8 +24,7 @@ class TransformManager():
         print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names}")
         self._torch_to_oflow_cls_map.update(of_mds)
         self._torch_to_oflow_packages_list.extend(package_names)
-    
-    
+
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
         """Update `_torch_to_oflow_cls_map` with `class_proxy_dict`.
     
@@ -33,7 +33,7 @@ class TransformManager():
     
         """
         self._torch_to_oflow_cls_map.update(class_proxy_dict)
-    
+
         if verbose:
             print_green(
                 f"Loaded Mock Torch {len(class_proxy_dict)} "
@@ -50,5 +50,6 @@ class TransformManager():
             You need to register it. 
             """
         )
+
 
 transform_mgr = TransformManager()

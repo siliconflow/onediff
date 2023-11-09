@@ -1,6 +1,7 @@
 import oneflow as flow
 import time
 
+
 def cost_cnt(fn):
     def new_fn(*args, **kwargs):
         print("==> function ", fn.__name__, " try to run...")
@@ -25,4 +26,3 @@ def cost_cnt(fn):
         return out
 
     return new_fn
-

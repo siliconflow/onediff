@@ -22,7 +22,10 @@ import torch
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.utils import BaseOutput, logging
 from diffusers.utils.torch_utils import randn_tensor
-from diffusers.schedulers.scheduling_utils import KarrasDiffusionSchedulers, SchedulerMixin
+from diffusers.schedulers.scheduling_utils import (
+    KarrasDiffusionSchedulers,
+    SchedulerMixin,
+)
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -49,9 +52,7 @@ class EulerDiscreteSchedulerOutput(BaseOutput):
 
 # Copied from diffusers.schedulers.scheduling_ddpm.betas_for_alpha_bar
 def betas_for_alpha_bar(
-    num_diffusion_timesteps,
-    max_beta=0.999,
-    alpha_transform_type="cosine",
+    num_diffusion_timesteps, max_beta=0.999, alpha_transform_type="cosine",
 ):
     """
     Create a beta schedule that discretizes the given alpha_t_bar function, which defines the cumulative product of
@@ -152,17 +153,27 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         if trained_betas is not None:
             self.betas = torch.tensor(trained_betas, dtype=torch.float32)
         elif beta_schedule == "linear":
-            self.betas = torch.linspace(beta_start, beta_end, num_train_timesteps, dtype=torch.float32)
+            self.betas = torch.linspace(
+                beta_start, beta_end, num_train_timesteps, dtype=torch.float32
+            )
         elif beta_schedule == "scaled_linear":
             # this schedule is very specific to the latent diffusion model.
             self.betas = (
-                torch.linspace(beta_start**0.5, beta_end**0.5, num_train_timesteps, dtype=torch.float32) ** 2
+                torch.linspace(
+                    beta_start ** 0.5,
+                    beta_end ** 0.5,
+                    num_train_timesteps,
+                    dtype=torch.float32,
+                )
+                ** 2
             )
         elif beta_schedule == "squaredcos_cap_v2":
             # Glide cosine schedule
             self.betas = betas_for_alpha_bar(num_train_timesteps)
         else:
-            raise NotImplementedError(f"{beta_schedule} does is not implemented for {self.__class__}")
+            raise NotImplementedError(
+                f"{beta_schedule} does is not implemented for {self.__class__}"
+            )
 
         self.alphas = 1.0 - self.betas
         self.alphas_cumprod = torch.cumprod(self.alphas, dim=0)
@@ -175,7 +186,9 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
 
         # setable values
         self.num_inference_steps = None
-        timesteps = np.linspace(0, num_train_timesteps - 1, num_train_timesteps, dtype=float)[::-1].copy()
+        timesteps = np.linspace(
+            0, num_train_timesteps - 1, num_train_timesteps, dtype=float
+        )[::-1].copy()
         self.timesteps = torch.from_numpy(timesteps)
         self.is_scale_input_called = False
         self.use_karras_sigmas = use_karras_sigmas
@@ -206,12 +219,14 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         step_index = (self.timesteps == timestep).nonzero().item()
         sigma = self.sigmas[step_index]
 
-        sample = sample / ((sigma**2 + 1) ** 0.5)
+        sample = sample / ((sigma ** 2 + 1) ** 0.5)
 
         self.is_scale_input_called = True
         return sample
 
-    def set_timesteps(self, num_inference_steps: int, device: Union[str, torch.device] = None):
+    def set_timesteps(
+        self, num_inference_steps: int, device: Union[str, torch.device] = None
+    ):
         """
         Sets the timesteps used for the diffusion chain. Supporting function to be run before inference.
 
@@ -225,20 +240,30 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
 
         # "linspace", "leading", "trailing" corresponds to annotation of Table 2. of https://arxiv.org/abs/2305.08891
         if self.config.timestep_spacing == "linspace":
-            timesteps = np.linspace(0, self.config.num_train_timesteps - 1, num_inference_steps, dtype=float)[
-                ::-1
-            ].copy()
+            timesteps = np.linspace(
+                0, self.config.num_train_timesteps - 1, num_inference_steps, dtype=float
+            )[::-1].copy()
         elif self.config.timestep_spacing == "leading":
             step_ratio = self.config.num_train_timesteps // self.num_inference_steps
             # creates integer timesteps by multiplying by ratio
             # casting to int to avoid issues when num_inference_step is power of 3
-            timesteps = (np.arange(0, num_inference_steps) * step_ratio).round()[::-1].copy().astype(float)
+            timesteps = (
+                (np.arange(0, num_inference_steps) * step_ratio)
+                .round()[::-1]
+                .copy()
+                .astype(float)
+            )
             timesteps += self.config.steps_offset
         elif self.config.timestep_spacing == "trailing":
             step_ratio = self.config.num_train_timesteps / self.num_inference_steps
             # creates integer timesteps by multiplying by ratio
             # casting to int to avoid issues when num_inference_step is power of 3
-            timesteps = (np.arange(self.config.num_train_timesteps, 0, -step_ratio)).round().copy().astype(float)
+            timesteps = (
+                (np.arange(self.config.num_train_timesteps, 0, -step_ratio))
+                .round()
+                .copy()
+                .astype(float)
+            )
             timesteps -= 1
         else:
             raise ValueError(
@@ -251,7 +276,9 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         if self.config.interpolation_type == "linear":
             sigmas = np.interp(timesteps, np.arange(0, len(sigmas)), sigmas)
         elif self.config.interpolation_type == "log_linear":
-            sigmas = torch.linspace(np.log(sigmas[-1]), np.log(sigmas[0]), num_inference_steps + 1).exp()
+            sigmas = torch.linspace(
+                np.log(sigmas[-1]), np.log(sigmas[0]), num_inference_steps + 1
+            ).exp()
         else:
             raise ValueError(
                 f"{self.config.interpolation_type} is not implemented. Please specify interpolation_type to either"
@@ -259,8 +286,12 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             )
 
         if self.use_karras_sigmas:
-            sigmas = self._convert_to_karras(in_sigmas=sigmas, num_inference_steps=self.num_inference_steps)
-            timesteps = np.array([self._sigma_to_t(sigma, log_sigmas) for sigma in sigmas])
+            sigmas = self._convert_to_karras(
+                in_sigmas=sigmas, num_inference_steps=self.num_inference_steps
+            )
+            timesteps = np.array(
+                [self._sigma_to_t(sigma, log_sigmas) for sigma in sigmas]
+            )
 
         sigmas = np.concatenate([sigmas, [0.0]]).astype(np.float32)
         self.sigmas = torch.from_numpy(sigmas).to(device=device)
@@ -280,7 +311,11 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         dists = log_sigma - log_sigmas[:, np.newaxis]
 
         # get sigmas range
-        low_idx = np.cumsum((dists >= 0), axis=0).argmax(axis=0).clip(max=log_sigmas.shape[0] - 2)
+        low_idx = (
+            np.cumsum((dists >= 0), axis=0)
+            .argmax(axis=0)
+            .clip(max=log_sigmas.shape[0] - 2)
+        )
         high_idx = low_idx + 1
 
         low = log_sigmas[low_idx]
@@ -296,7 +331,9 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         return t
 
     # Copied from https://github.com/crowsonkb/k-diffusion/blob/686dbad0f39640ea25c8a8c6a6e56bb40eacefa2/k_diffusion/sampling.py#L17
-    def _convert_to_karras(self, in_sigmas: torch.FloatTensor, num_inference_steps) -> torch.FloatTensor:
+    def _convert_to_karras(
+        self, in_sigmas: torch.FloatTensor, num_inference_steps
+    ) -> torch.FloatTensor:
         """Constructs the noise schedule of Karras et al. (2022)."""
 
         sigma_min: float = in_sigmas[-1].item()
@@ -370,7 +407,10 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         sigma = self.sigmas[step_index]
 
         noise = randn_tensor(
-            model_output.shape, dtype=model_output.dtype, device=model_output.device, generator=generator
+            model_output.shape,
+            dtype=model_output.dtype,
+            device=model_output.device,
+            generator=generator,
         )
 
         if s_churn == 0.0:
@@ -378,24 +418,33 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             sigma_hat = sigma
             dt = self.dts[step_index]
         else:
-            gamma = min(s_churn / (len(self.sigmas) - 1), 2**0.5 - 1) if s_tmin <= sigma <= s_tmax else 0.0
+            gamma = (
+                min(s_churn / (len(self.sigmas) - 1), 2 ** 0.5 - 1)
+                if s_tmin <= sigma <= s_tmax
+                else 0.0
+            )
             eps = noise * s_noise
             sigma_hat = sigma * (gamma + 1)
 
             if gamma > 0:
-                sample = sample + eps * (sigma_hat**2 - sigma**2) ** 0.5
+                sample = sample + eps * (sigma_hat ** 2 - sigma ** 2) ** 0.5
             dt = self.sigmas[step_index + 1] - sigma_hat
 
         # 1. compute predicted original sample (x_0) from sigma-scaled predicted noise
         # NOTE: "original_sample" should not be an expected prediction_type but is left in for
         # backwards compatibility
-        if self.config.prediction_type == "original_sample" or self.config.prediction_type == "sample":
+        if (
+            self.config.prediction_type == "original_sample"
+            or self.config.prediction_type == "sample"
+        ):
             pred_original_sample = model_output
         elif self.config.prediction_type == "epsilon":
             pred_original_sample = sample - sigma_hat * model_output
         elif self.config.prediction_type == "v_prediction":
             # * c_out + input * c_skip
-            pred_original_sample = model_output * (-sigma / (sigma**2 + 1) ** 0.5) + (sample / (sigma**2 + 1))
+            pred_original_sample = model_output * (-sigma / (sigma ** 2 + 1) ** 0.5) + (
+                sample / (sigma ** 2 + 1)
+            )
         else:
             raise ValueError(
                 f"prediction_type given as {self.config.prediction_type} must be one of `epsilon`, or `v_prediction`"
@@ -409,7 +458,9 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         if not return_dict:
             return (prev_sample,)
 
-        return EulerDiscreteSchedulerOutput(prev_sample=prev_sample, pred_original_sample=pred_original_sample)
+        return EulerDiscreteSchedulerOutput(
+            prev_sample=prev_sample, pred_original_sample=pred_original_sample
+        )
 
     def add_noise(
         self,
@@ -418,10 +469,14 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         timesteps: torch.FloatTensor,
     ) -> torch.FloatTensor:
         # Make sure sigmas and timesteps have the same device and dtype as original_samples
-        sigmas = self.sigmas.to(device=original_samples.device, dtype=original_samples.dtype)
+        sigmas = self.sigmas.to(
+            device=original_samples.device, dtype=original_samples.dtype
+        )
         if original_samples.device.type == "mps" and torch.is_floating_point(timesteps):
             # mps does not support float64
-            schedule_timesteps = self.timesteps.to(original_samples.device, dtype=torch.float32)
+            schedule_timesteps = self.timesteps.to(
+                original_samples.device, dtype=torch.float32
+            )
             timesteps = timesteps.to(original_samples.device, dtype=torch.float32)
         else:
             schedule_timesteps = self.timesteps.to(original_samples.device)

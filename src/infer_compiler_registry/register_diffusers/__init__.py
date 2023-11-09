@@ -25,6 +25,7 @@ try:
 except:
     pass
 
+
 def register_args_tree_relaxed_types():
     transformers_mocked = False
     for pkg_name in transform_mgr._torch_to_oflow_packages_list:
@@ -40,5 +41,6 @@ def register_args_tree_relaxed_types():
         register_relaxed_type(proxy_class(CLIPTextModelOutput))
     else:
         pass
+
 
 register_args_tree_relaxed_types()

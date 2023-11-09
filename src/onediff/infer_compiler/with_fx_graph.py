@@ -34,16 +34,17 @@ def fx_node_tranform(gm):
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+
         class OfGraph(flow.nn.Graph):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
                 self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
-            
+
             def build(self, *args, **kwargs):
                 return self.fx_md(*args, **kwargs)
-        
+
         of_g = OfGraph()
         oneflow_fn = lambda *args, **kwargs: of_g(*args, **kwargs)
 
@@ -60,25 +61,40 @@ def to_of_transform(
     modules = dict(gm.named_modules())
     for node in gm.graph.nodes:
         if node.op == "placeholder":
-            of_node = of_g.create_node('placeholder', node.target)
+            of_node = of_g.create_node("placeholder", node.target)
             name2node[node.name] = of_node
         elif node.op == "output":
             of_node = of_g.output(node_replace_args(node.args, name2node)[0])
             name2node[node.name] = of_node
         elif node.op == "call_function":
-            of_node = of_g.create_node('call_function', replace_func(node.target), args=node_replace_args(node.args, name2node), kwargs=node_replace_args(node.kwargs, name2node))
+            of_node = of_g.create_node(
+                "call_function",
+                replace_func(node.target),
+                args=node_replace_args(node.args, name2node),
+                kwargs=node_replace_args(node.kwargs, name2node),
+            )
             name2node[node.name] = of_node
         elif node.op == "call_method":
-            of_node = of_g.create_node('call_method', node.target, args=node_replace_args(node.args, name2node), kwargs=node_replace_args(node.kwargs, name2node))
+            of_node = of_g.create_node(
+                "call_method",
+                node.target,
+                args=node_replace_args(node.args, name2node),
+                kwargs=node_replace_args(node.kwargs, name2node),
+            )
             name2node[node.name] = of_node
         elif node.op == "call_module":
             torch_md = modules[node.target]
             name2obj[node.target] = torch2oflow(torch_md)
 
-            of_node = of_g.create_node('call_module', node.target, args=node_replace_args(node.args, name2node), kwargs=node_replace_args(node.kwargs, name2node))
+            of_node = of_g.create_node(
+                "call_module",
+                node.target,
+                args=node_replace_args(node.args, name2node),
+                kwargs=node_replace_args(node.kwargs, name2node),
+            )
             name2node[node.name] = of_node
         elif node.op == "get_attr":
-            of_node = of_g.create_node('get_attr', node.target)
+            of_node = of_g.create_node("get_attr", node.target)
             name2node[node.name] = of_node
             name2obj[node.target] = get_attr(gm, node, torch2flow)
         else:
@@ -90,6 +106,7 @@ def to_of_transform(
     of_gm.recompile()
     return of_gm
 
+
 def replace_node(node, name2node):
     if isinstance(node, torch.fx.Node):
         return name2node[node.name]
@@ -99,6 +116,3 @@ def replace_node(node, name2node):
 
 def node_replace_args(args, name2node):
     return map_aggregate(args, lambda node: replace_node(node, name2node))
-
-
-
