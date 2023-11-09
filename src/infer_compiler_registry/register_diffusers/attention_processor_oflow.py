@@ -16,6 +16,7 @@ from typing import Callable, Optional, Union
 import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
+import os
 
 import diffusers
 from diffusers.utils import deprecate, logging
@@ -42,6 +43,18 @@ if is_xformers_available():
 else:
     xformers = None
 
+def parse_boolean_from_env(env_var, default_value):
+    env_var = os.getenv(env_var)
+    if env_var is None:
+        return default_value
+    env_var = env_var.lower()
+    return (
+        env_var == "1"
+        or env_var == "true"
+        or env_var == "yes"
+        or env_var == "on"
+        or env_var == "y"
+    )
 
 class Attention(nn.Module):
     r"""
@@ -386,10 +399,14 @@ class Attention(nn.Module):
         return tensor
 
     def get_attention_scores(self, query, key, attention_mask=None):
+        if self.upcast_attention and parse_boolean_from_env(
+            "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
+        ):
+            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
         dtype = query.dtype
-        if self.upcast_attention:
-            query = query.float()
-            key = key.float()
+        # if self.upcast_attention:
+        #     query = query.float()
+        #     key = key.float()
 
         if attention_mask is None:
             baddbmm_input = torch.empty(
