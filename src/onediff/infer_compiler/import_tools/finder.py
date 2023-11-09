@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 import inspect
 import pkgutil
 import importlib
@@ -8,12 +9,18 @@ from types import ModuleType
 from pathlib import Path
 from .copier import PackageCopier
 
-
-PREFIX = "mock_"
-SUFFIX = "_oneflow"
-
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 
+def gen_unique_id():
+    timestamp = int(time.time() * 1000)
+    process_id = os.getpid()
+    # TODO(): refine the unique id
+    # sequence = str(uuid.uuid4())
+    unique_id = f"{timestamp}{process_id}"
+    return unique_id
+
+PREFIX = "mock_"
+SUFFIX = "_oflow_" + gen_unique_id()
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     if isinstance(module_path, Path):

@@ -69,7 +69,6 @@ class PackageCopier:
             self.copy_package,
             self.add_init_files,
             self.rewrite_imports,
-            self.test_import,
         ]
 
     def __repr__(self):

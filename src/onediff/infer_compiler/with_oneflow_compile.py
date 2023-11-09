@@ -1,6 +1,6 @@
 from typing import Any
 from functools import wraps
-from .convert_torch_to_of.register import torch2onef
+from .convert_torch_to_of.register import torch2oflow
 import os
 import types
 import torch
@@ -20,8 +20,7 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
-        print("Compile torch module to oneflow module ...")
-        self._oneflow_module = torch2onef(self._torch_module)
+        self._oneflow_module = torch2oflow(self._torch_module)
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -35,8 +34,8 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             if self._oneflow_module is not None:
-                args = [torch2onef(v) for v in args]
-                kwargs = {k: torch2onef(v) for k, v in kwargs.items()}
+                args = [torch2oflow(v) for v in args]
+                kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
@@ -64,7 +63,7 @@ class DualModule(torch.nn.Module):
         else:  # TODO: aviod memory up when set attr
             if self._oneflow_module is not None:
                 obj = getattr(self._oneflow_module, name)
-                obj.copy_(torch2onef(value))
+                obj.copy_(torch2oflow(value))
             else:
                 setattr(self._torch_module, name, value)
 

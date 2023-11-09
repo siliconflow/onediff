@@ -5,11 +5,30 @@
 
 OneFlow backend support for diffusers
 
+## Performance
+
+Updated on Nov 6, 2023.
+
+|                | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
+| -------------- | --------------- | --------------- | ------------------------- |
+| 3090           | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
+| 4090           | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
+| A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
+| A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
+
+Run it by yourself using Docker:
+
+```bash
+docker pull oneflowinc/onediff:20231106
+```
+
+OneDiff Pro delivers even higher performance and second-to-none deployment flexibility.
+
 ## Business inquiry
 
-If you need ComfyUI or quant support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your use case and requirements!
+If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wiki/Run-ComfyUI-with-OneDiff) or **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your **use case, deployment scale and requirements**!!
 
-|                      | OneFlow Open Source | OneFlow Pro |
+|                      | OneDiff Open Source | OneDiff Pro |
 | -------------------- | ------------------- | ----------- |
 | diffusers API        | Yes                 | Yes         |
 | UNet/VAE Compilation | Yes                 | Yes         |
@@ -29,11 +48,24 @@ Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to
 ### Clone and install
 
 ```
-python3 -m pip install --pre oneflow -f https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu118
+python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu118
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
-python3 -m pip uninstall accelerate -y
 git clone https://github.com/Oneflow-Inc/diffusers.git onediff
 cd onediff && python3 -m pip install -e .
+```
+
+Other optional packages
+
+CUDA 12.1
+
+```bash
+python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu121
+```
+
+CUDA 12.2
+
+```bash
+python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu122
 ```
 
 ### Login huggingface-cli
