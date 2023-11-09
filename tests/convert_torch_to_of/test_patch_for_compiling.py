@@ -2,7 +2,7 @@
 Install:
     pip install pytest
 Uasge:
-    python -m pytest diffusers/tests/convert_torch_to_of/test_temp_fix_compile_impl.py
+    python -m pytest diffusers/tests/torch_to_oflow/test_temp_fix_compile_impl.py
 """
 import pytest
 import numpy as np

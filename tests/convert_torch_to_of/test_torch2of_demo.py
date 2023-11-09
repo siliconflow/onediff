@@ -2,12 +2,12 @@
 Install:
     pip install pytest
 Uasge:
-    python -m pytest diffusers/tests/convert_torch_to_of/test_torch2of_demo.py
+    python -m pytest diffusers/tests/torch_to_oflow/test_torch2of_demo.py
 """
 import torch
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.convert_torch_to_of import (
+from onediff.infer_compiler.torch_to_oflow import (
     update_class_proxies
 )
 from onediff.infer_compiler.import_tools import get_mock_cls_name

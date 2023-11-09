@@ -3,7 +3,7 @@ from onediff.infer_compiler.registry import register
 import oneflow as flow
 import diffusers_quant
 
-torch2of_class_map = {
+torch2oflow_class_map = {
     diffusers_quant.FakeQuantModule: diffusers_quant.OneFlowFakeQuantModule,
     diffusers_quant.StaticQuantConvModule: diffusers_quant.OneFlowStaticQuantConvModule,
     diffusers_quant.DynamicQuantConvModule: diffusers_quant.OneFlowDynamicQuantConvModule,
@@ -17,5 +17,5 @@ def convert_func(mod: flow.Tensor, verbose=False):
     return mod
 
 
-register(torch2of_class_map=torch2of_class_map, 
-         torch2of_funcs=[convert_func])
+register(torch2oflow_class_map=torch2oflow_class_map, 
+         torch2oflow_funcs=[convert_func])

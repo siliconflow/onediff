@@ -1,6 +1,6 @@
 from typing import Any
 from functools import wraps
-from .convert_torch_to_of.register import torch2oflow
+from .torch_to_oflow.register import torch2oflow
 import os
 import types
 import torch

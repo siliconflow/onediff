@@ -44,43 +44,43 @@ def proxy_class(cls: type):
 
 class ProxySubmodule:
     def __init__(self, submod):
-        self._1f_proxy_submod = submod
-        self._1f_proxy_parameters = dict()
-        self._1f_proxy_children = dict()
+        self._oflow_proxy_submod = submod
+        self._oflow_proxy_parameters = dict()
+        self._oflow_proxy_children = dict()
 
     def __getitem__(self, index):  # __getitem__
         from .register import torch2oflow
 
-        if isinstance(self._1f_proxy_submod, Iterable):
-            submod = self._1f_proxy_submod[index]
+        if isinstance(self._oflow_proxy_submod, Iterable):
+            submod = self._oflow_proxy_submod[index]
             return torch2oflow(submod)
 
-        raise RuntimeError(f"can't getitem for: {type(self._1f_proxy_submod)}")
+        raise RuntimeError(f"can't getitem for: {type(self._oflow_proxy_submod)}")
 
 
     def __repr__(self) -> str:
-        return " 1f_proxy: " + self._1f_proxy_submod.__repr__()
+        return " oflow_proxy: " + self._oflow_proxy_submod.__repr__()
 
     def __getattribute__(self, attribute):
-        if attribute.startswith("_1f_proxy"):
+        if attribute.startswith("_oflow_proxy"):
             return object.__getattribute__(self, attribute)
         elif attribute in ["forward", "_conv_forward"]:
-            replacement = proxy_class(type(self._1f_proxy_submod))
+            replacement = proxy_class(type(self._oflow_proxy_submod))
             return lambda *args, **kwargs: getattr(replacement, attribute)(
                 self, *args, **kwargs
             )
         elif (
             isinstance(
-                self._1f_proxy_submod, diffusers.models.attention_processor.Attention
+                self._oflow_proxy_submod, diffusers.models.attention_processor.Attention
             )
             and attribute == "get_attention_scores"
         ):
-            replacement = proxy_class(type(self._1f_proxy_submod))
+            replacement = proxy_class(type(self._oflow_proxy_submod))
             return lambda *args, **kwargs: getattr(replacement, attribute)(
                 self, *args, **kwargs
             )
         elif (
-            isinstance(self._1f_proxy_submod, torch.nn.Linear)
+            isinstance(self._oflow_proxy_submod, torch.nn.Linear)
             and attribute == "use_fused_matmul_bias"
         ):
             return (
@@ -88,12 +88,12 @@ class ProxySubmodule:
                 and os.getenv("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR") == "1"
             )
         elif (
-            isinstance(self._1f_proxy_submod, torch.nn.Dropout)
+            isinstance(self._oflow_proxy_submod, torch.nn.Dropout)
             and attribute == "generator"
         ):
             return flow.Generator()
         elif (
-            isinstance(self._1f_proxy_submod, torch.nn.Conv2d)
+            isinstance(self._oflow_proxy_submod, torch.nn.Conv2d)
             and attribute == "channel_pos"
         ):
             return "channels_first"
@@ -101,37 +101,37 @@ class ProxySubmodule:
             from .register import torch2oflow
 
 
-            a = getattr(self._1f_proxy_submod, attribute)
+            a = getattr(self._oflow_proxy_submod, attribute)
 
             if isinstance(a, (torch.nn.parameter.Parameter, torch.Tensor)):
                 # TODO(oneflow): assert a.requires_grad == False
-                if attribute not in self._1f_proxy_parameters:
+                if attribute not in self._oflow_proxy_parameters:
                     a = torch2oflow(a)
 
-                    self._1f_proxy_parameters[attribute] = a
+                    self._oflow_proxy_parameters[attribute] = a
                 else:
-                    a = self._1f_proxy_parameters[attribute]
+                    a = self._oflow_proxy_parameters[attribute]
             elif isinstance(
                 a, (torch.nn.Module, torch.nn.ModuleList, torch.nn.Sequential)
             ):
-                if attribute not in self._1f_proxy_children:
+                if attribute not in self._oflow_proxy_children:
                     a = torch2oflow(a)
 
-                    self._1f_proxy_children[attribute] = a
+                    self._oflow_proxy_children[attribute] = a
                 else:
-                    a = self._1f_proxy_children[attribute]
+                    a = self._oflow_proxy_children[attribute]
 
 
             return a
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        replacement = proxy_class(type(self._1f_proxy_submod))
+        replacement = proxy_class(type(self._oflow_proxy_submod))
 
         if replacement is not None:
             return replacement.__call__(self, *args, **kwargs)
         else:
             raise RuntimeError(
-                "can't find oneflow module for: " + str(type(self._1f_proxy_submod))
+                "can't find oneflow module for: " + str(type(self._oflow_proxy_submod))
             )
 
 
