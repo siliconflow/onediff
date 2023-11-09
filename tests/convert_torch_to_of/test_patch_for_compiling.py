@@ -6,7 +6,7 @@ Uasge:
 """
 import pytest
 import numpy as np
-from onediff.infer_compiler.patch_for_compiling import FakeCuda
+from onediff.infer_compiler.utils.patch_for_compiler import FakeCuda
 
 
 @pytest.mark.parametrize("batch_size", [8])
