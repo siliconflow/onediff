@@ -22,7 +22,7 @@ def set_default_registry():
         return  # already set
 
     # compiler_registry_path
-    registry_path = Path(__file__).parents[2] / "compiler_registry"
+    registry_path = Path(__file__).parents[2] / "infer_compiler_registry"
 
     try:
         import_module_from_path(registry_path / "register_diffusers")
@@ -31,7 +31,7 @@ def set_default_registry():
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
-    except:
+    except Exception as e:
         warnings.warn(f"Failed to register_diffusers_quant {e=}")
 
 
