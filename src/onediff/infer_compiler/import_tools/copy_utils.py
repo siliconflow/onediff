@@ -25,7 +25,7 @@ __all__ = [
 
 
 def get_proxy_func_name(name):
-    return f"{FUNC_PREFIX}{name}{FUNC_SUFFIX}"
+    return f"{FUNC_PREFIX}{name.capitalize()}{FUNC_SUFFIX}"
 
 
 def get_matched_files(
@@ -107,7 +107,7 @@ def generate_class_definition(node):
         value=ast.Str(s=f"Auto generated class for {class_name} by onediff")
     )
     class_def = ast.ClassDef(
-        name=f"{FUNC_PREFIX}{class_name}{FUNC_SUFFIX}",
+        name=f"{FUNC_PREFIX}{class_name.capitalize()}{FUNC_SUFFIX}",
         bases=[],
         keywords=[],
         body=[
