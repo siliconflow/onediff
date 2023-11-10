@@ -1,6 +1,7 @@
 import torch
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
-from .convert_torch_to_of import map_args, replace_func, ProxySubmodule
+from .transform import map_args, replace_func, ProxySubmodule
+
 
 class OneFlowInterpreter(torch.fx.Interpreter):
     from torch.fx.node import Argument, Target
@@ -20,4 +21,3 @@ class OneFlowInterpreter(torch.fx.Interpreter):
         submod = self.fetch_attr(target)
         submod = ProxySubmodule(submod)
         return submod(*args, **kwargs)
-

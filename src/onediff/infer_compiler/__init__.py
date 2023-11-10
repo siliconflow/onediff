@@ -2,8 +2,10 @@ import os
 import torch
 import oneflow as flow
 
-from .patch_for_compiling import *  # TODO:
-from .with_oneflow_compile import oneflow_compile, oneflow_compile_lazy
+from .utils.patch_for_compiler import *  # TODO:
+from .transform.custom_transform import register
+from .with_oneflow_compile import oneflow_compile
+
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
 

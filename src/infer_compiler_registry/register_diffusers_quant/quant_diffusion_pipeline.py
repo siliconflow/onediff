@@ -77,7 +77,6 @@ class QuantDiffusionPipeline:
             pretrained_model_name_or_path, pipe, fake_quant, static, bits, graph
         )
 
-        
         return quant_pipe
 
     def _to(self, device):
@@ -116,7 +115,7 @@ class QuantDiffusionPipeline:
         if __name == "to":
             return self._to
         if __name.startswith("_"):
-            return object.__getattribute__(self,  __name)
+            return object.__getattribute__(self, __name)
         return getattr(self._pipe, __name)
 
     def __setattr__(self, name: str, value: Any) -> None:
@@ -134,8 +133,7 @@ class QuantDiffusionPipeline:
         num_inference_steps: int = 50,
         **kwargs
     ):
-        
-        return self._pipe(prompt, prompt_2, height, width, num_inference_steps, **kwargs)
 
-
-
+        return self._pipe(
+            prompt, prompt_2, height, width, num_inference_steps, **kwargs
+        )

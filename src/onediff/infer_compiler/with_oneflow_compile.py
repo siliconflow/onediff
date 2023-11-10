@@ -1,17 +1,13 @@
-import types
-from .convert_torch_to_of.register import torch2of
 import os
+import types
 import torch
 import oneflow as flow
-from oneflow.framework.args_tree import ArgsTree
-
-from .utils import (
-    oneflow_exec_mode,
-    oneflow_exec_mode_enabled,
-    register_args_tree_relaxed_types,
-)
-
-register_args_tree_relaxed_types()
+from typing import Any
+from functools import wraps
+from .transform.custom_transform import set_default_registry
+from .transform.builtin_transform import torch2oflow
+from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
+from .utils.args_tree_util import input_output_processor
 
 
 class DualModule(torch.nn.Module):
@@ -20,14 +16,29 @@ class DualModule(torch.nn.Module):
         self._torch_module = torch_module
         self._oneflow_module = oneflow_module
 
+    @property
+    def oneflow_module(self):
+        if self._oneflow_module is not None:
+            return self._oneflow_module
+        self._oneflow_module = torch2oflow(self._torch_module)
+        return self._oneflow_module
+
+    @oneflow_module.deleter
+    def oneflow_module(self):
+        if self._oneflow_module:
+            del self._oneflow_module
+            setattr(self, "_oneflow_module", None)
+
     def to(self, *args, **kwargs):
         if oneflow_exec_mode_enabled():
             self._oneflow_module.to(*args, **kwargs)
         else:
-            self._torch_module.to(*args, **kwargs)
-            args = [torch2of(v) for v in args]
-            kwargs = {k: torch2of(v) for k, v in kwargs.items()}
-            self._oneflow_module.to(*args, **kwargs)
+            if self._oneflow_module is not None:
+                args = [torch2oflow(v) for v in args]
+                kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
+                self._oneflow_module.to(*args, **kwargs)
+            else:
+                self._torch_module.to(*args, **kwargs)
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -36,23 +47,42 @@ class DualModule(torch.nn.Module):
             return super().__getattribute__(name)
 
         torch_attr = getattr(self._torch_module, name)
-        oneflow_attr = getattr(self._oneflow_module, name)
-        if isinstance(torch_attr, torch.nn.ModuleList):
-            return DualModuleList(torch_attr, oneflow_attr)
-        elif isinstance(torch_attr, torch.nn.Module):
+        oneflow_attr = (
+            None
+            if self._oneflow_module is None
+            else getattr(self._oneflow_module, name)
+        )
+        if isinstance(torch_attr, torch.nn.Module):
             return DualModule(torch_attr, oneflow_attr)
         else:
             return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
 
+    def __setattr__(self, name: str, value: Any) -> None:
+        if name in ["_torch_module", "_oneflow_module"]:
+            super().__setattr__(name, value)
+        else:  # TODO: aviod memory up when set attr
+            if self._oneflow_module is not None:
+                obj = getattr(self._oneflow_module, name)
+                obj.copy_(torch2oflow(value))
+            else:
+                setattr(self._torch_module, name, value)
 
-class DualModuleList(torch.nn.ModuleList):
-    def __init__(self, torch_module, oneflow_module):
-        super().__init__()
-        self.torch_module = torch_module
-        self.oneflow_module = oneflow_module
 
-    def __getitem__(self, idx):
-        return DualModule(self.torch_module[idx], self.oneflow_module[idx])
+def handle_deployable_exception(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        except Exception as e:
+            print(
+                f"Exception in {func.__name__} of " f"{self.__class__.__name__}: {e=}"
+            )
+            print("Recompile oneflow module ...")
+            del self._deployable_module_model.oneflow_module
+            self._deployable_module_dpl_graph = None
+            return func(self, *args, **kwargs)
+
+    return wrapper
 
 
 class DeployableModule(torch.nn.Module):
@@ -63,29 +93,15 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
 
-    def process_input(self, *args, **kwargs):
-        def input_fn(value):
-            if isinstance(value, torch.Tensor):
-                return flow.utils.tensor.from_torch(value)
-            else:
-                return value
-
-        args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-        out = args_tree.map_leaf(input_fn)
-        mapped_args = out[0]
-        mapped_kwargs = out[1]
-        return mapped_args, mapped_kwargs
-
-    def process_output(self, output):
-        def output_fn(value):
-            if isinstance(value, flow.Tensor):
-                return flow.utils.tensor.to_torch(value)
-            else:
-                return value
-
-        out_tree = ArgsTree((output, None), False)
-        out = out_tree.map_leaf(output_fn)
-        return out[0]
+    @classmethod
+    def from_existing(cls, existing_module, use_graph=None, options=None):
+        torch_module = existing_module._deployable_module_model._torch_module
+        oneflow_module = existing_module._deployable_module_model._oneflow_module
+        instance = cls(torch_module, oneflow_module, use_graph, options)
+        instance._deployable_module_dpl_graph = (
+            existing_module._deployable_module_dpl_graph if use_graph else None
+        )
+        return instance
 
     def get_graph(self):
         if self._deployable_module_dpl_graph is not None:
@@ -95,42 +111,44 @@ class DeployableModule(torch.nn.Module):
         else:
             size = 9
         self._deployable_module_dpl_graph = get_oneflow_graph(
-            self._deployable_module_model._oneflow_module, size
+            self._deployable_module_model.oneflow_module, size
         )
         return self._deployable_module_dpl_graph
 
+    @input_output_processor
+    @handle_deployable_exception
     def apply_model(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
+                output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.apply_model(
-                    *mapped_args, **mapped_kwargs
+                output = self._deployable_module_model.oneflow_module.apply_model(
+                    *args, **kwargs
                 )
-        return self.process_output(output)
+        return output
+
+    @input_output_processor
+    @handle_deployable_exception
+    def __call__(self, *args, **kwargs):
+        if self._deployable_module_use_graph:
+            dpl_graph = self.get_graph()
+            with oneflow_exec_mode():
+                output = dpl_graph(*args, **kwargs)
+        else:
+            with oneflow_exec_mode():
+                output = self._deployable_module_model.oneflow_module(*args, **kwargs)
+        return output
 
     def to(self, *args, **kwargs):
         self._deployable_module_model.to(*args, **kwargs)
-
-    def __call__(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
-            dpl_graph = self.get_graph()
-            with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
-        else:
-            with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module(
-                    *mapped_args, **mapped_kwargs
-                )
-        return self.process_output(output)
+        return self
 
     # TODO(): Just for transformers VAE decoder
+    @input_output_processor
+    @handle_deployable_exception
     def decode(self, *args, **kwargs):
-        mapped_args, mapped_kwargs = self.process_input(*args, **kwargs)
         if self._deployable_module_use_graph:
 
             def _build(graph, *args, **kwargs):
@@ -139,13 +157,13 @@ class DeployableModule(torch.nn.Module):
             dpl_graph = self.get_graph()
             dpl_graph.build = types.MethodType(_build, dpl_graph)
             with oneflow_exec_mode():
-                output = dpl_graph(*mapped_args, **mapped_kwargs)
+                output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model._oneflow_module.decode(
-                    *mapped_args, **mapped_kwargs
+                output = self._deployable_module_model.oneflow_module.decode(
+                    *args, **kwargs
                 )
-        return self.process_output(output)
+        return output
 
     def __getattr__(self, name):
         if name in self._modules:
@@ -213,53 +231,29 @@ def get_oneflow_graph(model, size=9):
     return g
 
 
+def state_dict_hook(module, state_dict, prefix, local_metadata):
+    pytorch_key_prefix = "_deployable_module_model._torch_module."
+    new_state_dict = type(state_dict)()
+    for k, v in state_dict.items():
+        # key_filter
+        # _deployable_module_model._torch_module.out.2.weight => out.2.weight
+        if k.startswith(pytorch_key_prefix):
+            new_k = k[len(pytorch_key_prefix) :]
+            new_state_dict[new_k] = v
+        else:
+            new_state_dict[k] = v
+    return new_state_dict
+
+
 def oneflow_compile(torch_module, *, use_graph=True, options={}):
-    oneflow_module = torch2of(torch_module)
-    return DeployableModule(torch_module, oneflow_module, use_graph, options)
+    set_default_registry()
 
+    def wrap_module(module):
+        if isinstance(module, DeployableModule):
+            return DeployableModule.from_existing(module, use_graph, options)
+        else:
+            return DeployableModule(module, None, use_graph, options)
 
-# TODO() model_patcher https://github.com/siliconflow/comfyui-speedup/blob/ad8b2d4b31272543f97aef80cb92ae22d88066ae/nodes.py#L25
-def oneflow_compile_lazy(torch_module, *, use_graph=True, options={}):
-    """Lazy compilation of torch module to oneflow module.
-
-    Calling the `__call__` method of LazyOneFlowModule will trigger compilation.
-
-    Example:
-        >>> import torch
-        >>> from onediff.infer_compiler import oneflow_compile_lazy
-        >>> torch_module = torch.nn.Linear(3, 4)
-        >>> oneflow_module = oneflow_compile_lazy(torch_module, use_graph=True)
-        >>> torch_module.to("cuda")
-        >>> input = torch.randn(2, 3).to("cuda")
-        >>> oneflow_module(input)
-        
-        oneflow_compile_lazy __call__ ...
-
-        tensor([[-0.6069, -0.5079, -0.1984, -0.1253],
-                [ 0.0041, -0.0595,  0.1333, -0.4581]], device='cuda:0')
-    """
-
-    class LazyOneFlowModule:
-        def __init__(self, torch_module):
-            self._torch_module = torch_module
-            self._lazy_convert = True
-            self._oneflow_module = None
-
-        def __getattribute__(self, __name: str):
-            if __name in ("_torch_module", "_lazy_convert", "_oneflow_module"):
-                return super().__getattribute__(__name)
-            if self._lazy_convert:
-                return getattr(self._torch_module, __name)
-            else:
-                return getattr(self._oneflow_module, __name)
-
-        def __call__(self, *args, **kwargs):
-            if self._oneflow_module is None:
-                print("oneflow_compile_lazy __call__ ...")
-                self._oneflow_module = oneflow_compile(
-                    self._torch_module, use_graph=use_graph, options=options
-                )
-                self._lazy_convert = False
-            return self._oneflow_module(*args, **kwargs)
-
-    return LazyOneFlowModule(torch_module)
+    model = wrap_module(torch_module)
+    model._register_state_dict_hook(state_dict_hook)
+    return model
