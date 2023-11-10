@@ -21,6 +21,7 @@ import os
 import diffusers
 from diffusers.utils import deprecate, logging
 
+from onediff.infer_compiler.utils import parse_boolean_from_env, set_boolean_env_var
 
 def is_xformers_available():
     return False
@@ -42,19 +43,6 @@ if is_xformers_available():
     import xformers.ops
 else:
     xformers = None
-
-def parse_boolean_from_env(env_var, default_value):
-    env_var = os.getenv(env_var)
-    if env_var is None:
-        return default_value
-    env_var = env_var.lower()
-    return (
-        env_var == "1"
-        or env_var == "true"
-        or env_var == "yes"
-        or env_var == "on"
-        or env_var == "y"
-    )
 
 class Attention(nn.Module):
     r"""
@@ -402,7 +390,7 @@ class Attention(nn.Module):
         if self.upcast_attention and parse_boolean_from_env(
             "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
         ):
-            os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+            set_boolean_env_var("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False)
         dtype = query.dtype
         # if self.upcast_attention:
         #     query = query.float()
