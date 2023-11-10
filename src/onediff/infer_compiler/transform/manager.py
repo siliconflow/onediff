@@ -46,7 +46,7 @@ class TransformManager:
 
         raise RuntimeError(
             f"""
-            Replace can't find proxy oneflow module for: {str(cls)}. \n 
+            Replace can't find proxy oneflow module for: {full_cls_name}. \n 
             You need to register it. 
             """
         )
