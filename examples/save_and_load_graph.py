@@ -115,7 +115,7 @@ def get_arg_meta_of_sizes(
 @click.option("--load", is_flag=True)
 @click.option("--file", type=str, default="./unet_graphs")
 @click.option(
-    "--model_id", type=str, default="/share_nfs/hf_models/stable-diffusion-2-1/"
+    "--model_id", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
 )
 @click.option("--revision", type=str, default="fp16")
 def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision):
@@ -132,7 +132,16 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
     from diffusers.utils import floats_tensor
     import torch
 
-    added_cond_kwargs = None
+    if (
+        model_id == "stabilityai/stable-diffusion-xl-base-1.0"
+        or "xl-base-1.0" in model_id
+    ):
+        # sdxl needed
+        add_text_embeds = floats_tensor((2, 1280)).to("cuda").to(torch.float16)
+        add_time_ids = floats_tensor((2, 6)).to("cuda").to(torch.float16)
+        added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
+    else:
+        added_cond_kwargs = None
 
     warmup_meta_of_sizes = get_arg_meta_of_sizes(
         batch_sizes=BATCH_SIZES,
@@ -140,51 +149,23 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         num_channels=num_channels,
         cross_attention_dim=cross_attention_dim,
     )
-
     for i, m in enumerate(warmup_meta_of_sizes):
         print(f"warmup case #{i + 1}:", m)
 
+    import time
+    
     if load == True:
+        
         print("loading graphs...")
+        t0 = time.time()
         unet_graph.warmup_with_load(file)
+        t1 = time.time()
+        duration = t1 - t0
+        print(f"Finish in {duration:.3f} seconds")
     else:
         print("warmup with arguments...")
         warmup_with_arg(unet_graph, warmup_meta_of_sizes, added_cond_kwargs)
-
-    # generate inputs with torch
-    time_step = torch.tensor([10]).to("cuda")
-    encoder_hidden_states_of_sizes = {
-        batch_size: floats_tensor((batch_size, 77, cross_attention_dim))
-        .to("cuda")
-        .to(torch.float16)
-        for batch_size in BATCH_SIZES
-    }
-    noise_of_sizes = [
-        floats_tensor(arg_metas.noise).to("cuda").to(torch.float16)
-        for arg_metas in warmup_meta_of_sizes
-    ]
-    flow._oneflow_internal.eager.Sync()
-
-    import time
-
-    t0 = time.time()
-    for r in tqdm(range(repeat)):
-        import random
-
-        noise = random.choice(noise_of_sizes)
-        encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]
-        out = unet_graph(noise, time_step, encoder_hidden_states, added_cond_kwargs)
-        if r == repeat - 1 or r % sync_interval == 0:
-            flow._oneflow_internal.eager.Sync()
-    print(f"{type(out)=}")
-
-    t1 = time.time()
-    duration = t1 - t0
-    throughput = repeat / duration
-    print(
-        f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f}it/s"
-    )
-
+        
     if save:
         print("saving graphs...")
         unet_graph.save_graph(file)
