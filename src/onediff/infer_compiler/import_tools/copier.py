@@ -4,54 +4,10 @@ import sys
 import shutil
 import importlib
 import tempfile
-import fnmatch
 from pathlib import Path
 from typing import List, Tuple, Union
 from .printer import print_red, print_green
-
-
-def get_matched_files(
-    root: Union[str, Path], ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]
-):
-    ignore_rules = []
-    ignore_file = Path(root) / ignore_file
-    if ignore_file.exists():
-        with open(ignore_file, "r") as f:
-            for line in f:
-                line = line.strip()
-                if line and not line.startswith("#"):
-                    ignore_rules.append(line)
-
-    ignore_rules.extend(extra_ignore_rules)
-    matches = []
-    for dirpath, dirnames, filenames in os.walk(root):
-        for filename in filenames:
-            filepath = os.path.join(dirpath, filename)
-            filepath = os.path.relpath(filepath, root)
-            if len(ignore_rules) == 0:
-                matches.append(filepath)
-                continue
-            is_match = any(fnmatch.fnmatch(filepath, rule) for rule in ignore_rules)
-            if not is_match:
-                matches.append(filepath)
-
-    return matches
-
-
-def copy_files(src_dir, dst_dir, filelist):
-    src_dir = Path(src_dir)
-    dst_dir = Path(dst_dir)
-    for file in filelist:
-        src = src_dir / file
-        dst = dst_dir / file
-
-        if not dst.parent.exists():
-            dst.parent.mkdir(parents=True)
-
-        if src.exists():
-            shutil.copy2(src, dst)
-        else:
-            print(f"{src} does not exist!")
+from .copy_utils import copy_files, get_matched_files, convert_funcs_to_classes
 
 
 class PackageCopier:
@@ -67,8 +23,10 @@ class PackageCopier:
         assert self.old_pkg_path.exists(), f"{self.old_pkg_path} not exists"
         self.register_call = [
             self.copy_package,
+            self.rewrite_func2class,
             self.add_init_files,
             self.rewrite_imports,
+            self.test_import,
         ]
 
     def __repr__(self):
@@ -161,6 +119,10 @@ class PackageCopier:
                 )
             with open(pyfile, "w") as fp:
                 fp.write(content)
+
+    def rewrite_func2class(self):
+        for pyfile in self.new_pkg_path.glob("**/*.py"):
+            convert_funcs_to_classes(pyfile, pyfile)  # in-place
 
     def test_import(self):
         sys.path.insert(0, str(self.new_pkg_path.parent))

@@ -2,7 +2,7 @@
 import os
 import importlib
 import types
-from functools import singledispatch
+from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
 from typing import Union, Any
@@ -382,6 +382,28 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 def _(mod: torch.device, verbose=False) -> None:
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
+
+
+@torch2oflow.register
+def _(mod: dict, verbose=False) -> dict:
+    return {torch2oflow(k): torch2oflow(v, verbose) for k, v in mod.items()}
+
+
+@torch2oflow.register
+def _(func: types.FunctionType, verbose=False):
+    proxy_cls_name = get_mock_cls_name(func)
+    proxy_obj = transform_mgr.transform_cls(proxy_cls_name)
+    new_func = getattr(proxy_obj, func.__name__)
+    return new_func
+
+
+@torch2oflow.register
+def _(mod: partial, verbose=False):
+    # https://docs.python.org/3/library/functools.html?highlight=partial#functools.partial
+    func = torch2oflow(mod.func)
+    args = torch2oflow(mod.args)
+    keywords = torch2oflow(mod.keywords)
+    return partial(func, *args, **keywords)
 
 
 try:

@@ -40,13 +40,13 @@ class TransformManager:
                 f"classes: {class_proxy_dict.keys()}... "
             )
 
-    def transform_cls(self, full_cls_name):
+    def transform_cls(self, full_cls_name: str):
         if full_cls_name in self._torch_to_oflow_cls_map:
             return self._torch_to_oflow_cls_map[full_cls_name]
 
         raise RuntimeError(
             f"""
-            Replace can't find proxy oneflow module for: {str(cls)}. \n 
+            Replace can't find proxy oneflow module for: {str(full_cls_name)}. \n 
             You need to register it. 
             """
         )
