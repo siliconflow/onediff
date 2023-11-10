@@ -8,7 +8,8 @@ import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff import EulerDiscreteScheduler, rewrite_self_attention
+from onediff.schedulers import EulerDiscreteScheduler
+from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()

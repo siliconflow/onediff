@@ -1,6 +1,7 @@
 import argparse
 from onediff.infer_compiler import oneflow_compile
-from onediff import EulerDiscreteScheduler, rewrite_self_attention
+from onediff.schedulers import EulerDiscreteScheduler
+from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionPipeline
 import oneflow as flow
 import torch
@@ -49,8 +50,10 @@ with flow.autocast("cuda"):
 
     torch.manual_seed(args.seed)
 
+    torch.cuda.cudart().cudaProfilerStart()
     images = pipe(
         prompt, height=args.height, width=args.width, num_inference_steps=args.steps
     ).images
+    torch.cuda.cudart().cudaProfilerStop()
     for i, image in enumerate(images):
         image.save(f"{prompt}-of-{i}.png")
