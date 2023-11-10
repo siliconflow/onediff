@@ -56,7 +56,8 @@ class DualModule(torch.nn.Module):
             oneflow_attr = (
                 [None] * len(torch_attr) if oneflow_attr is None else oneflow_attr
             )
-            return [DualModule(t, o) for t, o in zip(torch_attr, oneflow_attr)]
+            return DualModuleList(torch_attr, oneflow_attr)
+
         elif isinstance(torch_attr, torch.nn.Module):
             return DualModule(torch_attr, oneflow_attr)
         else:
@@ -66,12 +67,21 @@ class DualModule(torch.nn.Module):
         if name in ["_torch_module", "_oneflow_module"]:
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
-
             if self._oneflow_module is not None:
                 obj = getattr(self._oneflow_module, name)
                 obj.copy_(torch2oflow(value))
             else:
                 setattr(self._torch_module, name, value)
+
+
+class DualModuleList(torch.nn.ModuleList):
+    def __init__(self, torch_module, oneflow_module):
+        super().__init__()
+        self.torch_module = torch_module
+        self.oneflow_module = oneflow_module
+
+    def __getitem__(self, idx):
+        return DualModule(self.torch_module[idx], self.oneflow_module[idx])
 
 
 def handle_deployable_exception(func):
