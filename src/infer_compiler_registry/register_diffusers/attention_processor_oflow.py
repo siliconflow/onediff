@@ -1613,7 +1613,8 @@ class LoRAAttnProcessor2_0(nn.Module):
             out_hidden_size, out_hidden_size, out_rank, network_alpha
         )
 
-    def __call__(
+    # TODO temporary replace the __call__ as forward
+    def forward(
         self,
         attn: Attention,
         hidden_states,
