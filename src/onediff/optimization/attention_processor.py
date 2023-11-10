@@ -4,19 +4,6 @@ import oneflow as flow
 import oneflow.nn as nn
 import oneflow.nn.functional as F
 
-def parse_boolean_from_env(env_var, default_value):
-    env_var = os.getenv(env_var)
-    if env_var is None:
-        return default_value
-    env_var = env_var.lower()
-    return (
-        env_var == "1"
-        or env_var == "true"
-        or env_var == "yes"
-        or env_var == "on"
-        or env_var == "y"
-    )
-
 class FusedSelfAttnProcessor:
     def __init__(self, attn):
         assert hasattr(attn, "to_qkv") and attn.to_qkv is not None
@@ -97,10 +84,11 @@ class FusedSelfAttnProcessor:
             hidden_states = flow.bmm(attention_probs, value)
             hidden_states = attn.batch_to_head_dim(hidden_states)
         else:
+            from ..infer_compiler.utils import parse_boolean_from_env, set_boolean_env_var
             if attn.upcast_attention and parse_boolean_from_env(
                 "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
             ): 
-                os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+                set_boolean_env_var("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False)
             hidden_states = flow._C.fused_multi_head_attention_inference_v2(
                 query=qkv,
                 query_head_size=head_dim,
