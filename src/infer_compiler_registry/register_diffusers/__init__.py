@@ -4,11 +4,11 @@ from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0 
 from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
-from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
+from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessor2_0Oflow
 torch2oflow_class_map = {
     Attention: AttentionOflow,
     AttnProcessor2_0: AttnProcessorOflow,
-    LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
+    LoRAAttnProcessor2_0: LoRAAttnProcessor2_0Oflow,
 }
 
 register(package_names=["diffusers"], torch2oflow_class_map=torch2oflow_class_map)
