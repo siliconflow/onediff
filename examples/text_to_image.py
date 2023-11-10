@@ -50,10 +50,8 @@ with flow.autocast("cuda"):
 
     torch.manual_seed(args.seed)
 
-    torch.cuda.cudart().cudaProfilerStart()
     images = pipe(
         prompt, height=args.height, width=args.width, num_inference_steps=args.steps
     ).images
-    torch.cuda.cudart().cudaProfilerStop()
     for i, image in enumerate(images):
         image.save(f"{prompt}-of-{i}.png")
