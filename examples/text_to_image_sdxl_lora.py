@@ -13,5 +13,11 @@ pipe.unet = oneflow_compile(pipe.unet)
 
 generator = torch.manual_seed(0)
 images_fusion = pipe(
-    "masterpiece, best quality, mountain", generator=generator, num_inference_steps=2
-).images
+    "masterpiece, best quality, mountain",
+    generator=generator,
+    height=1024,
+    width=1024,
+    num_inference_steps=30,
+).images[0]
+
+images_fusion.save("test_sdxl_lora.png")
