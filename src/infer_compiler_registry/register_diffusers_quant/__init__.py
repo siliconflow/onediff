@@ -9,7 +9,6 @@ torch2oflow_class_map = {
     diffusers_quant.DynamicQuantConvModule: diffusers_quant.OneFlowDynamicQuantConvModule,
     diffusers_quant.StaticQuantLinearModule: diffusers_quant.OneFlowStaticQuantLinearModule,
     diffusers_quant.DynamicQuantLinearModule: diffusers_quant.OneFlowDynamicLinearQuantModule,
-    # diffusers_quant.models.attention_processor.TrtAttnProcessor: diffusers_quant.models.attention_processor_oneflow.OneFlowTrtAttnProcessor,
 }
 
 

@@ -163,7 +163,7 @@ class DeployableModule(torch.nn.Module):
 
     # TODO(): Just for transformers VAE decoder
     @input_output_processor
-    # @handle_deployable_exception
+    @handle_deployable_exception
     def decode(self, *args, **kwargs):
         if self._deployable_module_use_graph:
 
