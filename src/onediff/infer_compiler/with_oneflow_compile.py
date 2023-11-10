@@ -52,7 +52,12 @@ class DualModule(torch.nn.Module):
             if self._oneflow_module is None
             else getattr(self._oneflow_module, name)
         )
-        if isinstance(torch_attr, torch.nn.Module):
+        if isinstance(torch_attr, torch.nn.ModuleList):
+            oneflow_attr = (
+                [None] * len(torch_attr) if oneflow_attr is None else oneflow_attr
+            )
+            return [DualModule(t, o) for t, o in zip(torch_attr, oneflow_attr)]
+        elif isinstance(torch_attr, torch.nn.Module):
             return DualModule(torch_attr, oneflow_attr)
         else:
             return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
@@ -61,6 +66,7 @@ class DualModule(torch.nn.Module):
         if name in ["_torch_module", "_oneflow_module"]:
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
+
             if self._oneflow_module is not None:
                 obj = getattr(self._oneflow_module, name)
                 obj.copy_(torch2oflow(value))
@@ -147,7 +153,7 @@ class DeployableModule(torch.nn.Module):
 
     # TODO(): Just for transformers VAE decoder
     @input_output_processor
-    @handle_deployable_exception
+    # @handle_deployable_exception
     def decode(self, *args, **kwargs):
         if self._deployable_module_use_graph:
 
