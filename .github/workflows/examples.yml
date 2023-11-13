@@ -29,7 +29,8 @@ jobs:
           password: "${{ secrets.ACR_PASSWORD }}"
       - name: Setup docker
         run: |
-          docker run --rm --gpus=all -d --rm --privileged --shm-size=8g \
+          docker rm -f ${CONTAINER_NAME} || true
+          docker run --rm --gpus=all -d --privileged --shm-size=8g \
             --pids-limit 2000 \
             --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
             -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local \
