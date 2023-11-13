@@ -77,6 +77,8 @@ class PackageCopier:
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         shutil.rmtree(self.new_pkg_path)
+        if exc_tb:
+            print(f"{exc_type=} {exc_val=} {exc_tb=}")
 
     def __repr__(self):
         return (
