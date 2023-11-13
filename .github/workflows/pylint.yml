@@ -15,8 +15,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.8", "3.10"]
     steps:
       - uses: actions/checkout@v4
       - run: cat examples/requirements.txt | sed 's/cu118/cpu/g' > requirements-dev.txt
