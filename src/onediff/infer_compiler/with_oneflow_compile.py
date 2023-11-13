@@ -103,11 +103,11 @@ class DualModuleList(torch.nn.ModuleList):
             setattr(self._torch_modules, key, value._torch_module)
             setattr(self._oneflow_modules, key, value._oneflow_module)
         else:
-            if (
-                not isinstance(value, torch.nn.Module)
-                and not isinstance(value, torch.nn.ModuleList)
-                and not isinstance(value, flow.nn.Module)
-                and not isinstance(value, flow.nn.ModuleList)
+            if not (
+                isinstance(value, torch.nn.Module)
+                or isinstance(value, torch.nn.ModuleList)
+                or isinstance(value, flow.nn.Module)
+                or isinstance(value, flow.nn.ModuleList)
             ):
                 setattr(self._torch_modules, key, value)
                 value = torch2oflow(value)
