@@ -32,8 +32,6 @@ jobs:
           docker run --rm --gpus=all -d --rm --privileged --shm-size=8g \
             --pids-limit 2000 \
             --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-            -v ${ONEFLOW_TEST_DATASET_DIR}:${ONEFLOW_TEST_DATASET_DIR}:ro \
-            -v ${ONEFLOW_WHEEL_PATH}:${ONEFLOW_WHEEL_PATH}:ro \
             -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local \
             -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache \
             -v $PWD:$PWD \
