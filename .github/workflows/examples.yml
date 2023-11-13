@@ -19,8 +19,6 @@ jobs:
     name: "Examples"
     runs-on: [self-hosted, gpu]
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
         with:
@@ -43,6 +41,9 @@ jobs:
             --name ${CONTAINER_NAME} \
             ${{ env.IMAGE }} \
             sleep 5400
+          docker exec ${CONTAINER_NAME} rm -rf *.png
+      - name: Checkout
+        uses: actions/checkout@v4
       - name: Run examples
         run: |
           docker exec ${CONTAINER_NAME} bash ci/run_all_examples.sh
