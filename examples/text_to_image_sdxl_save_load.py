@@ -27,7 +27,9 @@ parser.add_argument(
 parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
+parser.add_argument(
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
 parser.add_argument("--num_dynamic_input_size", type=int, default=9)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
