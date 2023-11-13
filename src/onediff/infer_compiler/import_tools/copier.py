@@ -71,6 +71,13 @@ class PackageCopier:
             self.rewrite_imports,
         ]
 
+    def __enter__(self):
+        self.__call__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        shutil.rmtree(self.new_pkg_path)
+
     def __repr__(self):
         return (
             f"PackageCopier({self.old_pkg_name} -> {self.new_pkg_name}"
