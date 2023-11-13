@@ -34,5 +34,5 @@ jobs:
       - name: Analysing the code with pylint
         run: |
           pylint $(git ls-files '*.py') \
-            --ignore_patterns=.*src/onediff/schedulers.* \
-            --ignore_patterns=.*src/infer_compiler_registry.*
+            --ignore=src/onediff/schedulers/ \
+            --ignore=src/src/infer_compiler_registry/
