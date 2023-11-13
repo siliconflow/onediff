@@ -15,8 +15,8 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-oneflow:
-    name: "Build sd ${{ matrix.image.suffix }}"
+  run-examples:
+    name: "Examples"
     runs-on: [self-hosted, gpu]
     steps:
       - name: Checkout
