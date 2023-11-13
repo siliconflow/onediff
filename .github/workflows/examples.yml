@@ -38,6 +38,7 @@ jobs:
             -v $PWD:$PWD \
             -v /share_nfs:/share_nfs:ro \
             -w $PWD \
+            -e HF_HUB_OFFLINE=1 \
             -e PYTHONPATH=$PWD \
             --name ${CONTAINER_NAME} \
             ${{ env.IMAGE }} \

@@ -1,5 +1,5 @@
 set -ex
-python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --refiner /share_nfs/hf_models/stable-diffusion-xl-refiner-1.0/ --compile --with_refiner
+python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile
 python3 benchmarks/stable_diffusion_2_unet.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
 bash examples/unet_save_and_load.sh --model_id=/share_
 nfs/hf_models/stable-diffusion-2-1
