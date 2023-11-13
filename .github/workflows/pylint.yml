@@ -19,6 +19,7 @@ jobs:
         python-version: ["3.8", "3.9", "3.10"]
     steps:
       - uses: actions/checkout@v4
+      - run: cat examples/requirements.txt | sed 's/cu118/cpu/g' > requirements-dev.txt
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
@@ -28,7 +29,6 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          cat examples/requirements.txt | sed 's/cu118/cpu/g' > requirements-dev.txt
           python -m pip install -r requirements-dev.txt
           pip install pylint
       - name: Analysing the code with pylint
