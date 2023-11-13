@@ -41,7 +41,7 @@ jobs:
             --name ${CONTAINER_NAME} \
             ${{ env.IMAGE }} \
             sleep 5400
-          docker exec ${CONTAINER_NAME} rm -f *.png
+          docker exec ${CONTAINER_NAME} rm -rf *
       - name: Checkout
         uses: actions/checkout@v4
       - name: Run examples
