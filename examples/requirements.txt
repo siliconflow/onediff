@@ -5,3 +5,4 @@ diffusers[torch]==0.19.3
 onediff
 chardet
 opencv-python==4.8.0.74
+click
