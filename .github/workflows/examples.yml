@@ -11,7 +11,7 @@ env:
   CONTAINER_NAME: onediff-test
 
 concurrency:
-  group: sd-${{ github.ref }}
+  group: sd-examples-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
