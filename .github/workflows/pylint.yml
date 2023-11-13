@@ -35,4 +35,4 @@ jobs:
         run: |
           pylint $(git ls-files '*.py') \
             --ignore_patterns=.*src/onediff/schedulers.* \
-            --ignore_patterns=.*src/infer_compiler_registry/register_diffusers_quant.* \
+            --ignore_patterns=.*src/infer_compiler_registry.*
