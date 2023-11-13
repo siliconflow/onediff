@@ -161,7 +161,6 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_model.to(*args, **kwargs)
         return self
 
-    # TODO(): Just for transformers VAE decoder
     @input_output_processor
     @handle_deployable_exception
     def decode(self, *args, **kwargs):
@@ -228,7 +227,10 @@ class OneflowGraph(flow.nn.Graph):
         # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
     def build(self, *args, **kwargs):
-        return self.model(*args, **kwargs)
+        if hasattr(self.model, "decode"):
+            return self.model.decode(*args, **kwargs)
+        else:
+            return self.model(*args, **kwargs)
 
     def warmup_with_load(self, file_path, device=None):
         state_dict = flow.load(file_path)
