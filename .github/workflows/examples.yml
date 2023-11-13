@@ -1,0 +1,48 @@
+name: Build OneFlow Stable Diffusion
+
+on:
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "**/*.md"
+      - "LICENSE*"
+env:
+  IMAGE: registry.cn-beijing.aliyuncs.com/oneflow/onediff:cu118
+  CONTAINER_NAME: onediff-test
+
+concurrency:
+  group: sd-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-oneflow:
+    name: "Build sd ${{ matrix.image.suffix }}"
+    runs-on: [self-hosted, gpu]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Login to ACR with the AccessKey pair
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: https://registry.${{env.REGION_ID}}.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Setup docker
+        run: |
+          docker run --rm --gpus=all -d --rm --privileged --shm-size=8g \
+            --pids-limit 2000 \
+            --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
+            -v ${ONEFLOW_TEST_DATASET_DIR}:${ONEFLOW_TEST_DATASET_DIR}:ro \
+            -v ${ONEFLOW_WHEEL_PATH}:${ONEFLOW_WHEEL_PATH}:ro \
+            -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local \
+            -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache \
+            -v $PWD:$PWD \
+            -v /share_nfs:/share_nfs:ro \
+            -w $PWD \
+            -e PYTHONPATH=$PWD \
+            --name ${CONTAINER_NAME} \
+            ${{ env.IMAGE }} \
+            sleep 5400
+      - name: Run examples
+        run: |
+        docker exec ${CONTAINER_NAME} bash examples/run_all.sh
