@@ -35,5 +35,5 @@ jobs:
       - name: Analysing the code with pylint
         run: |
           pylint $(git ls-files '*.py') \
-            --ignore=src/onediff/schedulers/ \
-            --ignore=src/src/infer_compiler_registry/
+            --ignore=src/onediff/schedulers/scheduling_euler_discrete.py \
+            --ignore=src/infer_compiler_registry/register_diffusers/attention_processor_oflow.py
