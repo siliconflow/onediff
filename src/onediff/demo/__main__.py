@@ -13,28 +13,25 @@ def parse_args():
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
     )
     parser.add_argument(
-        "--output_dir",
-        type=str,
-        default="oneflow-sd-output",
-    )
-    parser.add_argument(
-        "-n",
-        type=int,
-        default=1,
-    )
-    parser.add_argument(
         "--model_id",
         type=str,
         default="runwayml/stable-diffusion-v1-5",
     )
+    parser.add_argument("--height", type=int, default=512)
+    parser.add_argument("--width", type=int, default=512)
+    parser.add_argument("--steps", type=int, default=30)
+    parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument("--seed", type=int, default=1)
     args = parser.parse_args()
     return args
 
 
 args = parse_args()
 
+scheduler = EulerDiscreteScheduler.from_pretrained(args.model_id, subfolder="scheduler")
 pipe = StableDiffusionPipeline.from_pretrained(
     args.model_id,
+    scheduler=scheduler,
     use_auth_token=True,
     revision="fp16",
     variant="fp16",
@@ -46,10 +43,17 @@ pipe = pipe.to("cuda")
 rewrite_self_attention(pipe.unet)
 pipe.unet = oneflow_compile(pipe.unet)
 
-os.makedirs(args.output_dir, exist_ok=True)
-prompt = "a photo of an astronaut riding a horse on mars"
-for n in range(args.n):
-    images = pipe(args.prompt).images
+prompt = args.prompt
+with flow.autocast("cuda"):
+    for _ in range(args.warmup):
+        images = pipe(
+            prompt, height=args.height, width=args.width, num_inference_steps=args.steps
+        ).images
+
+    torch.manual_seed(args.seed)
+
+    images = pipe(
+        prompt, height=args.height, width=args.width, num_inference_steps=args.steps
+    ).images
     for i, image in enumerate(images):
-        dst = os.path.join(args.output_dir, f"{prompt[:100]}-{n}-{i}.png")
-        image.save(dst)
+        image.save(f"{prompt}-of-{i}.png")
