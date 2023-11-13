@@ -27,25 +27,25 @@ jobs:
           password: "${{ secrets.ACR_PASSWORD }}"
       - name: Setup docker
         run: |
-          docker rm -f ${CONTAINER_NAME} || true
+          docker rm -f ${{ env.CONTAINER_NAME }} || true
           docker run --rm --gpus=all -d --privileged --shm-size=8g \
             --pids-limit 2000 \
             --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-            -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local \
-            -v $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache \
+            -v $HOME/test-container-cache-${{ env.CONTAINER_NAME }}/dot-local:/root/.local \
+            -v $HOME/test-container-cache-${{ env.CONTAINER_NAME }}/dot-cache:/root/.cache \
             -v $PWD:$PWD \
             -v /share_nfs:/share_nfs:ro \
             -w $PWD \
             -e HF_HUB_OFFLINE=1 \
             -e PYTHONPATH=$PWD \
-            --name ${CONTAINER_NAME} \
+            --name ${{ env.CONTAINER_NAME }} \
             ${{ env.IMAGE }} \
             sleep 5400
-          docker exec ${CONTAINER_NAME} rm -rf *
+          docker exec ${{ env.CONTAINER_NAME }} rm -rf *
       - name: Checkout
         uses: actions/checkout@v4
-      - run: docker exec ${CONTAINER_NAME} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
-      - run: docker exec ${CONTAINER_NAME} python3 examples/image_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
-      - run: docker exec ${CONTAINER_NAME} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0
-      - run: docker exec ${CONTAINER_NAME} python3 benchmarks/stable_diffusion_2_unet.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
-      - run: docker exec ${CONTAINER_NAME} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-2-1
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/image_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 benchmarks/stable_diffusion_2_unet.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
+      - run: docker exec ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-2-1
