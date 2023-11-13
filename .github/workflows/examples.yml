@@ -1,4 +1,4 @@
-name: Build OneFlow Stable Diffusion
+name: Run examples
 
 on:
   pull_request:
