@@ -1,10 +1,10 @@
 import argparse
-import os
-
-os.environ["ONEFLOW_NNGRAPH_ENABLE_PROGRESS_BAR"] = "1"
-import torch
 from onediff.infer_compiler import oneflow_compile
+from onediff.schedulers import EulerDiscreteScheduler
+from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionPipeline
+import oneflow as flow
+import torch
 
 
 def parse_args():
@@ -41,10 +41,10 @@ pipe = StableDiffusionPipeline.from_pretrained(
     torch_dtype=torch.float16,
     safety_checker=None,
 )
-
 pipe = pipe.to("cuda")
-pipe.unet = oneflow_compile(pipe.unet)
 
+rewrite_self_attention(pipe.unet)
+pipe.unet = oneflow_compile(pipe.unet)
 
 os.makedirs(args.output_dir, exist_ok=True)
 prompt = "a photo of an astronaut riding a horse on mars"
