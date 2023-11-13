@@ -1,6 +1,4 @@
 from onediff.infer_compiler import oneflow_compile
-
-# from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 from onediff.infer_compiler.transform import register
 import torch
 import torch.nn as nn
