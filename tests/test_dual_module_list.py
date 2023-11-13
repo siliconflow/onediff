@@ -1,3 +1,4 @@
+import numpy as np
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.transform import register
 import torch
@@ -36,8 +37,7 @@ y_torch = m(x)
 m = oneflow_compile(m)
 y_oneflow = m(x)
 
-# TODO(): y_torch should be equal to y_oneflow
-# assert y_torch.equal(y_oneflow)
+assert np.allclose(y_torch.detach().cpu(), y_oneflow.detach().cpu(), 1e-03, 1e-03)
 
 from onediff.infer_compiler.with_oneflow_compile import DualModule, DualModuleList
 
@@ -54,7 +54,7 @@ assert m.linears._torch_modules[2].bias is None
 assert m.linears._oneflow_modules[2].bias is None
 
 m.linears[3] = x
-assert m.linears[3].bias is None
 
+assert m.linears[3].bias is None
 assert m.linears._torch_modules[3].bias is None
 assert m.linears._oneflow_modules[3].bias is None
