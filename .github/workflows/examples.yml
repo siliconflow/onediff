@@ -45,4 +45,4 @@ jobs:
             sleep 5400
       - name: Run examples
         run: |
-        docker exec ${CONTAINER_NAME} bash examples/run_all.sh
+          docker exec ${CONTAINER_NAME} bash examples/run_all.sh
