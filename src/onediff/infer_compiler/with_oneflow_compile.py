@@ -68,20 +68,44 @@ class DualModule(torch.nn.Module):
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
             if self._oneflow_module is not None:
-                obj = getattr(self._oneflow_module, name)
-                obj.copy_(torch2oflow(value))
-            else:
-                setattr(self._torch_module, name, value)
+                value = torch2oflow(value)
+                if isinstance(value, flow.Tensor):
+                    obj = getattr(self._oneflow_module, name)
+                    obj.copy_(value)
+                else:
+                    setattr(self._oneflow_module, name, value)
+            setattr(self._torch_module, name, value)
 
 
 class DualModuleList(torch.nn.ModuleList):
-    def __init__(self, torch_module, oneflow_module):
+    def __init__(self, torch_modules, oneflow_modules):
         super().__init__()
-        self.torch_module = torch_module
-        self.oneflow_module = oneflow_module
+        assert len(torch_modules) == len(oneflow_modules)
+        self._torch_modules = torch_modules
+        self._oneflow_modules = oneflow_modules
+        dual_modules = []
+        for torch_module, oneflow_module in zip(
+            self._torch_modules, self._oneflow_modules
+        ):
+            dual_modules.append(DualModule(torch_module, oneflow_module))
+        # clear self._modules since `self._torch_modules = torch_modules` will append a module to self._modules
+        self._modules.clear()
+        self += dual_modules
 
-    def __getitem__(self, idx):
-        return DualModule(self.torch_module[idx], self.oneflow_module[idx])
+    def __setitem__(self, idx: int, module: DualModule):
+        idx = self._get_abs_string_index(idx)
+        setattr(self._torch_modules, str(idx), module._torch_module)
+        setattr(self._oneflow_modules, str(idx), module._oneflow_module)
+        return setattr(self, str(idx), module)
+
+    def __setattr__(self, key, value):
+        if isinstance(value, DualModule):
+            setattr(self._torch_modules, key, value._torch_module)
+            setattr(self._oneflow_modules, key, value._oneflow_module)
+        else:
+            setattr(self._torch_modules, key, value)
+            setattr(self._oneflow_modules, key, value)
+        object.__setattr__(self, key, value)
 
 
 def handle_deployable_exception(func):
