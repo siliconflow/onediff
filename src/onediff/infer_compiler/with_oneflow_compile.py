@@ -99,20 +99,16 @@ class DualModuleList(torch.nn.ModuleList):
         return setattr(self, str(idx), module)
 
     def __setattr__(self, key, value):
+        if key == "_torch_modules" or key == "_oneflow_modules":
+            return object.__setattr__(self, key, value)
         if isinstance(value, DualModule):
             setattr(self._torch_modules, key, value._torch_module)
             setattr(self._oneflow_modules, key, value._oneflow_module)
         else:
-            if not (
-                isinstance(value, torch.nn.Module)
-                or isinstance(value, torch.nn.ModuleList)
-                or isinstance(value, flow.nn.Module)
-                or isinstance(value, flow.nn.ModuleList)
-            ):
-                setattr(self._torch_modules, key, value)
-                value = torch2oflow(value)
-                setattr(self._oneflow_modules, key, value)
-        object.__setattr__(self, key, value)
+            setattr(self._torch_modules, key, value)
+            value = torch2oflow(value)
+            setattr(self._oneflow_modules, key, value)
+        return object.__setattr__(self, key, value)
 
 
 def handle_deployable_exception(func):
