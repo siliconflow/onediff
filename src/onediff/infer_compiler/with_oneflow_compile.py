@@ -104,6 +104,7 @@ class DualModuleList(torch.nn.ModuleList):
             setattr(self._oneflow_modules, key, value._oneflow_module)
         else:
             setattr(self._torch_modules, key, value)
+            value = torch2oflow(value)
             setattr(self._oneflow_modules, key, value)
         object.__setattr__(self, key, value)
 
