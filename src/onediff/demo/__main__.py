@@ -13,13 +13,19 @@ def parse_args():
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
     )
     parser.add_argument(
-        "--output_dir", type=str, default="oneflow-sd-output",
+        "--output_dir",
+        type=str,
+        default="oneflow-sd-output",
     )
     parser.add_argument(
-        "-n", type=int, default=1,
+        "-n",
+        type=int,
+        default=1,
     )
     parser.add_argument(
-        "--model_id", type=str, default="runwayml/stable-diffusion-v1-5",
+        "--model_id",
+        type=str,
+        default="runwayml/stable-diffusion-v1-5",
     )
     args = parser.parse_args()
     return args
@@ -28,7 +34,11 @@ def parse_args():
 args = parse_args()
 
 pipe = StableDiffusionPipeline.from_pretrained(
-    args.model_id, use_auth_token=True, revision="fp16", torch_dtype=torch.float16,
+    args.model_id,
+    use_auth_token=True,
+    revision="fp16",
+    variant="fp16",
+    torch_dtype=torch.float16,
 )
 
 pipe = pipe.to("cuda")
