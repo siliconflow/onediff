@@ -1,6 +1,23 @@
 import argparse
+from packaging import version
+import importlib.metadata
 
 from diffusers import DiffusionPipeline
+
+
+def check_diffusers_version():
+    required_version = version.parse("0.22.0")
+    package_name = "diffusers"
+
+    try:
+        installed_version = version.parse(importlib.metadata.version(package_name))
+        if installed_version < required_version:
+            raise ValueError(
+                f"Installed {package_name} version ({installed_version}) is lower than required ({required_version})"
+            )
+
+    except importlib.metadata.PackageNotFoundError:
+        print(f"{package_name} is not installed")
 
 
 def parse_args():
@@ -32,6 +49,8 @@ def parse_args():
     args = parser.parse_args()
     return args
 
+
+check_diffusers_version()
 
 args = parse_args()
 
