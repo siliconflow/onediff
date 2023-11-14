@@ -156,6 +156,8 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module, size
         )
+        if "debug" in self._deployable_module_options:
+            self._deployable_module_dpl_graph.debug(self._deployable_module_options["debug"])
         return self._deployable_module_dpl_graph
 
     @input_output_processor
