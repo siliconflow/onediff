@@ -1,13 +1,16 @@
+""" text to image for example model_id = 1.5,2"""
+import torch
 import argparse
+import oneflow as flow
+
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionPipeline
-import oneflow as flow
-import torch
 
 
 def parse_args():
+    """ add parameters"""
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
     parser.add_argument(
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
@@ -22,8 +25,8 @@ def parse_args():
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
-    args = parser.parse_args()
-    return args
+    cmd_args = parser.parse_args()
+    return cmd_args
 
 
 args = parse_args()

@@ -1,7 +1,9 @@
-from onediff.infer_compiler import register
+""" _init_ """
 
 import oneflow as flow
 import diffusers_quant
+from onediff.infer_compiler import register
+
 
 torch2oflow_class_map = {
     diffusers_quant.FakeQuantModule: diffusers_quant.OneFlowFakeQuantModule,
@@ -13,6 +15,7 @@ torch2oflow_class_map = {
 
 
 def convert_func(mod: flow.Tensor, verbose=False):
+    """  convert_func """
     return mod
 
 

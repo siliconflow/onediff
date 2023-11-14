@@ -1,8 +1,8 @@
+""" text to image sdxl fp16 """
 import os
+import torch
 import argparse
 from diffusers import StableDiffusionXLPipeline
-import torch
-
 from onediff.infer_compiler import torchbackend
 
 

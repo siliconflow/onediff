@@ -1,3 +1,4 @@
+""" init """
 import os
 import torch
 import oneflow as flow
@@ -10,7 +11,8 @@ from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
 
 
-def oneflow_backend(gm, example_inputs):
+def oneflow_backend(gm):
+    """ oneflow_backend """
     with_interp = os.getenv(
         "ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False"
     ).lower() in (

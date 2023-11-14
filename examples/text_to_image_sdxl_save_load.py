@@ -1,10 +1,8 @@
+""" text to image sdxl save load  """
 # Compile and save to oneflow graph example: python examples/text_to_image_sdxl.py --compile --save
 # Compile and load to oneflow graph example: python examples/text_to_image_sdxl.py --compile --load
 
-import os
 import argparse
-
-import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
@@ -38,8 +36,8 @@ cmd_args = parser.parse_args()
 
 
 # Normal SDXL pipeline init.
-seed = torch.Generator("cuda").manual_seed(cmd_args.seed)
-output_type = "pil"
+SEED = torch.Generator("cuda").manual_seed(cmd_args.seed)
+OUTPUT_TYPE = "pil"
 # SDXL base: StableDiffusionXLPipeline
 base = DiffusionPipeline.from_pretrained(
     cmd_args.base,
@@ -70,7 +68,7 @@ if cmd_args.compile:
         refiner.unet = oneflow_compile(
             refiner.unet, options={"size": cmd_args.num_dynamic_input_size}
         )
-        output_type = "latent"
+        OUTPUT_TYPE = "latent"
 
 # Load compiled unet with oneflow
 if cmd_args.compile and cmd_args.load:
@@ -89,14 +87,14 @@ for h in sizes:
                 prompt=cmd_args.prompt,
                 height=h,
                 width=w,
-                generator=seed,
+                generator=SEED,
                 num_inference_steps=cmd_args.n_steps,
-                output_type=output_type,
+                output_type=OUTPUT_TYPE,
             ).images
             if cmd_args.with_refiner:
                 image = refiner(
                     prompt=cmd_args.prompt,
-                    generator=seed,
+                    generator=SEED,
                     num_inference_steps=cmd_args.n_steps,
                     image=image,
                 ).images

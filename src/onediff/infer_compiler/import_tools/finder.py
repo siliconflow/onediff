@@ -1,3 +1,4 @@
+""" finder """
 import os
 import sys
 import time
@@ -13,6 +14,7 @@ __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_pa
 
 
 def gen_unique_id():
+    """ gen_unique_id """
     timestamp = int(time.time() * 1000)
     process_id = os.getpid()
     # TODO(): refine the unique id
@@ -26,6 +28,7 @@ SUFFIX = "_oflow_" + gen_unique_id()
 
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
+    """ import_module_from_path """
     if isinstance(module_path, Path):
         module_path = str(module_path)
     module_name = os.path.basename(module_path)
@@ -107,6 +110,7 @@ def _format_package_name(package_name):
 
 
 def get_mock_cls_name(cls) -> str:
+    """ get_mock_cls_name """
     if isinstance(cls, type):
         cls = f"{cls.__module__}.{cls.__name__}"
 

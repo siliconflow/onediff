@@ -16,7 +16,7 @@ def get_matched_files(
     ignore_rules = []
     ignore_file = Path(root) / ignore_file
     if ignore_file.exists():
-        with open(ignore_file, "r") as f:
+        with open(ignore_file, "r",encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):
@@ -39,6 +39,7 @@ def get_matched_files(
 
 
 def copy_files(src_dir, dst_dir, filelist):
+    """ copy files """
     src_dir = Path(src_dir)
     dst_dir = Path(dst_dir)
     for file in filelist:
@@ -55,6 +56,7 @@ def copy_files(src_dir, dst_dir, filelist):
 
 
 class PackageCopier:
+    """ PackageCopier """
     def __init__(
         self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir=False
     ):
@@ -103,6 +105,7 @@ class PackageCopier:
                 raise RuntimeError(f"{pkg} not found") from e
 
     def copy_package(self):
+        """ copy_package """
         src = Path(self.old_pkg_path)
         dest = Path(self.new_pkg_path)
         if src == dest:
@@ -116,6 +119,7 @@ class PackageCopier:
         copy_files(src, dest, file_list)
 
     def add_init_files(self):
+        """ add_init_files """
         directory = self.new_pkg_path
         if not directory.is_dir():
             raise ValueError(f"{directory} is not a directory")
@@ -141,7 +145,7 @@ class PackageCopier:
             if path.exists():
                 return
             else:
-                with open(path, "w") as fp:
+                with open(path, "w",encoding="utf-8") as fp:
                     result = find_directories_with_init(path.parent)
                     if result:
                         fp.write("# This file is created by PackageCopier\n")
@@ -157,8 +161,9 @@ class PackageCopier:
                 apply_fn(path / "__init__.py")
 
     def rewrite_imports(self):
+        """ rewrite_imports """
         for pyfile in self.new_pkg_path.glob("**/*.py"):
-            with open(pyfile, "r") as fp:
+            with open(pyfile, "r",encoding="utf-8") as fp:
                 content = fp.read()
                 content = content.replace(
                     f"{self.old_pkg_name}.", f"{self.new_pkg_name}."
@@ -169,15 +174,17 @@ class PackageCopier:
                 content = content.replace(
                     f"import {self.old_pkg_name}", f"import {self.new_pkg_name}"
                 )
-            with open(pyfile, "w") as fp:
+            with open(pyfile, "w",encoding="utf-8") as fp:
                 fp.write(content)
 
     def test_import(self):
+        """ test_import """
         sys.path.insert(0, str(self.new_pkg_path.parent))
         importlib.import_module(self.new_pkg_name)
         print_green(f"Test import {self.new_pkg_name} succeed!")
 
     def get_import_module(self):
+        """ get_import_module """
         return importlib.import_module(self.new_pkg_name)
 
     def __call__(self, verbose=False):

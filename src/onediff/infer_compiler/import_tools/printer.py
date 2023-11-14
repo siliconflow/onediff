@@ -1,9 +1,8 @@
-import sys
+""" printer """
 import warnings
-from pathlib import Path
-
 
 class Printer:
+    """  Printer """
     def __init__(self, color):
         self.color = color
 
@@ -12,17 +11,20 @@ class Printer:
 
 
 def print_red(*args, **kwargs):
+    """ print_red """
     output = Printer(31)(*args, **kwargs)
     warnings.warn(output)
 
 
 def print_green(*args, **kwargs):
+    """ print_green """
     output = Printer(32)(*args, **kwargs)
     # warnings.warn(output)
     print(output)
 
 
 def print_yellow(*args, **kwargs):
+    """ print_yellow """
     output = Printer(33)(*args, **kwargs)
     print(output)
 

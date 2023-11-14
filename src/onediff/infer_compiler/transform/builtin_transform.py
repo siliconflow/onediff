@@ -30,6 +30,7 @@ __all__ = [
 
 
 def proxy_class(cls: type):
+    """ proxy_class """
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
@@ -41,10 +42,11 @@ def proxy_class(cls: type):
 
 
 class ProxySubmodule:
+    """ ProxySubmodule """
     def __init__(self, submod):
         self._oflow_proxy_submod = submod
-        self._oflow_proxy_parameters = dict()
-        self._oflow_proxy_children = dict()
+        self._oflow_proxy_parameters = {}
+        self._oflow_proxy_children = {}
 
     def __getitem__(self, index):  # __getitem__
         if isinstance(self._oflow_proxy_submod, Iterable):

@@ -1,13 +1,15 @@
+
 """
 test run graph
 """
+
 import os
+import time
 import click
 from tqdm import tqdm
 import torch
-import time
-from onediff.infer_compiler import oneflow_compile
 import oneflow as flow
+from onediff.infer_compiler import oneflow_compile
 from diffusers import UNet2DConditionModel
 from diffusers.utils import floats_tensor
 
@@ -27,10 +29,6 @@ os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
 
 os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-
-"""
-test run graph
-"""
 
 
 @click.command()

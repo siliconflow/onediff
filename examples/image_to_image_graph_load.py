@@ -1,7 +1,7 @@
+""" image to image graph load ,a old example"""
 import time
 import os
 import gc
-import shutil
 import unittest
 import tempfile
 from PIL import Image
@@ -15,10 +15,10 @@ from onediff import (
 )
 
 from diffusers import EulerDiscreteScheduler
-from diffusers import utils
 
-_model_id = "stabilityai/stable-diffusion-2"
-_with_image_save = True
+
+_MODEL_ID = "/share_nfs/hf_models/stable-diffusion-2"
+_WITH_IMAGE_SAVE = True
 
 
 def _cost_cnt(fn):
@@ -83,10 +83,10 @@ def _test_sd_graph_save_and_load(
             )
         else:
             scheduler = EulerDiscreteScheduler.from_pretrained(
-                _model_id, subfolder="scheduler"
+                _MODEL_ID, subfolder="scheduler"
             )
             sd_pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-                _model_id,
+                _MODEL_ID,
                 scheduler=scheduler,
                 revision="fp16",
                 torch_dtype=torch.float16,
@@ -147,7 +147,7 @@ def _test_sd_graph_save_and_load(
             output_type="np",
         ).images
 
-        if _with_image_save:
+        if _WITH_IMAGE_SAVE:
             for i, image in enumerate(images):
                 pipe.numpy_to_pil(image)[0].save(
                     f"{prefix}{prompt}_{i}-with_graph_{str(with_graph)}.png"
@@ -190,6 +190,7 @@ def _test_sd_graph_save_and_load(
 
 
 class OneFlowPipeLineGraphSaveLoadTests(unittest.TestCase):
+    """ OneFlowPipeLineGraphSaveLoadTests """
     def tearDown(self):
         # clean up the VRAM after each test
         super().tearDown()
@@ -197,6 +198,7 @@ class OneFlowPipeLineGraphSaveLoadTests(unittest.TestCase):
         torch.cuda.empty_cache()
 
     def test_sd_graph_save_and_load(self):
+        """ test_sd_graph_save_and_load """
         with tempfile.TemporaryDirectory() as f0:
             with tempfile.TemporaryDirectory() as f1:
                 with tempfile.TemporaryDirectory() as f2:

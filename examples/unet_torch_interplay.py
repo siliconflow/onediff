@@ -1,27 +1,32 @@
-import os
+""" unet torch interplay"""
 import random
-import click
+import time
 import oneflow as flow
 import torch
 from tqdm import tqdm
 from dataclasses import dataclass, fields
+import click
 from onediff.infer_compiler import oneflow_compile
+from diffusers import UNet2DConditionModel
+from diffusers.utils import floats_tensor
 
 
 @dataclass
-class TensorInput(object):
+class TensorInput():
+    """ tensor input """
     noise: torch.float16
     time: torch.int64
     cross_attention_dim: torch.float16
 
     @classmethod
     def gettype(cls, key):
+        """get type"""
         field_types = {field.name: field.type for field in fields(TensorInput)}
         return field_types[key]
 
 
 def get_unet(token, _model_id, variant):
-    from diffusers import UNet2DConditionModel
+    """ get unet """
 
     unet = UNet2DConditionModel.from_pretrained(
         _model_id,
@@ -36,6 +41,7 @@ def get_unet(token, _model_id, variant):
 
 
 def warmup_with_arg(graph, arg_meta_of_sizes, added):
+    """ warmup_with_arg """
     for arg_metas in arg_meta_of_sizes:
         print(f"warmup {arg_metas=}")
         arg_tensors = [
@@ -52,10 +58,12 @@ def warmup_with_arg(graph, arg_meta_of_sizes, added):
 
 
 def img_dim(i, start, stride):
+    """img dim """
     return start + stride * i
 
 
 def noise_shape(batch_size, num_channels, image_w, image_h):
+    """noise shape"""
     sizes = (image_w // 8, image_h // 8)
     return (batch_size, num_channels) + sizes
 
@@ -68,6 +76,7 @@ def get_arg_meta_of_sizes(
     start=768,
     stride=128,
 ):
+    """ get_arg_meta_of_sizes """
     return [
         TensorInput(
             noise_shape(
@@ -97,18 +106,17 @@ def get_arg_meta_of_sizes(
 )
 @click.option("--variant", type=str, default="fp16")
 def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant):
-    RESOLUTION_SCALES = [2, 1, 0]
-    BATCH_SIZES = [2]
+    """ unet torch interplay """
+    resolution_scales = [2, 1, 0]
+    batch_sizes = [2]
     # TODO: reproduce bug caused by changing batch
-    # BATCH_SIZES = [4, 2]
+    # batch_size = [4, 2]
 
     unet = get_unet(token, model_id, variant)
     unet_graph = oneflow_compile(unet)
 
     num_channels = 4
     cross_attention_dim = unet.config["cross_attention_dim"]
-    from diffusers.utils import floats_tensor
-    import torch
 
     if (
         model_id == "stabilityai/stable-diffusion-xl-base-1.0"
@@ -122,15 +130,15 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
         added_cond_kwargs = None
 
     warmup_meta_of_sizes = get_arg_meta_of_sizes(
-        batch_sizes=BATCH_SIZES,
-        resolution_scales=RESOLUTION_SCALES,
+        batch_sizes=batch_size,
+        resolution_scales=resolution_scale,
         num_channels=num_channels,
         cross_attention_dim=cross_attention_dim,
     )
     for i, m in enumerate(warmup_meta_of_sizes):
         print(f"warmup case #{i + 1}:", m)
 
-    if load == True:
+    if load:
         print("loading graphs...")
         unet_graph.warmup_with_load(file)
     else:
@@ -143,18 +151,16 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
         batch_size: floats_tensor((batch_size, 77, cross_attention_dim))
         .to("cuda")
         .to(torch.float16)
-        for batch_size in BATCH_SIZES
+        for batch_size in batch_size
     }
     noise_of_sizes = [
         floats_tensor(arg_metas.noise).to("cuda").to(torch.float16)
         for arg_metas in warmup_meta_of_sizes
     ]
     flow._oneflow_internal.eager.Sync()
-    import time
 
     t0 = time.time()
     for r in tqdm(range(repeat)):
-        import random
 
         noise = random.choice(noise_of_sizes)
         encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]

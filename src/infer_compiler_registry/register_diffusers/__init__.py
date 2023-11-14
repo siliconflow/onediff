@@ -1,10 +1,17 @@
+""" _init_"""
 from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.transform.builtin_transform import proxy_class
 
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
+
 from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
 from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
+
+from transformers.modeling_outputs import BaseModelOutputWithPooling
+from transformers.models.clip.modeling_clip import CLIPTextModelOutput
 
 torch2oflow_class_map = {
     Attention: AttentionOflow,
@@ -15,8 +22,6 @@ torch2oflow_class_map = {
 register(package_names=["diffusers"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-from onediff.infer_compiler.transform import transform_mgr
-from onediff.infer_compiler.transform.builtin_transform import proxy_class
 
 
 _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = False
@@ -24,11 +29,12 @@ try:
     from oneflow.framework.args_tree import register_relaxed_type
 
     _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = True
-except:
+except ImportError:
     pass
 
 
 def register_args_tree_relaxed_types():
+    """ register_args_tree_relaxed_types """
     transformers_mocked = False
     for pkg_name in transform_mgr._torch_to_oflow_packages_list:
         if "transformers" in pkg_name:
@@ -36,8 +42,6 @@ def register_args_tree_relaxed_types():
             break
 
     if _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API and transformers_mocked:
-        from transformers.modeling_outputs import BaseModelOutputWithPooling
-        from transformers.models.clip.modeling_clip import CLIPTextModelOutput
 
         register_relaxed_type(proxy_class(BaseModelOutputWithPooling))
         register_relaxed_type(proxy_class(CLIPTextModelOutput))

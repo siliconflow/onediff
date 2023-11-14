@@ -1,22 +1,23 @@
-from PIL import Image
+""" image to image """
 
-
+import torch
 import argparse
+import oneflow as flow
+from PIL import Image
 from onediff.infer_compiler import oneflow_compile
 from diffusers import StableDiffusionImg2ImgPipeline
-import oneflow as flow
-import torch
 
 
 def parse_args():
+    """ add parameter """
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
     parser.add_argument(
         "--model_id",
         type=str,
         default="stabilityai/stable-diffusion-2-1",
     )
-    args = parser.parse_args()
-    return args
+    cmd_args = parser.parse_args()
+    return cmd_args
 
 
 args = parse_args()
@@ -32,17 +33,17 @@ pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
 pipe = pipe.to("cuda")
 pipe.unet = oneflow_compile(pipe.unet)
 
-prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
+PROMPT = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
 img = Image.new("RGB", (512, 512), "#1f80f0")
 
 with flow.autocast("cuda"):
     images = pipe(
-        prompt,
+        PROMPT,
         image=img,
         guidance_scale=10,
         num_inference_steps=100,
         output_type="np",
     ).images
     for i, image in enumerate(images):
-        pipe.numpy_to_pil(image)[0].save(f"{prompt}-of-{i}.png")
+        pipe.numpy_to_pil(image)[0].save(f"{PROMPT}-of-{i}.png")

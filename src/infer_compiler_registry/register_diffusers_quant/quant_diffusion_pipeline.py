@@ -1,13 +1,14 @@
+"""  quant_diffusion_pipeline """
 import os
 from typing import Any, List, Optional, Union
 import torch
-from diffusers import StableDiffusionXLPipeline
 import diffusers_quant
 from diffusers_quant.utils import (
     rewrite_sdxl_pipeline_attention,
     replace_sub_module_with_quantizable_module,
 )
 from torch._dynamo import allow_in_graph as maybe_allow_in_graph
+from diffusers import StableDiffusionXLPipeline
 
 
 def _use_graph():
@@ -37,6 +38,7 @@ def _use_graph():
 
 
 class QuantDiffusionPipeline:
+    """ QuantDiffusionPipeline """
     def __init__(
         self,
         pretrained_model_name_or_path,
