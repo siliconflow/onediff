@@ -14,6 +14,7 @@ def parse_args():
         "--model_id",
         type=str,
         default="SimianLuo/LCM_Dreamshaper_v7",
+        help="Model id or local path to the LCM model.",
     )
     parser.add_argument("--height", type=int, default=768)
     parser.add_argument("--width", type=int, default=768)
@@ -26,7 +27,7 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument(
-        "--disable", action="store_true", help="Disable Onediff speeding up"
+        "--disable", action="store_true", help="Disable Onediff speeding up."
     )
     args = parser.parse_args()
     return args
