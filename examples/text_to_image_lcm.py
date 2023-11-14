@@ -18,7 +18,12 @@ def parse_args():
     parser.add_argument("--height", type=int, default=768)
     parser.add_argument("--width", type=int, default=768)
     parser.add_argument("--steps", type=int, default=4)
-    parser.add_argument("--warmup", type=int, default=1)
+    parser.add_argument(
+        "--warmup",
+        type=int,
+        default=1,
+        help="Warmup option sets the number of preliminary runs of the pipeline. These initial runs are necessary to ensure accurate performance data during testing.",
+    )
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument(
         "--disable", action="store_true", help="Disable Onediff speeding up"
@@ -53,4 +58,6 @@ images = pipe(
     args.prompt, height=args.height, width=args.width, num_inference_steps=args.steps
 ).images
 for i, image in enumerate(images):
-    image.save(f"LCM-{args.width}x{args.height}-seed-{args.seed}-disable-{args.disable}.png")
+    image.save(
+        f"LCM-{args.width}x{args.height}-seed-{args.seed}-disable-{args.disable}.png"
+    )
