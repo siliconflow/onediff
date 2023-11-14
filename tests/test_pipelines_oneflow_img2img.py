@@ -23,10 +23,10 @@ import oneflow as torch
 from onediff import OneFlowStableDiffusionImg2ImgPipeline
 
 from diffusers import (
-    AutoencoderKL, 
-    LMSDiscreteScheduler, 
-    PNDMScheduler, 
-    UNet2DConditionModel
+    AutoencoderKL,
+    LMSDiscreteScheduler,
+    PNDMScheduler,
+    UNet2DConditionModel,
 )
 
 from diffusers.utils import floats_tensor, load_image, torch_device
@@ -128,7 +128,9 @@ class PipelineFastTests(unittest.TestCase):
         scheduler = PNDMScheduler(skip_prk_steps=True, steps_offset=1)
         vae = self.dummy_vae.to(torch_device)
         bert = self.dummy_text_encoder.to(torch_device)
-        tokenizer = CLIPTokenizer.from_pretrained("hf-internal-testing/tiny-random-clip")
+        tokenizer = CLIPTokenizer.from_pretrained(
+            "hf-internal-testing/tiny-random-clip"
+        )
 
         init_image = self.dummy_image.to(torch_device)
 
@@ -155,7 +157,7 @@ class PipelineFastTests(unittest.TestCase):
             guidance_scale=7.5,
             output_type="np",
             image=init_image,
-            compile_unet=False
+            compile_unet=False,
         )
         image = output.images
 
@@ -168,7 +170,7 @@ class PipelineFastTests(unittest.TestCase):
             output_type="np",
             image=init_image,
             return_dict=False,
-            compile_unet=False
+            compile_unet=False,
         )[0]
 
         image_slice = image[0, -3:, -3:, -1]
@@ -177,18 +179,24 @@ class PipelineFastTests(unittest.TestCase):
         assert image.shape == (1, 32, 32, 3)
 
         # Do not modify any seed number to past this test
-        expected_slice = np.array([0.4287, 0.5450, 0.5239, 0.5432, 0.6519, 0.5665, 0.6027, 0.5805, 0.5145])  
+        expected_slice = np.array(
+            [0.4287, 0.5450, 0.5239, 0.5432, 0.6519, 0.5665, 0.6027, 0.5805, 0.5145]
+        )
 
         assert np.abs(image_slice.flatten() - expected_slice).max() < 1e-2
         assert np.abs(image_from_tuple_slice.flatten() - expected_slice).max() < 1e-2
 
     def test_stable_diffusion_img2img_k_lms(self):
         unet = self.dummy_cond_unet
-        scheduler = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear")
+        scheduler = LMSDiscreteScheduler(
+            beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear"
+        )
 
         vae = self.dummy_vae
         bert = self.dummy_text_encoder
-        tokenizer = CLIPTokenizer.from_pretrained("hf-internal-testing/tiny-random-clip")
+        tokenizer = CLIPTokenizer.from_pretrained(
+            "hf-internal-testing/tiny-random-clip"
+        )
         init_image = self.dummy_image.to(torch_device)
 
         # make sure here that pndm scheduler skips prk
@@ -208,36 +216,38 @@ class PipelineFastTests(unittest.TestCase):
         generator = torch.Generator(device=torch_device).manual_seed(0)
         output = sd_pipe(
             [prompt],
-            image = init_image,
+            image=init_image,
             generator=generator,
             strength=0.75,
             guidance_scale=7.5,
             output_type="np",
-            compile_unet=False
+            compile_unet=False,
         )
         image = output.images
 
         generator = torch.Generator(device=torch_device).manual_seed(0)
         output = sd_pipe(
             [prompt],
-            image = init_image,
+            image=init_image,
             generator=generator,
             strength=0.75,
             guidance_scale=7.5,
             output_type="np",
             return_dict=False,
-            compile_unet=False
+            compile_unet=False,
         )
         image_from_tuple = output[0]
 
         image_slice = image[0, -3:, -3:, -1]
         image_from_tuple_slice = image_from_tuple[0, -3:, -3:, -1]
-        
+
         assert image.shape == (1, 32, 32, 3)
-        
+
         # Do not modify any seed number to past this test
-        expected_slice = np.array([0.4213, 0.5489, 0.5102, 0.5320, 0.6574, 0.5861, 0.6171, 0.5866, 0.5160])
-        
+        expected_slice = np.array(
+            [0.4213, 0.5489, 0.5102, 0.5320, 0.6574, 0.5861, 0.6171, 0.5866, 0.5160]
+        )
+
         assert np.abs(image_slice.flatten() - expected_slice).max() < 1e-2
         assert np.abs(image_from_tuple_slice.flatten() - expected_slice).max() < 1e-2
 
@@ -273,7 +283,7 @@ class PipelineFastTests(unittest.TestCase):
             guidance_scale=7.5,
             generator=generator,
             output_type="np",
-            compile_unet=False
+            compile_unet=False,
         )
         image = output.images[0]
 
@@ -293,7 +303,9 @@ class PipelineFastTests(unittest.TestCase):
         init_image = init_image.resize((768, 512))
         expected_image = np.array(expected_image, dtype=np.float32) / 255.0
 
-        lms = LMSDiscreteScheduler(beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear")
+        lms = LMSDiscreteScheduler(
+            beta_start=0.00085, beta_end=0.012, beta_schedule="scaled_linear"
+        )
 
         model_id = "CompVis/stable-diffusion-v1-4"
         pipe = OneFlowStableDiffusionImg2ImgPipeline.from_pretrained(
@@ -316,13 +328,14 @@ class PipelineFastTests(unittest.TestCase):
             guidance_scale=7.5,
             generator=generator,
             output_type="np",
-            compile_unet=False
+            compile_unet=False,
         )
         image = output.images[0]
 
         assert image.shape == (512, 768, 3)
         # img2img is flaky across GPUs even in fp32, so using MAE here
         assert np.abs(expected_image - image).mean() < 1e-2
+
 
 if __name__ == "__main__":
     unittest.main()

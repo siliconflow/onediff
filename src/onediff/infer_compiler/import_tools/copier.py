@@ -116,7 +116,6 @@ class PackageCopier:
         copy_files(src, dest, file_list)
 
     def add_init_files(self):
-
         directory = self.new_pkg_path
         if not directory.is_dir():
             raise ValueError(f"{directory} is not a directory")

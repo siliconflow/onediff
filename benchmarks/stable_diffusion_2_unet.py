@@ -1,6 +1,15 @@
+"""
+test run graph
+"""
 import os
-import cv2
+import click
+from tqdm import tqdm
+import torch
+import time
 from onediff.infer_compiler import oneflow_compile
+import oneflow as flow
+from diffusers import UNet2DConditionModel
+from diffusers.utils import floats_tensor
 
 os.environ["ONEFLOW_MLIR_CSE"] = "1"
 os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
@@ -19,12 +28,9 @@ os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
 os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 
-import click
-import oneflow as flow
-from diffusers import UNet2DConditionModel
-from diffusers.utils import floats_tensor
-from tqdm import tqdm
-import torch
+"""
+test run graph
+"""
 
 
 @click.command()
@@ -35,6 +41,7 @@ import torch
 @click.option("--sync_interval", default=50)
 @click.option("--model_id", default="stabilityai/stable-diffusion-2")
 def benchmark(token, height, width, repeat, sync_interval, model_id):
+    """Function test use graph speed."""
     with torch.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
             model_id,
@@ -60,11 +67,10 @@ def benchmark(token, height, width, repeat, sync_interval, model_id):
         )
         unet_graph(noise, time_step, encoder_hidden_states)
         flow._oneflow_internal.eager.Sync()
-        import time
 
         t0 = time.time()
         for r in tqdm(range(repeat)):
-            out = unet_graph(noise, time_step, encoder_hidden_states)
+            unet_graph(noise, time_step, encoder_hidden_states)
             if r == repeat - 1 or r % sync_interval == 0:
                 flow._oneflow_internal.eager.Sync()
         t1 = time.time()

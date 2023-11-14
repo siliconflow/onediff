@@ -133,7 +133,6 @@ class QuantDiffusionPipeline:
         num_inference_steps: int = 50,
         **kwargs
     ):
-
         return self._pipe(
             prompt, prompt_2, height, width, num_inference_steps, **kwargs
         )

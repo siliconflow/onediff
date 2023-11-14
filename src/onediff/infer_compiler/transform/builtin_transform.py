@@ -47,7 +47,6 @@ class ProxySubmodule:
         self._oflow_proxy_children = dict()
 
     def __getitem__(self, index):  # __getitem__
-
         if isinstance(self._oflow_proxy_submod, Iterable):
             submod = self._oflow_proxy_submod[index]
             return torch2oflow(submod)
@@ -226,13 +225,13 @@ def _(mod: torch.nn.Module, verbose=False):
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
-        for (n, p) in list(proxy_md.named_parameters("", False)):
+        for n, p in list(proxy_md.named_parameters("", False)):
             self._parameters[n] = flow.nn.Parameter(
                 flow.utils.tensor.from_torch(p.data), requires_grad=p.requires_grad
             )
-        for (n, b) in list(proxy_md.named_buffers("", False)):
+        for n, b in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
-        for (n, m) in proxy_md._modules.items():
+        for n, m in proxy_md._modules.items():
             self._modules[n] = torch2oflow(m)
 
         for k, _ in proxy_md.__dict__.items():
@@ -292,7 +291,6 @@ def _(mod: torch.nn.ModuleList, verbose=False):
 
 @torch2oflow.register
 def _(mod: torch.nn.Sequential, verbose=False):
-
     of_mod_list = []
     for original_submod in mod:
         submod = torch2oflow(original_submod, verbose)
@@ -392,7 +390,6 @@ try:
     @torch2oflow.register
     def _(mod: FusedSelfAttnProcessor, verbose=False) -> FusedSelfAttnProcessor:
         return mod
-
 
 except:
     pass

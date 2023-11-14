@@ -13,7 +13,9 @@ def parse_args():
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
     )
     parser.add_argument(
-        "--model_id", type=str, default="runwayml/stable-diffusion-v1-5",
+        "--model_id",
+        type=str,
+        default="runwayml/stable-diffusion-v1-5",
     )
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)

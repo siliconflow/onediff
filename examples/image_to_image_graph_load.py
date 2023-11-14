@@ -10,7 +10,9 @@ import numpy as np
 import oneflow as flow
 import oneflow as torch
 
-from onediff import OneFlowStableDiffusionImg2ImgPipeline as StableDiffusionImg2ImgPipeline
+from onediff import (
+    OneFlowStableDiffusionImg2ImgPipeline as StableDiffusionImg2ImgPipeline,
+)
 
 from diffusers import EulerDiscreteScheduler
 from diffusers import utils
@@ -52,7 +54,9 @@ def _reset_session():
     flow.framework.session_context.NewDefaultSession(flow._oneflow_global_unique_env)
 
 
-def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_file_path):
+def _test_sd_graph_save_and_load(
+    is_save, graph_save_path, sch_file_path, pipe_file_path
+):
     if is_save:
         print("\n==> Try to run graph save...")
         _online_mode = False
@@ -68,14 +72,24 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     @_cost_cnt
     def get_pipe():
         if _pipe_from_file:
-            scheduler = EulerDiscreteScheduler.from_pretrained(sch_file_path, subfolder="scheduler")
+            scheduler = EulerDiscreteScheduler.from_pretrained(
+                sch_file_path, subfolder="scheduler"
+            )
             sd_pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-                pipe_file_path, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
+                pipe_file_path,
+                scheduler=scheduler,
+                revision="fp16",
+                torch_dtype=torch.float16,
             )
         else:
-            scheduler = EulerDiscreteScheduler.from_pretrained(_model_id, subfolder="scheduler")
+            scheduler = EulerDiscreteScheduler.from_pretrained(
+                _model_id, subfolder="scheduler"
+            )
             sd_pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-                _model_id, scheduler=scheduler, revision="fp16", torch_dtype=torch.float16
+                _model_id,
+                scheduler=scheduler,
+                revision="fp16",
+                torch_dtype=torch.float16,
             )
 
         return scheduler, sd_pipe
@@ -99,22 +113,25 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
     if not _online_mode:
         pipe.enable_save_graph()
     else:
+
         @_cost_cnt
         def load_graph():
-            assert (os.path.exists(graph_save_path) and os.path.isdir(graph_save_path))
+            assert os.path.exists(graph_save_path) and os.path.isdir(graph_save_path)
             pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=True)
 
         load_graph()
     end_t = time.time()
-    print("sd init time ", end_t - start_t, 's.')
+    print("sd init time ", end_t - start_t, "s.")
 
     @_cost_cnt
-    def image_to_image(prompt, img, num_images_per_prompt=1, prefix="", with_graph=False):
+    def image_to_image(
+        prompt, img, num_images_per_prompt=1, prefix="", with_graph=False
+    ):
         cur_generator = torch.Generator("cuda").manual_seed(1024)
         strength = 0.8
         num_inference_steps = 100
         guidance_scale = 10
-        eta = 0.
+        eta = 0.0
 
         images = pipe(
             prompt,
@@ -133,22 +150,29 @@ def _test_sd_graph_save_and_load(is_save, graph_save_path, sch_file_path, pipe_f
         if _with_image_save:
             for i, image in enumerate(images):
                 pipe.numpy_to_pil(image)[0].save(
-                    f"{prefix}{prompt}_{i}-with_graph_{str(with_graph)}.png")
+                    f"{prefix}{prompt}_{i}-with_graph_{str(with_graph)}.png"
+                )
 
         return images
 
     prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
     img = Image.new("RGB", (512, 512), "#1f80f0")
 
-    no_g_images = image_to_image(prompt, img, prefix=f"is_save_{str(is_save)}-", with_graph=False)
-    with_g_images = image_to_image(prompt, img, prefix=f"is_save_{str(is_save)}-", with_graph=True)
+    no_g_images = image_to_image(
+        prompt, img, prefix=f"is_save_{str(is_save)}-", with_graph=False
+    )
+    with_g_images = image_to_image(
+        prompt, img, prefix=f"is_save_{str(is_save)}-", with_graph=True
+    )
     assert len(no_g_images) == len(with_g_images)
     for img_idx in range(len(no_g_images)):
-        print("====> diff ", np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean())
+        print(
+            "====> diff ", np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean()
+        )
         assert np.abs(no_g_images[img_idx] - with_g_images[img_idx]).mean() < 1e-2
 
     total_end_t = time.time()
-    print("st init and run time ", total_end_t - total_start_t, 's.')
+    print("st init and run time ", total_end_t - total_start_t, "s.")
 
     @_cost_cnt
     def save_pipe_sch():

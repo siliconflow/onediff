@@ -1,10 +1,11 @@
 from onediff.infer_compiler.transform import register
 
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
-from diffusers.models.attention_processor import LoRAAttnProcessor2_0 
+from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
 from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
+
 torch2oflow_class_map = {
     Attention: AttentionOflow,
     AttnProcessor2_0: AttnProcessorOflow,

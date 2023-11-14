@@ -16,7 +16,7 @@ from onediff.infer_compiler.utils.patch_for_compiler import FakeCuda
 @pytest.mark.parametrize("head_dim", [8, 16, 32, 64])
 @pytest.mark.parametrize("is_causal", [True, False])
 @pytest.mark.parametrize("dropout_p", [0.0])
-# @pytest.mark.parametrize("dropout_p", [0.0, 0.22, 0.48]) 
+# @pytest.mark.parametrize("dropout_p", [0.0, 0.22, 0.48])
 @pytest.mark.parametrize("seed", [1])
 def test_flash_attention(
     batch_size, n_heads, seq_len_q, seq_len_k, head_dim, is_causal, dropout_p, seed
