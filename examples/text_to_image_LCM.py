@@ -53,4 +53,4 @@ images = pipe(
     args.prompt, height=args.height, width=args.width, num_inference_steps=args.steps
 ).images
 for i, image in enumerate(images):
-    image.save(f"LCM-{args.width}x{args.height}-seed-{args.seed}.png")
+    image.save(f"LCM-{args.width}x{args.height}-seed-{args.seed}-disable-{args.disable}.png")
