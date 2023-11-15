@@ -13,6 +13,7 @@ __all__ = ["transform_mgr"]
 
 @contextmanager
 def onediff_mock_torch():
+    # Fixes  check the 'version'  error.
     attr_name = "__version__"
     restore_funcs = []  # Backup
     if hasattr(flow, attr_name) and hasattr(torch, attr_name):
