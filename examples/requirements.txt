@@ -1,6 +1,7 @@
 # pip install -r requirements.txt
 transformers==4.27.1
 diffusers[torch]==0.19.3
-onediff 
+oneflow --pre -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu121
+onediff
 chardet
 opencv-python==4.8.0.74
