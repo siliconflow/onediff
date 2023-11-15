@@ -1,4 +1,3 @@
-"""  quant_diffusion_pipeline """
 import os
 from typing import Any, List, Optional, Union
 import torch
@@ -38,7 +37,6 @@ def _use_graph():
 
 
 class QuantDiffusionPipeline:
-    """ QuantDiffusionPipeline """
     def __init__(
         self,
         pretrained_model_name_or_path,
@@ -88,7 +86,7 @@ class QuantDiffusionPipeline:
 
     def _load_calib_info(self):
         calibrate_info = {}
-        with open(os.path.join(self._model, "calibrate_info.txt"), "r") as f:
+        with open(os.path.join(self._model, "calibrate_info.txt"), "r",encoding="utf-8") as f:
             for line in f.readlines():
                 line = line.strip()
                 items = line.split(" ")

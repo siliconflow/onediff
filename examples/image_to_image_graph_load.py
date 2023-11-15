@@ -17,7 +17,7 @@ from onediff import (
 from diffusers import EulerDiscreteScheduler
 
 
-_MODEL_ID = "/share_nfs/hf_models/stable-diffusion-2"
+_MODEL_ID = "stabilityai/stable-diffusion-2"
 _WITH_IMAGE_SAVE = True
 
 

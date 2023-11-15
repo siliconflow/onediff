@@ -1,4 +1,4 @@
-""" _init_ """
+""" torch to flow  """
 
 import oneflow as flow
 import diffusers_quant
@@ -15,7 +15,7 @@ torch2oflow_class_map = {
 
 
 def convert_func(mod: flow.Tensor, verbose=False):
-    """  convert_func """
+    """ torch func to flow func  """
     return mod
 
 

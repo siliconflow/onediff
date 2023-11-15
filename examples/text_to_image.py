@@ -1,4 +1,7 @@
-""" text to image for example model_id = 1.5,2"""
+"""
+text to image 
+example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id runwayml/stable-diffusion-v1-5
+"""
 import torch
 import argparse
 import oneflow as flow
@@ -10,7 +13,6 @@ from diffusers import StableDiffusionPipeline
 
 
 def parse_args():
-    """ add parameters"""
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
     parser.add_argument(
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"

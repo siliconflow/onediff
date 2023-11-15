@@ -1,5 +1,9 @@
 '''
-test use speed
+
+evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
+
+example: python examples/stable_diffusion_v1_5_unet.py --model_id runwayml/stable-diffusion-v1-5
+
 '''
 import os
 import time
@@ -51,7 +55,9 @@ class UNetGraph(flow.nn.Graph):
 @click.option("--sync_interval", default=50)
 @click.option("--model_id", default="runwayml/stable-diffusion-v1-5")
 def benchmark(token, repeat, sync_interval, model_id):
-    """ test unet graph speed """
+    """ 
+    evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
+    """
     with flow.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
             model_id,

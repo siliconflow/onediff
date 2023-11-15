@@ -1,7 +1,7 @@
-""" text to image sdxl torch compile """
-# Compile to oneflow graph with oneflow_compile example: python examples/text_to_image_sdxl.py --compile
-# Compile to oneflow graph with torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dynamo
-
+"""
+Compile to oneflow graph with oneflow_compile example: python examples/text_to_image_sdxl.py --compile
+Compile to oneflow graph with torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dynamo
+"""
 import argparse
 import torch
 from diffusers import DiffusionPipeline

@@ -1,4 +1,6 @@
-""" _init_"""
+from transformers.modeling_outputs import BaseModelOutputWithPooling
+from transformers.models.clip.modeling_clip import CLIPTextModelOutput
+
 from onediff.infer_compiler.transform import register
 from onediff.infer_compiler.transform import transform_mgr
 from onediff.infer_compiler.transform.builtin_transform import proxy_class
@@ -10,8 +12,6 @@ from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
 from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
 
-from transformers.modeling_outputs import BaseModelOutputWithPooling
-from transformers.models.clip.modeling_clip import CLIPTextModelOutput
 
 torch2oflow_class_map = {
     Attention: AttentionOflow,
@@ -34,7 +34,6 @@ except ImportError:
 
 
 def register_args_tree_relaxed_types():
-    """ register_args_tree_relaxed_types """
     transformers_mocked = False
     for pkg_name in transform_mgr._torch_to_oflow_packages_list:
         if "transformers" in pkg_name:

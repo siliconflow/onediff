@@ -1,4 +1,4 @@
-"""Copier for package"""
+"""Copy and modify packages"""
 import os
 import sys
 import shutil
@@ -9,10 +9,10 @@ from pathlib import Path
 from typing import List, Tuple, Union
 from .printer import print_red, print_green
 
-
 def get_matched_files(
     root: Union[str, Path], ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]
 ):
+    # Get a list of matching files from the specified directory
     ignore_rules = []
     ignore_file = Path(root) / ignore_file
     if ignore_file.exists():
@@ -39,7 +39,6 @@ def get_matched_files(
 
 
 def copy_files(src_dir, dst_dir, filelist):
-    """ copy files """
     src_dir = Path(src_dir)
     dst_dir = Path(dst_dir)
     for file in filelist:
@@ -56,7 +55,7 @@ def copy_files(src_dir, dst_dir, filelist):
 
 
 class PackageCopier:
-    """ PackageCopier """
+    
     def __init__(
         self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir=False
     ):
@@ -105,7 +104,7 @@ class PackageCopier:
                 raise RuntimeError(f"{pkg} not found") from e
 
     def copy_package(self):
-        """ copy_package """
+        #copy package from self.old_pkg_path to self.new_pkg_path
         src = Path(self.old_pkg_path)
         dest = Path(self.new_pkg_path)
         if src == dest:
@@ -119,7 +118,6 @@ class PackageCopier:
         copy_files(src, dest, file_list)
 
     def add_init_files(self):
-        """ add_init_files """
         directory = self.new_pkg_path
         if not directory.is_dir():
             raise ValueError(f"{directory} is not a directory")
@@ -160,8 +158,8 @@ class PackageCopier:
             if path.is_dir() and path.name != "__pycache__":
                 apply_fn(path / "__init__.py")
 
-    def rewrite_imports(self):
-        """ rewrite_imports """
+    def rewrite_imports(self) -> None:
+        # Update import statements within the Python files of the newly created package
         for pyfile in self.new_pkg_path.glob("**/*.py"):
             with open(pyfile, "r",encoding="utf-8") as fp:
                 content = fp.read()
@@ -177,14 +175,13 @@ class PackageCopier:
             with open(pyfile, "w",encoding="utf-8") as fp:
                 fp.write(content)
 
-    def test_import(self):
-        """ test_import """
+    def test_import(self) -> None:
+        # Test the importability of the newly created package.
         sys.path.insert(0, str(self.new_pkg_path.parent))
         importlib.import_module(self.new_pkg_name)
         print_green(f"Test import {self.new_pkg_name} succeed!")
 
     def get_import_module(self):
-        """ get_import_module """
         return importlib.import_module(self.new_pkg_name)
 
     def __call__(self, verbose=False):

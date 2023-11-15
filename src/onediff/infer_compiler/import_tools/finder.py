@@ -1,4 +1,4 @@
-""" finder """
+""" Utility Module """
 import os
 import sys
 import time
@@ -13,8 +13,9 @@ from .copier import PackageCopier
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 
 
-def gen_unique_id():
-    """ gen_unique_id """
+def gen_unique_id() -> str:
+    #Generate a unique identifier.
+    
     timestamp = int(time.time() * 1000)
     process_id = os.getpid()
     # TODO(): refine the unique id
@@ -28,7 +29,7 @@ SUFFIX = "_oflow_" + gen_unique_id()
 
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
-    """ import_module_from_path """
+    # Import a Python module from a given file path.
     if isinstance(module_path, Path):
         module_path = str(module_path)
     module_name = os.path.basename(module_path)
@@ -51,8 +52,9 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     return module
 
 
-def import_submodules(package, recursive=True):
-    """Import all submodules of a module, recursively, including subpackages"""
+def import_submodules(package, recursive=True) -> None:
+    # Import all submodules of a module, recursively, including subpackages.
+
     if isinstance(package, str):
         package = importlib.import_module(package)
 
@@ -76,16 +78,8 @@ def import_submodules(package, recursive=True):
 
 
 def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, type]:
-    """
-    Get all classes in a package and its submodules.
+    # Get all classes in a package and its submodules.
 
-    Args:
-        package (str or module): The package to search for classes.
-        base_class (type, optional): The base class to filter classes by.
-
-    Returns:
-        dict: A dictionary mapping full class names to class objects.
-    """
     with PackageCopier(package, prefix=PREFIX, suffix=SUFFIX) as copier:
         package = copier.get_import_module()
 
@@ -110,7 +104,6 @@ def _format_package_name(package_name):
 
 
 def get_mock_cls_name(cls) -> str:
-    """ get_mock_cls_name """
     if isinstance(cls, type):
         cls = f"{cls.__module__}.{cls.__name__}"
 

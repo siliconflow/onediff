@@ -1,4 +1,6 @@
-""" conntrol net canny  """
+""" 
+performs image generation using a stable diffusion model with a control network. 
+"""
 import cv2
 import torch
 from PIL import Image

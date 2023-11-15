@@ -1,7 +1,7 @@
-""" image to image """
+""" a Simple demo of image generation. """
 
-import torch
 import argparse
+import torch
 import oneflow as flow
 from PIL import Image
 from onediff.infer_compiler import oneflow_compile
@@ -9,7 +9,6 @@ from diffusers import StableDiffusionImg2ImgPipeline
 
 
 def parse_args():
-    """ add parameter """
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
     parser.add_argument(
         "--model_id",

@@ -1,6 +1,9 @@
 
 """
-test run graph
+evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
+
+example: python examples/stable_diffusion_2_unet.py --height 1024 --width 1024 \
+--model_id runwayml/stable-diffusion-v1-5
 """
 
 import os
@@ -39,7 +42,9 @@ os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 @click.option("--sync_interval", default=50)
 @click.option("--model_id", default="stabilityai/stable-diffusion-2")
 def benchmark(token, height, width, repeat, sync_interval, model_id):
-    """Function test use graph speed."""
+ """ 
+ evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
+ """
     with torch.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
             model_id,

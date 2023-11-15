@@ -1,7 +1,7 @@
-""" text tot image sdxl mp load  """
-# Compile and save to oneflow graph example: python examples/text_to_image_sdxl_mp_load.py --save
-# Compile and load to new device example: python examples/text_to_image_sdxl_mp_load.py --load
-
+"""
+Compile and save to oneflow graph example: python examples/text_to_image_sdxl_mp_load.py --save
+Compile and load to new device example: python examples/text_to_image_sdxl_mp_load.py --load
+"""
 import argparse
 import torch
 
