@@ -1,7 +1,7 @@
-""" text to image sdxl """
-# Torch run example: python examples/text_to_image_sdxl.py
-# Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
-
+"""
+Torch run example: python examples/text_to_image_sdxl.py
+Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
+"""
 import argparse
 import torch
 

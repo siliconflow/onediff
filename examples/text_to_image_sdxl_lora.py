@@ -1,4 +1,3 @@
-""" text to image sdxl lora """
 import torch
 from onediff.infer_compiler import oneflow_compile
 from diffusers import DiffusionPipeline

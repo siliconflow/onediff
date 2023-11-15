@@ -1,9 +1,8 @@
 """
-text to image 
 example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id runwayml/stable-diffusion-v1-5
 """
-import torch
 import argparse
+import torch
 import oneflow as flow
 
 from onediff.infer_compiler import oneflow_compile

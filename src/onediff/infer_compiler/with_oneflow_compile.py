@@ -1,13 +1,14 @@
 import os
 import types
-import torch
-import oneflow as flow
 from typing import Any
 from functools import wraps
+import torch
+import oneflow as flow
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
+from onediff.infer_compiler.utils.set_oneflow_environment import _use_graph
 
 
 class DualModule(torch.nn.Module):
@@ -99,7 +100,7 @@ class DualModuleList(torch.nn.ModuleList):
         return setattr(self, str(idx), module)
 
     def __setattr__(self, key, value):
-        if key == "_torch_modules" or key == "_oneflow_modules":
+        if key in ("_torch_modules", "_oneflow_modules"):
             return object.__setattr__(self, key, value)
         if isinstance(value, DualModule):
             setattr(self._torch_modules, key, value._torch_module)

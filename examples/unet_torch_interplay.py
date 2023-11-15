@@ -4,11 +4,11 @@ save graph compiled by oneflow example: python3 examples/unet_torch_interplay.py
 load graph compiled by oneflow example: python3 examples/unet_torch_interplay.py --load
 """
 import random
-import torch
 import time
+from dataclasses import dataclass, fields
+import torch
 import oneflow as flow
 from tqdm import tqdm
-from dataclasses import dataclass, fields
 import click
 from onediff.infer_compiler import oneflow_compile
 from diffusers.utils import floats_tensor

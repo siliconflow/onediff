@@ -1,9 +1,4 @@
-import os
-
 import oneflow as flow
-import oneflow.nn as nn
-import oneflow.nn.functional as F
-
 
 class FusedSelfAttnProcessor:
     def __init__(self, attn):

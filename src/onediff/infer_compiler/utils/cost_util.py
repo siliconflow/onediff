@@ -1,5 +1,5 @@
-import oneflow as flow
 import time
+import oneflow as flow
 
 
 def cost_cnt(fn):

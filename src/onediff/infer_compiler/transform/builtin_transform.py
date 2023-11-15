@@ -30,7 +30,6 @@ __all__ = [
 
 
 def proxy_class(cls: type):
-    """ proxy_class """
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
@@ -42,7 +41,6 @@ def proxy_class(cls: type):
 
 
 class ProxySubmodule:
-    """ ProxySubmodule """
     def __init__(self, submod):
         self._oflow_proxy_submod = submod
         self._oflow_proxy_parameters = {}
@@ -141,7 +139,7 @@ def replace_obj(obj):
             "torch.uint8": flow.uint8,
         }[str(obj)]
     if cls == torch.fx.immutable_collections.immutable_list:
-        return [e for e in obj]
+        return list(obj)
     replacement = proxy_class(cls)
     if replacement is not None:
         if cls in [torch.device]:
@@ -355,12 +353,12 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 
 
 @torch2oflow.register
-def _(mod: None, verbose=False) -> None:
+def _(mod: None, verbose=False):
     return mod
 
 
 @torch2oflow.register
-def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
+def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
         mod_name = None
         if mod.__module__.startswith("torch._C._nn"):
@@ -381,7 +379,7 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 
 
 @torch2oflow.register
-def _(mod: torch.device, verbose=False) -> None:
+def _(mod: torch.device, verbose=False):
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
 

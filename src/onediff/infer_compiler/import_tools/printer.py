@@ -10,20 +10,20 @@ class Printer:
         return f"\033[{self.color}m" + f"{args} {kwargs}" + "\033[0m"
 
 
-def print_red(*args, **kwargs) -> None:
+def print_red(*args, **kwargs):
     # Print text with red color.
     output = Printer(31)(*args, **kwargs)
     warnings.warn(output)
 
 
-def print_green(*args, **kwargs) -> None:
+def print_green(*args, **kwargs):
     #Print text with green color.
     output = Printer(32)(*args, **kwargs)
     # warnings.warn(output)
     print(output)
 
 
-def print_yellow(*args, **kwargs) -> None:
+def print_yellow(*args, **kwargs):
     #Print text with yellow color.
     output = Printer(33)(*args, **kwargs)
     print(output)

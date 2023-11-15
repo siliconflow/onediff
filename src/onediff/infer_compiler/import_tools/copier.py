@@ -55,7 +55,6 @@ def copy_files(src_dir, dst_dir, filelist):
 
 
 class PackageCopier:
-    
     def __init__(
         self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir=False
     ):
@@ -138,7 +137,7 @@ class PackageCopier:
                         result.append(path.name)
             return result
 
-        def apply_fn(path: Path) -> None:
+        def apply_fn(path: Path):
             # Apply function to the path
             if path.exists():
                 return
@@ -158,7 +157,7 @@ class PackageCopier:
             if path.is_dir() and path.name != "__pycache__":
                 apply_fn(path / "__init__.py")
 
-    def rewrite_imports(self) -> None:
+    def rewrite_imports(self):
         # Update import statements within the Python files of the newly created package
         for pyfile in self.new_pkg_path.glob("**/*.py"):
             with open(pyfile, "r",encoding="utf-8") as fp:
@@ -175,7 +174,7 @@ class PackageCopier:
             with open(pyfile, "w",encoding="utf-8") as fp:
                 fp.write(content)
 
-    def test_import(self) -> None:
+    def test_import(self):
         # Test the importability of the newly created package.
         sys.path.insert(0, str(self.new_pkg_path.parent))
         importlib.import_module(self.new_pkg_name)

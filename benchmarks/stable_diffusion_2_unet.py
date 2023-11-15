@@ -42,9 +42,7 @@ os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
 @click.option("--sync_interval", default=50)
 @click.option("--model_id", default="stabilityai/stable-diffusion-2")
 def benchmark(token, height, width, repeat, sync_interval, model_id):
- """ 
- evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
- """
+    #evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
     with torch.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
             model_id,

@@ -1,7 +1,7 @@
-""" text to image sdxl save load  """
-# Compile and save to oneflow graph example: python examples/text_to_image_sdxl.py --compile --save
-# Compile and load to oneflow graph example: python examples/text_to_image_sdxl.py --compile --load
-
+"""
+Compile and save to oneflow graph example: python examples/text_to_image_sdxl.py --compile --save
+Compile and load to oneflow graph example: python examples/text_to_image_sdxl.py --compile --load
+"""
 import argparse
 import torch
 

@@ -1,6 +1,6 @@
-import oneflow as flow
 from typing import Dict, List, Union
 from pathlib import Path
+import oneflow as flow
 from ..import_tools import (
     get_classes_in_package,
     print_green,

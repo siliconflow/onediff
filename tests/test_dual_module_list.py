@@ -1,9 +1,10 @@
 import numpy as np
+import torch
+from torch import nn
+import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.transform import register
-import torch
-import torch.nn as nn
-import oneflow as flow
+from onediff.infer_compiler.with_oneflow_compile import DualModule, DualModuleList
 
 
 class MyModule(nn.Module):
@@ -11,10 +12,10 @@ class MyModule(nn.Module):
         super().__init__()
         self.linears = nn.ModuleList([nn.Linear(10, 10) for i in range(10)])
 
-    def forward(self, x):
+    def forward(self, k):
         for i, l in enumerate(self.linears):
-            x = self.linears[i // 2](x) + l(x)
-        return x
+            k = self.linears[i // 2](k) + l(k)
+        return k
 
 
 class MyModuleOneflow(flow.nn.Module):
@@ -22,10 +23,10 @@ class MyModuleOneflow(flow.nn.Module):
         super().__init__()
         self.linears = flow.nn.ModuleList([flow.nn.Linear(10, 10) for i in range(10)])
 
-    def forward(self, x):
+    def forward(self, k):
         for i, l in enumerate(self.linears):
-            x = self.linears[i // 2](x) + l(x)
-        return x
+            k = self.linears[i // 2](k) + l(k)
+        return k
 
 
 register(torch2oflow_class_map={MyModule: MyModuleOneflow})
@@ -39,7 +40,6 @@ y_oneflow = m(x)
 
 assert np.allclose(y_torch.detach().cpu(), y_oneflow.detach().cpu(), 1e-03, 1e-03)
 
-from onediff.infer_compiler.with_oneflow_compile import DualModule, DualModuleList
 
 assert isinstance(m.linears, DualModuleList)
 
