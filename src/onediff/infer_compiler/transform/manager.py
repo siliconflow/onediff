@@ -37,7 +37,6 @@ class TransformManager:
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         print_green(f"Loading modules: {package_names}")
         of_mds = {}
-        # https://docs.oneflow.org/master/cookies/oneflow_torch.html
         with onediff_mock_torch():
             for package_name in package_names:
                 of_mds.update(get_classes_in_package(package_name))
