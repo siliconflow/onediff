@@ -1,5 +1,7 @@
+import torch
 import oneflow as flow
 from typing import Dict, List, Union
+from contextlib import contextmanager
 from pathlib import Path
 from ..import_tools import (
     get_classes_in_package,
@@ -7,6 +9,23 @@ from ..import_tools import (
 )
 
 __all__ = ["transform_mgr"]
+
+
+@contextmanager
+def onediff_mock_torch():
+    attr_name = "__version__"
+    restore_funcs = []  # Backup
+    if hasattr(flow, attr_name) and hasattr(torch, attr_name):
+        org_flow_attr = getattr(flow, attr_name)
+        restore_funcs.append(lambda: setattr(flow, attr_name, org_flow_attr))
+        setattr(flow, attr_name, getattr(torch, attr_name))
+
+    # https://docs.oneflow.org/master/cookies/oneflow_torch.html
+    with flow.mock_torch.enable(lazy=True):
+        yield
+
+    for restore_func in restore_funcs:
+        restore_func()
 
 
 class TransformManager:
@@ -18,7 +37,7 @@ class TransformManager:
         print_green(f"Loading modules: {package_names}")
         of_mds = {}
         # https://docs.oneflow.org/master/cookies/oneflow_torch.html
-        with flow.mock_torch.enable(lazy=True):
+        with onediff_mock_torch():
             for package_name in package_names:
                 of_mds.update(get_classes_in_package(package_name))
         print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names}")
