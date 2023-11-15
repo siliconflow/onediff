@@ -78,10 +78,6 @@ python3 -m pip install huggingface_hub
 ## Run examples
 
 ```
-python3 -m onediff.demo
-
-or
-
 python3 examples/text_to_image.py
 ```
 

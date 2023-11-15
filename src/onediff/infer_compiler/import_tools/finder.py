@@ -73,7 +73,7 @@ def import_submodules(package, recursive=True):
                 pass  # ignore
 
 
-def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
+def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, type]:
     """
     Get all classes in a package and its submodules.
 
@@ -84,25 +84,23 @@ def get_classes_in_package(package, base_class=None) -> Dict[str, type]:
     Returns:
         dict: A dictionary mapping full class names to class objects.
     """
-    if isinstance(package, (str, Path)):
-        copier = PackageCopier(package, prefix=PREFIX, suffix=SUFFIX)
-        copier()  # copy package
+    with PackageCopier(package, prefix=PREFIX, suffix=SUFFIX) as copier:
         package = copier.get_import_module()
 
-    class_dict = {}
+        class_dict = {}
 
-    for module in import_submodules(package):
-        try:
-            for name, obj in inspect.getmembers(module, inspect.isclass):
-                if inspect.isclass(obj) and (
-                    base_class is None or issubclass(obj, base_class)
-                ):
-                    full_name = f"{obj.__module__}.{name}"
-                    class_dict[full_name] = obj
-        except Exception as e:
-            pass
+        for module in import_submodules(package):
+            try:
+                for name, obj in inspect.getmembers(module, inspect.isclass):
+                    if inspect.isclass(obj) and (
+                        base_class is None or issubclass(obj, base_class)
+                    ):
+                        full_name = f"{obj.__module__}.{name}"
+                        class_dict[full_name] = obj
+            except Exception as e:
+                pass
 
-    return class_dict
+        return class_dict
 
 
 def _validate_package_name(package_name) -> bool:
