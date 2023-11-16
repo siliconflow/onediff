@@ -168,8 +168,6 @@ def _test_sd_graph_save_and_load(
 
 
 class OneFlowPipeLineGraphSaveLoadTests(unittest.TestCase):
-    """OneFlowPipeLineGraphSaveLoadTests"""
-
     def tearDown(self):
         # clean up the VRAM after each test
         super().tearDown()
@@ -177,7 +175,6 @@ class OneFlowPipeLineGraphSaveLoadTests(unittest.TestCase):
         torch.cuda.empty_cache()
 
     def test_sd_graph_save_and_load(self):
-        """test_sd_graph_save_and_load"""
         with tempfile.TemporaryDirectory() as f0:
             with tempfile.TemporaryDirectory() as f1:
                 with tempfile.TemporaryDirectory() as f2:
