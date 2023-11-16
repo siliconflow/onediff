@@ -1,7 +1,7 @@
 """
 Testing inference speed
-save graph compiled by oneflow example: python3 examples/unet_torch_interplay.py --save --model_id stable-diffusion-xl-base-1.0 
-load graph compiled by oneflow example: python3 examples/unet_torch_interplay.py --load
+save graph compiled example: python3 examples/unet_torch_interplay.py --save --model_id xx
+load graph compiled example: python3 examples/unet_torch_interplay.py --load
 """
 import random
 import time
@@ -12,10 +12,11 @@ from tqdm import tqdm
 import click
 from onediff.infer_compiler import oneflow_compile
 from diffusers.utils import floats_tensor
+from diffusers import UNet2DConditionModel
 
 
 @dataclass
-class TensorInput():
+class TensorInput:
     noise: torch.float16
     time: torch.int64
     cross_attention_dim: torch.float16
@@ -27,8 +28,6 @@ class TensorInput():
 
 
 def get_unet(token, _model_id, variant):
-    from diffusers import UNet2DConditionModel
-
     unet = UNet2DConditionModel.from_pretrained(
         _model_id,
         use_auth_token=token,
@@ -135,7 +134,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
     for i, m in enumerate(warmup_meta_of_sizes):
         print(f"warmup case #{i + 1}:", m)
 
-    #load graph from filepath
+    # load graph from filepath
     if load:
         print("loading graphs...")
         unet_graph.warmup_with_load(file)
@@ -157,7 +156,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
     ]
     flow._oneflow_internal.eager.Sync()
 
-    #Testing inference speed
+    # Testing inference speed
     t0 = time.time()
     for r in tqdm(range(repeat)):
         noise = random.choice(noise_of_sizes)
@@ -180,7 +179,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
         f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f}it/s"
     )
 
-    #save graph to filepath
+    # save graph to filepath
     if save:
         print("saving graphs...")
         unet_graph.save_graph(file)

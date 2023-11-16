@@ -82,7 +82,9 @@ def rewrite_self_attention(model):
             )
             attn.to_qkv.bias.data = qkv_bias
 
-        if _IS_DIFFUSERS_QUANT_AVAILABLE and isinstance(attn.to_q, (DynamicQuantLinearModule, StaticQuantLinearModule)):
+        if _IS_DIFFUSERS_QUANT_AVAILABLE and isinstance(
+            attn.to_q, (DynamicQuantLinearModule, StaticQuantLinearModule)
+        ):
             cls = type(attn.to_q)
             weight_scale = (
                 torch.cat(

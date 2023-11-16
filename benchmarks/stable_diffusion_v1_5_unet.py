@@ -1,10 +1,6 @@
-'''
-
-evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
-
+"""
 example: python examples/stable_diffusion_v1_5_unet.py --model_id runwayml/stable-diffusion-v1-5
-
-'''
+"""
 import os
 import time
 import torch
@@ -12,17 +8,19 @@ import click
 from tqdm import tqdm
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.utils.set_oneflow_environment import set_oneflow_environment
 from diffusers import UNet2DConditionModel
 from diffusers.utils import floats_tensor
 
-from onediff.infer_compiler.utils.set_oneflow_environment import set_oneflow_environment
 
 set_oneflow_environment()
 
 del os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"]
 
+
 class UNetGraph(flow.nn.Graph):
-    """ build unet graph """
+    """build unet graph"""
+
     def __init__(self, unet):
         super().__init__()
         self.unet = unet
@@ -42,9 +40,6 @@ class UNetGraph(flow.nn.Graph):
 @click.option("--sync_interval", default=50)
 @click.option("--model_id", default="runwayml/stable-diffusion-v1-5")
 def benchmark(token, repeat, sync_interval, model_id):
-    """ 
-    evaluates the inference speed of a pre-trained 2D conditional UNet model implemented using the OneFlow framework.
-    """
     with flow.no_grad():
         unet = UNet2DConditionModel.from_pretrained(
             model_id,

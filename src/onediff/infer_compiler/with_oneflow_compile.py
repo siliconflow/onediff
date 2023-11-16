@@ -8,7 +8,6 @@ from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
-from onediff.infer_compiler.utils.set_oneflow_environment import _use_graph
 
 
 class DualModule(torch.nn.Module):

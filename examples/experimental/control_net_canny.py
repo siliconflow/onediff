@@ -12,7 +12,8 @@ from diffusers import StableDiffusionControlNetPipeline
 
 
 image = load_image(
-    "http://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png"
+    "http://hf.co/datasets/huggingface/" \
+    "documentation-images/resolve/main/diffusers/input_image_vermeer.png"
 )
 
 image = np.array(image)
@@ -38,7 +39,8 @@ pipe.unet = oneflow_compile(pipe.unet)
 generator = torch.manual_seed(0)
 
 PROMPT = "disco dancer with colorful lights, best quality, extremely detailed"
-NEGATIVE_PROMPT = "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
+NEGATIVE_PROMPT = "longbody, lowres, bad anatomy, bad hands, " \
+               " missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
 
 out_images = pipe(
     prompt=PROMPT,

@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import List, Tuple, Union
 from .printer import print_red, print_green
 
+
 def get_matched_files(
     root: Union[str, Path], ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]
 ):
@@ -16,7 +17,7 @@ def get_matched_files(
     ignore_rules = []
     ignore_file = Path(root) / ignore_file
     if ignore_file.exists():
-        with open(ignore_file, "r",encoding="utf-8") as f:
+        with open(ignore_file, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if line and not line.startswith("#"):
@@ -103,7 +104,7 @@ class PackageCopier:
                 raise RuntimeError(f"{pkg} not found") from e
 
     def copy_package(self):
-        #copy package from self.old_pkg_path to self.new_pkg_path
+        # copy package from self.old_pkg_path to self.new_pkg_path
         src = Path(self.old_pkg_path)
         dest = Path(self.new_pkg_path)
         if src == dest:
@@ -142,7 +143,7 @@ class PackageCopier:
             if path.exists():
                 return
             else:
-                with open(path, "w",encoding="utf-8") as fp:
+                with open(path, "w", encoding="utf-8") as fp:
                     result = find_directories_with_init(path.parent)
                     if result:
                         fp.write("# This file is created by PackageCopier\n")
@@ -160,7 +161,7 @@ class PackageCopier:
     def rewrite_imports(self):
         # Update import statements within the Python files of the newly created package
         for pyfile in self.new_pkg_path.glob("**/*.py"):
-            with open(pyfile, "r",encoding="utf-8") as fp:
+            with open(pyfile, "r", encoding="utf-8") as fp:
                 content = fp.read()
                 content = content.replace(
                     f"{self.old_pkg_name}.", f"{self.new_pkg_name}."
@@ -171,7 +172,7 @@ class PackageCopier:
                 content = content.replace(
                     f"import {self.old_pkg_name}", f"import {self.new_pkg_name}"
                 )
-            with open(pyfile, "w",encoding="utf-8") as fp:
+            with open(pyfile, "w", encoding="utf-8") as fp:
                 fp.write(content)
 
     def test_import(self):

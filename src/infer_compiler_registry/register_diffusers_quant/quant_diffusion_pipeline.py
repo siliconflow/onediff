@@ -61,7 +61,9 @@ class QuantDiffusionPipeline:
 
     def _load_calib_info(self):
         calibrate_info = {}
-        with open(os.path.join(self._model, "calibrate_info.txt"), "r",encoding="utf-8") as f:
+        with open(
+            os.path.join(self._model, "calibrate_info.txt"), "r", encoding="utf-8"
+        ) as f:
             for line in f.readlines():
                 line = line.strip()
                 items = line.split(" ")

@@ -15,7 +15,7 @@ torch2oflow_class_map = {
 
 
 def convert_func(mod: flow.Tensor, verbose=False):
-    """ torch func to flow func  """
+    """torch func to flow func"""
     return mod
 
 

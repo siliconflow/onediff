@@ -1,11 +1,11 @@
 import os
 import torch
 from torch import fx
-import oneflow as flow
 from torch.fx.node import map_aggregate
-
-from .transform import replace_obj, replace_func, get_attr, torch2oflow
+import oneflow as flow
 from onediff.infer_compiler.utils.set_oneflow_environment import set_oneflow_environment
+from .transform import replace_obj, replace_func, get_attr, torch2oflow
+
 
 
 def fx_node_tranform(gm):

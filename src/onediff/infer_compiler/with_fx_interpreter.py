@@ -3,8 +3,8 @@ import torch
 from torch.fx.node import Argument, Target
 from .transform import map_args, replace_func, ProxySubmodule
 
-class OneFlowInterpreter(torch.fx.Interpreter):
 
+class OneFlowInterpreter(torch.fx.Interpreter):
     def call_function(self, target: Target, args: Tuple, kwargs: Dict) -> Any:
         args, kwargs = map_args(args, kwargs)
         target = replace_func(target)

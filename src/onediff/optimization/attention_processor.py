@@ -1,5 +1,6 @@
 import oneflow as flow
 
+
 class FusedSelfAttnProcessor:
     def __init__(self, attn):
         assert hasattr(attn, "to_qkv") and attn.to_qkv is not None

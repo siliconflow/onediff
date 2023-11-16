@@ -1,5 +1,4 @@
 """ a Simple demo of image generation. """
-
 import argparse
 import torch
 import oneflow as flow

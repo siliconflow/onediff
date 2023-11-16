@@ -1,6 +1,7 @@
 """
-Compile to oneflow graph with oneflow_compile example: python examples/text_to_image_sdxl_fp16.py --compile
-Compile to oneflow graph with torch.compile example: python examples/text_to_image_sdxl_fp16.py
+Compile to oneflow graph with :
+oneflow_compile example: python examples/text_to_image_sdxl_fp16.py --compile
+torch.compile example: python examples/text_to_image_sdxl_fp16.py
 """
 import os
 import argparse

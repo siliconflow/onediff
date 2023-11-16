@@ -12,7 +12,7 @@ from .with_fx_graph import fx_node_tranform
 
 
 def oneflow_backend(gm):
-    """ oneflow_backend """
+    """oneflow_backend"""
     with_interp = os.getenv(
         "ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False"
     ).lower() in (

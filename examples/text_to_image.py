@@ -1,5 +1,5 @@
 """
-example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id runwayml/stable-diffusion-v1-5
+example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id xx
 """
 import argparse
 import torch

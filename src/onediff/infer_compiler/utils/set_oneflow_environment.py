@@ -1,5 +1,6 @@
 import os
 
+
 def set_oneflow_environment():
     os.environ["ONEFLOW_MLIR_CSE"] = "1"
     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
@@ -15,6 +16,7 @@ def set_oneflow_environment():
     os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
+
 
 def _use_graph():
     os.environ["with_graph"] = "1"
@@ -40,6 +42,7 @@ def _use_graph():
     os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
     # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
     # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
+
 
 # 使用示例
 if __name__ == "__main__":

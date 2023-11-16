@@ -1,6 +1,7 @@
 """
-Compile to oneflow graph with oneflow_compile example: python examples/text_to_image_sdxl.py --compile
-Compile to oneflow graph with torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dynamo
+Compile to oneflow graph with :
+oneflow_compile example: python examples/text_to_image_sdxl.py --compile
+torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dynamo
 """
 import argparse
 import torch
@@ -52,7 +53,8 @@ if cmd_args.compile:
         base.unet, options={"size": cmd_args.num_dynamic_input_size}
     )
 
-# Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
+# Compile unet with torch.compile to oneflow.
+# Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile_with_dynamo:
     print("unet is compiled to oneflow with torch.compile.")
     from onediff.infer_compiler import oneflow_backend

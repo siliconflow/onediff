@@ -17,12 +17,14 @@ from onediff import (
 from diffusers import EulerDiscreteScheduler
 
 # 计算函数运行时间和内存使用情况
-# from:  https://github.com/Oneflow-Inc/diffusers/blob/4e3acbe0c56376ace260afc4883b333499d8fd45/src/onediff/infer_compiler/utils/cost_util.py#L5
+# from:  https://github.com/Oneflow-Inc/diffusers/blob/ \
+# 4e3acbe0c56376ace260afc4883b333499d8fd45/src/onediff/infer_compiler/utils/cost_util.py#L5
 from onediff.infer_compiler.utils.cost_util import cost_cnt
 
 
 _MODEL_ID = "stabilityai/stable-diffusion-2"
 _WITH_IMAGE_SAVE = True
+
 
 def _reset_session():
     # Close session to avoid the buffer name duplicate error.
@@ -167,7 +169,8 @@ def _test_sd_graph_save_and_load(
 
 
 class OneFlowPipeLineGraphSaveLoadTests(unittest.TestCase):
-    """ OneFlowPipeLineGraphSaveLoadTests """
+    """OneFlowPipeLineGraphSaveLoadTests"""
+
     def tearDown(self):
         # clean up the VRAM after each test
         super().tearDown()
@@ -175,7 +178,7 @@ class OneFlowPipeLineGraphSaveLoadTests(unittest.TestCase):
         torch.cuda.empty_cache()
 
     def test_sd_graph_save_and_load(self):
-        """ test_sd_graph_save_and_load """
+        """test_sd_graph_save_and_load"""
         with tempfile.TemporaryDirectory() as f0:
             with tempfile.TemporaryDirectory() as f1:
                 with tempfile.TemporaryDirectory() as f2:
