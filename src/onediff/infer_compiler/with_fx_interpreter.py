@@ -1,10 +1,11 @@
-from typing import Any, Dict, Tuple
 import torch
-from torch.fx.node import Argument, Target
+from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 from .transform import map_args, replace_func, ProxySubmodule
 
 
 class OneFlowInterpreter(torch.fx.Interpreter):
+    from torch.fx.node import Argument, Target
+
     def call_function(self, target: Target, args: Tuple, kwargs: Dict) -> Any:
         args, kwargs = map_args(args, kwargs)
         target = replace_func(target)

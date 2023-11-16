@@ -1,13 +1,13 @@
 import os
 from typing import Any, List, Optional, Union
 import torch
+from diffusers import StableDiffusionXLPipeline
 import diffusers_quant
 from diffusers_quant.utils import (
     rewrite_sdxl_pipeline_attention,
     replace_sub_module_with_quantizable_module,
 )
 from torch._dynamo import allow_in_graph as maybe_allow_in_graph
-from diffusers import StableDiffusionXLPipeline
 from onediff.infer_compiler.utils.set_oneflow_environment import _use_graph
 
 

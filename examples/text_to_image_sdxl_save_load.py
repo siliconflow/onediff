@@ -1,8 +1,10 @@
-"""
-Compile and save to oneflow graph example: python examples/text_to_image_sdxl.py --compile --save
-Compile and load to oneflow graph example: python examples/text_to_image_sdxl.py --compile --load
-"""
+# Compile and save to oneflow graph example: python examples/text_to_image_sdxl.py --compile --save
+# Compile and load to oneflow graph example: python examples/text_to_image_sdxl.py --compile --load
+
+import os
 import argparse
+
+import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile

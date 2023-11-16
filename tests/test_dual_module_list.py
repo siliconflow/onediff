@@ -1,10 +1,9 @@
 import numpy as np
-import torch
-from torch import nn
-import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.transform import register
-from onediff.infer_compiler.with_oneflow_compile import DualModule, DualModuleList
+import torch
+import torch.nn as nn
+import oneflow as flow
 
 
 class MyModule(nn.Module):
@@ -40,6 +39,7 @@ y_oneflow = m(x)
 
 assert np.allclose(y_torch.detach().cpu(), y_oneflow.detach().cpu(), 1e-03, 1e-03)
 
+from onediff.infer_compiler.with_oneflow_compile import DualModule, DualModuleList
 
 assert isinstance(m.linears, DualModuleList)
 

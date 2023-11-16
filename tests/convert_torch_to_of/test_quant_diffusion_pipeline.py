@@ -1,6 +1,7 @@
 import pytest
-from mock_diffusers_quant import QuantDiffusionPipeline
+import torch
 from onediff.infer_compiler import oneflow_compile
+from mock_diffusers_quant import QuantDiffusionPipeline
 
 
 @pytest.mark.parametrize("model", ["/ssd/home/hanbinbin/sdxl-1.0-base-int8"])

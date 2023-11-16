@@ -1,12 +1,11 @@
-"""
-Compile and save to oneflow graph example: python examples/text_to_image_sdxl_mp_load.py --save
-Compile and load to new device example: python examples/text_to_image_sdxl_mp_load.py --load
-"""
-import argparse
-import torch
+# Compile and save to oneflow graph example: python examples/text_to_image_sdxl_mp_load.py --save
+# Compile and load to new device example: python examples/text_to_image_sdxl_mp_load.py --load
 
-from diffusers import DiffusionPipeline
-from onediff.infer_compiler import oneflow_compile
+import os
+import argparse
+
+import oneflow as flow
+import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -28,6 +27,9 @@ args = parser.parse_args()
 
 
 def run_sd(cmd_args, device):
+    from diffusers import DiffusionPipeline
+    from onediff.infer_compiler import oneflow_compile
+
     # Normal SDXL pipeline init.
     seed = torch.Generator(device).manual_seed(cmd_args.seed)
     output_type = "pil"

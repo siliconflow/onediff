@@ -1,10 +1,11 @@
-""" a Simple demo of image generation. """
-import argparse
-import torch
-import oneflow as flow
 from PIL import Image
+
+
+import argparse
 from onediff.infer_compiler import oneflow_compile
 from diffusers import StableDiffusionImg2ImgPipeline
+import oneflow as flow
+import torch
 
 
 def parse_args():

@@ -2,6 +2,7 @@
 import time
 import os
 import gc
+import shutil
 import unittest
 import tempfile
 from PIL import Image
@@ -15,6 +16,7 @@ from onediff import (
 )
 
 from diffusers import EulerDiscreteScheduler
+from diffusers import utils
 
 # 计算函数运行时间和内存使用情况
 # from:  https://github.com/Oneflow-Inc/diffusers/blob/ \

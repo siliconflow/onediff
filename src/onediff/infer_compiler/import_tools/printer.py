@@ -1,4 +1,6 @@
+import sys
 import warnings
+from pathlib import Path
 
 
 class Printer:
@@ -16,6 +18,7 @@ def print_red(*args, **kwargs):
 
 def print_green(*args, **kwargs):
     output = Printer(32)(*args, **kwargs)
+    # warnings.warn(output)
     print(output)
 
 

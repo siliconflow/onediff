@@ -3,16 +3,14 @@ Testing inference speed
 save graph compiled example: python3 examples/unet_torch_interplay.py --save --model_id xx
 load graph compiled example: python3 examples/unet_torch_interplay.py --load
 """
+import os
 import random
-import time
-from dataclasses import dataclass, fields
-import torch
-import oneflow as flow
-from tqdm import tqdm
 import click
+import oneflow as flow
+import torch
+from tqdm import tqdm
+from dataclasses import dataclass, fields
 from onediff.infer_compiler import oneflow_compile
-from diffusers.utils import floats_tensor
-from diffusers import UNet2DConditionModel
 
 
 @dataclass
@@ -28,6 +26,8 @@ class TensorInput:
 
 
 def get_unet(token, _model_id, variant):
+    from diffusers import UNet2DConditionModel
+
     unet = UNet2DConditionModel.from_pretrained(
         _model_id,
         use_auth_token=token,
@@ -113,6 +113,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
 
     num_channels = 4
     cross_attention_dim = unet.config["cross_attention_dim"]
+    from diffusers.utils import floats_tensor
 
     if (
         model_id == "stabilityai/stable-diffusion-xl-base-1.0"
@@ -155,6 +156,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
         for arg_metas in warmup_meta_of_sizes
     ]
     flow._oneflow_internal.eager.Sync()
+    import time
 
     # Testing inference speed
     t0 = time.time()

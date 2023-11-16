@@ -20,7 +20,6 @@ import unittest
 import numpy as np
 import oneflow as torch
 
-from transformers import CLIPTextConfig, CLIPTextModel, CLIPTokenizer
 from onediff import OneFlowStableDiffusionImg2ImgPipeline
 
 from diffusers import (
@@ -31,6 +30,7 @@ from diffusers import (
 )
 
 from diffusers.utils import floats_tensor, load_image, torch_device
+from transformers import CLIPTextConfig, CLIPTextModel, CLIPTokenizer
 
 
 class PipelineFastTests(unittest.TestCase):

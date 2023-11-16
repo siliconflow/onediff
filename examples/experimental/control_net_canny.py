@@ -2,17 +2,20 @@
 performs image generation using a stable diffusion model with a control network. 
 """
 import cv2
-import torch
+from onediff.infer_compiler import oneflow_compile
 from PIL import Image
 import numpy as np
-from onediff.infer_compiler import oneflow_compile
+
+
+import oneflow as flow
 from diffusers.utils import load_image
 from diffusers import ControlNetModel
 from diffusers import StableDiffusionControlNetPipeline
+import torch
 
 
 image = load_image(
-    "http://hf.co/datasets/huggingface/" \
+    "http://hf.co/datasets/huggingface/"
     "documentation-images/resolve/main/diffusers/input_image_vermeer.png"
 )
 
@@ -39,8 +42,10 @@ pipe.unet = oneflow_compile(pipe.unet)
 generator = torch.manual_seed(0)
 
 PROMPT = "disco dancer with colorful lights, best quality, extremely detailed"
-NEGATIVE_PROMPT = "longbody, lowres, bad anatomy, bad hands, " \
-               " missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
+NEGATIVE_PROMPT = (
+    "longbody, lowres, bad anatomy, bad hands, "
+    " missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
+)
 
 out_images = pipe(
     prompt=PROMPT,

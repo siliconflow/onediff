@@ -1,3 +1,4 @@
+"""Copier for package"""
 import os
 import sys
 import shutil
@@ -12,7 +13,6 @@ from .printer import print_red, print_green
 def get_matched_files(
     root: Union[str, Path], ignore_file=".gitignore", extra_ignore_rules=["*setup.py"]
 ):
-    # Get a list of matching files from the specified directory
     ignore_rules = []
     ignore_file = Path(root) / ignore_file
     if ignore_file.exists():
@@ -103,7 +103,6 @@ class PackageCopier:
                 raise RuntimeError(f"{pkg} not found") from e
 
     def copy_package(self):
-        # copy package from self.old_pkg_path to self.new_pkg_path
         src = Path(self.old_pkg_path)
         dest = Path(self.new_pkg_path)
         if src == dest:
@@ -158,7 +157,6 @@ class PackageCopier:
                 apply_fn(path / "__init__.py")
 
     def rewrite_imports(self):
-        # Update import statements within the Python files of the newly created package
         for pyfile in self.new_pkg_path.glob("**/*.py"):
             with open(pyfile, "r", encoding="utf-8") as fp:
                 content = fp.read()
@@ -175,7 +173,6 @@ class PackageCopier:
                 fp.write(content)
 
     def test_import(self):
-        # Test the importability of the newly created package.
         sys.path.insert(0, str(self.new_pkg_path.parent))
         importlib.import_module(self.new_pkg_name)
         print_green(f"Test import {self.new_pkg_name} succeed!")

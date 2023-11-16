@@ -5,8 +5,9 @@ torch.compile example: python examples/text_to_image_sdxl_fp16.py
 """
 import os
 import argparse
-import torch
 from diffusers import StableDiffusionXLPipeline
+import torch
+
 from onediff.infer_compiler import torchbackend
 from onediff.infer_compiler.utils.set_oneflow_environment import set_oneflow_environment
 

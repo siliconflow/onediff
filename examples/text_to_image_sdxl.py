@@ -2,7 +2,10 @@
 Torch run example: python examples/text_to_image_sdxl.py
 Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
 """
+import os
 import argparse
+
+import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile

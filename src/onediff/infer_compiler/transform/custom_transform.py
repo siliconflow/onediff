@@ -1,3 +1,4 @@
+"""A module for registering custom torch2oflow functions and classes."""
 import warnings
 import inspect
 from pathlib import Path

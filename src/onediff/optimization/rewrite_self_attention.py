@@ -1,3 +1,4 @@
+import os
 import torch
 from torch import nn
 
@@ -7,6 +8,7 @@ from .attention_processor import FusedSelfAttnProcessor
 
 _IS_DIFFUSERS_QUANT_AVAILABLE = 0
 try:
+    import diffusers_quant
     from diffusers_quant import StaticQuantLinearModule, DynamicQuantLinearModule
 
     _IS_DIFFUSERS_QUANT_AVAILABLE = 1

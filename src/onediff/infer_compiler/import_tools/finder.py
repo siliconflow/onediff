@@ -49,6 +49,7 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
 
 
 def import_submodules(package, recursive=True):
+    """Import all submodules of a module, recursively, including subpackages"""
     if isinstance(package, str):
         package = importlib.import_module(package)
 
@@ -72,6 +73,16 @@ def import_submodules(package, recursive=True):
 
 
 def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, type]:
+    """
+    Get all classes in a package and its submodules.
+
+    Args:
+        package (str or module): The package to search for classes.
+        base_class (type, optional): The base class to filter classes by.
+
+    Returns:
+        dict: A dictionary mapping full class names to class objects.
+    """
     with PackageCopier(package, prefix=PREFIX, suffix=SUFFIX) as copier:
         package = copier.get_import_module()
 

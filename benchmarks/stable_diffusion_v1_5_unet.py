@@ -1,26 +1,33 @@
-"""
-example: python examples/stable_diffusion_v1_5_unet.py --model_id runwayml/stable-diffusion-v1-5
-"""
 import os
-import time
-import torch
-import click
-from tqdm import tqdm
-import oneflow as flow
+import cv2
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.utils.set_oneflow_environment import set_oneflow_environment
+
+os.environ["ONEFLOW_MLIR_CSE"] = "1"
+os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
+os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
+os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
+os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
+os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+
+os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
+os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
+
+os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+
+os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
+
+import click
+import oneflow as flow
 from diffusers import UNet2DConditionModel
 from diffusers.utils import floats_tensor
-
-
-set_oneflow_environment()
-
-del os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"]
+from tqdm import tqdm
+import torch
 
 
 class UNetGraph(flow.nn.Graph):
-    """build unet graph"""
-
     def __init__(self, unet):
         super().__init__()
         self.unet = unet
@@ -65,10 +72,11 @@ def benchmark(token, repeat, sync_interval, model_id):
         )
         unet_graph(noise, time_step, encoder_hidden_states)
         flow._oneflow_internal.eager.Sync()
+        import time
 
         t0 = time.time()
         for r in tqdm(range(repeat)):
-            unet_graph(noise, time_step, encoder_hidden_states)
+            out = unet_graph(noise, time_step, encoder_hidden_states)
             if r == repeat - 1 or r % sync_interval == 0:
                 flow._oneflow_internal.eager.Sync()
         t1 = time.time()

@@ -2,13 +2,12 @@
 example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id xx
 """
 import argparse
-import torch
-import oneflow as flow
-
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionPipeline
+import oneflow as flow
+import torch
 
 
 def parse_args():

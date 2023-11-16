@@ -1,6 +1,6 @@
-import torch
 from onediff.infer_compiler import oneflow_compile
 from diffusers import DiffusionPipeline
+import torch
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(

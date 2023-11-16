@@ -1,7 +1,7 @@
-import oneflow as flow
-import diffusers_quant
 from onediff.infer_compiler import register
 
+import oneflow as flow
+import diffusers_quant
 
 torch2oflow_class_map = {
     diffusers_quant.FakeQuantModule: diffusers_quant.OneFlowFakeQuantModule,
