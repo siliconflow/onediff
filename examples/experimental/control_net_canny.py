@@ -15,8 +15,7 @@ import torch
 
 
 image = load_image(
-    "http://hf.co/datasets/huggingface/"
-    "documentation-images/resolve/main/diffusers/input_image_vermeer.png"
+    "http://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png"
 )
 
 image = np.array(image)
