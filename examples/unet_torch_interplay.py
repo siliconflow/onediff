@@ -14,7 +14,7 @@ from onediff.infer_compiler import oneflow_compile
 
 
 @dataclass
-class TensorInput:
+class TensorInput(object):
     noise: torch.float16
     time: torch.int64
     cross_attention_dim: torch.float16
@@ -70,10 +70,9 @@ def get_arg_meta_of_sizes(
     resolution_scales,
     num_channels,
     cross_attention_dim,
-):
-    start = 768
+    start = 768,
     stride = 128
-
+):
     return [
         TensorInput(
             noise_shape(

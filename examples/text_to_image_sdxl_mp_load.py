@@ -83,8 +83,8 @@ if __name__ == "__main__":
         # multi device/process run
         devices = ("cuda:0", "cuda:1")
         procs = []
-        for dev in devices:
-            p = mp.get_context("spawn").Process(target=run_sd, args=(args, dev))
+        for device in devices:
+            p = mp.get_context("spawn").Process(target=run_sd, args=(args, device))
             p.start()
             procs.append(p)
 

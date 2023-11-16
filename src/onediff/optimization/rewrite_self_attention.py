@@ -1,6 +1,6 @@
 import os
 import torch
-from torch import nn
+import torch.nn as nn
 
 from diffusers.models.attention_processor import Attention
 from diffusers.models.attention_processor import AttnProcessor, AttnProcessor2_0

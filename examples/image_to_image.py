@@ -7,6 +7,7 @@ from diffusers import StableDiffusionImg2ImgPipeline
 import oneflow as flow
 import torch
 
+PROMPT = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
@@ -32,7 +33,6 @@ pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
 pipe = pipe.to("cuda")
 pipe.unet = oneflow_compile(pipe.unet)
 
-PROMPT = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
 img = Image.new("RGB", (512, 512), "#1f80f0")
 

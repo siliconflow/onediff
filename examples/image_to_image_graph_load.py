@@ -18,9 +18,6 @@ from onediff import (
 from diffusers import EulerDiscreteScheduler
 from diffusers import utils
 
-# 计算函数运行时间和内存使用情况
-# from:  https://github.com/Oneflow-Inc/diffusers/blob/ \
-# 4e3acbe0c56376ace260afc4883b333499d8fd45/src/onediff/infer_compiler/utils/cost_util.py#L5
 from onediff.infer_compiler.utils.cost_util import cost_cnt
 
 

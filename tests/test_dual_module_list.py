@@ -11,10 +11,10 @@ class MyModule(nn.Module):
         super().__init__()
         self.linears = nn.ModuleList([nn.Linear(10, 10) for i in range(10)])
 
-    def forward(self, k):
+    def forward(self, x):
         for i, l in enumerate(self.linears):
-            k = self.linears[i // 2](k) + l(k)
-        return k
+            x = self.linears[i // 2](x) + l(x)
+        return x
 
 
 class MyModuleOneflow(flow.nn.Module):
@@ -22,10 +22,10 @@ class MyModuleOneflow(flow.nn.Module):
         super().__init__()
         self.linears = flow.nn.ModuleList([flow.nn.Linear(10, 10) for i in range(10)])
 
-    def forward(self, k):
+    def forward(self, x):
         for i, l in enumerate(self.linears):
-            k = self.linears[i // 2](k) + l(k)
-        return k
+            x = self.linears[i // 2](x) + l(x)
+        return x
 
 
 register(torch2oflow_class_map={MyModule: MyModuleOneflow})
