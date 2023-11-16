@@ -1,4 +1,3 @@
-"""Convert torch object to oneflow object."""
 import os
 import importlib
 import types

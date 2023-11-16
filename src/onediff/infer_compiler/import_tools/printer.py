@@ -1,9 +1,7 @@
-""" Utility Module """
 import warnings
 
 
 class Printer:
-    # printing text with colored output.
     def __init__(self, color):
         self.color = color
 
@@ -12,20 +10,16 @@ class Printer:
 
 
 def print_red(*args, **kwargs):
-    # Print text with red color.
     output = Printer(31)(*args, **kwargs)
     warnings.warn(output)
 
 
 def print_green(*args, **kwargs):
-    # Print text with green color.
     output = Printer(32)(*args, **kwargs)
-    # warnings.warn(output)
     print(output)
 
 
 def print_yellow(*args, **kwargs):
-    # Print text with yellow color.
     output = Printer(33)(*args, **kwargs)
     print(output)
 

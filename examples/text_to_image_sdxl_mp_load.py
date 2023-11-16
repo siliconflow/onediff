@@ -28,8 +28,6 @@ args = parser.parse_args()
 
 
 def run_sd(cmd_args, device):
-    """run sd"""
-
     # Normal SDXL pipeline init.
     seed = torch.Generator(device).manual_seed(cmd_args.seed)
     output_type = "pil"

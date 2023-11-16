@@ -1,4 +1,3 @@
-"""Copy and modify packages"""
 import os
 import sys
 import shutil

@@ -1,4 +1,3 @@
-"""Module to convert PyTorch code to OneFlow."""
 import os
 import warnings
 

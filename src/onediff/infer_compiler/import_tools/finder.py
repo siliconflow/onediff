@@ -1,4 +1,3 @@
-""" Utility Module """
 import os
 import sys
 import time
@@ -14,7 +13,6 @@ __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_pa
 
 
 def gen_unique_id() -> str:
-    # Generate a unique identifier
     timestamp = int(time.time() * 1000)
     process_id = os.getpid()
     # TODO(): refine the unique id
@@ -28,7 +26,6 @@ SUFFIX = "_oflow_" + gen_unique_id()
 
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
-    # Import a Python module from a given file path.
     if isinstance(module_path, Path):
         module_path = str(module_path)
     module_name = os.path.basename(module_path)
@@ -52,8 +49,6 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
 
 
 def import_submodules(package, recursive=True):
-    # Import all submodules of a module, recursively, including subpackages.
-
     if isinstance(package, str):
         package = importlib.import_module(package)
 
@@ -77,8 +72,6 @@ def import_submodules(package, recursive=True):
 
 
 def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, type]:
-    # Get all classes in a package and its submodules.
-
     with PackageCopier(package, prefix=PREFIX, suffix=SUFFIX) as copier:
         package = copier.get_import_module()
 

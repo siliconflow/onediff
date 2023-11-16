@@ -1,4 +1,3 @@
-""" torch_interpretor """
 # HF_HUB_OFFLINE=1 python3 examples/torch_interpretor.py
 import os
 import torch
