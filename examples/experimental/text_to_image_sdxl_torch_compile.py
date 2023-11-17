@@ -1,6 +1,8 @@
-# Compile to oneflow graph with oneflow_compile example: python examples/text_to_image_sdxl.py --compile
-# Compile to oneflow graph with torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dynamo
-
+"""
+Compile to oneflow graph with :
+oneflow_compile example: python examples/text_to_image_sdxl.py --compile
+torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dynamo
+"""
 import os
 import argparse
 
@@ -37,8 +39,8 @@ if cmd_args.compile and cmd_args.compile_with_dynamo:
     parser.error("--compile and --compile_with_dynamo cannot be used together.")
 
 # Normal SDXL pipeline init.
-seed = torch.Generator("cuda").manual_seed(cmd_args.seed)
-output_type = "pil"
+SEED = torch.Generator("cuda").manual_seed(cmd_args.seed)
+OUTPUT_TYPE = "pil"
 # SDXL base: StableDiffusionXLPipeline
 base = DiffusionPipeline.from_pretrained(
     cmd_args.base,
@@ -55,7 +57,8 @@ if cmd_args.compile:
         base.unet, options={"size": cmd_args.num_dynamic_input_size}
     )
 
-# Compile unet with torch.compile to oneflow. Note this is at alpha stage(experimental) and may be changed later.
+# Compile unet with torch.compile to oneflow.
+# Note this is at alpha stage(experimental) and may be changed later.
 if cmd_args.compile_with_dynamo:
     print("unet is compiled to oneflow with torch.compile.")
     from onediff.infer_compiler import oneflow_backend
@@ -74,8 +77,8 @@ for h in sizes:
                 prompt=cmd_args.prompt,
                 height=h,
                 width=w,
-                generator=seed,
+                generator=SEED,
                 num_inference_steps=cmd_args.n_steps,
-                output_type=output_type,
+                output_type=OUTPUT_TYPE,
             ).images
             image[0].save(f"h{h}-w{w}-i{i}-{cmd_args.saved_image}")

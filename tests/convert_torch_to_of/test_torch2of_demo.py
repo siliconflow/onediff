@@ -14,7 +14,7 @@ from onediff.infer_compiler.import_tools import get_mock_cls_name
 class PyTorchModel(torch.nn.Module):
     """used torch2of conversion.
 
-    For PyTorch models, input model must inherit torch.nn.Module to utilize trace and conversion of layers. 
+    For PyTorch models, input model must inherit torch.nn.Module to utilize trace and conversion of layers.
     """
 
     def __init__(self):
@@ -45,12 +45,10 @@ def test_torch2of_demo():
     cls_key = get_mock_cls_name(PyTorchModel)
     transform_mgr.update_class_proxies({cls_key: OneFlowModel})
 
-
     # Compile PyTorch model to OneFlow
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pytorch_model = PyTorchModel().to(device)
     of_model = oneflow_compile(pytorch_model, use_graph=True)
-
 
     # Verify conversion
     x = torch.randn(4, 4).to(device)

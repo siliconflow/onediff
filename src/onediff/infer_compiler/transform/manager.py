@@ -46,10 +46,10 @@ class TransformManager:
 
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
         """Update `_torch_to_oflow_cls_map` with `class_proxy_dict`.
-    
-        example: 
+
+        example:
             `class_proxy_dict = {"mock_torch.nn.Conv2d": flow.nn.Conv2d}`
-    
+
         """
         self._torch_to_oflow_cls_map.update(class_proxy_dict)
 

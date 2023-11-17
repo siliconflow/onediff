@@ -34,8 +34,7 @@ def _use_graph():
     os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
     # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
     # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
-
-
+    
 class QuantDiffusionPipeline:
     def __init__(
         self,
@@ -86,7 +85,9 @@ class QuantDiffusionPipeline:
 
     def _load_calib_info(self):
         calibrate_info = {}
-        with open(os.path.join(self._model, "calibrate_info.txt"), "r") as f:
+        with open(
+            os.path.join(self._model, "calibrate_info.txt"), "r", encoding="utf-8"
+        ) as f:
             for line in f.readlines():
                 line = line.strip()
                 items = line.split(" ")
@@ -133,7 +134,6 @@ class QuantDiffusionPipeline:
         num_inference_steps: int = 50,
         **kwargs
     ):
-
         return self._pipe(
             prompt, prompt_2, height, width, num_inference_steps, **kwargs
         )
