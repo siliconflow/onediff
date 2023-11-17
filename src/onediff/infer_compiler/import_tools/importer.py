@@ -1,7 +1,6 @@
 import inspect
 import os
 import sys
-import time
 import importlib
 from typing import Optional, Union
 from types import FunctionType, ModuleType
@@ -10,17 +9,11 @@ from .copier import PackageCopier
 from .context_managers import onediff_mock_torch
 
 
-def gen_unique_id():
-    timestamp = int(time.time() * 1000)
-    process_id = os.getpid()
-    # TODO(): refine the unique id
-    # sequence = str(uuid.uuid4())
-    unique_id = f"{timestamp}{process_id}"
-    return unique_id
+
 
 
 PREFIX = "mock_"
-SUFFIX = "_oflow" + gen_unique_id()
+SUFFIX = f"_oflow_{os.getpid()}"
 
 __all__ = [
     "import_module_from_path",
@@ -54,6 +47,7 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
 
 
 def copy_package(package: str, target_directory: Optional[Union[str, Path]] = None):
+    """Copy package to target directory"""
     with onediff_mock_torch():
         copier = PackageCopier(
             package, prefix=PREFIX, suffix=SUFFIX, target_directory=target_directory

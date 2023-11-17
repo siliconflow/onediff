@@ -6,7 +6,7 @@ LOGGING_NAME = "OneDiff"
 
 class ColorFormatter(logging.Formatter):
     COLORS = {
-        "DEBUG": "\033[94m",  # Blue
+        "DEBUG": "\033[34m",  # Blue
         "INFO": "\033[92m",  # green
         "WARNING": "\033[93m",  # Yellow
         "ERROR": "\033[91m",  # Red

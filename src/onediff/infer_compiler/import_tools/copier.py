@@ -124,9 +124,13 @@ class PackageCopier:
                 fp.write(content)
 
     def test_import(self):
-        sys.path.insert(0, str(self.new_pkg_path.parent))
-        importlib.import_module(self.new_pkg_name)
-        LOGGER.debug(f"import {self.new_pkg_name} success")
+        try:
+            sys.path.insert(0, str(self.new_pkg_path.parent))
+            importlib.import_module(self.new_pkg_name)
+            LOGGER.debug(f"Test import {self.new_pkg_name} success")
+        except Exception as e:
+            
+            raise RuntimeError(f"Test import failed") from e
 
     def get_import_module(self):
         return importlib.import_module(self.new_pkg_name)

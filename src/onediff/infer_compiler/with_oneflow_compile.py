@@ -4,6 +4,7 @@ import torch
 import oneflow as flow
 from typing import Any
 from functools import wraps
+from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
@@ -79,17 +80,18 @@ class DualModule(torch.nn.Module):
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        try:
+        
+        if transform_mgr.debug_mode:
             return func(self, *args, **kwargs)
-        except Exception as e:
-            print(
-                f"Exception in {func.__name__} of " f"{self.__class__.__name__}: {e=}"
-            )
-            print("Recompile oneflow module ...")
-            del self._deployable_module_model.oneflow_module
-            self._deployable_module_dpl_graph = None
-            return func(self, *args, **kwargs)
-
+        else:
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                LOGGER.error(f"Exception in {func.__name__}: {e=}")
+                LOGGER.warning("Recompile oneflow module ...")
+                del self._deployable_module_model.oneflow_module
+                self._deployable_module_dpl_graph = None
+                return func(self, *args, **kwargs)
     return wrapper
 
 
@@ -138,7 +140,7 @@ class DeployableModule(torch.nn.Module):
         return output
 
     @input_output_processor
-    # @handle_deployable_exception
+    @handle_deployable_exception
     def __call__(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
@@ -243,7 +245,6 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     pytorch_key_prefix = "_deployable_module_model._torch_module."
     new_state_dict = type(state_dict)()
     for k, v in state_dict.items():
-        # key_filter
         # _deployable_module_model._torch_module.out.2.weight => out.2.weight
         if k.startswith(pytorch_key_prefix):
             new_k = k[len(pytorch_key_prefix) :]
