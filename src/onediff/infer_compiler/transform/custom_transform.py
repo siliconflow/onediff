@@ -9,7 +9,7 @@ from ..import_tools import (
 )
 from .manager import transform_mgr
 from .builtin_transform import torch2oflow
-
+from ..utils.log_utils import LOGGER
 __all__ = ["register"]
 
 
@@ -19,7 +19,7 @@ def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
         transform_mgr.update_class_proxies({key: replacement}, verbose=verbose)
 
     except Exception as e:
-        print_yellow(f"Cannot register {cls=} {replacement=}. {e=}")
+        LOGGER.warning(f"Cannot register {cls=} {replacement=}. {e=}")
 
 
 def register_torch2oflow_func(func, first_param_type=None, verbose=True):
@@ -27,13 +27,13 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=True):
         params = inspect.signature(func).parameters
         first_param_type = params[list(params.keys())[0]].annotation
         if first_param_type == inspect._empty:
-            print_yellow(f"Cannot register {func=} {first_param_type=}.")
+            LOGGER.warning(f"Cannot register {func=} {first_param_type=}.")
     try:
         torch2oflow.register(first_param_type)(func)
         if verbose:
-            print_green(f"Register {func=} {first_param_type=}")
+            LOGGER.info(f"Register {func=} {first_param_type=}")
     except Exception as e:
-        print_yellow(f"Cannot register {func=} {first_param_type=}. {e=}")
+        LOGGER.warning(f"Cannot register {func=} {first_param_type=}. {e=}")
 
 
 def set_default_registry():
