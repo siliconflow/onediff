@@ -52,7 +52,9 @@ class EulerDiscreteSchedulerOutput(BaseOutput):
 
 # Copied from diffusers.schedulers.scheduling_ddpm.betas_for_alpha_bar
 def betas_for_alpha_bar(
-    num_diffusion_timesteps, max_beta=0.999, alpha_transform_type="cosine",
+    num_diffusion_timesteps,
+    max_beta=0.999,
+    alpha_transform_type="cosine",
 ):
     """
     Create a beta schedule that discretizes the given alpha_t_bar function, which defines the cumulative product of
@@ -160,8 +162,8 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             # this schedule is very specific to the latent diffusion model.
             self.betas = (
                 torch.linspace(
-                    beta_start ** 0.5,
-                    beta_end ** 0.5,
+                    beta_start**0.5,
+                    beta_end**0.5,
                     num_train_timesteps,
                     dtype=torch.float32,
                 )
@@ -219,7 +221,7 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
         step_index = (self.timesteps == timestep).nonzero().item()
         sigma = self.sigmas[step_index]
 
-        sample = sample / ((sigma ** 2 + 1) ** 0.5)
+        sample = sample / ((sigma**2 + 1) ** 0.5)
 
         self.is_scale_input_called = True
         return sample
@@ -419,7 +421,7 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             dt = self.dts[step_index]
         else:
             gamma = (
-                min(s_churn / (len(self.sigmas) - 1), 2 ** 0.5 - 1)
+                min(s_churn / (len(self.sigmas) - 1), 2**0.5 - 1)
                 if s_tmin <= sigma <= s_tmax
                 else 0.0
             )
@@ -427,7 +429,7 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             sigma_hat = sigma * (gamma + 1)
 
             if gamma > 0:
-                sample = sample + eps * (sigma_hat ** 2 - sigma ** 2) ** 0.5
+                sample = sample + eps * (sigma_hat**2 - sigma**2) ** 0.5
             dt = self.sigmas[step_index + 1] - sigma_hat
 
         # 1. compute predicted original sample (x_0) from sigma-scaled predicted noise
@@ -442,8 +444,8 @@ class EulerDiscreteScheduler(SchedulerMixin, ConfigMixin):
             pred_original_sample = sample - sigma_hat * model_output
         elif self.config.prediction_type == "v_prediction":
             # * c_out + input * c_skip
-            pred_original_sample = model_output * (-sigma / (sigma ** 2 + 1) ** 0.5) + (
-                sample / (sigma ** 2 + 1)
+            pred_original_sample = model_output * (-sigma / (sigma**2 + 1) ** 0.5) + (
+                sample / (sigma**2 + 1)
             )
         else:
             raise ValueError(

@@ -1,6 +1,7 @@
-# Torch run example: python examples/text_to_image_sdxl.py
-# Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
-
+"""
+Torch run example: python examples/text_to_image_sdxl.py
+Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
+"""
 import os
 import argparse
 
@@ -34,7 +35,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 # Normal SDXL pipeline init.
-output_type = "pil"
+OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
 scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
@@ -60,7 +61,7 @@ for i in range(args.warmup):
         height=args.height,
         width=args.width,
         num_inference_steps=args.n_steps,
-        output_type=output_type,
+        output_type=OUTPUT_TYPE,
     ).images
 
 # Normal SDXL run
@@ -70,6 +71,6 @@ image = base(
     height=args.height,
     width=args.width,
     num_inference_steps=args.n_steps,
-    output_type=output_type,
+    output_type=OUTPUT_TYPE,
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")

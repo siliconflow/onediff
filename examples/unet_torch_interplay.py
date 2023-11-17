@@ -1,30 +1,11 @@
+"""
+Testing inference speed
+save graph compiled example: python3 examples/unet_torch_interplay.py --save --model_id xx
+load graph compiled example: python3 examples/unet_torch_interplay.py --load
+"""
 import os
 import random
-
-os.environ["ONEFLOW_MLIR_CSE"] = "1"
-os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-
-os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-
-os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-
-os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-
-os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-
 import click
-
-# cv2 must be imported before diffusers and oneflow to avlid error: AttributeError: module 'cv2.gapi' has no attribute 'wip'
-# Maybe bacause oneflow use a lower version of cv2
-import cv2
 import oneflow as flow
 import torch
 from tqdm import tqdm
@@ -44,13 +25,13 @@ class TensorInput(object):
         return field_types[key]
 
 
-def get_unet(token, _model_id, revision):
+def get_unet(token, _model_id, variant):
     from diffusers import UNet2DConditionModel
 
     unet = UNet2DConditionModel.from_pretrained(
         _model_id,
         use_auth_token=token,
-        revision=revision,
+        variant=variant,
         torch_dtype=torch.float16,
         subfolder="unet",
     )
@@ -70,7 +51,9 @@ def warmup_with_arg(graph, arg_meta_of_sizes, added):
                 dtype=arg_metas.gettype("cross_attention_dim"),
             ).to("cuda"),
         ]
-        graph(*arg_tensors, added)  # build and warmup
+        graph(
+            *arg_tensors, added_cond_kwargs=added, return_dict=False
+        )  # build and warmup
 
 
 def img_dim(i, start, stride):
@@ -87,8 +70,8 @@ def get_arg_meta_of_sizes(
     resolution_scales,
     num_channels,
     cross_attention_dim,
-    start=768,
-    stride=128,
+    start = 768,
+    stride = 128,
 ):
     return [
         TensorInput(
@@ -117,20 +100,19 @@ def get_arg_meta_of_sizes(
 @click.option(
     "--model_id", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
 )
-@click.option("--revision", type=str, default="fp16")
-def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision):
+@click.option("--variant", type=str, default="fp16")
+def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant):
     RESOLUTION_SCALES = [2, 1, 0]
     BATCH_SIZES = [2]
     # TODO: reproduce bug caused by changing batch
     # BATCH_SIZES = [4, 2]
 
-    unet = get_unet(token, model_id, revision)
+    unet = get_unet(token, model_id, variant)
     unet_graph = oneflow_compile(unet)
 
     num_channels = 4
     cross_attention_dim = unet.config["cross_attention_dim"]
     from diffusers.utils import floats_tensor
-    import torch
 
     if (
         model_id == "stabilityai/stable-diffusion-xl-base-1.0"
@@ -152,7 +134,8 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
     for i, m in enumerate(warmup_meta_of_sizes):
         print(f"warmup case #{i + 1}:", m)
 
-    if load == True:
+    # load graph from filepath
+    if load:
         print("loading graphs...")
         unet_graph.warmup_with_load(file)
     else:
@@ -174,16 +157,22 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
     flow._oneflow_internal.eager.Sync()
     import time
 
+    # Testing inference speed
     t0 = time.time()
     for r in tqdm(range(repeat)):
-        import random
-
         noise = random.choice(noise_of_sizes)
         encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]
-        out = unet_graph(noise, time_step, encoder_hidden_states, added_cond_kwargs)
+        out = unet_graph(
+            noise,
+            time_step,
+            encoder_hidden_states,
+            added_cond_kwargs=added_cond_kwargs,
+            return_dict=False,
+        )
         if r == repeat - 1 or r % sync_interval == 0:
             flow._oneflow_internal.eager.Sync()
-    print(f"{type(out)=}")
+    assert isinstance(out[0], torch.Tensor)
+    print(f"{type(out[0])=}")
     t1 = time.time()
     duration = t1 - t0
     throughput = repeat / duration
@@ -191,6 +180,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, revision
         f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f}it/s"
     )
 
+    # save graph to filepath
     if save:
         print("saving graphs...")
         unet_graph.save_graph(file)
