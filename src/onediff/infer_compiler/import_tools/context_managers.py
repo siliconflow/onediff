@@ -1,3 +1,4 @@
+import sys
 import torch
 import oneflow as flow
 from contextlib import contextmanager
@@ -13,9 +14,11 @@ def onediff_mock_torch():
         restore_funcs.append(lambda: setattr(flow, attr_name, orig_flow_attr))
         setattr(flow, attr_name, getattr(torch, attr_name))
 
+    backup_modules = sys.modules.copy()  # sys.modules has been changed
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
     with flow.mock_torch.enable(lazy=True):
         yield
 
     for restore_func in restore_funcs:
         restore_func()
+    sys.modules = backup_modules
