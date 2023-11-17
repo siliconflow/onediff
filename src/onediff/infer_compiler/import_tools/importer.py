@@ -6,7 +6,7 @@ from typing import Optional, Union
 from types import FunctionType, ModuleType
 from pathlib import Path
 from .copier import PackageCopier
-from .context_managers import onediff_mock_torch
+from .context_managers import onediff_mock_torch, add_backup_modules
 
 
 
@@ -46,6 +46,8 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     return module
 
 
+
+
 def copy_package(package: str, target_directory: Optional[Union[str, Path]] = None):
     """Copy package to target directory"""
     with onediff_mock_torch():
@@ -53,7 +55,8 @@ def copy_package(package: str, target_directory: Optional[Union[str, Path]] = No
             package, prefix=PREFIX, suffix=SUFFIX, target_directory=target_directory
         )
         copier.do()  # copy package
-        package = copier.get_import_module()
+        new_pkg = copier.get_import_module()
+        add_backup_modules(copier.new_pkg_name, new_pkg)
 
 
 def _format_package_name(package_name: str) -> str:
@@ -84,9 +87,10 @@ def get_mock_entity_name(obj: Union[str, type, FunctionType]) -> str:
 
 def load_entity_with_mock(obj: Union[str, type, FunctionType]):
     path = _format_full_class_name(obj)
-    with onediff_mock_torch():
-        attrs = path.split(".")
-        obj_entity = importlib.import_module(attrs[0])
+    attrs = path.split(".")
+    with onediff_mock_torch(attrs[0]) as obj_entity:
+        # obj_entity = importlib.import_module(attrs[0])
+        # importlib.reload(obj_entity)
         for name in attrs[1:]:
             obj_entity = getattr(obj_entity, name)
         return obj_entity

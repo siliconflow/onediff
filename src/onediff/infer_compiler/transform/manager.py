@@ -77,7 +77,7 @@ class TransformManager:
             use_value = self._torch_to_oflow_cls_map[mock_full_cls_name]
             return use_value
 
-        use_value = load_entity_with_mock(full_cls_name)
+        use_value = load_entity_with_mock(mock_full_cls_name)
         self._torch_to_oflow_cls_map[mock_full_cls_name] = use_value
         return use_value
         
