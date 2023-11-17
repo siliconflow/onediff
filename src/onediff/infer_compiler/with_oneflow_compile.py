@@ -8,6 +8,7 @@ from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
+from .utils.log_utils import LOGGER
 
 
 class DualModule(torch.nn.Module):
@@ -20,7 +21,14 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
+
+        LOGGER.debug(
+            f"Convert {type(self._torch_module)} {id(self._torch_module)=} ..."
+        )
         self._oneflow_module = torch2oflow(self._torch_module)
+        LOGGER.debug(
+            f"Convert {id(self._torch_module)=} done! {id(self._oneflow_module)=}"
+        )
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -130,7 +138,7 @@ class DeployableModule(torch.nn.Module):
         return output
 
     @input_output_processor
-    @handle_deployable_exception
+    # @handle_deployable_exception
     def __call__(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()

@@ -4,9 +4,7 @@ import inspect
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 from ..import_tools import (
-    print_yellow,
-    print_green,
-    get_mock_cls_name,
+    get_mock_entity_name,
     import_module_from_path,
 )
 from .manager import transform_mgr
@@ -17,7 +15,7 @@ __all__ = ["register"]
 
 def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
     try:
-        key = get_mock_cls_name(cls)
+        key = get_mock_entity_name(cls)
         transform_mgr.update_class_proxies({key: replacement}, verbose=verbose)
 
     except Exception as e:

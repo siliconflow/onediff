@@ -1,55 +1,94 @@
-import oneflow as flow
+import sys
+import shutil
+import types
+import tempfile
+import atexit
 from typing import Dict, List, Union
 from pathlib import Path
-from ..import_tools import (
-    get_classes_in_package,
-    print_green,
+from ..utils.log_utils import set_logging, LOGGER
+
+# from ..import_tools.printer import print_green
+from ..import_tools.importer import (
+    copy_package,
+    get_mock_entity_name,
+    load_entity_with_mock,
 )
 
 __all__ = ["transform_mgr"]
 
 
 class TransformManager:
-    def __init__(self):
+    """TransformManager
+
+    __init__ args:
+        `debug_mode`: Whether to print debug info.
+        `output_dir`: Directory to save run results.
+    """
+
+    def __init__(self, debug_mode=False, output_dir: str = "./output"):
         self._torch_to_oflow_cls_map = {}
         self._torch_to_oflow_packages_list = []
+        self._create_output_dir(output_dir)
+        self.logger = set_logging(debug_mode=debug_mode, log_dir=output_dir)
+        # Create a temp dir to save mock packages.
+        self.temp_dir = tempfile.mkdtemp(
+            prefix="oneflow_transform_", dir=self.output_dir
+        )
+
+    def _create_output_dir(self, output_dir: str):
+        """Create a output dir to save run results."""
+        output_dir = Path(output_dir)
+        if not output_dir.exists():
+            output_dir.mkdir(parents=True, exist_ok=True)
+        self.output_dir = output_dir
+
+    def cleanup(self):
+        self.logger.debug(f"Cleaning up temp dir: {self.temp_dir}")
+        shutil.rmtree(self.temp_dir, ignore_errors=True)
 
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
-        print_green(f"Loading modules: {package_names}")
-        of_mds = {}
-        # https://docs.oneflow.org/master/cookies/oneflow_torch.html
-        with flow.mock_torch.enable(lazy=True):
-            for package_name in package_names:
-                of_mds.update(get_classes_in_package(package_name))
-        print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names}")
-        self._torch_to_oflow_cls_map.update(of_mds)
-        self._torch_to_oflow_packages_list.extend(package_names)
+        self.logger.info(f"Loading modules: {package_names}")
+        for package_name in package_names:
+            copy_package(package_name, self.temp_dir)
+            self._torch_to_oflow_packages_list.append(package_name)
 
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
         """Update `_torch_to_oflow_cls_map` with `class_proxy_dict`.
-    
-        example: 
+
+        example:
             `class_proxy_dict = {"mock_torch.nn.Conv2d": flow.nn.Conv2d}`
-    
+
         """
         self._torch_to_oflow_cls_map.update(class_proxy_dict)
 
         if verbose:
-            print_green(
+            self.logger.info(
                 f"Loaded Mock Torch {len(class_proxy_dict)} "
                 f"classes: {class_proxy_dict.keys()}... "
             )
 
     def transform_cls(self, full_cls_name: str):
-        if full_cls_name in self._torch_to_oflow_cls_map:
-            return self._torch_to_oflow_cls_map[full_cls_name]
+        """Transform a class name to a mock class ."""
+        mock_full_cls_name = get_mock_entity_name(full_cls_name)
+        if mock_full_cls_name in self._torch_to_oflow_cls_map:
+            return self._torch_to_oflow_cls_map[mock_full_cls_name]
 
-        raise RuntimeError(
-            f"""
-            Replace can't find proxy oneflow module for: {str(full_cls_name)}. \n 
-            You need to register it. 
-            """
-        )
+        return load_entity_with_mock(full_cls_name)
+
+    def transform_func(self, func: types.FunctionType):
+        """Transform a function to a mock function."""
+        return load_entity_with_mock(func)
 
 
-transform_mgr = TransformManager()
+transform_mgr = TransformManager(debug_mode=True)
+
+
+def handle_exit():
+    exc_type, exc_value, traceback = sys.exc_info()
+    if exc_type is not None:
+        LOGGER.error(f"Exception: {exc_type}, {exc_value}")
+        transform_mgr.cleanup()
+
+
+atexit.register(transform_mgr.cleanup)
+atexit.register(handle_exit)

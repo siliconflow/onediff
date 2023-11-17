@@ -9,13 +9,12 @@ from typing import Union, Any
 import torch
 import oneflow as flow
 
+
 # TODO(strint): rm diffusers import
 import diffusers
 
 from .manager import transform_mgr
-from ..import_tools import print_red, print_yellow
-from ..import_tools import get_mock_cls_name
-
+from ..utils.log_utils import LOGGER
 
 __all__ = [
     "proxy_class",
@@ -27,6 +26,21 @@ __all__ = [
     "torch2oflow",
     "default_converter",
 ]
+from functools import singledispatch
+
+# def singledispatch_proxy(func):
+#     dispatcher = singledispatch(func)
+
+#     def wrapper(first_param, *args, **kwargs):
+#         instance_name_before = first_param.__class__.__name__
+#         result = dispatcher(first_param, *args, **kwargs)
+
+#         if all(instance_name_before not in s for s in (result.__class__.__name__, str(result.__class__), str(result))):
+#             LOGGER.warning(f"instance_name: {instance_name_before} -> {result}")
+#         return result
+
+#     wrapper.register = dispatcher.register
+#     return wrapper
 
 
 def proxy_class(cls: type):
@@ -34,10 +48,8 @@ def proxy_class(cls: type):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
-
-    full_cls_name = get_mock_cls_name(cls)
-
-    return transform_mgr.transform_cls(full_cls_name)
+    result = transform_mgr.transform_cls(str(cls)[8:-2])
+    return result
 
 
 class ProxySubmodule:
@@ -127,60 +139,6 @@ class ProxySubmodule:
             )
 
 
-def replace_obj(obj):
-    cls = type(obj)
-    if cls == torch.dtype:
-        return {
-            "torch.float16": flow.float16,
-            "torch.float32": flow.float32,
-            "torch.double": flow.double,
-            "torch.int8": flow.int8,
-            "torch.int32": flow.int32,
-            "torch.int64": flow.int64,
-            "torch.uint8": flow.uint8,
-        }[str(obj)]
-    if cls == torch.fx.immutable_collections.immutable_list:
-        return [e for e in obj]
-    replacement = proxy_class(cls)
-    if replacement is not None:
-        if cls in [torch.device]:
-            return replacement(str(obj))
-        elif cls == torch.nn.parameter.Parameter:
-            return flow.utils.tensor.from_torch(obj.data)
-        else:
-            raise RuntimeError("don't know how to create oneflow obj for: " + str(cls))
-    else:
-        return obj
-
-
-def replace_func(func):
-    if func == torch.conv2d:
-        return flow.nn.functional.conv2d
-    if func == torch._C._nn.linear:
-        return flow.nn.functional.linear
-    if func.__module__.startswith("torch"):
-        mod_name = func.__module__.replace("torch", "oneflow")
-        mod = importlib.import_module(mod_name)
-        return getattr(mod, func.__name__)
-    else:
-        return func
-
-
-def map_args(args, kwargs):
-    args = [replace_obj(a) for a in args]
-    kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
-    return (args, kwargs)
-
-
-def get_attr(gm, node, torch2flow={}):
-    attr = getattr(gm, node.target)
-    if attr in torch2flow:
-        return torch2flow[attr]
-    of_attr = replace_obj(attr)
-    torch2flow[attr] = of_attr
-    return of_attr
-
-
 @singledispatch
 def torch2oflow(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
@@ -199,10 +157,10 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         of_obj = of_obj_cls()
 
         if verbose:
-            print(f"convert {type(obj)} to {type(of_obj)}")
+            LOGGER.info(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        print_yellow(f"Unsupported type: {type(obj)}")
+        LOGGER.warning(f"Unsupported type: {type(obj)}")
         return obj
 
 
@@ -240,7 +198,7 @@ def _(mod: torch.nn.Module, verbose=False):
                     self.__dict__[k] = torch2oflow(attr)
 
                 except Exception as e:
-                    print_red(f"convert {type(attr)} failed: {e}")
+                    LOGGER.error(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")
 
     def proxy_getattr(self, attr):
@@ -265,7 +223,7 @@ def _(mod: torch.nn.Module, verbose=False):
     if of_mod.training:
         of_mod.training = False
         if verbose:
-            print(
+            LOGGER.info(
                 f"""
             Warning: {type(of_mod)} is in training mode 
             and is turned into eval mode which is good for infrence optimation.
@@ -273,7 +231,7 @@ def _(mod: torch.nn.Module, verbose=False):
             )
 
     if verbose:
-        print(f"convert {type(mod)} to {type(of_mod)}")
+        LOGGER.info(f"convert {type(mod)} to {type(of_mod)}")
 
     return of_mod
 
@@ -290,7 +248,6 @@ def _(mod: torch.nn.ModuleList, verbose=False):
 
 @torch2oflow.register
 def _(mod: torch.nn.Sequential, verbose=False):
-
     of_mod_list = []
     for original_submod in mod:
         submod = torch2oflow(original_submod, verbose)
@@ -335,7 +292,7 @@ def _(mod: tuple, verbose=False) -> tuple:
 
 
 @torch2oflow.register
-def _(mod: OrderedDict, verbose=False) -> dict:
+def _(mod: OrderedDict, verbose=False) -> OrderedDict:
     return default_converter(mod, verbose, proxy_cls=OrderedDict)
 
 
@@ -391,10 +348,7 @@ def _(mod: dict, verbose=False) -> dict:
 
 @torch2oflow.register
 def _(func: types.FunctionType, verbose=False):
-    proxy_cls_name = get_mock_cls_name(func)
-    proxy_obj = transform_mgr.transform_cls(proxy_cls_name)
-    new_func = getattr(proxy_obj, func.__name__)
-    return new_func
+    return transform_mgr.transform_func(func)
 
 
 @torch2oflow.register
@@ -416,3 +370,71 @@ try:
 
 except:
     pass
+
+
+# from comfy.ldm.modules.diffusionmodules.openaimodel import TimestepEmbedSequential
+# @torch2oflow.register
+# def _(mod: TimestepEmbedSequential, verbose=False):
+#     # proxy_obj = proxy_class(type(mod))()
+#     proxy_objs = []
+#     for layer in mod:
+#         proxy_objs.append(torch2oflow(layer, verbose))
+
+#     return proxy_class(type(mod))(*proxy_objs)
+
+
+############################################## Old Code For Onefx ##############################################
+
+
+def replace_obj(obj):
+    cls = type(obj)
+    if cls == torch.dtype:
+        return {
+            "torch.float16": flow.float16,
+            "torch.float32": flow.float32,
+            "torch.double": flow.double,
+            "torch.int8": flow.int8,
+            "torch.int32": flow.int32,
+            "torch.int64": flow.int64,
+            "torch.uint8": flow.uint8,
+        }[str(obj)]
+    if cls == torch.fx.immutable_collections.immutable_list:
+        return [e for e in obj]
+    replacement = proxy_class(cls)
+    if replacement is not None:
+        if cls in [torch.device]:
+            return replacement(str(obj))
+        elif cls == torch.nn.parameter.Parameter:
+            return flow.utils.tensor.from_torch(obj.data)
+        else:
+            raise RuntimeError("don't know how to create oneflow obj for: " + str(cls))
+    else:
+        return obj
+
+
+def replace_func(func):
+    if func == torch.conv2d:
+        return flow.nn.functional.conv2d
+    if func == torch._C._nn.linear:
+        return flow.nn.functional.linear
+    if func.__module__.startswith("torch"):
+        mod_name = func.__module__.replace("torch", "oneflow")
+        mod = importlib.import_module(mod_name)
+        return getattr(mod, func.__name__)
+    else:
+        return func
+
+
+def map_args(args, kwargs):
+    args = [replace_obj(a) for a in args]
+    kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
+    return (args, kwargs)
+
+
+def get_attr(gm, node, torch2flow={}):
+    attr = getattr(gm, node.target)
+    if attr in torch2flow:
+        return torch2flow[attr]
+    of_attr = replace_obj(attr)
+    torch2flow[attr] = of_attr
+    return of_attr

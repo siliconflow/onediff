@@ -1,29 +1,32 @@
 """Copier for package"""
-import os
 import sys
 import shutil
 import importlib
-import tempfile
+from typing import List, Tuple, Union, Optional, Union
 from pathlib import Path
-from typing import List, Tuple, Union
-from .printer import print_red, print_green
-from .copy_utils import copy_files, get_matched_files, convert_funcs_to_classes
+from .copy_utils import copy_files, get_matched_files
+from ..utils.log_utils import LOGGER
 
 
 class PackageCopier:
     def __init__(
-        self, old_pkg: Union[str, Path], prefix="mock_", suffix="", use_temp_dir=False
+        self,
+        old_pkg: Union[str, Path],
+        prefix="mock_",
+        suffix="",
+        target_directory: Optional[Union[str, Path]] = None,
     ):
         self.old_pkg_name, self.old_pkg_path = self._get_path(old_pkg)
         self.new_pkg_name = prefix + self.old_pkg_name + suffix
-        if use_temp_dir:
-            self.new_pkg_path = Path(tempfile.gettempdir()) / self.new_pkg_name
-        else:
+
+        if target_directory is None:
             self.new_pkg_path = self.old_pkg_path.parent / self.new_pkg_name
+        else:
+            self.new_pkg_path = Path(target_directory) / self.new_pkg_name
+
         assert self.old_pkg_path.exists(), f"{self.old_pkg_path} not exists"
         self.register_call = [
             self.copy_package,
-            self.rewrite_func2class,
             self.add_init_files,
             self.rewrite_imports,
             self.test_import,
@@ -53,10 +56,10 @@ class PackageCopier:
         src = Path(self.old_pkg_path)
         dest = Path(self.new_pkg_path)
         if src == dest:
-            print_red(f"src == dest, do nothing")
+            LOGGER.warning(f"src == dest, do nothing")
             return
         if dest.exists():
-            print_red(f"{dest} exists, remove it")
+            LOGGER.warning(f"{dest} exists, remove it")
             shutil.rmtree(dest)
 
         file_list = get_matched_files(src)
@@ -89,7 +92,7 @@ class PackageCopier:
             if path.exists():
                 return
             else:
-                with open(path, "w") as fp:
+                with open(path, "w", encoding="utf-8") as fp:
                     result = find_directories_with_init(path.parent)
                     if result:
                         fp.write("# This file is created by PackageCopier\n")
@@ -106,7 +109,7 @@ class PackageCopier:
 
     def rewrite_imports(self):
         for pyfile in self.new_pkg_path.glob("**/*.py"):
-            with open(pyfile, "r") as fp:
+            with open(pyfile, "r", encoding="utf-8") as fp:
                 content = fp.read()
                 content = content.replace(
                     f"{self.old_pkg_name}.", f"{self.new_pkg_name}."
@@ -117,24 +120,23 @@ class PackageCopier:
                 content = content.replace(
                     f"import {self.old_pkg_name}", f"import {self.new_pkg_name}"
                 )
-            with open(pyfile, "w") as fp:
+            with open(pyfile, "w", encoding="utf-8") as fp:
                 fp.write(content)
-
-    def rewrite_func2class(self):
-        for pyfile in self.new_pkg_path.glob("**/*.py"):
-            convert_funcs_to_classes(pyfile, pyfile)  # in-place
 
     def test_import(self):
         sys.path.insert(0, str(self.new_pkg_path.parent))
         importlib.import_module(self.new_pkg_name)
-        print_green(f"Test import {self.new_pkg_name} succeed!")
+        LOGGER.debug(f"import {self.new_pkg_name} success")
 
     def get_import_module(self):
         return importlib.import_module(self.new_pkg_name)
 
-    def __call__(self, verbose=False):
+    def __call__(self):
         for fn in self.register_call:
             fn()
+
+    def do(self):
+        self.__call__()
 
 
 if __name__ == "__main__":
