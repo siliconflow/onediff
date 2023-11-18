@@ -1,5 +1,6 @@
 import oneflow as flow
 import time
+import inspect
 from .log_utils import LOGGER
 
 
@@ -8,8 +9,8 @@ def cost_cnt(debug=False):
         def clocked(*args, **kwargs):
             if not debug:
                 return func(*args, **kwargs)
-
-            LOGGER.debug(f"==> function {func.__name__}  try to run...")
+            module = inspect.getmodule(func)
+            LOGGER.debug(f"==> function {module.__name__}.{func.__name__}  try to run...")
             flow._oneflow_internal.eager.Sync()
 
             before_used = flow._oneflow_internal.GetCUDAMemoryUsed()

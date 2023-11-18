@@ -28,19 +28,28 @@ __all__ = [
 ]
 from functools import singledispatch
 
-# def singledispatch_proxy(func):
-#     dispatcher = singledispatch(func)
+_warning_set = set()
 
-#     def wrapper(first_param, *args, **kwargs):
-#         instance_name_before = first_param.__class__.__name__
-#         result = dispatcher(first_param, *args, **kwargs)
+def singledispatch_proxy(func):
+    dispatcher = singledispatch(func)
 
-#         if all(instance_name_before not in s for s in (result.__class__.__name__, str(result.__class__), str(result))):
-#             LOGGER.warning(f"instance_name: {instance_name_before} -> {result}")
-#         return result
+    def wrapper(first_param, *args, **kwargs):
+        instance_name_before = first_param.__class__.__name__
+        result = dispatcher(first_param, *args, **kwargs)
+        instance_name_after = result.__class__.__name__
 
-#     wrapper.register = dispatcher.register
-#     return wrapper
+        before_to_after = f"{instance_name_before} -> {instance_name_after}"
+
+        if (
+            instance_name_before not in instance_name_after
+            and before_to_after not in _warning_set
+        ):
+            _warning_set.add(before_to_after)
+            LOGGER.warning(f"instance_name: {before_to_after}")
+        return result
+
+    wrapper.register = dispatcher.register
+    return wrapper
 
 
 def proxy_class(cls: type):
@@ -49,6 +58,8 @@ def proxy_class(cls: type):
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
     result = transform_mgr.transform_cls(str(cls)[8:-2])
+    if result is None:
+        LOGGER.warning(f"Can't find oneflow module for: {str(cls)[8:-2]}")
     return result
 
 
@@ -139,7 +150,7 @@ class ProxySubmodule:
             )
 
 
-@singledispatch
+@singledispatch_proxy
 def torch2oflow(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
@@ -160,7 +171,9 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             LOGGER.info(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        LOGGER.warning(f"Unsupported type: {type(obj)}")
+        if type(obj) not in _warning_set:
+            LOGGER.warning(f"Unsupported type: {type(obj)}")
+            _warning_set.add(type(obj))
         return obj
 
 
@@ -252,8 +265,8 @@ def _(mod: torch.nn.Sequential, verbose=False):
     for original_submod in mod:
         submod = torch2oflow(original_submod, verbose)
         of_mod_list.append(submod)
-    of_mod_seq = flow.nn.Sequential(*of_mod_list)
 
+    of_mod_seq = proxy_class(type(mod))(*of_mod_list)
     return of_mod_seq
 
 
@@ -293,7 +306,10 @@ def _(mod: tuple, verbose=False) -> tuple:
 
 @torch2oflow.register
 def _(mod: OrderedDict, verbose=False) -> OrderedDict:
-    return default_converter(mod, verbose, proxy_cls=OrderedDict)
+    if "OrderedDict" not in f'{mod}':
+        return default_converter(mod, verbose)
+    else:
+        return default_converter(mod, verbose, proxy_cls=OrderedDict)
 
 
 @torch2oflow.register
@@ -370,17 +386,6 @@ try:
 
 except:
     pass
-
-
-# from comfy.ldm.modules.diffusionmodules.openaimodel import TimestepEmbedSequential
-# @torch2oflow.register
-# def _(mod: TimestepEmbedSequential, verbose=False):
-#     # proxy_obj = proxy_class(type(mod))()
-#     proxy_objs = []
-#     for layer in mod:
-#         proxy_objs.append(torch2oflow(layer, verbose))
-
-#     return proxy_class(type(mod))(*proxy_objs)
 
 
 ############################################## Old Code For Onefx ##############################################

@@ -1,5 +1,4 @@
 """A module for registering custom torch2oflow functions and classes."""
-import warnings
 import inspect
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
