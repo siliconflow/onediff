@@ -106,7 +106,7 @@ class DualModuleList(torch.nn.ModuleList):
         return setattr(self, str(idx), module)
 
     def __setattr__(self, key, value):
-        if key == "_torch_modules" or key == "_oneflow_modules":
+        if key in ("_torch_modules", "_oneflow_modules"):
             return object.__setattr__(self, key, value)
         if isinstance(value, DualModule):
             setattr(self._torch_modules, key, value._torch_module)
@@ -166,7 +166,9 @@ class DeployableModule(torch.nn.Module):
             self._deployable_module_model.oneflow_module, size
         )
         if "debug" in self._deployable_module_options:
-            self._deployable_module_dpl_graph.debug(self._deployable_module_options["debug"])
+            self._deployable_module_dpl_graph.debug(
+                self._deployable_module_options["debug"]
+            )
         return self._deployable_module_dpl_graph
 
     @input_output_processor

@@ -22,7 +22,7 @@ def rewrite_self_attention(model):
 
     def is_attention_can_be_fused(attn):
         dim_head = attn.to_q.out_features // attn.heads
-        if dim_head != 40 and dim_head != 64:
+        if dim_head not in (40, 64):
             return False
         if attn.to_k is None or attn.to_v is None:
             return False
@@ -32,10 +32,7 @@ def rewrite_self_attention(model):
             or attn.to_v.bias is not None
         ):
             return False
-        if not (
-            isinstance(attn.processor, AttnProcessor2_0)
-            or isinstance(attn.processor, AttnProcessor)
-        ):
+        if not isinstance(attn.processor, (AttnProcessor, AttnProcessor2_0)):
             return False
         if (
             attn.to_q.in_features != attn.to_k.in_features
@@ -87,9 +84,8 @@ def rewrite_self_attention(model):
             )
             attn.to_qkv.bias.data = qkv_bias
 
-        if _IS_DIFFUSERS_QUANT_AVAILABLE and (
-            isinstance(attn.to_q, StaticQuantLinearModule)
-            or isinstance(attn.to_q, DynamicQuantLinearModule)
+        if _IS_DIFFUSERS_QUANT_AVAILABLE and isinstance(
+            attn.to_q, (DynamicQuantLinearModule, StaticQuantLinearModule)
         ):
             cls = type(attn.to_q)
             weight_scale = (

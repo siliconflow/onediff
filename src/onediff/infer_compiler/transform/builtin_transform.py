@@ -71,11 +71,10 @@ def proxy_class(cls: type):
 class ProxySubmodule:
     def __init__(self, submod):
         self._oflow_proxy_submod = submod
-        self._oflow_proxy_parameters = dict()
-        self._oflow_proxy_children = dict()
+        self._oflow_proxy_parameters = {}
+        self._oflow_proxy_children = {}
 
     def __getitem__(self, index):  # __getitem__
-
         if isinstance(self._oflow_proxy_submod, Iterable):
             submod = self._oflow_proxy_submod[index]
             return torch2oflow(submod)
@@ -117,9 +116,9 @@ class ProxySubmodule:
         ):
             return flow.Generator()
         elif (
-            isinstance(self._oflow_proxy_submod, torch.nn.Conv2d)
-            or isinstance(self._oflow_proxy_submod, torch.nn.Conv3d)
-        ) and attribute == "channel_pos":
+            isinstance(self._oflow_proxy_submod, (torch.nn.Conv2d, torch.nn.Conv3d))
+            and attribute == "channel_pos"
+        ):
             return "channels_first"
         else:
             a = getattr(self._oflow_proxy_submod, attribute)
@@ -200,13 +199,13 @@ def _(mod: torch.nn.Module, verbose=False):
         self._parameters = OrderedDict()
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
-        for (n, p) in list(proxy_md.named_parameters("", False)):
+        for n, p in list(proxy_md.named_parameters("", False)):
             self._parameters[n] = flow.nn.Parameter(
                 flow.utils.tensor.from_torch(p.data), requires_grad=p.requires_grad
             )
-        for (n, b) in list(proxy_md.named_buffers("", False)):
+        for n, b in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
-        for (n, m) in proxy_md._modules.items():
+        for n, m in proxy_md._modules.items():
             self._modules[n] = torch2oflow(m)
 
         for k, _ in proxy_md.__dict__.items():
@@ -331,12 +330,12 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 
 
 @torch2oflow.register
-def _(mod: None, verbose=False) -> None:
+def _(mod: None, verbose=False):
     return mod
 
 
 @torch2oflow.register
-def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
+def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
         mod_name = None
         if mod.__module__.startswith("torch._C._nn"):
@@ -357,7 +356,7 @@ def _(mod: types.BuiltinFunctionType, verbose=False) -> None:
 
 
 @torch2oflow.register
-def _(mod: torch.device, verbose=False) -> None:
+def _(mod: torch.device, verbose=False):
     index = mod.index if mod.index is not None else 0
     return flow.device(mod.type, index)
 
@@ -387,7 +386,6 @@ try:
     @torch2oflow.register
     def _(mod: FusedSelfAttnProcessor, verbose=False) -> FusedSelfAttnProcessor:
         return mod
-
 
 except:
     pass

@@ -12,7 +12,7 @@ from .copier import PackageCopier
 __all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
 
 
-def gen_unique_id():
+def gen_unique_id() -> str:
     timestamp = int(time.time() * 1000)
     process_id = os.getpid()
     # TODO(): refine the unique id
@@ -102,7 +102,7 @@ def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, ty
         return class_dict
 
 
-def _format_package_name(package_name):
+def _format_package_name(package_name) -> str:
     return PREFIX + package_name + SUFFIX
 
 

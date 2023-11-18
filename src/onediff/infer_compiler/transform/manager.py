@@ -3,7 +3,9 @@ import shutil
 import types
 import tempfile
 import atexit
+
 from typing import Dict, List, Union
+from contextlib import contextmanager
 from pathlib import Path
 from ..utils.log_utils import set_logging, LOGGER
 from ..import_tools.importer import (
@@ -53,6 +55,7 @@ class TransformManager:
             self._torch_to_oflow_packages_list.append(package_name)
             self.logger.info(f"Loaded Mock Torch Package: {package_name} successfully")
 
+
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
         """Update `_torch_to_oflow_cls_map` with `class_proxy_dict`.
 
@@ -62,28 +65,9 @@ class TransformManager:
         """
         self._torch_to_oflow_cls_map.update(class_proxy_dict)
 
-<<<<<<< HEAD
         debug_message = f"Updated class proxies: {len(class_proxy_dict)=}"
         debug_message += f"\n{class_proxy_dict}\n"
         self.logger.debug(debug_message)
-=======
-        if verbose:
-            print_green(
-                f"Loaded Mock Torch {len(class_proxy_dict)} "
-                f"classes: {class_proxy_dict.keys()}... "
-            )
-
-    def transform_cls(self, full_cls_name):
-        if full_cls_name in self._torch_to_oflow_cls_map:
-            return self._torch_to_oflow_cls_map[full_cls_name]
-
-        raise RuntimeError(
-            f"""
-            Replace can't find proxy oneflow module for: {full_cls_name}. \n 
-            You need to register it. 
-            """
-        )
->>>>>>> main
 
 
 

@@ -77,7 +77,6 @@ class PackageCopier:
         copy_files(src, dest, file_list)
 
     def add_init_files(self):
-
         directory = self.new_pkg_path
         if not directory.is_dir():
             raise ValueError(f"{directory} is not a directory")
@@ -98,7 +97,7 @@ class PackageCopier:
                         result.append(path.name)
             return result
 
-        def apply_fn(path: Path) -> None:
+        def apply_fn(path: Path):
             # Apply function to the path
             if path.exists():
                 return
