@@ -30,6 +30,7 @@ from functools import singledispatch
 
 _warning_set = set()
 
+
 def singledispatch_proxy(func):
     dispatcher = singledispatch(func)
 
@@ -57,9 +58,13 @@ def proxy_class(cls: type):
         mod_name = cls.__module__.replace("torch", "oneflow")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
-    result = transform_mgr.transform_cls(str(cls)[8:-2])
-    if result is None:
-        LOGGER.warning(f"Can't find oneflow module for: {str(cls)[8:-2]}")
+
+    # <class 'models.Attention'> -> models.Attention
+    full_cls_name = str(cls)[8:-2]
+    result = transform_mgr.transform_cls(full_cls_name)
+    if result is None and full_cls_name not in _warning_set:
+        _warning_set.add(full_cls_name)
+        LOGGER.warning(f"Can't find oneflow module for: {full_cls_name}")
     return result
 
 
@@ -306,7 +311,7 @@ def _(mod: tuple, verbose=False) -> tuple:
 
 @torch2oflow.register
 def _(mod: OrderedDict, verbose=False) -> OrderedDict:
-    if "OrderedDict" not in f'{mod}':
+    if "OrderedDict" not in f"{mod}":
         return default_converter(mod, verbose)
     else:
         return default_converter(mod, verbose, proxy_cls=OrderedDict)
