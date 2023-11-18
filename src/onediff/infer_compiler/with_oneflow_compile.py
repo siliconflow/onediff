@@ -121,7 +121,6 @@ class DualModuleList(torch.nn.ModuleList):
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-
         if transform_mgr.debug_mode:
             return func(self, *args, **kwargs)
         else:
@@ -194,7 +193,9 @@ class DeployableModule(torch.nn.Module):
                 output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model.oneflow_module(*args, **kwargs)
+                output = self._deployable_module_model.oneflow_module.__call__(
+                    *args, **kwargs
+                )
         return output
 
     def to(self, *args, **kwargs):
@@ -302,7 +303,7 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     return new_state_dict
 
 
-def oneflow_compile(torch_module, *, use_graph=True, options={}):
+def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}):
     set_default_registry()
 
     def wrap_module(module):
@@ -313,4 +314,5 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
     model = wrap_module(torch_module)
     model._register_state_dict_hook(state_dict_hook)
+
     return model
