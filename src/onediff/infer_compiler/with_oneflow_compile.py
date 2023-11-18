@@ -10,6 +10,7 @@ from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import LOGGER
+from .utils.cost_util import cost_cnt
 
 
 class DualModule(torch.nn.Module):
@@ -23,13 +24,10 @@ class DualModule(torch.nn.Module):
         if self._oneflow_module is not None:
             return self._oneflow_module
 
-        LOGGER.debug(
-            f"Convert {type(self._torch_module)} {id(self._torch_module)=} ..."
-        )
+        LOGGER.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
-        LOGGER.debug(
-            f"Convert {id(self._torch_module)=} done! {id(self._oneflow_module)=}"
-        )
+
+        LOGGER.debug(f"Convert {id(self._torch_module)=} done!")
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -80,7 +78,7 @@ class DualModule(torch.nn.Module):
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        
+
         if transform_mgr.debug_mode:
             return func(self, *args, **kwargs)
         else:
@@ -92,6 +90,7 @@ def handle_deployable_exception(func):
                 del self._deployable_module_model.oneflow_module
                 self._deployable_module_dpl_graph = None
                 return func(self, *args, **kwargs)
+
     return wrapper
 
 
@@ -224,12 +223,14 @@ class OneflowGraph(flow.nn.Graph):
     def build(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
+    @cost_cnt(transform_mgr.debug_mode)
     def warmup_with_load(self, file_path, device=None):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
         self.load_runtime_state_dict(state_dict)
 
+    @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
         state_dict = self.runtime_state_dict()
         flow.save(state_dict, file_path)

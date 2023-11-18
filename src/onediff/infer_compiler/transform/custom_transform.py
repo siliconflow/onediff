@@ -46,13 +46,12 @@ def set_default_registry():
     try:
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
-        warnings.warn(f"Failed to register_diffusers {e=}")
+        LOGGER.warning(f"Failed to register_diffusers {e=}")
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except Exception as e:
-        warnings.warn(f"Failed to register_diffusers_quant {e=}")
-
+        LOGGER.warning(f"Failed to register_diffusers_quant {e=}")
 
 def register(
     *,
