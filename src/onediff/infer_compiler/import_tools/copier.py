@@ -32,6 +32,17 @@ class PackageCopier:
             self.test_import,
         ]
 
+    def __enter__(self):
+        # Copy the package to a new place
+        self.__call__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        # Remove the new package after exit
+        shutil.rmtree(self.new_pkg_path)
+        if exc_tb:
+            print(f"{exc_type=} {exc_val=} {exc_tb=}")
+
     def __repr__(self):
         return (
             f"PackageCopier({self.old_pkg_name} -> {self.new_pkg_name}"

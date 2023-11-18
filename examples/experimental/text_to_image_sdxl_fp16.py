@@ -20,7 +20,9 @@ parser.add_argument(
     "--saved_image", type=str, required=False, default="xl-base-out.png"
 )
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--compile", action=argparse.BooleanOptionalAction)
+parser.add_argument(
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
 parser.add_argument("--graph", action=argparse.BooleanOptionalAction)
 args = parser.parse_args()
 

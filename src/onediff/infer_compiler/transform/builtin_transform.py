@@ -118,8 +118,8 @@ class ProxySubmodule:
             return flow.Generator()
         elif (
             isinstance(self._oflow_proxy_submod, torch.nn.Conv2d)
-            and attribute == "channel_pos"
-        ):
+            or isinstance(self._oflow_proxy_submod, torch.nn.Conv3d)
+        ) and attribute == "channel_pos":
             return "channels_first"
         else:
             a = getattr(self._oflow_proxy_submod, attribute)
@@ -425,6 +425,8 @@ def replace_obj(obj):
 def replace_func(func):
     if func == torch.conv2d:
         return flow.nn.functional.conv2d
+    if func == torch.conv3d:
+        return flow.nn.functional.conv3d
     if func == torch._C._nn.linear:
         return flow.nn.functional.linear
     if func.__module__.startswith("torch"):
