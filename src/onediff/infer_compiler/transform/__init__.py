@@ -15,6 +15,6 @@ from .builtin_transform import (
     get_attr,
 )
 
-if os.environ.get("ONEDIFF_DEBUG", "0") != "1":
+if transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
