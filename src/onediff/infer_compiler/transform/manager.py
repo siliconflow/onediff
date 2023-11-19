@@ -5,9 +5,8 @@ import types
 import tempfile
 import atexit
 import warnings
-
 from typing import Dict, List, Union
-from contextlib import contextmanager
+
 from pathlib import Path
 from ..utils.log_utils import set_logging, LOGGER
 from ..import_tools.importer import (
