@@ -1,8 +1,10 @@
+import os
 import sys
 import shutil
 import types
 import tempfile
 import atexit
+import warnings
 
 from typing import Dict, List, Union
 from contextlib import contextmanager
@@ -26,8 +28,8 @@ class TransformManager:
         `output_dir`: Directory to save run results.
     """
 
-    def __init__(self, debug_mode=False, output_dir: str = "./output"):
-        self.debug_mode = debug_mode    
+    def __init__(self, debug_mode=False, output_dir="./output"):
+        self.debug_mode = debug_mode
         self._torch_to_oflow_cls_map = {}
         self._torch_to_oflow_packages_list = []
         self._create_output_dir(output_dir)
@@ -55,7 +57,6 @@ class TransformManager:
             self._torch_to_oflow_packages_list.append(package_name)
             self.logger.info(f"Loaded Mock Torch Package: {package_name} successfully")
 
-
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
         """Update `_torch_to_oflow_cls_map` with `class_proxy_dict`.
 
@@ -69,9 +70,6 @@ class TransformManager:
         debug_message += f"\n{class_proxy_dict}\n"
         self.logger.debug(debug_message)
 
-
-
-
     def transform_cls(self, full_cls_name: str):
         """Transform a class name to a mock class ."""
         mock_full_cls_name = get_mock_entity_name(full_cls_name)
@@ -83,14 +81,19 @@ class TransformManager:
         use_value = load_entity_with_mock(mock_full_cls_name)
         self._torch_to_oflow_cls_map[mock_full_cls_name] = use_value
         return use_value
-        
 
     def transform_func(self, func: types.FunctionType):
         """Transform a function to a mock function."""
         return load_entity_with_mock(func)
 
 
-transform_mgr = TransformManager(debug_mode=True)
+debug_mode = os.getenv("ONEDIFF_DEBUG_MODE", "0") == "1"
+output_dir = os.getenv("ONEDIFF_MOCK_TMP_PATH", "./output")
+transform_mgr = TransformManager(debug_mode=debug_mode, output_dir=output_dir)
+
+if not transform_mgr.debug_mode:
+    warnings.simplefilter("ignore", category=UserWarning)
+    warnings.simplefilter("ignore", category=FutureWarning)
 
 
 def handle_exit():

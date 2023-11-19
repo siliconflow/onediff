@@ -10,11 +10,9 @@ import torch
 import oneflow as flow
 
 
-# TODO(strint): rm diffusers import
-import diffusers
-
 from .manager import transform_mgr
 from ..utils.log_utils import LOGGER
+from ..utils.patch_for_diffusers import diffusers_checker
 
 __all__ = [
     "proxy_class",
@@ -93,9 +91,7 @@ class ProxySubmodule:
                 self, *args, **kwargs
             )
         elif (
-            isinstance(
-                self._oflow_proxy_submod, diffusers.models.attention_processor.Attention
-            )
+            diffusers_checker.is_attention_instance(self._oflow_proxy_submod)
             and attribute == "get_attention_scores"
         ):
             replacement = proxy_class(type(self._oflow_proxy_submod))
@@ -176,7 +172,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return of_obj
     except Exception as e:
         if type(obj) not in _warning_set:
-            LOGGER.warning(f"Unsupported type: {type(obj)}")
+            LOGGER.warning(f"Unsupported type: {type(obj)} {e=}")
             _warning_set.add(type(obj))
         return obj
 
@@ -380,18 +376,7 @@ def _(mod: partial, verbose=False):
     return partial(func, *args, **keywords)
 
 
-try:
-    from onediff.optimization.attention_processor import FusedSelfAttnProcessor
-
-    @torch2oflow.register
-    def _(mod: FusedSelfAttnProcessor, verbose=False) -> FusedSelfAttnProcessor:
-        return mod
-
-except:
-    pass
-
-
-############################################## Old Code For Onefx ##############################################
+############################################## Code For Onefx ##############################################
 
 
 def replace_obj(obj):

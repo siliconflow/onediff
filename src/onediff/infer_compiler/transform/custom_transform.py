@@ -21,7 +21,7 @@ def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
         LOGGER.warning(f"Cannot register {cls=} {replacement=}. {e=}")
 
 
-def register_torch2oflow_func(func, first_param_type=None, verbose=True):
+def register_torch2oflow_func(func, first_param_type=None, verbose=False):
     if first_param_type is None:
         params = inspect.signature(func).parameters
         first_param_type = params[list(params.keys())[0]].annotation
@@ -29,6 +29,7 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=True):
             LOGGER.warning(f"Cannot register {func=} {first_param_type=}.")
     try:
         torch2oflow.register(first_param_type)(func)
+        LOGGER.debug(f"Register {func=} {first_param_type=}")
         if verbose:
             LOGGER.info(f"Register {func=} {first_param_type=}")
     except Exception as e:
@@ -52,13 +53,21 @@ def set_default_registry():
     except Exception as e:
         LOGGER.warning(f"Failed to register_diffusers_quant {e=}")
 
+
+def ensure_list(obj):
+    if isinstance(obj, list):
+        return obj
+    return [obj]
+
 def register(
     *,
     package_names: Optional[List[Union[Path, str]]] = None,
     torch2oflow_class_map: Optional[Dict[type, type]] = None,
     torch2oflow_funcs: Optional[List[Callable]] = None,
 ):
+
     if package_names:
+        package_names = ensure_list(package_names)
         transform_mgr.load_class_proxies_from_packages(package_names)
 
     if torch2oflow_class_map:
@@ -66,5 +75,6 @@ def register(
             register_torch2oflow_class(torch_cls, of_cls)
 
     if torch2oflow_funcs:
+        torch2oflow_funcs = ensure_list(torch2oflow_funcs)
         for func in torch2oflow_funcs:
             register_torch2oflow_func(func)
