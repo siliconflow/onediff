@@ -23,7 +23,7 @@ parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
 parser.add_argument("--file", type=str, required=False, default="unet_compiled")
-cmd_args = parser.parse_args()
+args = parser.parse_args()
 
 
 def run_sd(cmd_args, device):
@@ -72,17 +72,19 @@ def run_sd(cmd_args, device):
         print("saving graphs...")
         base.unet.save_graph("base_" + cmd_args.file)
 
-if __name__ == '__main__':
-    if cmd_args.save:
-        run_sd(cmd_args, "cuda:0")
 
-    if cmd_args.load:
+if __name__ == "__main__":
+    if args.save:
+        run_sd(args, "cuda:0")
+
+    if args.load:
         import torch.multiprocessing as mp
+
         # multi device/process run
         devices = ("cuda:0", "cuda:1")
         procs = []
         for device in devices:
-            p = mp.get_context("spawn").Process(target=run_sd, args=(cmd_args, device))
+            p = mp.get_context("spawn").Process(target=run_sd, args=(args, device))
             p.start()
             procs.append(p)
 

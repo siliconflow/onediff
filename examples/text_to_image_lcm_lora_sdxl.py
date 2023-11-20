@@ -1,4 +1,5 @@
 import os
+
 import argparse
 from packaging import version
 import importlib.metadata
@@ -53,12 +54,16 @@ def parse_args():
     parser.add_argument(
         "--disable", action="store_true", help="Disable Onediff speeding up."
     )
+
     parser.add_argument(
-        "--mlir_enable_inference_optimization", action="store_true", help="If this option is enabled, it will trigger additional optimizations, but it may potentially affect the quality of the output image."
+        "--mlir_enable_inference_optimization",
+        action="store_true",
+        help="If this option is enabled, it will trigger additional optimizations, but it may potentially affect the quality of the output image.",
     )
     parser.add_argument(
         "--output", type=str, default="", help="Output image file name."
     )
+
     args = parser.parse_args()
     return args
 
@@ -80,11 +85,11 @@ pipe.to("cuda")
 if not args.disable:
     pipe.unet = oneflow_compile(pipe.unet)
 
+
 if not args.mlir_enable_inference_optimization:
     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "0"
 else:
     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-
 
 for _ in range(args.warmup):
     images = pipe(

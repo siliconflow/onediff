@@ -75,7 +75,7 @@ class FakeCuda:
             - :math:`Ev: \text{Embedding dimension of the value}`
         """
         if attn_mask is not None or dropout_p > 0.0:
-            return _scaled_dot_product_attention_math(
+            return FakeCuda._scaled_dot_product_attention_math(
                 query, key, value, attn_mask, dropout_p, is_causal
             )
 
