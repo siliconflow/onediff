@@ -21,6 +21,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: cat examples/requirements.txt | sed 's/cu118/cpu/g' > requirements-dev.txt
+      - run: cat examples/requirements.txt
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v3
         with:
