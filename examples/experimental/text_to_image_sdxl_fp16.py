@@ -1,10 +1,14 @@
+"""
+Compile to oneflow graph with :
+oneflow_compile example: python examples/text_to_image_sdxl_fp16.py --compile
+torch.compile example: python examples/text_to_image_sdxl_fp16.py
+"""
 import os
 import argparse
 from diffusers import StableDiffusionXLPipeline
 import torch
 
 from onediff.infer_compiler import torchbackend
-
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
