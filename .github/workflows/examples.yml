@@ -34,11 +34,10 @@ jobs:
             --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
             -v $HOME/test-container-cache-${{ env.CONTAINER_NAME }}/dot-local:/root/.local \
             -v $HOME/test-container-cache-${{ env.CONTAINER_NAME }}/dot-cache:/root/.cache \
-            -v $PWD:$PWD \
             -v /share_nfs:/share_nfs:ro \
-            -w $PWD \
+            -v $PWD:/src/onediff \
+            -w /src/onediff \
             -e HF_HUB_OFFLINE=1 \
-            -e PYTHONPATH=$PWD \
             --name ${{ env.CONTAINER_NAME }} \
             ${{ env.IMAGE }} \
             sleep 5400
