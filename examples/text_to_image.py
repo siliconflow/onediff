@@ -56,10 +56,6 @@ else:
 prompt = args.prompt
 with flow.autocast("cuda"):
     torch.manual_seed(args.seed)
-    for _ in range(args.warmup):
-        images = pipe(
-            prompt, height=args.height, width=args.width, num_inference_steps=args.steps
-        ).images
 
     images = pipe(
         prompt, height=args.height, width=args.width, num_inference_steps=args.steps
