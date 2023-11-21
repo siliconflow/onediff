@@ -304,3 +304,27 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
     model = wrap_module(torch_module)
     model._register_state_dict_hook(state_dict_hook)
     return model
+
+
+def oneflow_load_compiled(torch_module, path, *, device=None, use_graph=True, options={}):
+    """
+    Example usage:
+    1. Save from compiled pipe like this: `pipe.unet.save_graph("graph_path")`
+    
+    2. Load in /diffusers/examples/text_to_image.py like this:
+    - Remove `rewrite_self_attention(pipe.unet)` when loading
+    - Remove `pipe.unet = oneflow_compile(pipe.unet)` when loading
+    - Add to imports: from onediff.infer_compiler import oneflow_load_compiled
+    - Add pre-compiled unet to pipe: `pipe.unet = oneflow_load_compiled(pipe.unet, "test", device="cuda")`
+    """
+    set_default_registry()
+    
+    def wrap_module(module):
+        if isinstance(module, DeployableModule):
+            return DeployableModule.from_existing(module, use_graph, options)
+        else:
+            return DeployableModule(module, None, use_graph, options)
+
+    model = wrap_module(torch_module)
+    model.warmup_with_load(path, device=device)
+    return model
