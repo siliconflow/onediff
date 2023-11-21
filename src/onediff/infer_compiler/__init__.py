@@ -4,7 +4,7 @@ import oneflow as flow
 
 from .utils.patch_for_compiler import *  # TODO:
 from .transform.custom_transform import register
-from .with_oneflow_compile import oneflow_compile
+from .with_oneflow_compile import oneflow_compile, oneflow_load_compiled
 
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
