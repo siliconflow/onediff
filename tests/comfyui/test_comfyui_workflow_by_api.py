@@ -1,5 +1,7 @@
-import os
+import argparse
 import json
+import os
+
 
 import requests
 from PIL import Image
@@ -37,7 +39,6 @@ def parse_args():
         required=True,
     )
     parser.add_argument(
-        "-h",
         "--host",
         type=str,
         default="127.0.0.1",
@@ -61,9 +62,11 @@ def queue_prompt(prompt, host, port):
 
     if response.status_code == 200:
         print("Prompt queued successfully.")
+        result = json.loads(response.text)
+        print(result)
     else:
         print("Failed to queue prompt.")
-    print(response.content)
+    
 
 
 if __name__ == "__main__":
