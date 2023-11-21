@@ -4,8 +4,6 @@ import argparse
 from packaging import version
 import importlib.metadata
 
-from diffusers import LCMScheduler, AutoPipelineForText2Image
-
 
 def check_diffusers_version():
     required_version = version.parse("0.22.0")
@@ -69,6 +67,7 @@ def parse_args():
 
 
 check_diffusers_version()
+from diffusers import LCMScheduler, AutoPipelineForText2Image
 
 args = parse_args()
 
