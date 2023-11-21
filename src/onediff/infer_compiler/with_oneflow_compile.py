@@ -283,6 +283,12 @@ class OneflowGraph(flow.nn.Graph):
 
         self.load_runtime_state_dict(state_dict)
 
+        flow._oneflow_internal.eager.Sync()
+        load_state_end = time.perf_counter()
+
+        print(f"load_runtime_state_dict2用时：{load_state_end - state_end} 秒\n")
+
+
     def save_graph(self, file_path):
         state_dict = self.runtime_state_dict()
         flow.save(state_dict, file_path)
