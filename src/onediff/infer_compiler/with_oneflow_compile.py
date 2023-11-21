@@ -1,6 +1,7 @@
 import os
 import types
 import torch
+import time
 import oneflow as flow
 from typing import Any
 from functools import wraps
@@ -262,9 +263,24 @@ class OneflowGraph(flow.nn.Graph):
         return self.model(*args, **kwargs)
 
     def warmup_with_load(self, file_path, device=None):
+        flow._oneflow_internal.eager.Sync()
+        load_init = time.perf_counter()
+
         state_dict = flow.load(file_path)
+
+        flow._oneflow_internal.eager.Sync()
+        load_end = time.perf_counter()
+
+        print(f"flow.load用时：{load_end - load_init} 秒\n")
+
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
+
+        flow._oneflow_internal.eager.Sync()
+        state_end = time.perf_counter()
+
+        print(f"runtime_state_dict_to用时：{state_end - load_end} 秒\n")
+
         self.load_runtime_state_dict(state_dict)
 
     def save_graph(self, file_path):
