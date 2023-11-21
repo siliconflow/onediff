@@ -2,18 +2,20 @@
 example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id xx
 """
 import argparse
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile, oneflow_load_compiled
 from onediff.schedulers import EulerDiscreteScheduler
 from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionPipeline
 import oneflow as flow
 import torch
+import os
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
+    parser.add_argument("--compiled_graph_path", type=str, default="compiled-graph")
     parser.add_argument(
-        "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
+        "--prompt", type=str, default="an icon of a cat"
     )
     parser.add_argument(
         "--model_id",
@@ -43,20 +45,29 @@ pipe = StableDiffusionPipeline.from_pretrained(
 )
 pipe = pipe.to("cuda")
 
-rewrite_self_attention(pipe.unet)
-pipe.unet = oneflow_compile(pipe.unet)
+compiled_graph_exists = os.path.exists(args.compiled_graph_path)
+
+if not compiled_graph_exists:
+    rewrite_self_attention(pipe.unet)
+    pipe.unet = oneflow_compile(pipe.unet)
+else:
+    pipe.unet = oneflow_load_compiled(pipe.unet, args.compiled_graph_path, device="cuda")
 
 prompt = args.prompt
 with flow.autocast("cuda"):
+    torch.manual_seed(args.seed)
     for _ in range(args.warmup):
         images = pipe(
             prompt, height=args.height, width=args.width, num_inference_steps=args.steps
         ).images
 
-    torch.manual_seed(args.seed)
-
     images = pipe(
         prompt, height=args.height, width=args.width, num_inference_steps=args.steps
     ).images
+
+    if not compiled_graph_exists:
+        print("Saving compiled graph")
+        pipe.unet.save_graph(args.compiled_graph_path)
+
     for i, image in enumerate(images):
         image.save(f"{prompt}-of-{i}.png")
