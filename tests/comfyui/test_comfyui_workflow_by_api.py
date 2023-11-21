@@ -1,7 +1,7 @@
 import os
 import json
-from urllib import request, parse
 
+import requests
 from PIL import Image
 
 prompt_text = ""
@@ -27,16 +27,47 @@ def load_workflow_from_file(filename) -> str:
         raise NotImplementedError("Only json or png workflow file supported yet")
 
 
-def queue_prompt(prompt):
-    p = {"prompt": prompt}
-    data = json.dumps(p).encode("utf-8")
-    req = request.Request("http://127.0.0.1:9999/prompt", data=data)
-    request.urlopen(req)
+def parse_args():
+    parser = argparse.ArgumentParser(description="Launch ComfyUI workflow by API")
+    parser.add_argument(
+        "-w",
+        "--workflow",
+        type=str,
+        help="The workflow filename which can be either json or png.",
+        required=True,
+    )
+    parser.add_argument(
+        "-h",
+        "--host",
+        type=str,
+        default="127.0.0.1",
+    )
+    parser.add_argument(
+        "-p",
+        "--port",
+        type=int,
+        default=8188,
+    )
+
+    args = parser.parse_args()
+    return args
+
+
+def queue_prompt(prompt, host, port):
+    url = f"http://{host}:{port}/prompt"
+    payload = {"prompt": prompt}
+    headers = {"Content-Type": "application/json"}
+    response = requests.post(url, data=json.dumps(payload), headers=headers)
+
+    if response.status_code == 200:
+        print("Prompt queued successfully.")
+    else:
+        print("Failed to queue prompt.")
+    print(response.content)
 
 
 if __name__ == "__main__":
-    r = load_workflow_from_file(
-        "/data/home/yaochi/pack-ComfyUI-docker-image/diffusers/tests/comfyui/workflows/processed-lora-lora.png"
-    )
+    args = parse_args()
+    r = load_workflow_from_file(args.workflow)
     prompt = json.loads(r)
-    queue_prompt(prompt)
+    queue_prompt(prompt, args.host, args.port)
