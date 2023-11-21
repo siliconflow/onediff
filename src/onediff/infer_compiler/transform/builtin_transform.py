@@ -12,9 +12,8 @@ import oneflow as flow
 # TODO(strint): rm diffusers import
 import diffusers
 
-from .manager import transform_mgr
+from .manager import transform_mgr, get_mock_cls_name
 from ..import_tools import print_red, print_yellow
-from ..import_tools import get_mock_cls_name
 
 
 __all__ = [

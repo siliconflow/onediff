@@ -72,12 +72,14 @@ def run_sd(cmd_args, device):
         print("saving graphs...")
         base.unet.save_graph("base_" + cmd_args.file)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     if cmd_args.save:
         run_sd(cmd_args, "cuda:0")
 
     if cmd_args.load:
         import torch.multiprocessing as mp
+
         # multi device/process run
         devices = ("cuda:0", "cuda:1")
         procs = []

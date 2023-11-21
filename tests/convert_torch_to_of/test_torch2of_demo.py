@@ -7,8 +7,7 @@ Uasge:
 import torch
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import transform_mgr
-from onediff.infer_compiler.import_tools import get_mock_cls_name
+from onediff.infer_compiler.transform import transform_mgr, get_mock_cls_name
 
 
 class PyTorchModel(torch.nn.Module):
@@ -45,12 +44,10 @@ def test_torch2of_demo():
     cls_key = get_mock_cls_name(PyTorchModel)
     transform_mgr.update_class_proxies({cls_key: OneFlowModel})
 
-
     # Compile PyTorch model to OneFlow
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pytorch_model = PyTorchModel().to(device)
     of_model = oneflow_compile(pytorch_model, use_graph=True)
-
 
     # Verify conversion
     x = torch.randn(4, 4).to(device)

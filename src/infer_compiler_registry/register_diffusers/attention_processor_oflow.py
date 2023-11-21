@@ -23,6 +23,7 @@ from diffusers.utils import deprecate, logging
 
 from onediff.infer_compiler.utils import parse_boolean_from_env, set_boolean_env_var
 
+
 def is_xformers_available():
     return False
 
@@ -43,6 +44,7 @@ if is_xformers_available():
     import xformers.ops
 else:
     xformers = None
+
 
 class Attention(nn.Module):
     r"""

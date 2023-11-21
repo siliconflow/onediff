@@ -1,18 +1,49 @@
+import time
+import os
+import sys
 import oneflow as flow
 from typing import Dict, List, Union
 from pathlib import Path
 from ..import_tools import (
-    get_classes_in_package,
+    get_classes_and_package,
     print_green,
 )
 
-__all__ = ["transform_mgr"]
+__all__ = ["transform_mgr", "get_mock_cls_name", "format_package_name"]
+
+
+def gen_unique_id():
+    timestamp = int(time.time() * 1000)
+    process_id = os.getpid()
+    # TODO(): refine the unique id
+    # sequence = str(uuid.uuid4())
+    unique_id = f"{timestamp}{process_id}"
+    return unique_id
+
+
+PREFIX = "mock_"
+SUFFIX = "_oflow_" + gen_unique_id()
+
+
+def format_package_name(package_name):
+    return PREFIX + package_name + SUFFIX
+
+
+def get_mock_cls_name(cls) -> str:
+    if isinstance(cls, type):
+        cls = f"{cls.__module__}.{cls.__name__}"
+
+    pkg_name, cls_ = cls.split(".", 1)
+
+    pkg_name = format_package_name(pkg_name)
+    return f"{pkg_name}.{cls_}"
 
 
 class TransformManager:
     def __init__(self):
         self._torch_to_oflow_cls_map = {}
         self._torch_to_oflow_packages_list = []
+        self._packages_map = {}
 
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         print_green(f"Loading modules: {package_names}")
@@ -20,7 +51,12 @@ class TransformManager:
         # https://docs.oneflow.org/master/cookies/oneflow_torch.html
         with flow.mock_torch.enable(lazy=True):
             for package_name in package_names:
-                of_mds.update(get_classes_in_package(package_name))
+                classes, pkg = get_classes_and_package(
+                    package_name, prefix=PREFIX, suffix=SUFFIX
+                )
+                of_mds.update(classes)
+                self._packages_map[format_package_name(package_name)] = pkg
+
         print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names}")
         self._torch_to_oflow_cls_map.update(of_mds)
         self._torch_to_oflow_packages_list.extend(package_names)
@@ -50,6 +86,22 @@ class TransformManager:
             You need to register it. 
             """
         )
+
+    def transform_package(self, package_name):
+        full_pkg_name = format_package_name(package_name)
+        if full_pkg_name in self._packages_map:
+            return self._packages_map[full_pkg_name]
+        else:
+            raise RuntimeError(
+                f"""
+                Package {package_name} is not registered. \n 
+                You need to register it. 
+                """
+            )
+
+    def transform_package_name(self, package_name):
+        full_pkg_name = format_package_name(package_name)
+        return full_pkg_name
 
 
 transform_mgr = TransformManager()
