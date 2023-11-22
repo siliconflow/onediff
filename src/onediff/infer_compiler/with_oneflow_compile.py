@@ -254,7 +254,6 @@ class OneflowGraph(flow.nn.Graph):
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
         os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
         os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
-        self.debug(max_py_stack_depth=10)
         # TODO: enable this will cause the failure of multi resolution warmup
         # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
         # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
