@@ -4,16 +4,19 @@ import os
 from PIL import Image
 from PIL.PngImagePlugin import PngInfo
 
+usage = """
+    python meta2png.py --key api --png image.png --api api.json --output output.png OR
+    python meta2png.py --key api --png image.png
+"""
+
 
 def parse_args():
-    parser = argparse.ArgumentParser(
-        description="Add ComfyUI API Workflow to a png file."
-    )
+    parser = argparse.ArgumentParser(description=usage)
     parser.add_argument(
         "--api",
         type=str,
+        default="",
         help="The json file containing the workflow for API calling.",
-        required=True,
     )
     parser.add_argument(
         "--png",
@@ -31,15 +34,14 @@ def parse_args():
         "--key",
         type=str,
         default="api",
-        help="The key name of the metadata.",
+        help="The key name of the metadata. Default: api",
     )
 
     args = parser.parse_args()
     return args
 
 
-if __name__ == "__main__":
-    args = parse_args()
+def add_meta2png(args):
     origin_img = Image.open(args.png)
     info_dict = origin_img.info
     metadata = PngInfo()
@@ -63,3 +65,26 @@ if __name__ == "__main__":
         output = args.output
     api_img.save(output, pnginfo=metadata)
     api_img.close()
+
+
+def show_meta4png(args):
+    origin_img = Image.open(args.png)
+    info_dict = origin_img.info
+
+    if info_dict is None:
+        print(f"There is NO meta data in {args.png} found")
+        return
+
+    if not args.key in info_dict.keys():
+        print(f"{args.key} is not found in {info_dict.keys()}")
+        return
+
+    print(info_dict[args.key])
+
+
+if __name__ == "__main__":
+    args = parse_args()
+    if args.api != "":  # no josn file specified
+        add_meta2png(args)
+    else:
+        show_meta4png(args)

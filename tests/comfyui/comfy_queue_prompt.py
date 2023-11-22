@@ -42,12 +42,14 @@ def parse_args():
         "--host",
         type=str,
         default="127.0.0.1",
+        help="ComfyUI server host, default is 127.0.0.1",
     )
     parser.add_argument(
         "-p",
         "--port",
         type=int,
         default=8188,
+        help="CofyUI server port, default is 8188",
     )
 
     args = parser.parse_args()
@@ -66,7 +68,6 @@ def queue_prompt(prompt, host, port):
         print(result)
     else:
         print("Failed to queue prompt.")
-    
 
 
 if __name__ == "__main__":
