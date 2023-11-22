@@ -7,7 +7,7 @@ from diffusers import StableDiffusionImg2ImgPipeline
 import oneflow as flow
 import torch
 
-PROMPT = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
+prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
@@ -36,4 +36,4 @@ with flow.autocast("cuda"):
         prompt, image=img, guidance_scale=10, num_inference_steps=100, output_type="np",
     ).images
     for i, image in enumerate(images):
-        pipe.numpy_to_pil(image)[0].save(f"{PROMPT}-of-{i}.png")
+        pipe.numpy_to_pil(image)[0].save(f"{prompt}-of-{i}.png")
