@@ -1,3 +1,4 @@
+""" image to image graph load ,a old example"""
 import time
 import os
 import gc
@@ -17,34 +18,11 @@ from onediff import (
 from diffusers import EulerDiscreteScheduler
 from diffusers import utils
 
-_model_id = "stabilityai/stable-diffusion-2"
-_with_image_save = True
+from onediff.infer_compiler.utils.cost_util import cost_cnt
 
 
-def _cost_cnt(fn):
-    def new_fn(*args, **kwargs):
-        print("==> function ", fn.__name__, " try to run...")
-        flow._oneflow_internal.eager.Sync()
-        before_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-        print(fn.__name__, " cuda mem before ", before_used, " MB")
-        before_host_used = flow._oneflow_internal.GetCPUMemoryUsed()
-        print(fn.__name__, " host mem before ", before_host_used, " MB")
-        start_time = time.time()
-        out = fn(*args, **kwargs)
-        flow._oneflow_internal.eager.Sync()
-        end_time = time.time()
-        print(fn.__name__, " run time ", end_time - start_time, " seconds")
-        after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-        print(fn.__name__, " cuda mem after ", after_used, " MB")
-        print(fn.__name__, " cuda mem diff ", after_used - before_used, " MB")
-        after_host_used = flow._oneflow_internal.GetCPUMemoryUsed()
-        print(fn.__name__, " host mem after ", after_host_used, " MB")
-        print(fn.__name__, " host mem diff ", after_host_used - before_host_used, " MB")
-        print("<== function ", fn.__name__, " finish run.")
-        print("")
-        return out
-
-    return new_fn
+_MODEL_ID = "stabilityai/stable-diffusion-2"
+_WITH_IMAGE_SAVE = True
 
 
 def _reset_session():
@@ -69,7 +47,7 @@ def _test_sd_graph_save_and_load(
     total_start_t = time.time()
     start_t = time.time()
 
-    @_cost_cnt
+    @cost_cnt
     def get_pipe():
         if _pipe_from_file:
             scheduler = EulerDiscreteScheduler.from_pretrained(
@@ -83,10 +61,10 @@ def _test_sd_graph_save_and_load(
             )
         else:
             scheduler = EulerDiscreteScheduler.from_pretrained(
-                _model_id, subfolder="scheduler"
+                _MODEL_ID, subfolder="scheduler"
             )
             sd_pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
-                _model_id,
+                _MODEL_ID,
                 scheduler=scheduler,
                 revision="fp16",
                 torch_dtype=torch.float16,
@@ -96,14 +74,14 @@ def _test_sd_graph_save_and_load(
 
     sch, pipe = get_pipe()
 
-    @_cost_cnt
+    @cost_cnt
     def pipe_to_cuda():
         cu_pipe = pipe.to("cuda")
         return cu_pipe
 
     pipe = pipe_to_cuda()
 
-    @_cost_cnt
+    @cost_cnt
     def config_graph():
         pipe.set_graph_compile_cache_size(9)
         pipe.enable_graph_share_mem()
@@ -114,7 +92,7 @@ def _test_sd_graph_save_and_load(
         pipe.enable_save_graph()
     else:
 
-        @_cost_cnt
+        @cost_cnt
         def load_graph():
             assert os.path.exists(graph_save_path) and os.path.isdir(graph_save_path)
             pipe.load_graph(graph_save_path, compile_unet=True, compile_vae=True)
@@ -123,7 +101,7 @@ def _test_sd_graph_save_and_load(
     end_t = time.time()
     print("sd init time ", end_t - start_t, "s.")
 
-    @_cost_cnt
+    @cost_cnt
     def image_to_image(
         prompt, img, num_images_per_prompt=1, prefix="", with_graph=False
     ):
@@ -147,7 +125,7 @@ def _test_sd_graph_save_and_load(
             output_type="np",
         ).images
 
-        if _with_image_save:
+        if _WITH_IMAGE_SAVE:
             for i, image in enumerate(images):
                 pipe.numpy_to_pil(image)[0].save(
                     f"{prefix}{prompt}_{i}-with_graph_{str(with_graph)}.png"
@@ -174,12 +152,12 @@ def _test_sd_graph_save_and_load(
     total_end_t = time.time()
     print("st init and run time ", total_end_t - total_start_t, "s.")
 
-    @_cost_cnt
+    @cost_cnt
     def save_pipe_sch():
         pipe.save_pretrained(pipe_file_path)
         sch.save_pretrained(sch_file_path)
 
-    @_cost_cnt
+    @cost_cnt
     def save_graph():
         assert os.path.exists(graph_save_path) and os.path.isdir(graph_save_path)
         pipe.save_graph(graph_save_path)

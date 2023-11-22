@@ -1,8 +1,10 @@
 import time
 import os
 import sys
+import torch
 import oneflow as flow
 from typing import Dict, List, Union
+from contextlib import contextmanager
 from pathlib import Path
 from ..import_tools import (
     get_classes_and_package,
@@ -39,6 +41,24 @@ def get_mock_cls_name(cls) -> str:
     return f"{pkg_name}.{cls_}"
 
 
+@contextmanager
+def onediff_mock_torch():
+    # Fixes  check the 'version'  error.
+    attr_name = "__version__"
+    restore_funcs = []  # Backup
+    if hasattr(flow, attr_name) and hasattr(torch, attr_name):
+        orig_flow_attr = getattr(flow, attr_name)
+        restore_funcs.append(lambda: setattr(flow, attr_name, orig_flow_attr))
+        setattr(flow, attr_name, getattr(torch, attr_name))
+
+    # https://docs.oneflow.org/master/cookies/oneflow_torch.html
+    with flow.mock_torch.enable(lazy=True):
+        yield
+
+    for restore_func in restore_funcs:
+        restore_func()
+
+
 class TransformManager:
     def __init__(self):
         self._torch_to_oflow_cls_map = {}
@@ -48,8 +68,7 @@ class TransformManager:
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         print_green(f"Loading modules: {package_names}")
         of_mds = {}
-        # https://docs.oneflow.org/master/cookies/oneflow_torch.html
-        with flow.mock_torch.enable(lazy=True):
+        with onediff_mock_torch():
             for package_name in package_names:
                 classes, pkg = get_classes_and_package(
                     package_name, prefix=PREFIX, suffix=SUFFIX
@@ -63,10 +82,10 @@ class TransformManager:
 
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
         """Update `_torch_to_oflow_cls_map` with `class_proxy_dict`.
-    
-        example: 
+
+        example:
             `class_proxy_dict = {"mock_torch.nn.Conv2d": flow.nn.Conv2d}`
-    
+
         """
         self._torch_to_oflow_cls_map.update(class_proxy_dict)
 

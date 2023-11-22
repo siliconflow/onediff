@@ -99,7 +99,7 @@ class DualModuleList(torch.nn.ModuleList):
         return setattr(self, str(idx), module)
 
     def __setattr__(self, key, value):
-        if key == "_torch_modules" or key == "_oneflow_modules":
+        if key in ("_torch_modules", "_oneflow_modules"):
             return object.__setattr__(self, key, value)
         if isinstance(value, DualModule):
             setattr(self._torch_modules, key, value._torch_module)

@@ -1,3 +1,8 @@
+"""
+Testing inference speed
+save graph compiled example: python3 examples/unet_torch_interplay.py --save --model_id xx
+load graph compiled example: python3 examples/unet_torch_interplay.py --load
+"""
 import os
 import random
 import click
@@ -65,8 +70,8 @@ def get_arg_meta_of_sizes(
     resolution_scales,
     num_channels,
     cross_attention_dim,
-    start=768,
-    stride=128,
+    start = 768,
+    stride = 128,
 ):
     return [
         TensorInput(
@@ -108,7 +113,6 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
     num_channels = 4
     cross_attention_dim = unet.config["cross_attention_dim"]
     from diffusers.utils import floats_tensor
-    import torch
 
     if (
         model_id == "stabilityai/stable-diffusion-xl-base-1.0"
@@ -130,7 +134,8 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
     for i, m in enumerate(warmup_meta_of_sizes):
         print(f"warmup case #{i + 1}:", m)
 
-    if load == True:
+    # load graph from filepath
+    if load:
         print("loading graphs...")
         unet_graph.warmup_with_load(file)
     else:
@@ -152,10 +157,9 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
     flow._oneflow_internal.eager.Sync()
     import time
 
+    # Testing inference speed
     t0 = time.time()
     for r in tqdm(range(repeat)):
-        import random
-
         noise = random.choice(noise_of_sizes)
         encoder_hidden_states = encoder_hidden_states_of_sizes[noise.shape[0]]
         out = unet_graph(
@@ -176,6 +180,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
         f"Finish {repeat} steps in {duration:.3f} seconds, average {throughput:.2f}it/s"
     )
 
+    # save graph to filepath
     if save:
         print("saving graphs...")
         unet_graph.save_graph(file)

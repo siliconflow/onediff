@@ -32,19 +32,15 @@ def test_flash_attention(
         q = torch.from_numpy(query).to("cuda")
         k = torch.from_numpy(key).to("cuda")
         v = torch.from_numpy(value).to("cuda")
-        return (
-            torch.nn.functional.scaled_dot_product_attention(
-                query=q,
-                key=k,
-                value=v,
-                attn_mask=None,
-                dropout_p=dropout_p,
-                is_causal=is_causal,
-            )
-            .cpu()
-            .detach()
-            .numpy()
+        result = torch.nn.functional.scaled_dot_product_attention(
+            query=q,
+            key=k,
+            value=v,
+            attn_mask=None,
+            dropout_p=dropout_p,
+            is_causal=is_causal,
         )
+        return result.cpu().detach().numpy()
 
     def oneflow_flash_attention() -> np.ndarray:
         import oneflow as flow

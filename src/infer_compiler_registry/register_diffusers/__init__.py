@@ -28,7 +28,7 @@ try:
     from oneflow.framework.args_tree import register_relaxed_type
 
     _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = True
-except:
+except ImportError:
     pass
 
 

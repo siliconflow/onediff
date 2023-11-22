@@ -13,7 +13,7 @@ from onediff.infer_compiler.transform import transform_mgr, get_mock_cls_name
 class PyTorchModel(torch.nn.Module):
     """used torch2of conversion.
 
-    For PyTorch models, input model must inherit torch.nn.Module to utilize trace and conversion of layers. 
+    For PyTorch models, input model must inherit torch.nn.Module to utilize trace and conversion of layers.
     """
 
     def __init__(self):
