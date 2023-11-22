@@ -6,6 +6,8 @@ import os
 import requests
 from PIL import Image
 
+__all__ = ["load_workflow_from_file", "queue_prompt"]
+
 prompt_text = ""
 
 
@@ -66,12 +68,16 @@ def queue_prompt(prompt, host, port):
         print("Prompt queued successfully.")
         result = json.loads(response.text)
         print(result)
+        return result
     else:
-        print("Failed to queue prompt.")
+        print(
+            f"Failed to queue prompt, error code: {response.status_code}, {response.text}"
+        )
+    return None
 
 
 if __name__ == "__main__":
     args = parse_args()
     r = load_workflow_from_file(args.workflow)
     prompt = json.loads(r)
-    queue_prompt(prompt, args.host, args.port)
+    r = queue_prompt(prompt, args.host, args.port)
