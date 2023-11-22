@@ -25,7 +25,9 @@ def is_finished(prompt_ids, history):
         if k in history.keys():
             print(f"{k} has finished, outputfile: {get_output_info(history[k])}")
             keys_to_remove.append(k)
-    if len(prompt_ids) == len(keys_to_remove):
+    for key in keys_to_remove:
+        prompt_ids.pop(key)
+    if len(prompt_ids) == 0:
         return True
     return False
 
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     for workflow in workflows:
         r = load_workflow_from_file(workflow)
         prompt = json.loads(r)
-        r = queue_prompt(prompt, "127.0.0.1", "8855")
+        r = queue_prompt(prompt, "127.0.0.1", PORT)
         prompt_ids[r["prompt_id"]] = r
 
     time.sleep(60 * 1)
