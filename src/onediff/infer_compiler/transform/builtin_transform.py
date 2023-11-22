@@ -12,7 +12,7 @@ import oneflow as flow
 # TODO(strint): rm diffusers import
 import diffusers
 
-from .manager import transform_mgr, get_mock_cls_name
+from .manager import transform_mgr
 from ..import_tools import print_red, print_yellow
 
 
@@ -34,9 +34,7 @@ def proxy_class(cls: type):
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
-    full_cls_name = get_mock_cls_name(cls)
-
-    return transform_mgr.transform_cls(full_cls_name)
+    return transform_mgr.transform_cls(cls)
 
 
 class ProxySubmodule:
