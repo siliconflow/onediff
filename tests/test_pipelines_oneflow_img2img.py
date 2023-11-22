@@ -264,9 +264,7 @@ class PipelineFastTests(unittest.TestCase):
 
         model_id = "CompVis/stable-diffusion-v1-4"
         pipe = OneFlowStableDiffusionImg2ImgPipeline.from_pretrained(
-            model_id,
-            safety_checker=self.dummy_safety_checker,
-            use_auth_token=True,
+            model_id, safety_checker=self.dummy_safety_checker, use_auth_token=True,
         )
         pipe.to(torch_device)
         pipe.set_progress_bar_config(disable=None)

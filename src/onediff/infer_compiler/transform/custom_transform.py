@@ -6,10 +6,9 @@ from typing import Callable, Dict, List, Optional, Union
 from ..import_tools import (
     print_yellow,
     print_green,
-    get_mock_cls_name,
     import_module_from_path,
 )
-from .manager import transform_mgr
+from .manager import transform_mgr, get_mock_cls_name
 from .builtin_transform import torch2oflow
 
 __all__ = ["register"]

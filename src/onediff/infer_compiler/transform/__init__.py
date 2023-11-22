@@ -2,7 +2,7 @@
 import os
 import warnings
 
-from .manager import transform_mgr
+from .manager import transform_mgr, get_mock_cls_name
 from .builtin_transform import torch2oflow, default_converter
 from .custom_transform import register
 
