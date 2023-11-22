@@ -219,7 +219,17 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
+        flow._oneflow_internal.eager.Sync()
+        load_init = time.perf_counter()
+        
+        graph = self.get_graph()
+
+        flow._oneflow_internal.eager.Sync()
+        load_end = time.perf_counter()
+        
+        print(f"get_graph用时：{load_end - load_init} 秒\n")
+        
+        graph.warmup_with_load(file_path, device)
 
     def warmup_with_load(self, file_path, device=None):
         self.get_graph().warmup_with_load(file_path, device)
