@@ -1,6 +1,6 @@
 from onediff.infer_compiler.transform import register
 
-# register(package_names=["diffusers"])
+register(package_names=["diffusers"])
 
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
