@@ -3,7 +3,7 @@
 
 # OneDiff
 
-A drop-in acceleration lib for diffusers. (Or other Stable Diffusion Models)
+A drop-in acceleration lib for diffusers and other diffusion models
 
 ## Performance of OneDiff Community Version 
 
