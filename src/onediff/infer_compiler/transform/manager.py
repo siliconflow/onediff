@@ -18,6 +18,7 @@ from ..import_tools.importer import (
 __all__ = ["transform_mgr"]
 
 
+
 class TransformManager:
     """TransformManager
 
@@ -37,6 +38,7 @@ class TransformManager:
         self.temp_dir = tempfile.mkdtemp(
             prefix="oneflow_transform_", dir=self.output_dir
         )
+        self._package_map = {}
 
     def _create_output_dir(self, output_dir: str):
         """Create a output dir to save run results."""
@@ -52,7 +54,8 @@ class TransformManager:
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         self.logger.debug(f"Loading modules: {package_names}")
         for package_name in package_names:
-            copy_package(package_name, self.temp_dir)
+            key,pkg = copy_package(package_name, self.temp_dir)
+            self._package_map[key] = pkg
             self._torch_to_oflow_packages_list.append(package_name)
             self.logger.info(f"Loaded Mock Torch Package: {package_name} successfully")
 
@@ -84,6 +87,13 @@ class TransformManager:
     def transform_func(self, func: types.FunctionType):
         """Transform a function to a mock function."""
         return load_entity_with_mock(func)
+
+    def transform_package(self, package_name):
+        """Transform a package to a mock package."""
+        LOGGER.error(f"transform_package: {package_name}")
+        result = load_entity_with_mock(package_name)
+        LOGGER.error(f"transform_package: {result}")
+        return result
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG_MODE", "0") == "1"

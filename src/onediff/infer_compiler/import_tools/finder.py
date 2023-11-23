@@ -1,28 +1,14 @@
 import os
 import sys
-import time
 import inspect
 import pkgutil
 import importlib
-from typing import Dict, Union
+from typing import Dict, Union, Tuple, Any
 from types import ModuleType
 from pathlib import Path
 from .copier import PackageCopier
 
-__all__ = ["get_classes_in_package", "get_mock_cls_name", "import_module_from_path"]
-
-
-def gen_unique_id() -> str:
-    timestamp = int(time.time() * 1000)
-    process_id = os.getpid()
-    # TODO(): refine the unique id
-    # sequence = str(uuid.uuid4())
-    unique_id = f"{timestamp}{process_id}"
-    return unique_id
-
-
-PREFIX = "mock_"
-SUFFIX = "_oflow_" + gen_unique_id()
+__all__ = ["get_classes_and_package", "import_module_from_path"]
 
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
@@ -72,7 +58,9 @@ def import_submodules(package, recursive=True):
                 pass  # ignore
 
 
-def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, type]:
+def get_classes_and_package(
+    package: Union[str, Path], base_class=None, prefix=None, suffix=None
+) -> Tuple[Dict[str, type], Any]:
     """
     Get all classes in a package and its submodules.
 
@@ -82,8 +70,9 @@ def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, ty
 
     Returns:
         dict: A dictionary mapping full class names to class objects.
+        obj: the package object.
     """
-    with PackageCopier(package, prefix=PREFIX, suffix=SUFFIX) as copier:
+    with PackageCopier(package, prefix=prefix, suffix=suffix) as copier:
         package = copier.get_import_module()
 
         class_dict = {}
@@ -99,18 +88,4 @@ def get_classes_in_package(package: str | Path, base_class=None) -> Dict[str, ty
             except Exception as e:
                 pass
 
-        return class_dict
-
-
-def _format_package_name(package_name) -> str:
-    return PREFIX + package_name + SUFFIX
-
-
-def get_mock_cls_name(cls) -> str:
-    if isinstance(cls, type):
-        cls = f"{cls.__module__}.{cls.__name__}"
-
-    pkg_name, cls_ = cls.split(".", 1)
-
-    pkg_name = _format_package_name(pkg_name)
-    return f"{pkg_name}.{cls_}"
+        return (class_dict, package)

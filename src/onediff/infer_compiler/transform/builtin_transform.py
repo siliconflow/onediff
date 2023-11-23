@@ -196,9 +196,7 @@ def _(mod: torch.nn.Module, verbose=False):
         self._buffers = OrderedDict()
         self._modules = OrderedDict()
         for n, p in list(proxy_md.named_parameters("", False)):
-            self._parameters[n] = flow.nn.Parameter(
-                flow.utils.tensor.from_torch(p.data), requires_grad=p.requires_grad
-            )
+            self._parameters[n] = torch2oflow(p)
         for n, b in list(proxy_md.named_buffers("", False)):
             self._buffers[n] = flow.utils.tensor.from_torch(b.data)
         for n, m in proxy_md._modules.items():
@@ -273,6 +271,9 @@ def _(mod: torch.nn.Sequential, verbose=False):
 @torch2oflow.register
 def _(mod: torch.nn.parameter.Parameter, verbose=False) -> flow.nn.Parameter:
     data = flow.utils.tensor.from_torch(mod.data)
+    if mod.data.dtype == torch.int8:
+        mod.requires_grad_(False)
+        return flow.nn.Parameter(data.to(flow.int8), requires_grad=False)
     return flow.nn.Parameter(data, requires_grad=mod.requires_grad)
 
 

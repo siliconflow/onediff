@@ -45,11 +45,22 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
 
 def copy_package(package: str, target_directory: Optional[Union[str, Path]] = None):
     """Copy package to target directory"""
-    with onediff_mock_torch():
+    with onediff_mock_torch(package):
         copier = PackageCopier(
             package, prefix=PREFIX, suffix=SUFFIX, target_directory=target_directory
         )
         copier.do()  # copy package
+        new_pkg_name = copier.new_pkg_name
+        pkg = copier.get_import_module()
+        # if hasattr(pkg, "models.embeddings.ImagePositionalEmbeddings"):
+        # def opx(x):
+        #     y = "models.embeddings.ImagePositionalEmbeddings".split(".")
+        #     for i in y:
+        #         x = getattr(x, i)
+        #         print(x)
+        # import pdb; pdb.set_trace()
+        # opx(pkg)
+        return new_pkg_name, pkg
 
 
 def _format_package_name(package_name: str) -> str:
@@ -68,7 +79,12 @@ def _format_full_class_name(obj: Union[str, type, FunctionType]):
         obj = f"{module.__name__}.{obj.__name__}"
 
     assert isinstance(obj, str), f"obj must be str, but got {type(obj)}"
+    
+    if "." not in obj:
+        return _format_package_name(obj)
+    
     pkg_name, cls_name = obj.split(".", 1)
+    
     pkg_name = _format_package_name(pkg_name)
     return f"{pkg_name}.{cls_name}"
 
@@ -79,9 +95,13 @@ def get_mock_entity_name(obj: Union[str, type, FunctionType]) -> str:
 
 
 def load_entity_with_mock(obj: Union[str, type, FunctionType]):
+    print(f'load_entity_with_mock: {obj}')
     path = _format_full_class_name(obj)
     attrs = path.split(".")
-    with onediff_mock_torch():
+    
+    print(f"attrs: {attrs}")
+
+    with onediff_mock_torch(attrs[0]):
         obj_entity = importlib.reload(sys.modules[attrs[0]])
         for name in attrs[1:]:
             obj_entity = getattr(obj_entity, name)

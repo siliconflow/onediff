@@ -6,7 +6,7 @@ from ..utils.log_utils import LOGGER
 
 
 @contextmanager
-def onediff_mock_torch():
+def onediff_mock_torch(pkg_name=None):
     # Fixes  check the 'version'  error.
     attr_name = "__version__"
     restore_funcs = []  # Backup
@@ -24,6 +24,6 @@ def onediff_mock_torch():
         restore_func()
 
     need_backup = len(sys.modules.copy()) != len(backup_modules)
-    # LOGGER.debug(f'PKG_NAME: {pkg_name} need_backup: {need_backup}')
+    LOGGER.debug(f'PKG_NAME: {pkg_name} need_backup: {need_backup}')
     if need_backup:
         sys.modules = backup_modules

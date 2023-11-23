@@ -81,10 +81,10 @@ if cmd_args.compile and cmd_args.load:
 
 # Normal SDXL run
 # sizes = [1024, 896, 768]
-sizes = [1024]
+sizes = [1024, 896]
 for h in sizes:
     for w in sizes:
-        for i in range(3):
+        for i in range(2):
             image = base(
                 prompt=cmd_args.prompt,
                 height=h,
