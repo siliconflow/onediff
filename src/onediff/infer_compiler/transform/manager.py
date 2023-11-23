@@ -76,6 +76,7 @@ class TransformManager:
     def transform_func(self, func: types.FunctionType):
         return self.transform_entity(func)
 
+
     def transform_package(self, package_name):
         return self.transform_entity(package_name)
 
