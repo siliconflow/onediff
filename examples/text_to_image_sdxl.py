@@ -53,6 +53,7 @@ if args.compile:
     print("unet is compiled to oneflow.")
     rewrite_self_attention(base.unet)
     base.unet = oneflow_compile(base.unet)
+    base.vae = oneflow_compile(base.vae)
 
 # Warmup
 for i in range(args.warmup):
