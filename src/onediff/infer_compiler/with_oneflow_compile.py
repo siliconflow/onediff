@@ -192,7 +192,7 @@ class DeployableModule(torch.nn.Module):
                 output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model.oneflow_module.__call__(
+                output = self._deployable_module_model.oneflow_module(
                     *args, **kwargs
                 )
         return output
