@@ -25,6 +25,7 @@ def gen_unique_id():
     unique_id = f"{timestamp}{process_id}"
     return unique_id
 
+
 PREFIX = "mock_"
 SUFFIX = f"_oflow_{gen_unique_id()}"
 
@@ -53,7 +54,7 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
 
 
 def mock_package(package: str, output_directory: Optional[Union[str, Path]] = None):
-    """Mock the package and cache the pkg ModuleType object.""" 
+    """Mock the package and cache the pkg ModuleType object."""
     with onediff_mock_torch(package):
         copier = PackageCopier(
             package, prefix=PREFIX, suffix=SUFFIX, target_directory=output_directory
@@ -71,10 +72,13 @@ def _format_pkg_name(pkg_name: str) -> str:
         return pkg_name
     return PREFIX + pkg_name + SUFFIX
 
+
 def _reverse_pkg_name(pkg_name: str) -> str:
-    assert pkg_name.startswith(PREFIX) and pkg_name.endswith(SUFFIX), \
-        f"Package name must start with {PREFIX} and end with {SUFFIX}, but got {pkg_name}"
-    return pkg_name[len(PREFIX):-len(SUFFIX)]
+    assert pkg_name.startswith(PREFIX) and pkg_name.endswith(
+        SUFFIX
+    ), f"Package name must start with {PREFIX} and end with {SUFFIX}, but got {pkg_name}"
+    return pkg_name[len(PREFIX) : -len(SUFFIX)]
+
 
 def _format_full_class_name(obj: Union[str, type, FunctionType]):
     if isinstance(obj, type):
@@ -85,21 +89,24 @@ def _format_full_class_name(obj: Union[str, type, FunctionType]):
         obj = f"{module.__name__}.{obj.__name__}"
 
     assert isinstance(obj, str), f"obj must be str, but got {type(obj)}"
-    
-    if '.' in obj:
-        pkg_name, cls_name = obj.split('.', 1)
+
+    if "." in obj:
+        pkg_name, cls_name = obj.split(".", 1)
         return f"{_format_pkg_name(pkg_name)}.{cls_name}"
     else:
         return _format_pkg_name(obj)
 
+
 def get_mock_entity_name(entity: Union[str, type, FunctionType]) -> str:
     full_obj_name = _format_full_class_name(entity)
     return full_obj_name
-    
 
-def load_entity_with_mock(entity: Union[str, type, FunctionType],
-                           *,
-                        output_directory: Optional[Union[str, Path]] = None):
+
+def load_entity_with_mock(
+    entity: Union[str, type, FunctionType],
+    *,
+    output_directory: Optional[Union[str, Path]] = None,
+):
     """
     Load entity with mock support. If specified (`entity`) not found, mock its package and retry.
 
@@ -126,14 +133,13 @@ def load_entity_with_mock(entity: Union[str, type, FunctionType],
             for name in attrs[1:]:
                 obj_entity = getattr(obj_entity, name)
             return obj_entity
-        
+
     pkg_name = _reverse_pkg_name(attrs[0])
     pkg = importlib.import_module(pkg_name)
-    if pkg is None:    
+    if pkg is None:
         raise ValueError(f"package {pkg_name} not found in sys.modules")
-    
+
     # https://docs.python.org/3/reference/import.html#path__
     # Do something with the output directory
     mock_package(pkg.__path__[0], output_directory=output_directory)
     return load_entity_with_mock(entity)
-

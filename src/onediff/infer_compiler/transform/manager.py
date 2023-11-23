@@ -14,7 +14,6 @@ from ..import_tools.importer import (
 __all__ = ["transform_mgr"]
 
 
-
 class TransformManager:
     """TransformManager
 
@@ -29,7 +28,7 @@ class TransformManager:
         self._torch_to_oflow_cls_map = {}
         self._torch_to_oflow_packages_list = []
         self._create_output_dir(output_dir)
-        self.logger = set_logging(debug_mode=debug_mode, log_dir=output_dir)     
+        self.logger = set_logging(debug_mode=debug_mode, log_dir=output_dir)
 
     def _create_output_dir(self, output_dir: str):
         """Create a output dir to save run results."""
@@ -37,7 +36,6 @@ class TransformManager:
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir = output_dir
-        
 
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         self.logger.debug(f"Loading modules: {package_names}")
@@ -57,7 +55,7 @@ class TransformManager:
         debug_message = f"Updated class proxies: {len(class_proxy_dict)=}"
         debug_message += f"\n{class_proxy_dict}\n"
         self.logger.debug(debug_message)
-    
+
     def transform_entity(self, entity):
         result = load_entity_with_mock(entity, output_directory=self.output_dir)
         assert result is not None, f"Failed to transform {entity}"
@@ -89,4 +87,3 @@ transform_mgr = TransformManager(debug_mode=debug_mode, output_dir=output_dir)
 if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
-
