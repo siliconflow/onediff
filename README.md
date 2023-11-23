@@ -20,16 +20,17 @@ Updated on Nov 6, 2023.
 
 ## Features
 - Acceleration for SDXL, SD2.1 and so on
-  - [SDXL](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L16) 
-  - [SD2.1](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image.py#L30C10-L30C10)
-- Convert PyTorch models like UNet to an OneFlow graph with one function
+  - [SDXL](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl.py) 
+  - [SD2.1](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image.py)
+  - [LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_lora.py)
+  - [LCM](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
+- Compile PyTorch models (like UNet) with one function
   - [oneflow_compile](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
 - Enable multi-resolution input with the same compiled model
   - [The Multi graph way](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
-  - [The Single graph way](https://github.com/Oneflow-Inc/diffusers#business-inquiry)
 - Save/load/change device of the compiled graph
-  - [Save and Load](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L76)
-  - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_mp_load.py#L52)
+  - [Save and Load](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_save_load.py)
+  - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
 ## Business inquiry on OneDiff Enterprise Version
 
