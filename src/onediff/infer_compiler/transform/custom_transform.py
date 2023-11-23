@@ -2,19 +2,17 @@
 import inspect
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
-from ..import_tools import (
-    get_mock_entity_name,
-    import_module_from_path,
-)
+from ..import_tools import import_module_from_path
 from .manager import transform_mgr
 from .builtin_transform import torch2oflow
 from ..utils.log_utils import LOGGER
+
 __all__ = ["register"]
 
 
 def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
     try:
-        key = get_mock_entity_name(cls)
+        key = transform_mgr.get_transformed_entity_name(cls)
         transform_mgr.update_class_proxies({key: replacement}, verbose=verbose)
 
     except Exception as e:
@@ -37,7 +35,7 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=False):
 
 
 def set_default_registry():
-    if len(transform_mgr._torch_to_oflow_packages_list) > 0:
+    if transform_mgr.get_mocked_package_count() > 0:
         return  # already set
 
     # compiler_registry_path
@@ -58,6 +56,7 @@ def ensure_list(obj):
     if isinstance(obj, list):
         return obj
     return [obj]
+
 
 def register(
     *,

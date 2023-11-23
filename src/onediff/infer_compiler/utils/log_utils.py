@@ -55,7 +55,7 @@ def set_logging(name="OneDiff", debug_mode=False, log_dir="."):
 LOGGER = logging.getLogger(LOGGING_NAME)
 
 if __name__ == "__main__":
-    log_directory = "/home/fengwen/workspace/run"
+    log_directory = "~/workspace/run"
     # # Debug
     # logger_debug = set_logging("test_debug", debug_mode=True, log_dir=log_directory)
     # logger_debug.debug("debug message in debug mode")

@@ -5,6 +5,7 @@ import oneflow as flow
 from typing import Any
 from functools import wraps
 from .transform.manager import transform_mgr
+from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
@@ -191,9 +192,7 @@ class DeployableModule(torch.nn.Module):
                 output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self._deployable_module_model.oneflow_module(
-                    *args, **kwargs
-                )
+                output = self._deployable_module_model.oneflow_module(*args, **kwargs)
         return output
 
     def to(self, *args, **kwargs):
@@ -302,6 +301,7 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
 
 
 def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}):
+    set_default_registry()
 
     def wrap_module(module):
         if isinstance(module, DeployableModule):

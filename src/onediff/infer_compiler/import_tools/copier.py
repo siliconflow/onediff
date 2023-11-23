@@ -29,7 +29,7 @@ class PackageCopier:
             self.copy_package,
             self.add_init_files,
             self.rewrite_imports,
-            self.test_import,
+            self.test_module_import,
         ]
 
     def __repr__(self):
@@ -37,9 +37,11 @@ class PackageCopier:
             f"PackageCopier({self.old_pkg_name} -> {self.new_pkg_name}"
             f"\n{self.old_pkg_path} -> {self.new_pkg_path})"
         )
+
     def cleanup(self):
         if self.new_pkg_path.exists():
             shutil.rmtree(self.new_pkg_path)
+
     def _get_path(self, pkg) -> Tuple[str, Path]:
         try:
             pkg = importlib.import_module(pkg)
@@ -124,14 +126,14 @@ class PackageCopier:
             with open(pyfile, "w", encoding="utf-8") as fp:
                 fp.write(content)
 
-    def test_import(self):
+    def test_module_import(self):
         try:
             sys.path.insert(0, str(self.new_pkg_path.parent))
             importlib.import_module(self.new_pkg_name)
             LOGGER.debug(f"Test import {self.new_pkg_name} success")
         except Exception as e:
-
-            raise RuntimeError(f"Test import failed") from e
+            LOGGER.error(f"Test import {self.new_pkg_name} failed")
+            raise e
 
     def get_import_module(self):
         return importlib.import_module(self.new_pkg_name)

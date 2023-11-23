@@ -10,7 +10,6 @@ import torch
 import oneflow as flow
 
 
-
 from .manager import transform_mgr
 from ..utils.log_utils import LOGGER
 from ..utils.patch_for_diffusers import diffusers_checker
@@ -59,7 +58,9 @@ def proxy_class(cls: type):
         return getattr(mod, cls.__name__)
 
     # <class 'models.Attention'> -> models.Attention
-    full_cls_name = str(cls)[8:-2]
+    full_cls_name = f"{cls.__module__}.{cls.__name__}"
+    # TODO: fix class in class case
+    # <class 'models.Ops.ConvBNReLU'> -> models.Ops.ConvBNReLU
     result = transform_mgr.transform_cls(full_cls_name)
     if result is None and full_cls_name not in _warning_set:
         _warning_set.add(full_cls_name)

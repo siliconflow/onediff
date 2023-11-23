@@ -33,7 +33,7 @@ except ImportError:
 
 def register_args_tree_relaxed_types():
     transformers_mocked = False
-    for pkg_name in transform_mgr._torch_to_oflow_packages_list:
+    for pkg_name in transform_mgr.get_mocked_packages():
         if "transformers" in pkg_name:
             transformers_mocked = True
             break
