@@ -3,9 +3,9 @@
 
 # OneDiff (OneFlow Diffusers)
 
-An OneFlow backend for diffusers.
+A drop-in acceleration lib for diffusers. (Or other Stable Diffusion Models)
 
-## OneDiff Community Version Performance
+## Performance of OneDiff Community Version 
 
 Updated on Nov 6, 2023.
 
