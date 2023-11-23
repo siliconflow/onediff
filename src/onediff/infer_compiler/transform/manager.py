@@ -75,6 +75,7 @@ class TransformManager:
                 )
                 of_mds.update(classes)
                 self._packages_map[format_package_name(package_name)] = pkg
+                print_green(self._packages_map)
 
         print_green(f"Loaded Mock Torch {len(of_mds)} classes: {package_names}")
         self._torch_to_oflow_cls_map.update(of_mds)
