@@ -4,7 +4,6 @@ from typing import Any, Dict, Optional
 import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
-import pdb; pdb.set_trace()
 from onediff.infer_compiler.transform import transform_mgr
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin

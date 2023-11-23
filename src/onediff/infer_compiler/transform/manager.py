@@ -1,16 +1,12 @@
 import os
-import sys
-import shutil
 import types
-import tempfile
-import atexit
 import warnings
 from typing import Dict, List, Union
 
 from pathlib import Path
 from ..utils.log_utils import set_logging, LOGGER
 from ..import_tools.importer import (
-    copy_package,
+    mock_package,
     get_mock_entity_name,
     load_entity_with_mock,
 )
@@ -33,12 +29,7 @@ class TransformManager:
         self._torch_to_oflow_cls_map = {}
         self._torch_to_oflow_packages_list = []
         self._create_output_dir(output_dir)
-        self.logger = set_logging(debug_mode=debug_mode, log_dir=output_dir)
-        # Create a temp dir to save mock packages.
-        self.temp_dir = tempfile.mkdtemp(
-            prefix="oneflow_transform_", dir=self.output_dir
-        )
-        self._package_map = {}
+        self.logger = set_logging(debug_mode=debug_mode, log_dir=output_dir)     
 
     def _create_output_dir(self, output_dir: str):
         """Create a output dir to save run results."""
@@ -46,17 +37,12 @@ class TransformManager:
         if not output_dir.exists():
             output_dir.mkdir(parents=True, exist_ok=True)
         self.output_dir = output_dir
-
-    def cleanup(self):
-        self.logger.debug(f"Cleaning up temp dir: {self.temp_dir}")
-        shutil.rmtree(self.temp_dir, ignore_errors=True)
+        
 
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         self.logger.debug(f"Loading modules: {package_names}")
         for package_name in package_names:
-            key,pkg = copy_package(package_name, self.temp_dir)
-            self._package_map[key] = pkg
-            self._torch_to_oflow_packages_list.append(package_name)
+            mock_package(package_name, self.output_dir)
             self.logger.info(f"Loaded Mock Torch Package: {package_name} successfully")
 
     def update_class_proxies(self, class_proxy_dict: Dict[str, type], verbose=True):
@@ -71,6 +57,11 @@ class TransformManager:
         debug_message = f"Updated class proxies: {len(class_proxy_dict)=}"
         debug_message += f"\n{class_proxy_dict}\n"
         self.logger.debug(debug_message)
+    
+    def transform_entity(self, entity):
+        result = load_entity_with_mock(entity, output_directory=self.output_dir)
+        assert result is not None, f"Failed to transform {entity}"
+        return result
 
     def transform_cls(self, full_cls_name: str):
         """Transform a class name to a mock class ."""
@@ -80,20 +71,15 @@ class TransformManager:
             use_value = self._torch_to_oflow_cls_map[mock_full_cls_name]
             return use_value
 
-        use_value = load_entity_with_mock(mock_full_cls_name)
-        self._torch_to_oflow_cls_map[mock_full_cls_name] = use_value
-        return use_value
+        mock_cls = self.transform_entity(mock_full_cls_name)
+        self._torch_to_oflow_cls_map[mock_full_cls_name] = mock_cls
+        return mock_cls
 
     def transform_func(self, func: types.FunctionType):
-        """Transform a function to a mock function."""
-        return load_entity_with_mock(func)
+        return self.transform_entity(func)
 
     def transform_package(self, package_name):
-        """Transform a package to a mock package."""
-        LOGGER.error(f"transform_package: {package_name}")
-        result = load_entity_with_mock(package_name)
-        LOGGER.error(f"transform_package: {result}")
-        return result
+        return self.transform_entity(package_name)
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG_MODE", "0") == "1"
@@ -104,13 +90,3 @@ if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
 
-
-def handle_exit():
-    exc_type, exc_value, traceback = sys.exc_info()
-    if exc_type is not None:
-        LOGGER.error(f"Exception: {exc_type}, {exc_value}")
-        transform_mgr.cleanup()
-
-
-atexit.register(transform_mgr.cleanup)
-atexit.register(handle_exit)

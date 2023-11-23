@@ -37,7 +37,9 @@ class PackageCopier:
             f"PackageCopier({self.old_pkg_name} -> {self.new_pkg_name}"
             f"\n{self.old_pkg_path} -> {self.new_pkg_path})"
         )
-
+    def cleanup(self):
+        if self.new_pkg_path.exists():
+            shutil.rmtree(self.new_pkg_path)
     def _get_path(self, pkg) -> Tuple[str, Path]:
         try:
             pkg = importlib.import_module(pkg)
@@ -138,7 +140,7 @@ class PackageCopier:
         for fn in self.register_call:
             fn()
 
-    def do(self):
+    def mock(self):
         self.__call__()
 
 

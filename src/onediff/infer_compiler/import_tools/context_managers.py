@@ -4,6 +4,11 @@ import oneflow as flow
 from contextlib import contextmanager
 from ..utils.log_utils import LOGGER
 
+_PACKAGE_MAP = {}
+def cache_package(key, package):
+    global _PACKAGE_MAP
+    _PACKAGE_MAP[key] = package
+
 
 @contextmanager
 def onediff_mock_torch(pkg_name=None):
@@ -14,16 +19,20 @@ def onediff_mock_torch(pkg_name=None):
         orig_flow_attr = getattr(flow, attr_name)
         restore_funcs.append(lambda: setattr(flow, attr_name, orig_flow_attr))
         setattr(flow, attr_name, getattr(torch, attr_name))
-
-    backup_modules = sys.modules.copy()  # sys.modules has been changed
+    
+    backup = sys.modules.copy()
     # https://docs.oneflow.org/master/cookies/oneflow_torch.html
-    with flow.mock_torch.enable(lazy=True):
-        yield
+    pkg = _PACKAGE_MAP.get(pkg_name, None)
+    if pkg is None:
+        with flow.mock_torch.enable(lazy=True):
+            yield pkg
+    else:
+        yield pkg
 
     for restore_func in restore_funcs:
         restore_func()
-
-    need_backup = len(sys.modules.copy()) != len(backup_modules)
-    LOGGER.debug(f'PKG_NAME: {pkg_name} need_backup: {need_backup}')
+        
+    # https://docs.python.org/3/library/sys.html?highlight=sys%20modules#sys.modules
+    need_backup = len(sys.modules.copy()) != len(backup)
     if need_backup:
-        sys.modules = backup_modules
+        sys.modules = backup
