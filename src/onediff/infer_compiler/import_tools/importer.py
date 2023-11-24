@@ -6,7 +6,7 @@ from typing import Any, Optional, Union
 from types import FunctionType, ModuleType
 from pathlib import Path
 from .copier import PackageCopier
-from .context_managers import onediff_mock_torch
+from .mock_torch_context import onediff_mock_torch
 from .format_utils import MockEntityNameFormatter
 
 __all__ = ["import_module_from_path", "LazyMocker"]

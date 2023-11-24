@@ -88,7 +88,7 @@ class TransformManager:
         debug_message += f"\n{class_proxy_dict}\n"
         self.logger.debug(debug_message)
 
-    def transform_entity(self, entity):
+    def _transform_entity(self, entity):
         result = self.mocker.mock_entity(entity)
         if result is None:
             RuntimeError(f"Failed to transform entity: {entity}")
@@ -111,10 +111,10 @@ class TransformManager:
 
     def transform_func(self, func: types.FunctionType):
         # TODO: support transform function cache
-        return self.transform_entity(func)
+        return self._transform_entity(func)
 
     def transform_package(self, package_name):
-        return self.transform_entity(package_name)
+        return self._transform_entity(package_name)
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG", "0") == "1"
