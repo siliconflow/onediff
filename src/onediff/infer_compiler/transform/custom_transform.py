@@ -5,7 +5,7 @@ from typing import Callable, Dict, List, Optional, Union
 from ..import_tools import import_module_from_path
 from .manager import transform_mgr
 from .builtin_transform import torch2oflow
-from ..utils.log_utils import LOGGER
+from ..utils.log_utils import logger
 
 __all__ = ["register"]
 
@@ -16,7 +16,7 @@ def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
         transform_mgr.update_class_proxies({key: replacement}, verbose=verbose)
 
     except Exception as e:
-        LOGGER.warning(f"Cannot register {cls=} {replacement=}. {e=}")
+        logger.warning(f"Cannot register {cls=} {replacement=}. {e=}")
 
 
 def register_torch2oflow_func(func, first_param_type=None, verbose=False):
@@ -24,14 +24,14 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=False):
         params = inspect.signature(func).parameters
         first_param_type = params[list(params.keys())[0]].annotation
         if first_param_type == inspect._empty:
-            LOGGER.warning(f"Cannot register {func=} {first_param_type=}.")
+            logger.warning(f"Cannot register {func=} {first_param_type=}.")
     try:
         torch2oflow.register(first_param_type)(func)
-        LOGGER.debug(f"Register {func=} {first_param_type=}")
+        logger.debug(f"Register {func=} {first_param_type=}")
         if verbose:
-            LOGGER.info(f"Register {func=} {first_param_type=}")
+            logger.info(f"Register {func=} {first_param_type=}")
     except Exception as e:
-        LOGGER.warning(f"Cannot register {func=} {first_param_type=}. {e=}")
+        logger.warning(f"Cannot register {func=} {first_param_type=}. {e=}")
 
 
 def set_default_registry():
@@ -44,12 +44,12 @@ def set_default_registry():
     try:
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
-        LOGGER.warning(f"Failed to register_diffusers {e=}")
+        logger.warning(f"Failed to register_diffusers {e=}")
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except Exception as e:
-        LOGGER.warning(f"Failed to register_diffusers_quant {e=}")
+        logger.warning(f"Failed to register_diffusers_quant {e=}")
 
 
 def ensure_list(obj):

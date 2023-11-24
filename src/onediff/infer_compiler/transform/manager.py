@@ -6,10 +6,11 @@ import warnings
 import shutil
 import time
 import uuid
+import logging
 from typing import Dict, List, Union
 
 from pathlib import Path
-from ..utils.log_utils import LOGGER, ConfigurableLogger
+from ..utils.log_utils import logger
 from ..import_tools.importer import LazyMocker
 
 __all__ = ["transform_mgr"]
@@ -38,10 +39,7 @@ class TransformManager:
         self.debug_mode = debug_mode
         self._torch_to_oflow_cls_map = {}
         self._create_temp_dir(tmp_dir)
-        print(f"{__file__}.{__name__=}")
-        self.logger = ConfigurableLogger(
-            "ondiff", log_dir=tmp_dir, debug_mode=debug_mode
-        ).logger
+        self._setup_logger()
         self.mocker = LazyMocker(
             prefix=PREFIX, suffix=SUFFIX, tmp_dir=self.tmp_dir / ".mock_cache"
         )
@@ -49,6 +47,15 @@ class TransformManager:
     def _create_temp_dir(self, tmp_dir):
         self.tmp_dir = Path(tmp_dir)
         self.tmp_dir.mkdir(parents=True, exist_ok=True)
+
+    def _setup_logger(self):
+        name = "ONEDIFF"
+        file_name = f"onediff_{gen_unique_id()}.log"
+        level = logging.DEBUG if self.debug_mode else logging.ERROR
+        logger.configure_logging(
+            name=name, file_name=file_name, level=level, log_dir=self.tmp_dir
+        )
+        self.logger = logger
 
     def cleanup(self):
         mock_cache_dir = self.tmp_dir / ".mock_cache"
@@ -86,7 +93,6 @@ class TransformManager:
         return result
 
     def get_transformed_entity_name(self, entity):
-        """Get a mock entity name."""
         return self.mocker.get_mock_entity_name(entity)
 
     def transform_cls(self, full_cls_name: str):
@@ -122,7 +128,7 @@ def handle_exit():
     transform_mgr.cleanup()
     exc_type, exc_value, traceback = sys.exc_info()
     if exc_type is not None:
-        LOGGER.error(f"Exception: {exc_type}, {exc_value}")
+        logger.error(f"Exception: {exc_type}, {exc_value}")
 
 
 atexit.register(transform_mgr.cleanup)

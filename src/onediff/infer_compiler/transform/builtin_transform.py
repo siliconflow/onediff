@@ -11,7 +11,7 @@ import oneflow as flow
 
 
 from .manager import transform_mgr
-from ..utils.log_utils import LOGGER
+from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 
 __all__ = [
@@ -26,25 +26,23 @@ __all__ = [
 ]
 from functools import singledispatch
 
-_warning_set = set()
-
 
 def singledispatch_proxy(func):
     dispatcher = singledispatch(func)
+    _warning_set = set()
 
     def wrapper(first_param, *args, **kwargs):
-        instance_name_before = first_param.__class__.__name__
+        nonlocal _warning_set
+
+        before = first_param.__class__.__name__
         result = dispatcher(first_param, *args, **kwargs)
-        instance_name_after = result.__class__.__name__
+        after = result.__class__.__name__
 
-        before_to_after = f"{instance_name_before} -> {instance_name_after}"
+        description = f"{before} transformed to  {after}"
 
-        if (
-            instance_name_before not in instance_name_after
-            and before_to_after not in _warning_set
-        ):
-            _warning_set.add(before_to_after)
-            LOGGER.warning(f"instance_name: {before_to_after}")
+        if before not in after and description not in _warning_set:
+            _warning_set.add(description)
+            logger.warning(f"instance_name: {description}")
         return result
 
     wrapper.register = dispatcher.register
@@ -59,9 +57,6 @@ def proxy_class(cls: type):
 
     full_qualified_name = cls.__module__ + "." + cls.__qualname__
     result = transform_mgr.transform_cls(full_qualified_name)
-    if result is None and full_qualified_name not in _warning_set:
-        _warning_set.add(full_qualified_name)
-        LOGGER.warning(f"Can't find oneflow module for: {full_qualified_name}")
     return result
 
 
@@ -167,12 +162,10 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         of_obj = of_obj_cls()
 
         if verbose:
-            LOGGER.info(f"convert {type(obj)} to {type(of_obj)}")
+            logger.info(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        if type(obj) not in _warning_set:
-            LOGGER.warning(f"Unsupported type: {type(obj)} {e=}")
-            _warning_set.add(type(obj))
+        logger.error(f"Unsupported type: {type(obj)} {e=}")
         return obj
 
 
@@ -208,7 +201,7 @@ def _(mod: torch.nn.Module, verbose=False):
                     self.__dict__[k] = torch2oflow(attr)
 
                 except Exception as e:
-                    LOGGER.error(f"convert {type(attr)} failed: {e}")
+                    logger.error(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")
 
     def proxy_getattr(self, attr):
@@ -233,7 +226,7 @@ def _(mod: torch.nn.Module, verbose=False):
     if of_mod.training:
         of_mod.training = False
         if verbose:
-            LOGGER.info(
+            logger.info(
                 f"""
             Warning: {type(of_mod)} is in training mode 
             and is turned into eval mode which is good for infrence optimation.
@@ -241,7 +234,7 @@ def _(mod: torch.nn.Module, verbose=False):
             )
 
     if verbose:
-        LOGGER.info(f"convert {type(mod)} to {type(of_mod)}")
+        logger.info(f"convert {type(mod)} to {type(of_mod)}")
 
     return of_mod
 

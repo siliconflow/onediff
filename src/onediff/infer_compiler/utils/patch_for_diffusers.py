@@ -1,12 +1,13 @@
+# TODO: remove this file to diffusers/src/infer_compiler_registry/register_diffusers
 from abc import ABC, abstractmethod
-from .log_utils import LOGGER
+from .log_utils import logger
 
 try:
     import diffusers
     from diffusers.models.attention_processor import Attention
 except ImportError:
     diffusers = None
-    LOGGER.warning("diffusers not found, some features will be disabled.")
+    logger.warning("diffusers not found, some features will be disabled.")
 
 _IS_DIFFUSERS_AVAILABLE = diffusers is not None
 

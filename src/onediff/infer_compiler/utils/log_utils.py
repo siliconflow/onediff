@@ -1,5 +1,7 @@
+import time
 import logging
 import os
+from pathlib import Path
 
 
 class ColorFormatter(logging.Formatter):
@@ -18,19 +20,20 @@ class ColorFormatter(logging.Formatter):
 
 
 class ConfigurableLogger:
-    def __init__(self, name=None, log_dir=".", debug_mode=False):
-        self.name = name or __name__
-        self.log_dir = log_dir
-        self.debug_mode = debug_mode
-        self.configure_logging()
-        self.logger = logging.getLogger(self.name)
+    def __init__(self) -> None:
+        self.logger = logging.getLogger(__name__)
 
-    def configure_logging(self):
-        name = self.name
-        debug = self.debug_mode
-        log_dir = self.log_dir
-        level = logging.DEBUG if debug else logging.INFO
+    def __getattr__(self, name):
+        return getattr(self.logger, name)
+
+    def configure_logging(self, name, level, log_dir=None, file_name=None):
+        log_dir = Path(log_dir)
         logger = logging.getLogger(name)
+
+        if logger.hasHandlers():
+            logger.warning("Logging handlers already exist for %s", name)
+            return
+
         logger.setLevel(level)
 
         # Create a console formatter and add it to a console handler
@@ -42,16 +45,28 @@ class ConfigurableLogger:
         logger.addHandler(console_handler)
 
         # Create a file formatter and add it to a file handler if log_dir is provided
-        if log_dir and level == logging.DEBUG:
+        if log_dir:
             os.makedirs(log_dir, exist_ok=True)
-            log_file = os.path.join(log_dir, f"{name}.log")
+
+            file_prefix = "{}_".format(
+                time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+            )
+
+            if file_name:
+                log_file_name = file_prefix + file_name
+            else:
+                log_file_name = file_prefix + name + ".log"
+
+            log_file = log_dir / log_file_name
             file_formatter = logging.Formatter(
                 fmt="%(levelname)s [%(asctime)s] - %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
-            file_handler = logging.FileHandler(log_file)
+            file_handler = logging.FileHandler(log_file, encoding="utf-8")
             file_handler.setFormatter(file_formatter)
             logger.addHandler(file_handler)
 
+        self.logger = logger
 
-LOGGER = logging.getLogger("ondiff")
+
+logger = ConfigurableLogger()

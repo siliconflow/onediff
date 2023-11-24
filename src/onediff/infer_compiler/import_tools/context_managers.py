@@ -2,7 +2,6 @@ import sys
 import torch
 import oneflow as flow
 from contextlib import contextmanager
-from ..utils.log_utils import LOGGER
 
 
 @contextmanager

@@ -3,7 +3,7 @@ from pathlib import Path
 import os
 import shutil
 import fnmatch
-from ..utils.log_utils import LOGGER
+from ..utils.log_utils import logger
 
 __all__ = [
     "copy_files",
@@ -52,7 +52,7 @@ def copy_files(src_dir, dst_dir, filelist):
         if src.exists():
             shutil.copy2(src, dst)
         else:
-            LOGGER.warning(f"{src} does not exist!")
+            logger.warning(f"{src} does not exist!")
 
 
 if __name__ == "__main__":

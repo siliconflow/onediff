@@ -9,7 +9,7 @@ from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
-from .utils.log_utils import LOGGER
+from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
 
 
@@ -24,9 +24,9 @@ class DualModule(torch.nn.Module):
         if self._oneflow_module is not None:
             return self._oneflow_module
 
-        LOGGER.debug(f"Convert {type(self._torch_module)} ...")
+        logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
-        LOGGER.debug(f"Convert {id(self._torch_module)=} done!")
+        logger.debug(f"Convert {id(self._torch_module)=} done!")
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -126,8 +126,8 @@ def handle_deployable_exception(func):
             try:
                 return func(self, *args, **kwargs)
             except Exception as e:
-                LOGGER.error(f"Exception in {func.__name__}: {e=}")
-                LOGGER.warning("Recompile oneflow module ...")
+                logger.error(f"Exception in {func.__name__}: {e=}")
+                logger.warning("Recompile oneflow module ...")
                 del self._deployable_module_model.oneflow_module
                 self._deployable_module_dpl_graph = None
                 return func(self, *args, **kwargs)

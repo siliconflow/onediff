@@ -5,7 +5,7 @@ import importlib
 from typing import List, Tuple, Union, Optional, Union
 from pathlib import Path
 from .copy_utils import copy_files, get_matched_files
-from ..utils.log_utils import LOGGER
+from ..utils.log_utils import logger
 
 
 class PackageCopier:
@@ -60,10 +60,10 @@ class PackageCopier:
         src = Path(self.old_pkg_path)
         dest = Path(self.new_pkg_path)
         if src == dest:
-            LOGGER.warning(f"src == dest, do nothing")
+            logger.warning(f"src == dest, do nothing")
             return
         if dest.exists():
-            LOGGER.warning(f"{dest} exists, remove it")
+            logger.warning(f"{dest} exists, remove it")
             shutil.rmtree(dest)
 
         file_list = get_matched_files(src)
@@ -130,9 +130,9 @@ class PackageCopier:
         try:
             sys.path.insert(0, str(self.new_pkg_path.parent))
             importlib.import_module(self.new_pkg_name)
-            LOGGER.debug(f"Test import {self.new_pkg_name} success")
+            logger.debug(f"Test import {self.new_pkg_name} success")
         except Exception as e:
-            LOGGER.error(f"Test import {self.new_pkg_name} failed")
+            logger.error(f"Test import {self.new_pkg_name} failed")
             raise e
 
     def get_import_module(self):
