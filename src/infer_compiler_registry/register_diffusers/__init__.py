@@ -1,7 +1,6 @@
 from onediff.infer_compiler.transform import register
 
-register(package_names=["diffusers"])
-
+# register(package_names=["diffusers"])
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 from diffusers.models.transformer_2d import Transformer2DModel
@@ -34,7 +33,7 @@ except ImportError:
 
 def register_args_tree_relaxed_types():
     transformers_mocked = False
-    for pkg_name in transform_mgr._torch_to_oflow_packages_list:
+    for pkg_name in transform_mgr.get_mocked_packages():
         if "transformers" in pkg_name:
             transformers_mocked = True
             break
