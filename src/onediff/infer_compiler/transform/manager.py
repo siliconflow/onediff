@@ -90,6 +90,8 @@ class TransformManager:
 
     def transform_entity(self, entity):
         result = self.mocker.mock_entity(entity)
+        if result is None:
+            RuntimeError(f"Failed to transform entity: {entity}")
         return result
 
     def get_transformed_entity_name(self, entity):
