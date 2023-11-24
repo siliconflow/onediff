@@ -3,7 +3,7 @@
 
 # OneDiff
 
-A drop-in acceleration lib for diffusers and other diffusion models
+A **drop-in acceleration lib** for diffusers and other diffusion models.
 
 ## Performance of OneDiff Community Version 
 
@@ -51,8 +51,6 @@ If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wik
 
 ## Install with pip or Using in Docker
 ### Install from source
-
-** Clone and install **
 
 1. Install OneFlow(For CUDA 11.8)
 ```
