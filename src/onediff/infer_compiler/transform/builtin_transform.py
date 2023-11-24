@@ -57,10 +57,7 @@ def proxy_class(cls: type):
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
-    # <class 'models.Attention'> -> models.Attention
-    full_cls_name = f"{cls.__module__}.{cls.__name__}"
-    # TODO: fix class in class case
-    # <class 'models.Ops.ConvBNReLU'> -> models.Ops.ConvBNReLU
+    full_cls_name = cls.__module__ + "." + cls.__qualname__
     result = transform_mgr.transform_cls(full_cls_name)
     if result is None and full_cls_name not in _warning_set:
         _warning_set.add(full_cls_name)

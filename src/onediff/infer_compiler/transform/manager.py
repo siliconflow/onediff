@@ -82,9 +82,9 @@ class TransformManager:
         result = self.mocker.mock_entity(entity)
         return result
 
-    def get_transformed_entity_name(self, entity_name):
+    def get_transformed_entity_name(self, entity):
         """Get a mock entity name."""
-        return self.mocker.get_mock_entity_name(entity_name)
+        return self.mocker.get_mock_entity_name(entity)
 
     def transform_cls(self, full_cls_name: str):
         """Transform a class name to a mock class ."""

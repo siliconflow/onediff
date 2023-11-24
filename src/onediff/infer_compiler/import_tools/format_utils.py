@@ -21,11 +21,11 @@ class MockEntityNameFormatter:
 
     def _format_full_class_name(self, obj: Union[str, type, FunctionType]):
         if isinstance(obj, type):
-            obj = f"{obj.__module__}.{obj.__name__}"
+            obj = f"{obj.__module__}.{obj.__qualname__}"
 
         elif isinstance(obj, FunctionType):
             module = inspect.getmodule(obj)
-            obj = f"{module.__name__}.{obj.__name__}"
+            obj = f"{module.__name__}.{obj.__qualname__}"
 
         assert isinstance(obj, str), f"obj must be str, but got {type(obj)}"
 
