@@ -97,6 +97,7 @@ class TransformManager:
     def get_transformed_entity_name(self, entity):
         return self.mocker.get_mock_entity_name(entity)
 
+
     def transform_cls(self, full_cls_name: str):
         """Transform a class name to a mock class ."""
         mock_full_cls_name = self.get_transformed_entity_name(full_cls_name)
@@ -105,7 +106,7 @@ class TransformManager:
             use_value = self._torch_to_oflow_cls_map[mock_full_cls_name]
             return use_value
 
-        mock_cls = self.transform_entity(mock_full_cls_name)
+        mock_cls = self._transform_entity(mock_full_cls_name)
         self._torch_to_oflow_cls_map[mock_full_cls_name] = mock_cls
         return mock_cls
 
@@ -126,12 +127,5 @@ if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=FutureWarning)
 
 
-def handle_exit():
-    transform_mgr.cleanup()
-    exc_type, exc_value, traceback = sys.exc_info()
-    if exc_type is not None:
-        logger.error(f"Exception: {exc_type}, {exc_value}")
-
 
 atexit.register(transform_mgr.cleanup)
-atexit.register(handle_exit)

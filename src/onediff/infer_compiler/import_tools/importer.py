@@ -95,6 +95,16 @@ class LazyMocker:
         return full_obj_name
 
     def mock_entity(self, entity: Union[str, type, FunctionType]):
+        """Mock the entity and return the mocked entity
+        
+        Example:
+            >>> mocker = LazyMocker(prefix="mock_", suffix="_of", tmp_dir="tmp")
+            >>> mocker.mock_entity("models.DemoModel")
+            <class 'mock_models_of.DemoModel'>
+            >>> cls_obj = models.DemoModel
+            >>> mocker.mock_entity(cls_obj)
+            <class 'mock_models_of.DemoModel'>
+        """
         return self.load_entity_with_mock(entity)
 
     def load_entity_with_mock(self, entity: Union[str, type, FunctionType]):
