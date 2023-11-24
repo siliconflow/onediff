@@ -1,7 +1,6 @@
 import inspect
 import os
 import sys
-import time
 import importlib
 from typing import Any, Optional, Union
 from types import FunctionType, ModuleType
@@ -111,7 +110,7 @@ class LazyMocker:
             pkg_name = formatter.unformat(attrs[0])
             pkg = importlib.import_module(pkg_name)
             if pkg is None:
-                raise ValueError(f"package {pkg_name} not found in sys.modules")
+                RuntimeError(f'Importing package "{pkg_name}" failed')
             # https://docs.python.org/3/reference/import.html#path__
             self.mock_package(pkg.__path__[0])
             return self.load_entity_with_mock(entity)
