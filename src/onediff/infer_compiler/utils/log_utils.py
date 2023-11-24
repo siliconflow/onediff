@@ -52,7 +52,9 @@ def set_logging(name="OneDiff", debug_mode=False, log_dir="."):
     return logging.getLogger(name)
 
 
+# TODO: Remove this global variable
 LOGGER = logging.getLogger(LOGGING_NAME)
+
 
 if __name__ == "__main__":
     log_directory = "~/workspace/run"

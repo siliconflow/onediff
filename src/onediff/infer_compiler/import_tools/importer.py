@@ -3,7 +3,7 @@ import os
 import sys
 import time
 import importlib
-from typing import Optional, Union
+from typing import Any, Optional, Union
 from types import FunctionType, ModuleType
 from pathlib import Path
 from .copier import PackageCopier
@@ -14,32 +14,36 @@ __all__ = ["import_module_from_path", "LazyMocker"]
 
 
 class MockEntity:
-    def __init__(self, obj_entity: Optional[Union[type, ModuleType]] = None):
-        self._obj_entity = obj_entity
+    def __init__(self, obj_entity: ModuleType = None):
+        self._obj_entity = obj_entity  # ModuleType or _LazyModule
 
     @classmethod
     def from_package(cls, package: str):
         with onediff_mock_torch():
             return cls(importlib.import_module(package))
 
+    def _get_module(self, _name: str):
+        # Fix Lazy import
+        # https://github.com/huggingface/diffusers/blob/main/src/diffusers/__init__.py#L728-L734
+        module_name = f"{self._obj_entity.__name__}.{_name}"
+        try:
+            return importlib.import_module(module_name)
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to import {module_name} because of the following error (look up to see its"
+                f" traceback):\n{e}"
+            ) from e
+
     def __getattr__(self, name: str):
         with onediff_mock_torch():
-            try:
-                obj_entity = getattr(self._obj_entity, name)
-            except AttributeError:
-                # Fix Lazy import
-                # https://github.com/huggingface/diffusers/blob/main/src/diffusers/__init__.py#L728-L734
-                obj_entity = importlib.import_module(
-                    f"{self._obj_entity.__name__}.{name}"
-                )
-                if obj_entity is None:
-                    raise ValueError(
-                        f"Attribute {name} not found in {self._obj_entity}"
-                    )
+            obj_entity = getattr(self._obj_entity, name, None)
+            if obj_entity is None:
+                self._get_module(name)
 
             if inspect.ismodule(obj_entity):
                 return MockEntity(obj_entity)
-            return obj_entity
+            else:
+                return obj_entity
 
     def entity(self):
         return self._obj_entity
@@ -99,12 +103,12 @@ class LazyMocker:
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
-        try:
-            obj_entity = MockEntity.from_package(attrs[0])
+        if attrs[0] in self.mocked_packages:
+            obj_entity = MockEntity.from_package(attrs[0]) 
             for name in attrs[1:]:
                 obj_entity = getattr(obj_entity, name)
             return obj_entity
-        except ModuleNotFoundError:
+        else:
             pkg_name = formatter.unformat(attrs[0])
             pkg = importlib.import_module(pkg_name)
             if pkg is None:
@@ -113,5 +117,4 @@ class LazyMocker:
             self.mock_package(pkg.__path__[0])
             return self.load_entity_with_mock(entity)
 
-        except Exception as e:
-            raise e
+        

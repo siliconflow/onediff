@@ -4,6 +4,8 @@ import sys
 import types
 import warnings
 import shutil
+import time
+import uuid
 from typing import Dict, List, Union
 
 from pathlib import Path
@@ -12,8 +14,16 @@ from ..import_tools.importer import LazyMocker
 
 __all__ = ["transform_mgr"]
 
+
+def gen_unique_id():
+    process_id = os.getpid()
+    timestamp = int(time.time())
+    uuid_str = uuid.uuid4().hex
+    return f"{process_id}_{timestamp}_{uuid_str}"
+
+
 PREFIX = "mock_"
-SUFFIX = f"_oflow_{os.getpid()}"
+SUFFIX = f"_oflow_{gen_unique_id()}"
 
 
 class TransformManager:
@@ -89,6 +99,7 @@ class TransformManager:
         return mock_cls
 
     def transform_func(self, func: types.FunctionType):
+        # TODO: support transform function cache
         return self.transform_entity(func)
 
     def transform_package(self, package_name):

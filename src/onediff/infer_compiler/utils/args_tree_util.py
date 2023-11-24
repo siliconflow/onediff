@@ -7,7 +7,8 @@ def input_output_processor(func):
     def process_input(*args, **kwargs):
         def input_fn(value):
             if isinstance(value, torch.Tensor):
-                return flow.utils.tensor.from_torch(value)
+                # TODO: https://github.com/siliconflow/sd-team/issues/109
+                return flow.utils.tensor.from_torch(value.contiguous())
             else:
                 return value
 
