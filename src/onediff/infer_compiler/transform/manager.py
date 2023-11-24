@@ -61,10 +61,7 @@ class TransformManager:
         mock_cache_dir = self.tmp_dir / ".mock_cache"
         if mock_cache_dir.exists():
             self.logger.info("Cleaning up mock files...")
-            for pkg in self.mocker.mocked_packages:
-                self.logger.debug(f"Removing mock package: {pkg}")
-                pkg_path = mock_cache_dir / pkg
-                shutil.rmtree(pkg_path)
+            self.mocker.cleanup()
 
     def get_mocked_packages(self):
         return self.mocker.mocked_packages

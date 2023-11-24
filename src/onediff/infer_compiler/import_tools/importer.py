@@ -2,9 +2,11 @@ import inspect
 import os
 import sys
 import importlib
+import shutil
 from typing import Any, Optional, Union
 from types import FunctionType, ModuleType
 from pathlib import Path
+from ..utils.log_utils import logger
 from .copier import PackageCopier
 from .mock_torch_context import onediff_mock_torch
 from .format_utils import MockEntityNameFormatter
@@ -76,6 +78,7 @@ class LazyMocker:
         self.suffix = suffix
         self.tmp_dir = tmp_dir
         self.mocked_packages = set()
+        self.cleanup_list = []
 
     def mock_package(self, package: str):
         # TODO Mock the package in memory
@@ -88,6 +91,12 @@ class LazyMocker:
             )
             copier.mock()
             self.mocked_packages.add(copier.new_pkg_name)
+            self.cleanup_list.append(copier.new_pkg_path)
+
+    def cleanup(self):
+        for path in self.cleanup_list:
+            logger.debug(f"Removing {path=}")
+            shutil.rmtree(path, ignore_errors=True)
 
     def get_mock_entity_name(self, entity: Union[str, type, FunctionType]):
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
