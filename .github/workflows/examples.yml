@@ -19,6 +19,13 @@ jobs:
   run-examples:
     name: "Examples"
     runs-on: [self-hosted, gpu]
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        image:
+          - registry.cn-beijing.aliyuncs.com/oneflow/onediff:cu118
+          - registry.cn-beijing.aliyuncs.com/oneflow/onediff-pro:cu121
     steps:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
@@ -38,7 +45,7 @@ jobs:
             -v $PWD:/src/onediff \
             -w /src/onediff \
             -e HF_HUB_OFFLINE=1 \
-            --name ${{ env.CONTAINER_NAME }} \
+            --name ${{ matrix.image }} \
             ${{ env.IMAGE }} \
             sleep 5400
           docker exec ${{ env.CONTAINER_NAME }} rm -rf *
