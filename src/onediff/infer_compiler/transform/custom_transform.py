@@ -35,7 +35,8 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=False):
 
 
 def set_default_registry():
-    if transform_mgr.get_mocked_package_count() > 0:
+    mocked_packages = transform_mgr.get_mocked_packages()
+    if len(mocked_packages) > 0:
         return  # already set
 
     # compiler_registry_path
@@ -44,12 +45,12 @@ def set_default_registry():
     try:
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
-        logger.warning(f"Failed to register_diffusers {e=}")
+        logger.error(f"Failed to register_diffusers {e=}")
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except Exception as e:
-        logger.warning(f"Failed to register_diffusers_quant {e=}")
+        logger.error(f"Failed to register_diffusers_quant {e=}")
 
 
 def ensure_list(obj):

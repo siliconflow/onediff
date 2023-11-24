@@ -63,8 +63,8 @@ class TransformManager:
             self.logger.info("Cleaning up mock files...")
             shutil.rmtree(mock_cache_dir, ignore_errors=True)
 
-    def get_mocked_package_count(self):
-        return len(self.mocker.mocked_packages)
+    def get_mocked_packages(self):
+        return self.mocker.mocked_packages
 
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
