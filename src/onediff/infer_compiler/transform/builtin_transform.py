@@ -57,11 +57,11 @@ def proxy_class(cls: type):
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
-    full_cls_name = cls.__module__ + "." + cls.__qualname__
-    result = transform_mgr.transform_cls(full_cls_name)
-    if result is None and full_cls_name not in _warning_set:
-        _warning_set.add(full_cls_name)
-        LOGGER.warning(f"Can't find oneflow module for: {full_cls_name}")
+    full_qualified_name = cls.__module__ + "." + cls.__qualname__
+    result = transform_mgr.transform_cls(full_qualified_name)
+    if result is None and full_qualified_name not in _warning_set:
+        _warning_set.add(full_qualified_name)
+        LOGGER.warning(f"Can't find oneflow module for: {full_qualified_name}")
     return result
 
 

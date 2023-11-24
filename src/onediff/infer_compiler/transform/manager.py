@@ -9,7 +9,7 @@ import uuid
 from typing import Dict, List, Union
 
 from pathlib import Path
-from ..utils.log_utils import set_logging, LOGGER
+from ..utils.log_utils import LOGGER, ConfigurableLogger
 from ..import_tools.importer import LazyMocker
 
 __all__ = ["transform_mgr"]
@@ -38,7 +38,10 @@ class TransformManager:
         self.debug_mode = debug_mode
         self._torch_to_oflow_cls_map = {}
         self._create_temp_dir(tmp_dir)
-        self.logger = set_logging(debug_mode=debug_mode, log_dir=tmp_dir)
+        print(f"{__file__}.{__name__=}")
+        self.logger = ConfigurableLogger(
+            "ondiff", log_dir=tmp_dir, debug_mode=debug_mode
+        ).logger
         self.mocker = LazyMocker(
             prefix=PREFIX, suffix=SUFFIX, tmp_dir=self.tmp_dir / ".mock_cache"
         )

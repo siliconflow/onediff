@@ -38,12 +38,11 @@ class MockEntity:
         with onediff_mock_torch():
             obj_entity = getattr(self._obj_entity, name, None)
             if obj_entity is None:
-                self._get_module(name)
+                obj_entity = self._get_module(name)
 
-            if inspect.ismodule(obj_entity):
-                return MockEntity(obj_entity)
-            else:
-                return obj_entity
+        if inspect.ismodule(obj_entity):
+            return MockEntity(obj_entity)
+        return obj_entity
 
     def entity(self):
         return self._obj_entity
@@ -89,7 +88,7 @@ class LazyMocker:
                 target_directory=self.tmp_dir,
             )
             copier.mock()
-        self.mocked_packages.add(package)
+            self.mocked_packages.add(copier.new_pkg_name)
 
     def get_mock_entity_name(self, entity: Union[str, type, FunctionType]):
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
@@ -104,7 +103,7 @@ class LazyMocker:
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
         if attrs[0] in self.mocked_packages:
-            obj_entity = MockEntity.from_package(attrs[0]) 
+            obj_entity = MockEntity.from_package(attrs[0])
             for name in attrs[1:]:
                 obj_entity = getattr(obj_entity, name)
             return obj_entity
@@ -116,5 +115,3 @@ class LazyMocker:
             # https://docs.python.org/3/reference/import.html#path__
             self.mock_package(pkg.__path__[0])
             return self.load_entity_with_mock(entity)
-
-        
