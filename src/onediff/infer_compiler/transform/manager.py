@@ -61,7 +61,10 @@ class TransformManager:
         mock_cache_dir = self.tmp_dir / ".mock_cache"
         if mock_cache_dir.exists():
             self.logger.info("Cleaning up mock files...")
-            shutil.rmtree(mock_cache_dir, ignore_errors=True)
+            for pkg in self.mocker.mocked_packages:
+                self.logger.debug(f"Removing mock package: {pkg}")
+                pkg_path = mock_cache_dir / pkg
+                shutil.rmtree(pkg_path)
 
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
@@ -97,7 +100,6 @@ class TransformManager:
     def get_transformed_entity_name(self, entity):
         return self.mocker.get_mock_entity_name(entity)
 
-
     def transform_cls(self, full_cls_name: str):
         """Transform a class name to a mock class ."""
         mock_full_cls_name = self.get_transformed_entity_name(full_cls_name)
@@ -125,7 +127,6 @@ transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=tmp_dir)
 if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
-
 
 
 atexit.register(transform_mgr.cleanup)
