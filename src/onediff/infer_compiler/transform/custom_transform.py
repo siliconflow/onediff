@@ -1,44 +1,42 @@
 """A module for registering custom torch2oflow functions and classes."""
-import warnings
 import inspect
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
-from ..import_tools import (
-    print_yellow,
-    print_green,
-    import_module_from_path,
-)
-from .manager import transform_mgr, get_mock_cls_name
+from ..import_tools import import_module_from_path
+from .manager import transform_mgr
 from .builtin_transform import torch2oflow
+from ..utils.log_utils import logger
 
 __all__ = ["register"]
 
 
 def register_torch2oflow_class(cls: type, replacement: type, verbose=True):
     try:
-        key = get_mock_cls_name(cls)
+        key = transform_mgr.get_transformed_entity_name(cls)
         transform_mgr.update_class_proxies({key: replacement}, verbose=verbose)
 
     except Exception as e:
-        print_yellow(f"Cannot register {cls=} {replacement=}. {e=}")
+        logger.warning(f"Cannot register {cls=} {replacement=}. {e=}")
 
 
-def register_torch2oflow_func(func, first_param_type=None, verbose=True):
+def register_torch2oflow_func(func, first_param_type=None, verbose=False):
     if first_param_type is None:
         params = inspect.signature(func).parameters
         first_param_type = params[list(params.keys())[0]].annotation
         if first_param_type == inspect._empty:
-            print_yellow(f"Cannot register {func=} {first_param_type=}.")
+            logger.warning(f"Cannot register {func=} {first_param_type=}.")
     try:
         torch2oflow.register(first_param_type)(func)
+        logger.debug(f"Register {func=} {first_param_type=}")
         if verbose:
-            print_green(f"Register {func=} {first_param_type=}")
+            logger.info(f"Register {func=} {first_param_type=}")
     except Exception as e:
-        print_yellow(f"Cannot register {func=} {first_param_type=}. {e=}")
+        logger.warning(f"Cannot register {func=} {first_param_type=}. {e=}")
 
 
 def set_default_registry():
-    if len(transform_mgr._torch_to_oflow_packages_list) > 0:
+    mocked_packages = transform_mgr.get_mocked_packages()
+    if len(mocked_packages) > 0:
         return  # already set
 
     # compiler_registry_path
@@ -47,13 +45,19 @@ def set_default_registry():
     try:
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
-        warnings.warn(f"Failed to register_diffusers {e=}")
+        logger.error(f"Failed to register_diffusers {e=}")
         raise
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except Exception as e:
-        warnings.warn(f"Failed to register_diffusers_quant {e=}")
+        logger.info(f"Failed to register_diffusers_quant {e=}")
+
+
+def ensure_list(obj):
+    if isinstance(obj, list):
+        return obj
+    return [obj]
 
 
 def register(
@@ -62,7 +66,9 @@ def register(
     torch2oflow_class_map: Optional[Dict[type, type]] = None,
     torch2oflow_funcs: Optional[List[Callable]] = None,
 ):
+
     if package_names:
+        package_names = ensure_list(package_names)
         transform_mgr.load_class_proxies_from_packages(package_names)
 
     if torch2oflow_class_map:
@@ -70,5 +76,6 @@ def register(
             register_torch2oflow_class(torch_cls, of_cls)
 
     if torch2oflow_funcs:
+        torch2oflow_funcs = ensure_list(torch2oflow_funcs)
         for func in torch2oflow_funcs:
             register_torch2oflow_func(func)
