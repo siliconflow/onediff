@@ -4,10 +4,11 @@ from typing import Union, Callable
 import importlib
 import inspect
 
-__all__ = ["hijack_func"]
+__all__ = ["hijack_func", "is_hijacked"]
 
 
 def get_func_full_name(func: FunctionType):
+    """Get the full name of a function."""
     module = inspect.getmodule(func)
     if module is None:
         raise ValueError(f"Cannot get module of function {func}")
@@ -15,8 +16,13 @@ def get_func_full_name(func: FunctionType):
 
 
 class CondFunc:
-    # Copied from: https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/sd_hijack_utils.py
+    """A function that conditionally calls another function. 
+
+    Copied from: https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/sd_hijack_utils.py
+    """
+
     def __new__(cls, orig_func, sub_func, cond_func):
+        # self: CondFunc instance
         self = super(CondFunc, cls).__new__(cls)
         if isinstance(orig_func, str):
             func_path = orig_func.split(".")
@@ -34,8 +40,12 @@ class CondFunc:
                 func_path[-1],
                 lambda *args, **kwargs: self(*args, **kwargs),
             )
+
+            def unhijack_func():
+                setattr(resolved_obj, func_path[-1], orig_func)
+
         self.__init__(orig_func, sub_func, cond_func)
-        return lambda *args, **kwargs: self(*args, **kwargs)
+        return (lambda *args, **kwargs: self(*args, **kwargs), unhijack_func)
 
     def __init__(self, orig_func, sub_func, cond_func):
         self.__orig_func = orig_func
@@ -49,11 +59,26 @@ class CondFunc:
             return self.__orig_func(*args, **kwargs)
 
 
+def is_hijacked(func: Callable, *, use_cond_func: Callable = None):
+    """Check if a function is hijacked."""
+    func_path = get_func_full_name(func)
+    if use_cond_func is None:
+        cond_func_path = get_func_full_name(CondFunc)
+    else:
+        cond_func_path = get_func_full_name(cond_func)
+
+    expected_path = f"{cond_func_path}.__new__.<locals>.<lambda>"
+    return func_path == expected_path
+
+
 def hijack_func(
     orig_func: Union[str, Callable], sub_func: Callable, cond_func: Callable
 ):
     """
-    Hijacks a function with another function.
+    Hijacks a function with another function.  
+
+    Returns: 
+        A tuple of (hijacked_func, unhijack_func)
 
     Examples:
         >>> def foo(*args, **kwargs):
@@ -62,11 +87,14 @@ def hijack_func(
         >>> def bar(orig_func, *args, **kwargs):
         >>>     # sub_func
         >>>     print('bar')
-        >>> hijack_func(foo, bar, lambda func, *args, **kwargs: True)
+        >>> def cond_func(orig_func, *args, **kwargs):
+        >>>     # cond_func
+        >>>     return True
+        >>> hijack_func(foo, bar, cond_func)
         >>> foo()
         bar
     """
 
     if isinstance(orig_func, FunctionType):
         orig_func = get_func_full_name(orig_func)
-    CondFunc(orig_func, sub_func, cond_func)
+    return CondFunc(orig_func, sub_func, cond_func)
