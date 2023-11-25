@@ -42,7 +42,7 @@ def singledispatch_proxy(func):
 
         if before not in after and description not in _warning_set:
             _warning_set.add(description)
-            logger.warning(f"instance_name: {description}")
+            logger.info(f"instance_name: {description}")
         return result
 
     wrapper.register = dispatcher.register
