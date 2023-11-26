@@ -38,14 +38,12 @@ If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wik
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
 | diffusers            | Yes                 | Yes         |
-| UNet/VAE Compilation | Yes                 | Yes         |
+| UNet/VAE/ControlNet Compilation | Yes      | Yes         |
 | LoRA                 | Limited             | Yes         |
 | LCM                  | Limited             | Yes         |
 | Multiple Resolutions | Limited             | Yes         |
 | Technical Support    | Community           | Yes         |
 | ComfyUI              |                     | Yes         |
-| ControlNet           |                     | Yes         |
-| ControlNet Compilation |                   | Yes         |
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
 
