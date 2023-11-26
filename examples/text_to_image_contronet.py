@@ -1,4 +1,3 @@
-# !pip install opencv-python transformers accelerate
 import argparse
 
 from diffusers import (
