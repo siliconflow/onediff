@@ -86,7 +86,6 @@ class TransformManager:
         self.logger.debug(debug_message)
 
     def _transform_entity(self, entity):
-        print(f"===> mock {entity}")
         result = self.mocker.mock_entity(entity)
         if result is None:
             RuntimeError(f"Failed to transform entity: {entity}")
@@ -98,7 +97,6 @@ class TransformManager:
     def transform_cls(self, full_cls_name: str):
         """Transform a class name to a mock class ."""
         mock_full_cls_name = self.get_transformed_entity_name(full_cls_name)
-        print(f"trans{mock_full_cls_name}")
 
         if mock_full_cls_name in self._torch_to_oflow_cls_map:
             use_value = self._torch_to_oflow_cls_map[mock_full_cls_name]

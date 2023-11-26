@@ -21,14 +21,18 @@ parser.add_argument(
     type=str,
     default="chinese painting style women",
 )
-parser.add_argument("--height", type=int, default=1024)
-parser.add_argument("--width", type=int, default=1024)
-parser.add_argument("--n_steps", type=int, default=50)
+parser.add_argument("--height", type=int, default=512)
+parser.add_argument("--width", type=int, default=512)
+parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="controlnet-out.png")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)
+parser.add_argument("--run", type=int, default=3)
 parser.add_argument(
     "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
+parser.add_argument(
+    "--compile_ctrlnet", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
 )
 args = parser.parse_args()
 
@@ -64,7 +68,9 @@ if args.compile:
     from onediff.infer_compiler import oneflow_compile
     pipe.unet = oneflow_compile(pipe.unet)
     pipe.vae = oneflow_compile(pipe.vae)
-    #pipe.controlnet = oneflow_compile(pipe.controlnet)
+if args.compile_ctrlnet:
+    from onediff.infer_compiler import oneflow_compile
+    pipe.controlnet = oneflow_compile(pipe.controlnet)
 
 
 # generate image
@@ -77,10 +83,10 @@ for i in range(args.warmup):
     ).images
 
 print("Run")
-images = pipe(
-    args.prompt,  height=args.height, width=args.width,num_inference_steps=args.n_steps, generator=generator, image=canny_image
-).images
-for i, image in enumerate(images):
+for i in range(args.run):
+    image = pipe(
+        args.prompt,  height=args.height, width=args.width,num_inference_steps=args.n_steps, generator=generator, image=canny_image
+    ).images[0]
     image.save(
         f"{i=}th_{args.saved_image}.png"
     )
