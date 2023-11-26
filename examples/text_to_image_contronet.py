@@ -19,7 +19,7 @@ parser.add_argument(
 parser.add_argument(
     "--prompt",
     type=str,
-    default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
+    default="chinese painting style women",
 )
 parser.add_argument("--height", type=int, default=1024)
 parser.add_argument("--width", type=int, default=1024)
