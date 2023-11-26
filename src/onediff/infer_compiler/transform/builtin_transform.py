@@ -174,12 +174,10 @@ def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
 
     new_md_cls = proxy_class(type(mod))
-    # print(f"==>{new_md_cls}")
 
     def init(self):
         nonlocal proxy_md
 
-        # print(f"===>{type(self).__mro__}")
         flow.nn.Module.__init__(self)
 
         self._parameters = OrderedDict()
