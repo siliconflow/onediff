@@ -66,9 +66,6 @@ class TransformManager:
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
 
-    def get_mocked_packages(self):
-        return self.mocker.mocked_packages
-
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         self.logger.debug(f"Loading modules: {package_names}")
         for package_name in package_names:

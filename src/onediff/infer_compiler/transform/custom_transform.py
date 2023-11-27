@@ -46,11 +46,12 @@ def set_default_registry():
         import_module_from_path(registry_path / "register_diffusers")
     except Exception as e:
         logger.error(f"Failed to register_diffusers {e=}")
+        raise
 
     try:
         import_module_from_path(registry_path / "register_diffusers_quant")
     except Exception as e:
-        logger.error(f"Failed to register_diffusers_quant {e=}")
+        logger.info(f"Failed to register_diffusers_quant {e=}")
 
 
 def ensure_list(obj):
