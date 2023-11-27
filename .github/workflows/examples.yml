@@ -7,9 +7,9 @@ on:
       - "**/*.md"
       - "LICENSE*"
 env:
-  IMAGE: registry.cn-beijing.aliyuncs.com/oneflow/onediff:cu118
   CONTAINER_NAME: onediff-test
   REGION_ID: cn-beijing
+  ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
 
 concurrency:
   group: sd-examples-${{ github.ref }}
@@ -17,8 +17,15 @@ concurrency:
 
 jobs:
   run-examples:
-    name: "Examples"
+    name: "Examples ${{ matrix.image }}"
     runs-on: [self-hosted, gpu]
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        image:
+          - onediff:cu118
+          - onediff-pro:cu121
     steps:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
@@ -39,7 +46,7 @@ jobs:
             -w /src/onediff \
             -e HF_HUB_OFFLINE=1 \
             --name ${{ env.CONTAINER_NAME }} \
-            ${{ env.IMAGE }} \
+            ${{ env.ACR_ORG }}/${{ matrix.image }} \
             sleep 5400
           docker exec ${{ env.CONTAINER_NAME }} rm -rf *
       - name: Checkout
