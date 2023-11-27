@@ -7,8 +7,7 @@ Uasge:
 import torch
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import transform_mgr
-from onediff.infer_compiler.import_tools import get_mock_cls_name
+from onediff.infer_compiler.transform import transform_mgr, get_mock_cls_name
 
 
 class PyTorchModel(torch.nn.Module):

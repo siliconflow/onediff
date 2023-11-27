@@ -4,10 +4,13 @@ import torch
 import oneflow as flow
 from typing import Any
 from functools import wraps
+from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
+from .utils.log_utils import logger
+from .utils.cost_util import cost_cnt
 
 
 class DualModule(torch.nn.Module):
@@ -20,7 +23,10 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
+
+        logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
+        logger.debug(f"Convert {id(self._torch_module)=} done!")
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -114,16 +120,17 @@ class DualModuleList(torch.nn.ModuleList):
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        try:
+        if transform_mgr.debug_mode:
             return func(self, *args, **kwargs)
-        except Exception as e:
-            print(
-                f"Exception in {func.__name__} of " f"{self.__class__.__name__}: {e=}"
-            )
-            print("Recompile oneflow module ...")
-            del self._deployable_module_model.oneflow_module
-            self._deployable_module_dpl_graph = None
-            return func(self, *args, **kwargs)
+        else:
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Exception in {func.__name__}: {e=}")
+                logger.warning("Recompile oneflow module ...")
+                del self._deployable_module_model.oneflow_module
+                self._deployable_module_dpl_graph = None
+                return func(self, *args, **kwargs)
 
     return wrapper
 
@@ -261,12 +268,14 @@ class OneflowGraph(flow.nn.Graph):
     def build(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
+    @cost_cnt(transform_mgr.debug_mode)
     def warmup_with_load(self, file_path, device=None):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
         self.load_runtime_state_dict(state_dict)
 
+    @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
         state_dict = self.runtime_state_dict()
         flow.save(state_dict, file_path)
@@ -282,7 +291,6 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     pytorch_key_prefix = "_deployable_module_model._torch_module."
     new_state_dict = type(state_dict)()
     for k, v in state_dict.items():
-        # key_filter
         # _deployable_module_model._torch_module.out.2.weight => out.2.weight
         if k.startswith(pytorch_key_prefix):
             new_k = k[len(pytorch_key_prefix) :]
@@ -292,7 +300,7 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     return new_state_dict
 
 
-def oneflow_compile(torch_module, *, use_graph=True, options={}):
+def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}):
     set_default_registry()
 
     def wrap_module(module):
@@ -303,6 +311,7 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
     model = wrap_module(torch_module)
     model._register_state_dict_hook(state_dict_hook)
+
     return model
 
 

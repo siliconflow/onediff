@@ -1,5 +1,4 @@
 import os
-
 import oneflow as flow
 import oneflow.nn as nn
 import oneflow.nn.functional as F
@@ -121,3 +120,16 @@ class FusedSelfAttnProcessor:
         hidden_states = hidden_states / attn.rescale_output_factor
 
         return hidden_states
+
+
+try:
+    from onediff.infer_compiler.transform import register
+
+    def convert_fused_self_attn_processor(
+        mod: FusedSelfAttnProcessor, verbose=True
+    ) -> FusedSelfAttnProcessor:
+        return mod
+
+    register(torch2oflow_funcs=convert_fused_self_attn_processor)
+except:
+    print("Skip onediff.infer_compiler.transform.register")

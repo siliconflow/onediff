@@ -13,11 +13,7 @@ from .with_fx_graph import fx_node_tranform
 def oneflow_backend(gm, example_inputs):
     with_interp = os.getenv(
         "ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False"
-    ).lower() in (
-        "true",
-        "1",
-        "t",
-    )
+    ).lower() in ("true", "1", "t",)
     if not with_interp:
         transformed_fn = fx_node_tranform(gm)
 
