@@ -7,7 +7,6 @@ on:
       - "**/*.md"
       - "LICENSE*"
 env:
-  IMAGE: registry.cn-beijing.aliyuncs.com/oneflow/onediff:cu118
   CONTAINER_NAME: onediff-test
   REGION_ID: cn-beijing
 
@@ -45,8 +44,8 @@ jobs:
             -v $PWD:/src/onediff \
             -w /src/onediff \
             -e HF_HUB_OFFLINE=1 \
-            --name ${{ matrix.image }} \
-            ${{ env.IMAGE }} \
+            --name ${{ env.CONTAINER_NAME }} \
+            ${{ matrix.image }} \
             sleep 5400
           docker exec ${{ env.CONTAINER_NAME }} rm -rf *
       - name: Checkout
