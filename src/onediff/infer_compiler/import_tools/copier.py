@@ -6,7 +6,6 @@ from typing import List, Tuple, Union, Optional, Union
 from pathlib import Path
 from .copy_utils import copy_files, get_matched_files
 from ..utils.log_utils import logger
-from .mock_torch_context import onediff_mock_torch
 
 
 class PackageCopier:
@@ -26,6 +25,12 @@ class PackageCopier:
             self.new_pkg_path = Path(target_directory) / self.new_pkg_name
 
         assert self.old_pkg_path.exists(), f"{self.old_pkg_path} not exists"
+        self.register_call = [
+            self.copy_package,
+            self.add_init_files,
+            self.rewrite_imports,
+            self.test_module_import,
+        ]
 
     def __repr__(self):
         return (
@@ -121,28 +126,27 @@ class PackageCopier:
             with open(pyfile, "w", encoding="utf-8") as fp:
                 fp.write(content)
 
-    def try_mock(self):
-        with onediff_mock_torch():
-            try:
-                sys.path.insert(0, str(self.new_pkg_path.parent))
-                new_pkg = importlib.import_module(self.new_pkg_name)
-                logger.debug(f"Test import {self.new_pkg_name} success")
-                return new_pkg
-            except Exception as e:
-                logger.error(f"Test import {self.new_pkg_name} failed")
-                raise e
+    def test_module_import(self):
+        try:
+            sys.path.insert(0, str(self.new_pkg_path.parent))
+            importlib.import_module(self.new_pkg_name)
+            logger.debug(f"Test import {self.new_pkg_name} success")
+        except Exception as e:
+            logger.error(f"Test import {self.new_pkg_name} failed")
+            raise e
 
     def get_import_module(self):
         return importlib.import_module(self.new_pkg_name)
 
+    def __call__(self):
+        for fn in self.register_call:
+            fn()
+
     def mock(self):
-        self.copy_package()
-        self.add_init_files()
-        self.rewrite_imports()
-        return self.try_mock()
+        self.__call__()
 
 
 if __name__ == "__main__":
     copier = PackageCopier("diffusers", prefix="mock_", suffix="")
-    copier.mock()
+    copier()
     print(copier.get_import_module())
