@@ -12,7 +12,7 @@ env:
   REGION_ID: cn-beijing
   REGISTRY: registry.cn-beijing.aliyuncs.com
   NAMESPACE: oneflow
-  ONEFLOW_PIP_INDEX: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121"
+  ONEFLOW_PIP_INDEX: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118"
 
 concurrency:
   group: sd-${{ github.ref }}
