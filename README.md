@@ -5,7 +5,7 @@
 
 A **drop-in acceleration lib** for diffusers and other **diffusion models**.
 
-## Performance of OneDiff Community Version 
+## Performance of OneDiff Community Edition 
 
 Updated on Nov 6, 2023.
 
@@ -16,7 +16,7 @@ Updated on Nov 6, 2023.
 | A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
 | A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
 
-> **_NOTE:_** OneDiff Enterprise version delivers even higher performance and second-to-none deployment flexibility.
+> **_NOTE:_** OneDiff Enterprise Edition delivers even higher performance and second-to-none deployment flexibility.
 
 ## Features
 - Acceleration for SDXL, SD2.1 and so on
@@ -32,7 +32,7 @@ Updated on Nov 6, 2023.
   - [Save and Load](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_save_load.py)
   - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
-## Business inquiry on OneDiff Enterprise Version
+## Business inquiry on OneDiff Enterprise Edition
 
 If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wiki/Run-ComfyUI-with-OneDiff), **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
 |                      | OneDiff Community   | OneDiff Enterprise|
