@@ -86,6 +86,8 @@ class TransformManager:
         self.logger.debug(debug_message)
 
     def _transform_entity(self, entity):
+        if "omegaconf" in str(entity):
+            return entity
         result = self.mocker.mock_entity(entity)
         if result is None:
             RuntimeError(f"Failed to transform entity: {entity}")
