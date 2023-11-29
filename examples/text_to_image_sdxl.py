@@ -73,7 +73,7 @@ if args.compile_vae:
 
 # Define multiple resolutions for warmup
 resolutions = (
-    [(512, 512), (512, 768), (768, 768),]
+    [(512, 512), (512, 256), (256, 256),]
     if args.use_multiple_resolutions
     else [(args.height, args.width)]
 )
