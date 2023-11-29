@@ -88,6 +88,7 @@ for resolution in resolutions:
             num_inference_steps=args.n_steps,
             output_type=OUTPUT_TYPE,
         ).images
+        torch.cuda.empty_cache()
         flow.cuda.empty_cache()
 
 # Normal SDXL run
