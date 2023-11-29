@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - priv-img
+      - use-community-whl-in-tests
 
   workflow_dispatch:
 # Environment variables available to all jobs and steps in this workflow.
@@ -12,7 +12,7 @@ env:
   REGION_ID: cn-beijing
   REGISTRY: registry.cn-beijing.aliyuncs.com
   NAMESPACE: oneflow
-  ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu118"
+  ONEFLOW_PIP_INDEX: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118"
 
 concurrency:
   group: sd-${{ github.ref }}
