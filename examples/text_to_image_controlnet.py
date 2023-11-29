@@ -62,8 +62,6 @@ pipe.to("cuda")
 # remove following line if xformers is not installed
 # pipe.enable_xformers_memory_efficient_attention()
 
-# pipe.enable_model_cpu_offload()
-
 if args.compile:
     from onediff.infer_compiler import oneflow_compile
 
