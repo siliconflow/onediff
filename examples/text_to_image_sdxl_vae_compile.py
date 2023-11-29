@@ -1,7 +1,3 @@
-"""
-Torch run example: python examples/text_to_image_sdxl.py
-Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
-"""
 import os
 import argparse
 
@@ -10,7 +6,6 @@ import torch
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
-from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
@@ -23,8 +18,8 @@ parser.add_argument(
     type=str,
     default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
 )
-parser.add_argument("--height", type=int, default=1024)
-parser.add_argument("--width", type=int, default=1024)
+parser.add_argument("--height", type=int, default=512)
+parser.add_argument("--width", type=int, default=512)
 parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--warmup", type=int, default=1)
@@ -48,12 +43,10 @@ base = StableDiffusionXLPipeline.from_pretrained(
 )
 base.to("cuda")
 
-# Compile unet with oneflow
+# Compile VAE with oneflow
 if args.compile:
-    print("unet is compiled to oneflow.")
-    rewrite_self_attention(base.unet)
-    base.unet = oneflow_compile(base.unet)
-    # base.vae = oneflow_compile(base.vae)
+    print("vae is compiled to oneflow.")
+    base.vae = oneflow_compile(base.vae)
 
 # Warmup
 for i in range(args.warmup):
