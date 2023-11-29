@@ -15,7 +15,11 @@ from PIL import Image
 parser = argparse.ArgumentParser()
 parser.add_argument("--base", type=str, default="runwayml/stable-diffusion-v1-5")
 parser.add_argument("--controlnet", type=str, default="lllyasviel/sd-controlnet-canny")
-parser.add_argument("--input_image", type=str, default="https://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png")
+parser.add_argument(
+    "--input_image",
+    type=str,
+    default="https://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png",
+)
 parser.add_argument(
     "--prompt", type=str, default="chinese painting style women",
 )
