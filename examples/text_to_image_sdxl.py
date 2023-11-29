@@ -29,8 +29,21 @@ parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
-parser.add_argument("--compile_unet", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True)
-parser.add_argument("--compile_vae", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True)
+parser.add_argument(
+    "--compile_unet",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=True,
+)
+parser.add_argument(
+    "--compile_vae",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=True,
+)
+parser.add_argument(
+    "--use_multiple_resolutions",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=False,
+)
 args = parser.parse_args()
 
 # Normal SDXL pipeline init.
@@ -58,15 +71,23 @@ if args.compile_vae:
     print("Compiling vae with oneflow.")
     base.vae = oneflow_compile(base.vae)
 
-# Warmup
-for i in range(args.warmup):
-    image = base(
-        prompt=args.prompt,
-        height=args.height,
-        width=args.width,
-        num_inference_steps=args.n_steps,
-        output_type=OUTPUT_TYPE,
-    ).images
+# Define multiple resolutions for warmup
+resolutions = (
+    [(1024, 1024), (512, 512), (768, 768), (1024, 512)]
+    if args.use_multiple_resolutions
+    else [(args.height, args.width)]
+)
+
+# Warmup with chosen resolutions
+for resolution in resolutions:
+    for i in range(args.warmup):
+        image = base(
+            prompt=args.prompt,
+            height=resolution[0],
+            width=resolution[1],
+            num_inference_steps=args.n_steps,
+            output_type=OUTPUT_TYPE,
+        ).images
 
 # Normal SDXL run
 torch.manual_seed(args.seed)
