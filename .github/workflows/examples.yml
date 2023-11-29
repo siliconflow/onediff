@@ -36,6 +36,7 @@ jobs:
       - name: Setup docker
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
+          docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
           docker run --rm --gpus=all -d --privileged --shm-size=8g \
             --pids-limit 2000 \
             --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
