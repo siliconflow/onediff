@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-      - fix-docker-2
+      - priv-img
 
   workflow_dispatch:
 # Environment variables available to all jobs and steps in this workflow.
@@ -12,6 +12,7 @@ env:
   REGION_ID: cn-beijing
   REGISTRY: registry.cn-beijing.aliyuncs.com
   NAMESPACE: oneflow
+  ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu118"
 
 concurrency:
   group: sd-${{ github.ref }}
@@ -19,7 +20,7 @@ concurrency:
 
 jobs:
   build-oneflow:
-    name: "Build sd ${{ matrix.image.suffix }}"
+    name: Build sd ${{ matrix.image.repo }}:${{ matrix.image.suffix }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -29,12 +30,15 @@ jobs:
           - {
               BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
               suffix: "cu118",
-              ONEFLOW_PIP_INDEX: "https://oneflow-staging.oss-cn-beijing.aliyuncs.com/branch/master/cu118",
+              repo: "onediff",
+            }
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
+              suffix: "cu121",
+              repo: "onediff-pro",
             }
 
     env:
-      IMAGE: onediff
-      TAG: ${{ matrix.image.suffix }}
       DOCKER_BUILDKIT: 1
     steps:
       - name: Maximize build space
@@ -67,14 +71,18 @@ jobs:
       # 1.2 Build and push image to ACR
       - name: Set env
         run: |
-          echo ACR_TAG="$REGISTRY/$NAMESPACE/$IMAGE:$TAG" >> $GITHUB_ENV
-          echo DOCKERHUB_TAG="oneflowinc/$IMAGE:$TAG" >> $GITHUB_ENV
+          echo ACR_TAG="$REGISTRY/$NAMESPACE/${{ matrix.image.repo }}:${{ matrix.image.suffix }}" >> $GITHUB_ENV
+          echo DOCKERHUB_TAG="oneflowinc/${{ matrix.image.repo }}:${{ matrix.image.suffix }}" >> $GITHUB_ENV
+      - name: Set env (Pro)
+        if: matrix.image.repo == 'onediff-pro'
+        run: |
+          echo ONEFLOW_PIP_INDEX="https://${{ secrets.ONEFLOW_PRIV_OSS_BUCKET }}.oss-cn-beijing.aliyuncs.com/branch/main/cu121" >> $GITHUB_ENV
       - name: Get OneFlow version
         id: get-oneflow-version
         run: |
-          curl "${{ matrix.image.ONEFLOW_PIP_INDEX }}"
-          ONEFLOW_PIP_INDEX=${{matrix.image.ONEFLOW_PIP_INDEX}}
-          DEV_VERSION=$(curl $ONEFLOW_PIP_INDEX | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | head -n 1)
+          curl "${{ env.ONEFLOW_PIP_INDEX }}"
+          ONEFLOW_PIP_INDEX=${{ env.ONEFLOW_PIP_INDEX }}
+          DEV_VERSION=$(curl ${{ env.ONEFLOW_PIP_INDEX }} | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | head -n 1)
           echo "DEV_VERSION: ${DEV_VERSION}"
           if [ -z "$DEV_VERSION" ]
           then
@@ -93,7 +101,7 @@ jobs:
           target: ${{ matrix.build-target }}
           build-args: |
             BASE_IMAGE=${{matrix.image.BASE_IMAGE}}
-            ONEFLOW_PIP_INDEX=${{matrix.image.ONEFLOW_PIP_INDEX}}
+            ONEFLOW_PIP_INDEX=${{ env.ONEFLOW_PIP_INDEX }}
             ONEFLOW_PACKAGE_NAME=${{steps.get-oneflow-version.outputs.ONEFLOW_PACKAGE_NAME}}
       - name: Push image to ACR
         run: |
