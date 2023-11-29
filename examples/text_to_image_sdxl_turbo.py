@@ -26,7 +26,7 @@ parser.add_argument(
 )
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)
-parser.add_argument("--n_steps", type=int, default=1)
+parser.add_argument("--n_steps", type=int, default=4)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
