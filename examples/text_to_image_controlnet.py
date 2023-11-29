@@ -42,7 +42,7 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# download an image
+# load an image
 image = load_image(args.input_image)
 image = np.array(image)
 
