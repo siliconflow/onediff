@@ -73,7 +73,7 @@ if args.compile_vae:
 
 # Define multiple resolutions for warmup
 resolutions = (
-    [(256, 256), (512, 256), (512, 512)]
+    [(256, 256), (512, 512)]
     if args.use_multiple_resolutions
     else [(args.height, args.width)]
 )
@@ -88,7 +88,6 @@ for resolution in resolutions:
             num_inference_steps=args.n_steps,
             output_type=OUTPUT_TYPE,
         ).images
-        torch.cuda.empty_cache()
         flow.cuda.empty_cache()
 
 # Normal SDXL run
