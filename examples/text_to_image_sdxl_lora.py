@@ -10,7 +10,7 @@ LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
 LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
 pipe.load_lora_weights(LORA_MODEL_ID, weight_name=LORA_FILENAME)
 
-# TODO(): Not fused lora will affect the performance.
+pipe.fuse_lora(safe_fusing=True)
 pipe.unet = oneflow_compile(pipe.unet)
 
 generator = torch.manual_seed(0)
