@@ -56,13 +56,15 @@ python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyu
 ```
 OneFlow packages for other CUDA versioins:
 <details>
-CUDA 12.1
+<summary> Click to expand details </summary>
+
+**CUDA 12.1**
 
 ```bash
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
 ```
 
-CUDA 12.2
+**CUDA 12.2**
 
 ```bash
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
