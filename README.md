@@ -54,8 +54,8 @@ If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wik
 ```
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
 ```
-OneFlow packages for other CUDA versioins:
 <details>
+<summary> Click to get OneFlow packages for other CUDA versioins. </summary>
 CUDA 12.1
 
 ```bash
