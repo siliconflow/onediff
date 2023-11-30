@@ -52,7 +52,7 @@ image = image[:, :, None]
 image = np.concatenate([image, image, image], axis=2)
 canny_image = Image.fromarray(image)
 
-# load control net and stable diffusion v1-5
+# load control net and stable diffusion
 # reference: https://huggingface.co/docs/diffusers/main/en/api/pipelines/controlnet
 controlnet = ControlNetModel.from_pretrained(args.controlnet, torch_dtype=torch.float16)
 pipe = StableDiffusionControlNetPipeline.from_pretrained(
