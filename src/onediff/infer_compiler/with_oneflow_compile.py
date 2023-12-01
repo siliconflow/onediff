@@ -137,7 +137,7 @@ def handle_deployable_exception(func):
 
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
-        super().__init__()
+        torch.nn.Module.__init__(self)
         self._deployable_module_model = DualModule(torch_module, oneflow_module)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
@@ -233,12 +233,12 @@ class DeployableModule(torch.nn.Module):
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
 
-    @property
-    def __class__(self):
-        if oneflow_exec_mode_enabled():
-            return type(self)
-        else:
-            return self._deployable_module_model._torch_module.__class__
+    # @property
+    # def __class__(self):
+    #     if oneflow_exec_mode_enabled():
+    #         return type(self)
+    #     else:
+    #         return self._deployable_module_model._torch_module.__class__
 
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
@@ -313,9 +313,13 @@ def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}
         if isinstance(module, DeployableModule):
             return DeployableModule.from_existing(module, use_graph, options)
         else:
-            return DeployableModule(module, None, use_graph, options)
+            class MixedDeployableModule(DeployableModule, module.__class__):
+                def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
+                    DeployableModule.__init__(self, torch_module, oneflow_module, use_graph=True, options={})
+            return MixedDeployableModule(module, None, use_graph, options)
 
     model = wrap_module(torch_module)
+    assert isinstance(model, DeployableModule)
     assert isinstance(model, torch_module.__class__)
     model._register_state_dict_hook(state_dict_hook)
 
