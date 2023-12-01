@@ -51,7 +51,7 @@ jobs:
         with:
           ref: ${{ inputs.branch }}
           repository: ${{ secrets.ONEFLOW_PRIV_ORG }}/comfyui-speedup
-          token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }
+          token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
           path: comfyui-speedup
 
       - name: Start ComfyUI container
