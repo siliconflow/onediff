@@ -1,11 +1,11 @@
 name: ComfyUI Workflows Test
 
 on:
-  push:
-    branches:
-      - main
-      - add_comfyui_workflow_ci
-  workflow_dispatch: 
+  # push:
+  #   branches:
+  #     - main
+  #     - add_comfyui_workflow_ci
+  workflow_dispatch:
 
 env:
   SELENIUM_CONTAINER_NAME: ci-selenium-30m
@@ -75,4 +75,4 @@ jobs:
         run: |
           pip install -r requirements.txt
           python test_by_ui.py --workflow workflows/sdxl-unet-speedup-graph-saver.json
-        working-directory: tests/comfyui 
+        working-directory: tests/comfyui
