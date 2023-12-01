@@ -301,6 +301,28 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     return new_state_dict
 
 
+# Return a DeployableModule that using module_cls as it's parent class.
+def get_mixed_deployable_module(module_cls):
+    class MixedDeployableModule(DeployableModule, module_cls):
+        def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
+            DeployableModule.__init__(
+                self, torch_module, oneflow_module, use_graph, options
+            )
+            self._is_raw_deployable_module = False
+
+        @classmethod
+        def from_existing(cls, existing_module, use_graph=None, options=None):
+            torch_module = existing_module._deployable_module_model._torch_module
+            oneflow_module = existing_module._deployable_module_model._oneflow_module
+            instance = cls(torch_module, oneflow_module, use_graph, options)
+            instance._deployable_module_dpl_graph = (
+                existing_module._deployable_module_dpl_graph if use_graph else None
+            )
+            return instance
+
+    return MixedDeployableModule
+
+
 def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}):
     set_default_registry()
 
@@ -309,33 +331,9 @@ def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}
             assert not module._is_raw_deployable_module
             return module.__class__.from_existing(module, use_graph, options)
         else:
-
-            class MixedDeployableModule(DeployableModule, module.__class__):
-                def __init__(
-                    self, torch_module, oneflow_module, use_graph=True, options={}
-                ):
-                    DeployableModule.__init__(
-                        self, torch_module, oneflow_module, use_graph, options
-                    )
-                    self._is_raw_deployable_module = False
-
-                @classmethod
-                def from_existing(cls, existing_module, use_graph=None, options=None):
-                    torch_module = (
-                        existing_module._deployable_module_model._torch_module
-                    )
-                    oneflow_module = (
-                        existing_module._deployable_module_model._oneflow_module
-                    )
-                    instance = cls(torch_module, oneflow_module, use_graph, options)
-                    instance._deployable_module_dpl_graph = (
-                        existing_module._deployable_module_dpl_graph
-                        if use_graph
-                        else None
-                    )
-                    return instance
-
-            return MixedDeployableModule(module, None, use_graph, options)
+            return get_mixed_deployable_module(module.__class__)(
+                module, None, use_graph, options
+            )
 
     model = wrap_module(torch_module)
     assert isinstance(model, DeployableModule)
