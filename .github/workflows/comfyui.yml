@@ -32,7 +32,7 @@ jobs:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
         with:
-          login-server: https://registry.${{env.REGION_ID}}.aliyuncs.com
+          login-server: https://registry.cn-beijing.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
 
