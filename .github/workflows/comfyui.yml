@@ -17,6 +17,7 @@ env:
 
 jobs:
   selenium-test:
+    name: "Test ComfyUI Nodes by UI"
     runs-on: [self-hosted, gpu]
 
     steps:
