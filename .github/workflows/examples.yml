@@ -61,7 +61,6 @@ jobs:
           token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
           path: ${{ env.COMFYUI_SPEEDUP_DIR }}
       - name: Setup docker
-      - if: matrix.test-suite == 'comfy'
         run: |
           docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
           docker pull ${{ env.SELENIUM_IMAGE }}
@@ -69,7 +68,6 @@ jobs:
             --shm-size="2g" --rm --name ${{ env.SELENIUM_CONTAINER_NAME }} \
             -d $SELENIUM_IMAGE sleep 5400
           docker exec ${{ env.SELENIUM_CONTAINER_NAME }} /opt/bin/entry_point.sh&
-        run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
           docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
           docker run --rm --gpus=all -d --privileged --shm-size=8g \
