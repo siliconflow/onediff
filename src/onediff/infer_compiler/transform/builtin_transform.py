@@ -178,10 +178,6 @@ def _(mod: torch.nn.Module, verbose=False):
     def init(self):
         nonlocal proxy_md
 
-        # call the super `__init__` may cause unnecessary memory allocation,
-        # so we call the nn.Module `__init__` instead.
-
-        # super(type(self), self).__init__()
         flow.nn.Module.__init__(self)
 
         self._parameters = OrderedDict()
