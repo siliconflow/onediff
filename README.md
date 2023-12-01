@@ -1,87 +1,109 @@
 [![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
 [![Docker image build](https://github.com/Oneflow-Inc/diffusers/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/diffusers/actions/workflows/sd.yml)
 
-# OneFlow diffusers
+# OneDiff
 
-OneFlow backend support for diffusers
+A **drop-in acceleration lib** for diffusers and other **diffusion models**.
 
-## Performance
+## Performance of OneDiff Community Edition 
 
 Updated on Nov 6, 2023.
 
-|                | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
+|     Device     | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
 | -------------- | --------------- | --------------- | ------------------------- |
-| 3090           | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
-| 4090           | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
+| RTX 3090       | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
+| RTX 4090       | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
 | A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
 | A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
 
-Run it by yourself using Docker:
+> **_NOTE:_** OneDiff Enterprise Edition delivers even higher performance and second-to-none deployment flexibility.
 
-```bash
-docker pull oneflowinc/onediff:20231106
-```
+## Features
+- Acceleration for SDXL, SD2.1 and so on
+  - [SDXL](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl.py) 
+  - [SD2.1](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image.py)
+  - [LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_lora.py)
+  - [ControlNet](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_controlnet.py)
+  - [LCM](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
+  - [SDXL Turbo](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_turbo.py)
+- Compile PyTorch models (like UNet) with one function
+  - [oneflow_compile](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
+- Enable multi-resolution input with the same compiled model
+  - [The Multi graph way](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
+- Save/load/change device of the compiled graph
+  - [Save and Load](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_save_load.py)
+  - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
-OneDiff Pro delivers even higher performance and second-to-none deployment flexibility.
+## Business inquiry on OneDiff Enterprise Edition
 
-## Business inquiry
-
-If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wiki/Run-ComfyUI-with-OneDiff) or **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org to tell us about your **use case, deployment scale and requirements**!!
-
-|                      | OneDiff Open Source | OneDiff Pro |
+If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wiki/Run-ComfyUI-with-OneDiff), **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+|                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
-| diffusers API        | Yes                 | Yes         |
-| UNet/VAE Compilation | Yes                 | Yes         |
-| LoRA                 |                     | Yes         |
+| diffusers            | Yes                 | Yes         |
+| UNet/VAE/ControlNet Compilation | Yes      | Yes         |
+| LoRA                 | Limited             | Yes         |
+| LCM                  | Limited             | Yes         |
+| Multiple Resolutions | Limited             | Yes         |
+| Technical Support    | Community           | Yes         |
 | ComfyUI              |                     | Yes         |
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
-| Multiple Resolutions | Limited             | Yes         |
-| Technical Support    | Community           | Yes         |
 
-## Use within docker or install with pip
+## Install with pip or Using in Docker
+### Install from source
 
-Please refer to this [wiki](https://github.com/Oneflow-Inc/diffusers/wiki/How-to-Run-OneFlow-Stable-Diffusion)
-
-## Install from source
-
-### Clone and install
-
+1. Install OneFlow(For CUDA 11.8)
 ```
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu118
-python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
-git clone https://github.com/Oneflow-Inc/diffusers.git onediff
-cd onediff && python3 -m pip install -e .
+python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
 ```
-
-Other optional packages
-
+<details>
+<summary> Click to get OneFlow packages for other CUDA versioins. </summary>
 CUDA 12.1
 
 ```bash
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu121
+python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
 ```
 
 CUDA 12.2
 
 ```bash
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/master_open_source/cu122
+python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
 ```
 
-### Login huggingface-cli
+</details>
+
+
+2. Install torch and diffusers
+```
+python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
+```
+
+3. Install OneDiff
+```
+git clone https://github.com/Oneflow-Inc/diffusers.git onediff
+cd onediff && python3 -m pip install -e .
+```
+
+4. (Optional)Login huggingface-cli
 
 ```
 python3 -m pip install huggingface_hub
  ~/.local/bin/huggingface-cli login
 ```
 
-## Run examples
+### Docker
+```bash
+docker pull oneflowinc/onediff:20231106
+```
+
+
+### Run examples
 
 ```
 python3 examples/text_to_image.py
 ```
 
-## Release
+### Release
 
 - run examples to check it works
 

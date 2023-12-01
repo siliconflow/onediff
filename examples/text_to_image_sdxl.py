@@ -1,6 +1,6 @@
 """
 Torch run example: python examples/text_to_image_sdxl.py
-Compile to oneflow graph example: python examples/text_to_image_sdxl.py --compile
+Compile to oneflow graph example: python examples/text_to_image_sdxl.py
 """
 import os
 import argparse
@@ -30,7 +30,19 @@ parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
-    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+    "--compile_unet",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=True,
+)
+parser.add_argument(
+    "--compile_vae",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=True,
+)
+parser.add_argument(
+    "--use_multiple_resolutions",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=False,
 )
 args = parser.parse_args()
 
@@ -49,20 +61,33 @@ base = StableDiffusionXLPipeline.from_pretrained(
 base.to("cuda")
 
 # Compile unet with oneflow
-if args.compile:
-    print("unet is compiled to oneflow.")
+if args.compile_unet:
+    print("Compiling unet with oneflow.")
     rewrite_self_attention(base.unet)
     base.unet = oneflow_compile(base.unet)
 
-# Warmup
-for i in range(args.warmup):
-    image = base(
-        prompt=args.prompt,
-        height=args.height,
-        width=args.width,
-        num_inference_steps=args.n_steps,
-        output_type=OUTPUT_TYPE,
-    ).images
+# Compile vae with oneflow
+if args.compile_vae:
+    print("Compiling vae with oneflow.")
+    base.vae = oneflow_compile(base.vae)
+
+# Define multiple resolutions for warmup
+resolutions = (
+    [(512, 512), (256, 256), ]
+    if args.use_multiple_resolutions
+    else [(args.height, args.width)]
+)
+
+# Warmup with chosen resolutions
+for resolution in resolutions:
+    for i in range(args.warmup):
+        image = base(
+            prompt=args.prompt,
+            height=resolution[0],
+            width=resolution[1],
+            num_inference_steps=args.n_steps,
+            output_type=OUTPUT_TYPE,
+        ).images
 
 # Normal SDXL run
 torch.manual_seed(args.seed)
