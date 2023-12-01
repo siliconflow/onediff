@@ -84,7 +84,7 @@ jobs:
       - if: matrix.test-suite == 'comfy'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
       - if: matrix.test-suite == 'comfy'
-        run: docker exec ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8855&
+        run: docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8855
       - if: matrix.test-suite == 'comfy'
         run:
           docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} \
