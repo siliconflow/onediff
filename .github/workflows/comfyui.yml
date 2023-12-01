@@ -1,10 +1,10 @@
 name: ComfyUI Workflows Test
 
 on:
-  push:
-    branches:
-      - main
-      - add_comfyui_workflow_ci
+  # push:
+  #   branches:
+  #     - main
+  #     - add_comfyui_workflow_ci
   workflow_dispatch:
 
 env:

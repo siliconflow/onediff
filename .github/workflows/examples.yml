@@ -14,6 +14,8 @@ env:
   COMFYUI_SPEEDUP_DIR: comfyui-speedup
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
+  SELENIUM_CONTAINER_NAME: ci-selenium-90m
+  SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 concurrency:
   group: sd-examples-${{ github.ref }}
   cancel-in-progress: true
@@ -31,6 +33,7 @@ jobs:
           - onediff-pro:cu121
         test-suite:
           - diffusers_examples
+          - comfy
     steps:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
@@ -42,6 +45,14 @@ jobs:
         run: |
           set -x
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
+      - name: Start Selenium container
+        run: |
+          docker rm -f ${{ env.ACR_ORG }}/${{ env.SELENIUM_CONTAINER_NAME }} || true
+          docker pull ${{ env.SELENIUM_IMAGE }}
+          docker run --network host \
+            --shm-size="2g" --rm --name ${{ env.SELENIUM_CONTAINER_NAME }} \
+            -d $SELENIUM_IMAGE sleep 5400
+          docker exec ${{ env.SELENIUM_CONTAINER_NAME }} /opt/bin/entry_point.sh&
       - name: Checkout
         uses: actions/checkout@v4
       - name: Checkout ComfyUI
