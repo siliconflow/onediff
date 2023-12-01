@@ -47,8 +47,8 @@ jobs:
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
       - name: Start Selenium container
         run: |
-          docker rm -f ${{ env.ACR_ORG }}/${{ env.SELENIUM_CONTAINER_NAME }} || true
-          docker pull ${{ env.SELENIUM_IMAGE }}
+          docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
+          docker pull ${{ env.ACR_ORG }}/${{ env.SELENIUM_IMAGE }}
           docker run --network host \
             --shm-size="2g" --rm --name ${{ env.SELENIUM_CONTAINER_NAME }} \
             -d $SELENIUM_IMAGE sleep 5400
