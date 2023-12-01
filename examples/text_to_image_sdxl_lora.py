@@ -14,9 +14,7 @@ LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
 pipe.load_lora_weights(LORA_MODEL_ID, weight_name=LORA_FILENAME)
 
 # The 'fuse_lora' API is not available in diffuser versions prior to 0.21.0.
-version_supporting_fuse_lora = version.parse("0.21.0")
-diffusers_version = version.parse(diffusers.__version__)
-if diffusers_version >= version_supporting_fuse_lora:
+if hasattr(pipe, "fuse_lora"):
     pipe.fuse_lora(lora_scale=1.0)
 
 pipe.unet = oneflow_compile(pipe.unet)
