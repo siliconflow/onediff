@@ -15,7 +15,7 @@ env:
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   SELENIUM_CONTAINER_NAME: ci-selenium-90m
-  SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
+  SELENIUM_IMAGE: registry.cn-beijing.aliyuncs.com/oneflow/standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 concurrency:
   group: sd-examples-${{ github.ref }}
   cancel-in-progress: true
@@ -48,7 +48,7 @@ jobs:
       - name: Start Selenium container
         run: |
           docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
-          docker pull ${{ env.ACR_ORG }}/${{ env.SELENIUM_IMAGE }}
+          docker pull ${{ env.SELENIUM_IMAGE }}
           docker run --network host \
             --shm-size="2g" --rm --name ${{ env.SELENIUM_CONTAINER_NAME }} \
             -d $SELENIUM_IMAGE sleep 5400
