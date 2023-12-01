@@ -58,7 +58,6 @@ jobs:
           repository: ${{ secrets.ONEFLOW_PRIV_ORG }}/comfyui-speedup
           token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
           path: ${{ env.COMFYUI_SPEEDUP_DIR }}
-          ref: master
       - name: Setup docker
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
