@@ -22,8 +22,3 @@ def onediff_mock_torch():
 
     for restore_func in restore_funcs:
         restore_func()
-
-    # https://docs.python.org/3/library/sys.html?highlight=sys%20modules#sys.modules
-    need_backup = len(sys.modules.copy()) != len(backup)
-    if need_backup:
-        sys.modules = backup
