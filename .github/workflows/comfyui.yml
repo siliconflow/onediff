@@ -55,17 +55,17 @@ jobs:
 
       - name: Start ComfyUI container
         run: |
-        docker rm -f ${{ env.COMFYUI_CONTAINER_NAME }} || true
-        docker pull ${{ env.COMFYUI_IMAGE }}
-        docker run -it --shm-size=8G -P --privileged --runtime=nvidia --rm \
-            --gpus all --network host --name ${{ env.COMFYUI_CONTAINER_NAME }} \
-            -v `pwd`/ComfyUI:/app/ComfyUI \
-            -v `pwd`/comfyui-speedup:/app/ComfyUI/custom_nodes/comfyui-speedup \
-            -v ${{ env.SDXL_BASE }}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro \
-            -v ${{ env.UNET_INT8 }}:/app/ComfyUI/models/unet_int8/unet_int8:ro \
-            -w /app \
-            -d ${{ env.COMFYUI_IMAGE }} sleep 1800
-        docker exec ${{ env.COMFYUI_CONTAINER_NAME }} python /app/ComfyUI/main.py --port 8855&
+          docker rm -f ${{ env.COMFYUI_CONTAINER_NAME }} || true
+          docker pull ${{ env.COMFYUI_IMAGE }}
+          docker run -it --shm-size=8G -P --privileged --runtime=nvidia --rm \
+              --gpus all --network host --name ${{ env.COMFYUI_CONTAINER_NAME }} \
+              -v `pwd`/ComfyUI:/app/ComfyUI \
+              -v `pwd`/comfyui-speedup:/app/ComfyUI/custom_nodes/comfyui-speedup \
+              -v ${{ env.SDXL_BASE }}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro \
+              -v ${{ env.UNET_INT8 }}:/app/ComfyUI/models/unet_int8/unet_int8:ro \
+              -w /app \
+              -d ${{ env.COMFYUI_IMAGE }} sleep 1800
+          docker exec ${{ env.COMFYUI_CONTAINER_NAME }} python /app/ComfyUI/main.py --port 8855&
 
       - name: Wait for container to start
         run: sleep 5
