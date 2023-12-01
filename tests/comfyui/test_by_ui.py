@@ -18,14 +18,22 @@ def parse_args():
         default="Workflow file",
     )
     parser.add_argument(
+        "-t",
+        "--timeout",
+        type=int,
+        default="200",
+    )
+    parser.add_argument(
         "--host",
         type=str,
         default="127.0.0.1",
+        help="The selenium service host",
     )
     parser.add_argument(
         "--port",
         type=str,
         default="4444",
+        help="The selenium service port",
     )
     args = parser.parse_args()
     return args
@@ -108,7 +116,7 @@ def launch_prompt(driver):
         check_graph_node_types(driver)
         print(f"{args.workflow} workflow checked")
 
-        launch_and_wait(driver, timeout=200)
+        launch_and_wait(driver, timeout=args.timeout)
         print(
             f"{args.workflow} has finished, time elapsed: {time.time() - start_time:.1f}"
         )
