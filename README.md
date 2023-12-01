@@ -23,7 +23,9 @@ Updated on Nov 6, 2023.
   - [SDXL](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl.py) 
   - [SD2.1](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image.py)
   - [LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_lora.py)
+  - [ControlNet](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_controlnet.py)
   - [LCM](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
+  - [SDXL Turbo](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_turbo.py)
 - Compile PyTorch models (like UNet) with one function
   - [oneflow_compile](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
 - Enable multi-resolution input with the same compiled model
