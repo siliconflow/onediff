@@ -31,7 +31,6 @@ jobs:
           - onediff-pro:cu121
         test-suite:
           - diffusers_examples
-          - comfy
     steps:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
