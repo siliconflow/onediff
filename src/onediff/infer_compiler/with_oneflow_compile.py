@@ -2,7 +2,7 @@ import os
 import types
 import torch
 import oneflow as flow
-from typing import Any
+from typing import Any, Iterator, Tuple, Callable, Union, Dict
 from functools import wraps
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
@@ -303,4 +303,62 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
     model = wrap_module(torch_module)
     model._register_state_dict_hook(state_dict_hook)
+    model = convert_nchw_to_nhwc(model)
+
     return model
+
+    
+def search_modules(root, match_fn: callable, name="") -> Dict:
+    """
+    example:
+    >>> search_modules(model, lambda m: isinstance(m, (nn.Conv2d, nn.Linear))
+    """
+    if match_fn(root):
+        return {name: root}
+
+    result = {}
+    for child_name, child in root.named_children():
+        result.update(
+            search_modules(
+                child, match_fn, f"{name}.{child_name}" if name != "" else child_name
+            )
+        )
+    return result
+
+def _setattr(obj, attr, value):
+    attrs = attr.split(".")
+    for name in attrs[:-1]:
+        obj = getattr(obj, name)
+    prev = getattr(obj, attrs[-1])
+    setattr(obj, attrs[-1], value)
+    del prev
+
+
+def convert_nchw_to_nhwc(module: DeployableModule) -> DeployableModule:
+    oneflow_module = module._deployable_module_model.oneflow_module
+    match_func = lambda m: isinstance(m, flow.nn.Conv2d)
+    can_rewrite_modules = search_modules(oneflow_module, match_func)
+    for k, m in can_rewrite_modules.items():
+        _setattr(oneflow_module, k, Conv2dNHWC(m))
+    return module
+
+class Conv2dNHWC(flow.nn.Conv2d):
+    def __init__(self, module: flow.nn.Conv2d):
+        flow.nn.Module.__init__(self)
+        self.padding_mode = module.padding_mode
+        self.kernel_size = module.kernel_size
+        self.stride = module.stride
+        self.dilation = module.dilation
+        self.padding = module.padding
+        self.groups = module.groups
+        self.channel_pos = "channels_last"
+        self.transposed = True
+        self.in_channels = module.in_channels
+        self.out_channels = module.out_channels
+        self.weight = flow.nn.Parameter(module.weight.data.permute(0, 2, 3, 1)) 
+        self.bias = module.bias
+    
+    def forward(self, x):
+        x = x.permute(0, 2, 3, 1)
+        x = self._conv_forward(x, self.weight, self.bias)
+        return x.permute(0, 3, 1, 2)
