@@ -65,7 +65,7 @@ jobs:
       - name: Setup docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
-          docker compose -f tests/comfyui/comfy-docker-compose.yml up -d
+          docker compose -f tests/comfy-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
@@ -79,7 +79,7 @@ jobs:
       - name: Setup docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'
         run: |
-          docker compose -f tests/comfyui/diffusers-docker-compose.yml up -d
+          docker compose -f tests/diffusers-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
