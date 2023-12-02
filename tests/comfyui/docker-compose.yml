@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  selenium:
+    container_name: selenium-test
+    image: ${SELENIUM_IMAGE}
+    network_mode: host
+    shm_size: 2g
+    command: sleep 5400
+    entrypoint: /opt/bin/entry_point.sh
+    restart: 'no'
+
+  onediff-test:
+    container_name: onediff-test
+    image: ${ACR_ORG}/${IMAGE}
+    command: sleep 5400
+    privileged: true
+    shm_size: 8g
+    network_mode: host
+    pids_limit: 2000
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    environment:
+      HF_HUB_OFFLINE: '1'
+    volumes:
+      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
+      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
+      - /share_nfs:/share_nfs:ro
+      - ${PWD}/${COMFYUI_SRC_DIR}:/app/ComfyUI
+      - ${PWD}/${COMFYUI_SPEEDUP_DIR}:/app/ComfyUI/custom_nodes/comfyui-speedup
+      - ${SDXL_BASE}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro
+      - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
+      - $PWD:/src/onediff
+    working_dir: /src/onediff
+    restart: 'no'
+    depends_on:
+      - selenium
