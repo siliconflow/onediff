@@ -14,7 +14,7 @@ env:
   COMFYUI_SPEEDUP_DIR: comfyui-speedup
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
-  SELENIUM_CONTAINER_NAME: ci-selenium-90m
+  SELENIUM_CONTAINER_NAME: selenium-test
   SELENIUM_IMAGE: registry.cn-beijing.aliyuncs.com/oneflow/standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 concurrency:
   group: sd-examples-${{ github.ref }}
@@ -62,6 +62,14 @@ jobs:
           token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
           path: ${{ env.COMFYUI_SPEEDUP_DIR }}
 
+      - run: |
+          docker rm -f ${{ env.CONTAINER_NAME }} || true
+          docker pull ${{ env.ACR_ORG }}/${{ matrix.image }} 
+      - if: matrix.test-suite == 'comfy'
+        run: |
+          docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
+          docker pull ${{ env.SELENIUM_IMAGE }}
+        
       - name: Setup docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
@@ -75,6 +83,7 @@ jobs:
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+          SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
 
       - name: Setup docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'

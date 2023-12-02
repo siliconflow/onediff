@@ -2,7 +2,7 @@ version: '3.8'
 
 services:
   selenium:
-    container_name: selenium-test
+    container_name: ${SELENIUM_CONTAINER_NAME}
     image: ${SELENIUM_IMAGE}
     network_mode: host
     shm_size: 2g
