@@ -1,15 +1,6 @@
 version: '3.8'
 
 services:
-  selenium:
-    container_name: selenium-test
-    image: ${SELENIUM_IMAGE}
-    network_mode: host
-    shm_size: 2g
-    command: sleep 5400
-    entrypoint: /opt/bin/entry_point.sh
-    restart: 'no'
-
   onediff-test:
     container_name: ${CONTAINER_NAME}
     image: ${ACR_ORG}/${MATRIX_IMAGE}
@@ -35,5 +26,3 @@ services:
       - $PWD:/src/onediff
     working_dir: /src/onediff
     restart: 'no'
-    depends_on:
-      - selenium

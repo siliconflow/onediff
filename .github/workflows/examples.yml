@@ -45,6 +45,7 @@ jobs:
         run: |
           set -x
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
+
       - name: Checkout
         uses: actions/checkout@v4
       - name: Checkout ComfyUI
@@ -60,41 +61,53 @@ jobs:
           repository: ${{ secrets.ONEFLOW_PRIV_ORG }}/comfyui-speedup
           token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
           path: ${{ env.COMFYUI_SPEEDUP_DIR }}
-      - name: Setup docker
+
+      - name: Setup docker for ComfyUI Test
+        if: matrix.test-suite == 'comfy'
         run: |
-          docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
-          docker pull ${{ env.SELENIUM_IMAGE }}
-          docker run --network host \
-            --shm-size="2g" --rm --name ${{ env.SELENIUM_CONTAINER_NAME }} \
-            -d ${{ env.SELENIUM_IMAGE }} sleep 5400
-          docker exec ${{ env.SELENIUM_CONTAINER_NAME }} /opt/bin/entry_point.sh&
-          docker rm -f ${{ env.CONTAINER_NAME }} || true
-          docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
-          docker run --rm --gpus=all -d --privileged --shm-size=8g \
-            --network host --pids-limit 2000 \
-            --cap-add=SYS_PTRACE --security-opt seccomp=unconfined \
-            -v $HOME/test-container-cache-${{ env.CONTAINER_NAME }}/dot-local:/root/.local \
-            -v $HOME/test-container-cache-${{ env.CONTAINER_NAME }}/dot-cache:/root/.cache \
-            -v /share_nfs:/share_nfs:ro \
-            -v ${PWD}/${{ env.COMFYUI_SRC_DIR }}:/app/ComfyUI \
-            -v ${PWD}/${{ env.COMFYUI_SPEEDUP_DIR }}:/app/ComfyUI/custom_nodes/comfyui-speedup \
-            -v ${{ env.SDXL_BASE }}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro \
-            -v ${{ env.UNET_INT8 }}:/app/ComfyUI/models/unet_int8/unet_int8:ro \
-            -v $PWD:/src/onediff \
-            -w /src/onediff \
-            -e HF_HUB_OFFLINE=1 \
-            --name ${{ env.CONTAINER_NAME }} \
-            ${{ env.ACR_ORG }}/${{ matrix.image }} \
-            sleep 5400
+          docker compose -f tests/comfyui/comfy-docker-compose.yml up -d
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
+          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}
+          SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+
+      - name: Setup docker for diffusers examples
+        if: matrix.test-suite == 'diffusers_examples'
+        run: |
+          docker compose -f tests/comfyui/diffusers-docker-compose.yml up -d
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
+          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}
+
+        
       - run: nvidia-smi
       - run: nvidia-smi -L
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-      - if: matrix.test-suite == 'comfy'
-        run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
-      - if: matrix.test-suite == 'comfy'
+      - name: Pip Install Requirements for ComfyUI & Test
+        if: matrix.test-suite == 'comfy'
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
+      
+      - name: Start ComfyUI Web Service
+        if: matrix.test-suite == 'comfy'
         run: docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8855
-      - if: matrix.test-suite == 'comfy'
-        run: docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --workflow workflows/sdxl-unet-speedup-graph-saver.json
+      
+      - name: Test ComfyUI
+        if: matrix.test-suite == 'comfy'
+        run: |
+          docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --workflow workflows/sdxl-unet-speedup-graph-saver.json
+      
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
