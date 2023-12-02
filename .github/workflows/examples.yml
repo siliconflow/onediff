@@ -66,7 +66,7 @@ jobs:
           docker pull ${{ env.SELENIUM_IMAGE }}
           docker run --network host \
             --shm-size="2g" --rm --name ${{ env.SELENIUM_CONTAINER_NAME }} \
-            -d $SELENIUM_IMAGE sleep 5400
+            -d $ {{ env.SELENIUM_IMAGE }} sleep 5400
           docker exec ${{ env.SELENIUM_CONTAINER_NAME }} /opt/bin/entry_point.sh&
           docker rm -f ${{ env.CONTAINER_NAME }} || true
           docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
