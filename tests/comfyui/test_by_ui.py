@@ -1,3 +1,36 @@
+"""
+Before running this script, you need to start the Selenium and ComfyUI services. 
+You can start their containers using Docker Compose.
+
+Please set the following environment variables (whose values are for reference only):
+
+export ACR_ORG=registry.cn-beijing.aliyuncs.com/oneflow
+export MATRIX_IMAGE=onediff-pro:cu121
+export COMFYUI_SRC_DIR=ComfyUI
+export COMFYUI_SPEEDUP_DIR=comfyui-speedup
+export SELENIUM_IMAGE=standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
+export SELENIUM_CONTAINER_NAME=selenium-test
+export COMFYUI_PORT=8855
+export CONTAINER_NAME=onediff-test
+export SDXL_BASE=/share_nfs/hf_models/sd_xl_base_1.0.safetensors
+export UNET_INT8=/share_nfs/hf_models/unet_int8
+
+And then:
+
+git clone https://github.com/comfyanonymous/ComfyUI.git
+git clone comfyui-speedup-repo
+
+docker compose -f ../comfy-docker-compose.yml up -d
+docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+docker exec $CONTAINER_NAME python3 -m pip install selenium==4.15.2 scikit-image==0.22.0 --user
+docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
+docker exec -d $CONTAINER_NAME python3 /app/ComfyUI/main.py --port 8855
+
+Run the test script:
+
+python test_by_ui.py --workflow workflows/sdxl-unet-speedup-graph-saver.json
+
+"""
 import argparse
 import os
 import time
