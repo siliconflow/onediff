@@ -110,12 +110,12 @@ jobs:
       
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
-        run: docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8855
+        run: docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
       
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
         run: |
-          docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --workflow workflows/sdxl-unet-speedup-graph-saver.json
+          docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-unet-speedup-graph-saver.json
       
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5

@@ -25,7 +25,7 @@ directory.
 git clone https://github.com/comfyanonymous/ComfyUI.git
 git clone url-of-comfyui-speedup-repo
 
-docker compose -f ../comfy-docker-compose.yml up -d
+docker compose -f tests/comfy-docker-compose.yml up -d
 docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 docker exec $CONTAINER_NAME python3 -m pip install -r tests/comfyui/requirements.txt --user
 docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
@@ -71,6 +71,12 @@ def parse_args():
         "--port",
         type=str,
         default="4444",
+        help="The selenium service port",
+    )
+    parser.add_argument(
+        "--comfy_port",
+        type=str,
+        default="8188",
         help="The selenium service port",
     )
     args = parser.parse_args()
@@ -140,7 +146,7 @@ def check_graph_node_types(driver):
 
 def launch_prompt(driver):
     try:
-        driver.get("http://127.0.0.1:8855")
+        driver.get(f"http://127.0.0.1:{args.comfy_port}")
         time.sleep(0.1)
         start_time = time.time()
 
