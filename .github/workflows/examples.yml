@@ -131,3 +131,31 @@ jobs:
         run: docker exec ${{ env.CONTAINER_NAME }} python3 benchmarks/stable_diffusion_2_unet.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-2-1
+
+      - name: Shutdown docker for ComfyUI Test
+        if: matrix.test-suite == 'comfy'
+        run: |
+          docker compose -f tests/comfy-docker-compose.yml down
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
+          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}
+          SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+          SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
+
+      - name: Shutdown docker for diffusers examples
+        if: matrix.test-suite == 'diffusers_examples'
+        run: |
+          docker compose -f tests/diffusers-docker-compose.yml down
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
+          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}

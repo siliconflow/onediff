@@ -17,12 +17,17 @@ export UNET_INT8=/share_nfs/hf_models/unet_int8
 
 And then:
 
+**Note**:
+  It is advisable to execute the following commands in the 'diffusers' directory
+unless you are fully aware of the implications of executing them in a different 
+directory.
+
 git clone https://github.com/comfyanonymous/ComfyUI.git
-git clone comfyui-speedup-repo
+git clone url-of-comfyui-speedup-repo
 
 docker compose -f ../comfy-docker-compose.yml up -d
 docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-docker exec $CONTAINER_NAME python3 -m pip install selenium==4.15.2 scikit-image==0.22.0 --user
+docker exec $CONTAINER_NAME python3 -m pip install -r tests/comfyui/requirements.txt --user
 docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
 docker exec -d $CONTAINER_NAME python3 /app/ComfyUI/main.py --port 8855
 
