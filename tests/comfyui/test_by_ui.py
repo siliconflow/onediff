@@ -77,7 +77,7 @@ def parse_args():
         "--comfy_port",
         type=str,
         default="8188",
-        help="The selenium service port",
+        help="The ComfyUI service port",
     )
     args = parser.parse_args()
     return args
