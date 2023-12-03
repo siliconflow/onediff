@@ -112,7 +112,7 @@ jobs:
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
-          sleep 5
+          sleep 30
       
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
