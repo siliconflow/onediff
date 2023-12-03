@@ -110,7 +110,9 @@ jobs:
       
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
-        run: docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
+        run: |
+          docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
+          sleep 5
       
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
