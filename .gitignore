@@ -173,3 +173,6 @@ op_prof.csv
 log
 unet_graphs
 *.json
+
+ComfyUI/
+comfyui-speedup/
