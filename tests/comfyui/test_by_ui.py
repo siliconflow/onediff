@@ -141,14 +141,20 @@ def launch_prompt(driver):
 
         wait_until_app_ready(driver)
 
+        print("clear the workflow...")
         clear_curernt_workflow(driver)
+        print("workflow cleard")
 
+        print("load the target workflow...")
         load_workflow_graph(driver, read_workflow_json(args.workflow))
-        print(f"{args.workflow} loaded, and launch the queue prompt...")
+        print(f"{args.workflow} loaded")
 
+        print("check the nodes type of workflow...")
         check_graph_node_types(driver)
         print(f"{args.workflow} workflow checked")
+        print("all nodes checked")
 
+        print("launch the queue prompt...")
         launch_and_wait(driver, timeout=args.timeout)
         print(
             f"{args.workflow} has finished, time elapsed: {time.time() - start_time:.1f}"
