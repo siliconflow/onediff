@@ -145,6 +145,17 @@ def check_graph_node_types(driver):
         raise Exception("Error: Workflow nodes checking failed, likely missing nodes")
 
 
+def check_error_occurs(driver):
+    elements = driver.find_elements(By.CLASS_NAME, "comfy-modal-content")
+
+    desired_element = None
+    for element in elements:
+        element_text = element.text
+        if "Error occurred when" in element_text:
+            print(element.text)
+            raise Exception(f"{element.text}")
+
+
 def launch_prompt(driver):
     try:
         print(f"connect to ComfyUI: 127.0.0.1:{args.comfy_port}...")
@@ -172,6 +183,10 @@ def launch_prompt(driver):
         print(
             f"{args.workflow} has finished, time elapsed: {time.time() - start_time:.1f}"
         )
+
+        print(f"check if error occurs...")
+        check_error_occurs(driver)
+        print(f"no error occurs when executing workflow")
     except TimeoutException:
         print("Time out")
         exit(1)
