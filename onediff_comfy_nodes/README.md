@@ -13,35 +13,46 @@
 
 ## Installation Guide
 
-1. Install and set up ComfyUI based on [this commit snapshot](https://github.com/comfyanonymous/ComfyUI/tree/aeba1cc2a068ba66b2701bf2aaba21a6364337bf)
+1. Install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 
 
 2. Install PyTorch and OneFlow
 
+Install PyTorch:
+
 ```bash
-pip install torch torchvision torchaudio && \
+pip install torch torchvision torchaudio
+```
+
+Install OneFlow Community(CUDA 11.x)
+
+```bash
 pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
+```
+
+Install OneFlow Community(CUDA 12.x)
+
+```bash
+pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
 ```
 
 3. Intall onediff
 
 ```bash
-git clone git@github.com:Oneflow-Inc/onediff.git
-cd diffusers && pip install -e .
+https://github.com/Oneflow-Inc/onediff.git
+cd onediff && pip install -e .
 ```
 
 5. Install onediff_comfy_nodes for ComfyUI
 
 ```bash
+cd onediff
 cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
 ```
 
-6. (Optional) If int8 model is needed, install diffusers-quant
+6. (Optional) Advanced features
 
-```bash
-git clone git@github.com:siliconflow/diffusers-quant.git
-export PYTHONPATH=$PYTHONPATH:`pwd`/diffusers-quant 
-```
+If you need **unrestricted multiple resolution**, **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
 
 
 
