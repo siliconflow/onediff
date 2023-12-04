@@ -4,8 +4,13 @@ from PIL import Image
 import os
 import numpy as np
 import torch
-from skimage.metrics import structural_similarity
+import subprocess
 
+try:
+    from skimage.metrics import structural_similarity
+except ImportError as e:
+    subprocess.check_call(["pip", "install", "scikit-image"])
+    from skimage.metrics import structural_similarity
 
 class CompareModel:
     r"""

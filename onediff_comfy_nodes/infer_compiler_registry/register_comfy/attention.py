@@ -6,7 +6,6 @@ import oneflow as torch
 import oneflow.nn as nn
 from typing import Optional, Any
 
-# from ..proxy import proxy_class
 from onediff.infer_compiler.transform import proxy_class
 
 

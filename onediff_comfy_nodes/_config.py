@@ -3,13 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-_USE_UNET_INT8 = False
-try:
-    import diffusers_quant
-
-    _USE_UNET_INT8 = True
-except ImportError as e:
-    print('diffusers_quant not found, will not load "unet_int8" models. Error: ', e)
+_USE_UNET_INT8 = True
 
 COMFYUI_ROOT = Path(os.path.abspath(__file__)).parents[2]
 COMFYUI_SPEEDUP_ROOT = Path(os.path.abspath(__file__)).parents[0]
@@ -19,7 +13,10 @@ sys.path.insert(0, str(COMFYUI_ROOT))
 sys.path.insert(0, str(COMFYUI_SPEEDUP_ROOT))
 sys.path.insert(0, str(INFER_COMPILER_REGISTRY))
 import register_comfy  # load plugins
+from .utils.comfyui_speedup_utils import is_community_version
 
+if is_community_version():
+    _USE_UNET_INT8 = False
 
 if _USE_UNET_INT8:
     import register_diffusers_quant  # load plugins

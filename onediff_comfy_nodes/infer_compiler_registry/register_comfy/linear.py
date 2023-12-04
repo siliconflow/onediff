@@ -1,8 +1,6 @@
 import oneflow as torch
 
-# from ..proxy import proxy_class
 from onediff.infer_compiler.transform import proxy_class
-
 import comfy
 
 
