@@ -339,5 +339,5 @@ def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}
     assert isinstance(model, DeployableModule)
     assert isinstance(model, torch_module.__class__)
     model._register_state_dict_hook(state_dict_hook)
+    
     return model
-
