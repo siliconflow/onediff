@@ -29,11 +29,11 @@ docker compose -f tests/comfy-docker-compose.yml up -d
 docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 docker exec $CONTAINER_NAME python3 -m pip install -r tests/comfyui/requirements.txt --user
 docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
-docker exec -d $CONTAINER_NAME python3 /app/ComfyUI/main.py --port 8855
+docker exec -d $CONTAINER_NAME python3 /app/ComfyUI/main.py
 
 Run the test script:
 
-python test_by_ui.py --workflow workflows/sdxl-unet-speedup-graph-saver.json
+python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-unet-speedup-graph-saver.json
 
 """
 import argparse
@@ -53,7 +53,8 @@ def parse_args():
         "-w",
         "--workflow",
         type=str,
-        default="Workflow file",
+        required=True,
+        help="Workflow file",
     )
     parser.add_argument(
         "-t",
@@ -146,7 +147,9 @@ def check_graph_node_types(driver):
 
 def launch_prompt(driver):
     try:
+        print(f"connect to ComfyUI: 127.0.0.1:{args.comfy_port}...")
         driver.get(f"http://127.0.0.1:{args.comfy_port}")
+        print(f"ComfyUI connected")
         time.sleep(0.1)
         start_time = time.time()
 
@@ -163,9 +166,8 @@ def launch_prompt(driver):
         print("check the nodes type of workflow...")
         check_graph_node_types(driver)
         print(f"{args.workflow} workflow checked")
-        print("all nodes checked")
 
-        print("launch the queue prompt...")
+        print(f"launch the queue prompt (timeout: {args.timeout}s) ...")
         launch_and_wait(driver, timeout=args.timeout)
         print(
             f"{args.workflow} has finished, time elapsed: {time.time() - start_time:.1f}"
@@ -184,7 +186,9 @@ def launch_prompt(driver):
 
 if __name__ == "__main__":
     options = webdriver.ChromeOptions()
+    print(f"connect remote Selenium: http://{args.host}:{args.port}/wd/hub ...")
     driver = webdriver.Remote(
         command_executor=f"http://{args.host}:{args.port}/wd/hub", options=options
     )
+    print(f"Selenium connected")
     launch_prompt(driver)
