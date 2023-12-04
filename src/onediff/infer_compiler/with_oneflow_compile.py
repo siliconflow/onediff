@@ -9,7 +9,6 @@ from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
 
-from torch.nn.parameter import _ParameterMeta
 
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
@@ -319,7 +318,7 @@ class AutoInplaceCopyTensor(torch.Tensor):
             raise TypeError
         self.copy_(new_tensor)
 
-class AutoInplaceCopyParameter(torch.nn.Parameter, metaclass=_ParameterMeta):
+class AutoInplaceCopyParameter(torch.nn.Parameter):
     @property
     def data(self):
         return AutoInplaceCopyTensor(super(AutoInplaceCopyParameter, self).data)
