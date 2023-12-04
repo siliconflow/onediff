@@ -26,23 +26,23 @@ pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/bra
 3. Intall onediff
 
 ```bash
-git clone git@github.com:Oneflow-Inc/diffusers.git
+git clone git@github.com:Oneflow-Inc/onediff.git
 cd diffusers && pip install -e .
 ```
 
-5. (Optional) If int8 model is needed, install diffusers-quant
+5. Install onediff_comfy_nodes for ComfyUI
+
+```bash
+cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+```
+
+6. (Optional) If int8 model is needed, install diffusers-quant
 
 ```bash
 git clone git@github.com:siliconflow/diffusers-quant.git
 export PYTHONPATH=$PYTHONPATH:`pwd`/diffusers-quant 
 ```
 
-
-6. Install onediff_comfy_nodes for ComfyUI
-
-```bash
-cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/diffusers
-```
 
 
 
