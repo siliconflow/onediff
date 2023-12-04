@@ -54,13 +54,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
-      - name: Checkout ConfyUI Speedup Nodes
-        uses: actions/checkout@v2
-        if: matrix.test-suite == 'comfy'
-        with:
-          repository: ${{ secrets.ONEFLOW_PRIV_ORG }}/comfyui-speedup
-          token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
-          path: ${{ env.COMFYUI_SPEEDUP_DIR }}
 
       - run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true

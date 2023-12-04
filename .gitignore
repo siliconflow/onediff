@@ -174,5 +174,6 @@ log
 unet_graphs
 *.json
 
-ComfyUI/
-comfyui-speedup/
+# siliconflow/comfyui-speedup
+*.pt
+*.graph
