@@ -303,46 +303,5 @@ def oneflow_compile(torch_module, *, use_graph=True, options={}):
 
     model = wrap_module(torch_module)
     model._register_state_dict_hook(state_dict_hook)
-    model._deployable_module_model._torch_module.apply(module_convert_parameter)
     return model
 
-
-class AutoInplaceCopyTensor(torch.Tensor):
-    @property
-    def data(self):
-        return AutoInplaceCopyTensor(self)
-
-    @data.setter
-    def data(self, new_tensor):
-        if not isinstance(new_tensor, torch.Tensor):
-            raise TypeError
-        self.copy_(new_tensor)
-
-class AutoInplaceCopyParameter(torch.nn.Parameter):
-    @property
-    def data(self):
-        return AutoInplaceCopyTensor(super(AutoInplaceCopyParameter, self).data)
-
-    @data.setter
-    def data(self, new_tensor):
-        if not isinstance(new_tensor, torch.Tensor):
-            raise TypeError
-        self.data.copy_(new_tensor)
-
-
-def module_convert_parameter(module: torch.nn.Module):
-    for k, v in module.__dict__.items():
-        if isinstance(v, torch.Tensor):
-            module.__dict__[k] = AutoInplaceCopyTensor(v)
-        elif isinstance(v, torch.nn.Parameter):
-            module.__dict__[k] = AutoInplaceCopyParameter(v)
-    for k, param in module._parameters.items():
-        if isinstance(param, (AutoInplaceCopyParameter, AutoInplaceCopyTensor)):
-            continue
-        if param is not None:
-            module._parameters[k] = AutoInplaceCopyParameter(param)
-    for k, buffer in module._buffers.items():
-        if isinstance(param, (AutoInplaceCopyParameter, AutoInplaceCopyTensor)):
-            continue
-        if buffer is not None:
-            module._buffers[k] = AutoInplaceCopyTensor(buffer)
