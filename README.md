@@ -1,5 +1,5 @@
 [![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
-[![Docker image build](https://github.com/Oneflow-Inc/diffusers/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/diffusers/actions/workflows/sd.yml)
+[![Docker image build](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml)
 
 # OneDiff
 
@@ -20,23 +20,23 @@ Updated on Nov 6, 2023.
 
 ## Features
 - Acceleration for SDXL, SD2.1 and so on
-  - [SDXL](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl.py) 
-  - [SD2.1](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image.py)
-  - [LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_lora.py)
-  - [ControlNet](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_controlnet.py)
-  - [LCM](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
-  - [SDXL Turbo](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_turbo.py)
+  - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py) 
+  - [SD2.1](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image.py)
+  - [LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_lora.py)
+  - [ControlNet](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_controlnet.py)
+  - [LCM](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
+  - [SDXL Turbo](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_turbo.py)
 - Compile PyTorch models (like UNet) with one function
-  - [oneflow_compile](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
+  - [oneflow_compile](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
 - Enable multi-resolution input with the same compiled model
-  - [The Multi graph way](https://github.com/Oneflow-Inc/diffusers/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
+  - [The Multi graph way](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
 - Save/load/change device of the compiled graph
-  - [Save and Load](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_save_load.py)
-  - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/diffusers/blob/main/examples/text_to_image_sdxl_mp_load.py)
+  - [Save and Load](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
+  - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
 ## Business inquiry on OneDiff Enterprise Edition
 
-If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/diffusers/wiki/Run-ComfyUI-with-OneDiff), **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/onediff/wiki/Run-ComfyUI-with-OneDiff), **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
 | diffusers            | Yes                 | Yes         |
@@ -80,7 +80,7 @@ python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 
 3. Install OneDiff
 ```
-git clone https://github.com/Oneflow-Inc/diffusers.git onediff
+git clone https://github.com/Oneflow-Inc/onediff.git
 cd onediff && python3 -m pip install -e .
 ```
 
