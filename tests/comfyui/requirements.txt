@@ -1,0 +1,2 @@
+selenium==4.15.2
+scikit-image==0.22.0
