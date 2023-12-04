@@ -38,11 +38,10 @@ export PYTHONPATH=$PYTHONPATH:`pwd`/diffusers-quant
 ```
 
 
-6. Git clone this repo to ComfyUI `custom_nodes` folder
+6. Install onediff_comfy_nodes for ComfyUI
 
 ```bash
-cd  ComfyUI/custom_nodes
-git clone git@github.com:siliconflow/comfyui-speedup.git
+cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/diffusers
 ```
 
 ## Diffusers-Quant
