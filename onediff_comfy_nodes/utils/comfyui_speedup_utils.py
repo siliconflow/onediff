@@ -26,7 +26,7 @@ def is_quantization_enabled():
     return hasattr(oneflow._C, "dynamic_quantization")
 
 
-def is_community_version(stop_if_not=True):
+def is_community_version(stop_if_not=False):
     is_community = not is_quantization_enabled()
     if is_community:
         message = get_support_message()
