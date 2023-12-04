@@ -372,20 +372,20 @@ class Attention(nn.Module):
     def batch_to_head_dim(self, tensor):
         head_size = self.heads
         batch_size, seq_len, dim = tensor.shape
-        tensor = tensor.reshape(batch_size // head_size, head_size, seq_len, dim)
+        tensor = tensor.reshape(batch_size // head_size, head_size, -1, dim)
         tensor = tensor.permute(0, 2, 1, 3).reshape(
-            batch_size // head_size, seq_len, dim * head_size
+            batch_size // head_size, -1, dim * head_size
         )
         return tensor
 
     def head_to_batch_dim(self, tensor, out_dim=3):
         head_size = self.heads
         batch_size, seq_len, dim = tensor.shape
-        tensor = tensor.reshape(batch_size, seq_len, head_size, dim // head_size)
+        tensor = tensor.reshape(batch_size, -1, head_size, dim // head_size)
         tensor = tensor.permute(0, 2, 1, 3)
 
         if out_dim == 3:
-            tensor = tensor.reshape(batch_size * head_size, seq_len, dim // head_size)
+            tensor = tensor.reshape(batch_size * head_size, -1, dim // head_size)
 
         return tensor
 
@@ -526,8 +526,8 @@ class AttnProcessor:
 
         if input_ndim == 4:
             batch_size, channel, height, width = hidden_states.shape
-            hidden_states = hidden_states.view(
-                batch_size, channel, height * width
+            hidden_states = hidden_states.reshape(
+                batch_size, channel, -1
             ).transpose(1, 2)
 
         batch_size, sequence_length, _ = (
@@ -571,8 +571,8 @@ class AttnProcessor:
 
         if input_ndim == 4:
             hidden_states = hidden_states.transpose(-1, -2).reshape(
-                batch_size, channel, height, width
-            )
+                batch_size, channel, -1
+            ).reshape_as(residual)
 
         if attn.residual_connection:
             hidden_states = hidden_states + residual

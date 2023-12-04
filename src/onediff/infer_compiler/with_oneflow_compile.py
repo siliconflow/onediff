@@ -4,10 +4,13 @@ import torch
 import oneflow as flow
 from typing import Any
 from functools import wraps
+from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
+from .utils.log_utils import logger
+from .utils.cost_util import cost_cnt
 
 
 class DualModule(torch.nn.Module):
@@ -20,7 +23,10 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
+
+        logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
+        logger.debug(f"Convert {id(self._torch_module)=} done!")
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -114,27 +120,29 @@ class DualModuleList(torch.nn.ModuleList):
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        try:
+        if transform_mgr.debug_mode:
             return func(self, *args, **kwargs)
-        except Exception as e:
-            print(
-                f"Exception in {func.__name__} of " f"{self.__class__.__name__}: {e=}"
-            )
-            print("Recompile oneflow module ...")
-            del self._deployable_module_model.oneflow_module
-            self._deployable_module_dpl_graph = None
-            return func(self, *args, **kwargs)
+        else:
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Exception in {func.__name__}: {e=}")
+                logger.warning("Recompile oneflow module ...")
+                del self._deployable_module_model.oneflow_module
+                self._deployable_module_dpl_graph = None
+                return func(self, *args, **kwargs)
 
     return wrapper
 
 
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
-        super().__init__()
+        torch.nn.Module.__init__(self)
         self._deployable_module_model = DualModule(torch_module, oneflow_module)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
+        self._is_raw_deployable_module = True
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, options=None):
@@ -261,12 +269,14 @@ class OneflowGraph(flow.nn.Graph):
     def build(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
+    @cost_cnt(transform_mgr.debug_mode)
     def warmup_with_load(self, file_path, device=None):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
         self.load_runtime_state_dict(state_dict)
 
+    @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
         state_dict = self.runtime_state_dict()
         flow.save(state_dict, file_path)
@@ -282,7 +292,6 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     pytorch_key_prefix = "_deployable_module_model._torch_module."
     new_state_dict = type(state_dict)()
     for k, v in state_dict.items():
-        # key_filter
         # _deployable_module_model._torch_module.out.2.weight => out.2.weight
         if k.startswith(pytorch_key_prefix):
             new_k = k[len(pytorch_key_prefix) :]
@@ -292,16 +301,43 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
     return new_state_dict
 
 
-def oneflow_compile(torch_module, *, use_graph=True, options={}):
+# Return a DeployableModule that using module_cls as it's parent class.
+def get_mixed_deployable_module(module_cls):
+    class MixedDeployableModule(DeployableModule, module_cls):
+        def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
+            DeployableModule.__init__(
+                self, torch_module, oneflow_module, use_graph, options
+            )
+            self._is_raw_deployable_module = False
+
+        @classmethod
+        def from_existing(cls, existing_module, use_graph=None, options=None):
+            torch_module = existing_module._deployable_module_model._torch_module
+            oneflow_module = existing_module._deployable_module_model._oneflow_module
+            instance = cls(torch_module, oneflow_module, use_graph, options)
+            instance._deployable_module_dpl_graph = (
+                existing_module._deployable_module_dpl_graph if use_graph else None
+            )
+            return instance
+
+    return MixedDeployableModule
+
+
+def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}):
     set_default_registry()
 
     def wrap_module(module):
         if isinstance(module, DeployableModule):
-            return DeployableModule.from_existing(module, use_graph, options)
+            assert not module._is_raw_deployable_module
+            return module.__class__.from_existing(module, use_graph, options)
         else:
-            return DeployableModule(module, None, use_graph, options)
+            return get_mixed_deployable_module(module.__class__)(
+                module, None, use_graph, options
+            )
 
     model = wrap_module(torch_module)
+    assert isinstance(model, DeployableModule)
+    assert isinstance(model, torch_module.__class__)
     model._register_state_dict_hook(state_dict_hook)
     return model
 
