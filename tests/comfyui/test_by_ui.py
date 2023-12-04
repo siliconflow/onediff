@@ -87,6 +87,13 @@ def parse_args():
 args = parse_args()
 
 
+def extract_metadata_from_png(png_file_path):
+    img = Image.open(png_file_path)
+    metadata = img.info
+    img.close()
+    return metadata
+
+
 def read_workflow_json(filename) -> str:
     _, extension = os.path.splitext(filename)
     if extension.endswith("json"):
