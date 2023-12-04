@@ -44,13 +44,6 @@ export PYTHONPATH=$PYTHONPATH:`pwd`/diffusers-quant
 cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/diffusers
 ```
 
-## Diffusers-Quant
-
-```shell
-git clone git@github.com:siliconflow/diffusers-quant.git
-
-export PYTHONPATH=$PYTHONPATH:path/diffusers-quant 
-```
 
 
 ## Nodes Usage
