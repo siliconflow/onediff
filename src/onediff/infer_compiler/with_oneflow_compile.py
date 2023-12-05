@@ -15,7 +15,7 @@ from .utils.cost_util import cost_cnt
 
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
-        super().__init__()
+        torch.nn.Module.__init__(self)
         self._torch_module = torch_module
         self._oneflow_module = oneflow_module
 
@@ -65,7 +65,7 @@ class DualModule(torch.nn.Module):
             return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
-            return DualModule(torch_attr, oneflow_attr)
+            return get_mixed_dual_module(torch_attr.__class__)(torch_attr, oneflow_attr)
         else:
             return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
 
@@ -93,7 +93,7 @@ class DualModuleList(torch.nn.ModuleList):
         for torch_module, oneflow_module in zip(
             self._torch_modules, self._oneflow_modules
         ):
-            dual_modules.append(DualModule(torch_module, oneflow_module))
+            dual_modules.append(get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module))
         # clear self._modules since `self._torch_modules = torch_modules` will append a module to self._modules
         self._modules.clear()
         self += dual_modules
@@ -115,6 +115,13 @@ class DualModuleList(torch.nn.ModuleList):
             value = torch2oflow(value)
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
+
+def get_mixed_dual_module(module_cls):
+    class MixedDualModule(DualModule, module_cls):
+        def __init__(self, torch_module, oneflow_module):
+            DualModule.__init__(self, torch_module, oneflow_module)
+
+    return MixedDualModule
 
 
 def handle_deployable_exception(func):
@@ -138,7 +145,7 @@ def handle_deployable_exception(func):
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = DualModule(torch_module, oneflow_module)
+        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
