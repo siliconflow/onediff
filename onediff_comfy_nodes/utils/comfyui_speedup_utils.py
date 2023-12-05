@@ -5,11 +5,19 @@ from importlib_metadata import version
 def get_support_message():
     recipient_email = "caishenghang@oneflow.org"
 
+<<<<<<< HEAD
     message = f"""\033[91m Advanced features cannot be used !!! 
         If you need unrestricted multiple resolution, quantization support or any other more advanced
         features, please send an email to {recipient_email} and tell us about 
         your **use case, deployment scale and requirements**.
         """
+=======
+    message = f"""\033[91m Quantization acceleration cannot be used !!! please send an email to {recipient_email} to get usage permissions. \033[0m
+                If you need LoRA, ComfyUI, Quantization support or any other more advanced features,
+                please send an email to {recipient_email}.
+                Tell us about your use case, deployment scale and requirements!
+            """
+>>>>>>> c04db12861094011339c5f755147de04ad547d52
     return message
 
 
