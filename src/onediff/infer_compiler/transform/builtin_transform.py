@@ -287,12 +287,17 @@ def _(mod: torch.dtype, verbose=False) -> flow.dtype:
 def _(mod: list, verbose=False) -> list:
     return [torch2oflow(m, verbose) for m in mod]
 
-from omegaconf import OmegaConf, ListConfig
+try:
+    from omegaconf import OmegaConf, ListConfig
+    omegaconf_available = True
+except ImportError:
+    omegaconf_available = False
 
-@torch2oflow.register
-def _(mod: ListConfig, verbose=False) -> ListConfig:
-    converted_list = [torch2oflow(item, verbose) for item in mod]
-    return OmegaConf.create(converted_list)
+if omegaconf_available:
+    @torch2oflow.register
+    def _(mod: ListConfig, verbose=False) -> ListConfig:
+        converted_list = [torch2oflow(item, verbose) for item in mod]
+        return OmegaConf.create(converted_list)
 
 @torch2oflow.register
 def _(mod: tuple, verbose=False) -> tuple:
