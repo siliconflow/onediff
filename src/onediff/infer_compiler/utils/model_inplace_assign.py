@@ -6,6 +6,37 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 _nested_counter = defaultdict(lambda: 0)
 
 class AutoInplaceAssign:
+    r"""
+    This class is used as a context manager, instantiated with either a `torch.nn.Module` or
+    `onediff.infer_compiler.with_oneflow_compile.DeployableModule` during initialization.
+    Within the context manager, all Tensors associated with the provided module will be
+    transformed into AutoInplaceCopyTensor. After transformed, assignments to Tensor.data are
+    modified to in-place copying.
+
+    The class is commonly used to ensure the stability of the data_ptr() for weights,
+    particularly in scenarios involving the loading of LoRA weights.
+
+    For example:
+        >>> class EagerModule(torch.nn.Module):
+        >>>     def __init__(self):
+        >>>         super().__init__()
+        >>>         self.linear1 = torch.nn.Linear(3, 3)
+        >>>         self.linear2 = torch.nn.Linear(3, 3)
+        >>>
+        >>>     def forward(self, x):
+        >>>         return self.linear2(self.linear1(x))
+        >>>
+        >>> eager = EagerModule()
+        >>> dptr1 = eager.linear1.weight.data.data_ptr()
+        >>> dptr2 = eager.linear2.weight.data.data_ptr()
+        >>>
+        >>> with AutoInplaceAssign(eager.linear1):
+        >>>     eager.linear1.weight.data = torch.randn(3, 3)
+        >>>     eager.linear2.weight.data = torch.randn(3, 3)
+        >>>
+        >>> eager.linear1.weight.data.data_ptr() == dptr1, eager.linear2.weight.data.data_ptr() == dptr2
+        (True, False)
+    """
     def __init__(self, *modules: List[Union[torch.nn.Module, DeployableModule]]) -> None:
         self.modules = set()
         for module in modules:
@@ -133,4 +164,3 @@ if __name__ == "__main__":
             eager.linear2.weight.data = torch.randn(3, 3)
     assert dptr1 == eager.linear1.weight.data.data_ptr()
     assert dptr2 == eager.linear2.weight.data.data_ptr()
-    
