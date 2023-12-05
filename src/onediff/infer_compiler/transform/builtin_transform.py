@@ -290,7 +290,7 @@ def _(mod: list, verbose=False) -> list:
 from omegaconf import OmegaConf, ListConfig
 
 @torch2oflow.register
-def _(mod, verbose=False) -> ListConfig:
+def _(mod: ListConfig, verbose=False) -> ListConfig:
     converted_list = [torch2oflow(item, verbose) for item in mod]
     return OmegaConf.create(converted_list)
 
