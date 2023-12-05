@@ -6,7 +6,7 @@ def get_support_message():
     recipient_email = "caishenghang@oneflow.org"
 
     message = f"""\033[91m Advanced features cannot be used !!! 
-        If you need unrestricted multiple resolution, quant support or any other more advanced
+        If you need unrestricted multiple resolution, quantization support or any other more advanced
         features, please send an email to {recipient_email} and tell us about 
         your **use case, deployment scale and requirements**.
         """

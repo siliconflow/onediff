@@ -36,7 +36,7 @@ Updated on Nov 6, 2023.
 
 ## Business inquiry on OneDiff Enterprise Edition
 
-If you need **unrestricted multiple resolution**, **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+If you need **unrestricted multiple resolution**, **quantization** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
 
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
