@@ -10,6 +10,14 @@ from einops import rearrange
 from oneflow import nn, einsum
 from sgm.modules.attention import default, CrossAttention
 from sgm.modules.diffusionmodules.util import GroupNorm32
+from omegaconf import OmegaConf, ListConfig
+from onediff.infer_compiler.transform.builtin_transform import torch2oflow
+
+
+@torch2oflow.register
+def _(mod, verbose=False) -> ListConfig:
+    converted_list = [torch2oflow(item, verbose) for item in mod]
+    return OmegaConf.create(converted_list)
 
 
 """oneflow_compiled UNetModel"""
