@@ -36,7 +36,8 @@ Updated on Nov 6, 2023.
 
 ## Business inquiry on OneDiff Enterprise Edition
 
-If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/onediff/wiki/Run-ComfyUI-with-OneDiff), **quant** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+If you need **unrestricted multiple resolution**, **quantization** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
 | diffusers            | Yes                 | Yes         |
@@ -45,7 +46,7 @@ If you need **LoRA**, [**ComfyUI**](https://github.com/Oneflow-Inc/onediff/wiki/
 | LCM                  | Limited             | Yes         |
 | Multiple Resolutions | Limited             | Yes         |
 | Technical Support    | Community           | Yes         |
-| ComfyUI              |                     | Yes         |
+| ComfyUI              | Community           | Yes         |
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
 
