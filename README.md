@@ -46,7 +46,7 @@ If you need **unrestricted multiple resolution**, **quantization** support or an
 | LCM                  | Limited             | Yes         |
 | Multiple Resolutions | Limited             | Yes         |
 | Technical Support    | Community           | Yes         |
-| ComfyUI              |                     | Yes         |
+| ComfyUI              | Community           | Yes         |
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
 
