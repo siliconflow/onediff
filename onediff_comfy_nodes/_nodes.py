@@ -15,6 +15,9 @@ from comfy.cli_args import args
 
 from .utils import OneFlowSpeedUpModelPatcher, save_graph, load_graph, OUTPUT_FOLDER
 
+# from .modules.hijack_model_management import model_management_hijacker
+# model_management_hijacker.hijack() # add flow.cuda.empty_cache()
+
 __all__ = [
     "ModelSpeedup",
     "ModelGraphLoader",
@@ -233,4 +236,91 @@ class VaeGraphSaver:
         vae_device = model_management.vae_offload_device()
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
 
+        return {}
+
+
+class ControlNetSpeedup:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "control_net": ("CONTROL_NET",),
+                "static_mode": (["enable", "disable"],),
+            }
+        }
+
+    RETURN_TYPES = ("CONTROL_NET",)
+    RETURN_NAMES = ("control_net",)
+    FUNCTION = "apply_controlnet"
+
+    CATEGORY = "OneDiff"
+
+    def apply_controlnet(self, control_net, static_mode):
+        from .modules.hijack_controlnet import controlnet_hijacker
+
+        if static_mode == "enable":
+            controlnet_hijacker.hijack()
+        else:
+            controlnet_hijacker.unhijack()
+
+        return (control_net,)
+
+
+class ControlNetGraphLoader:
+    @classmethod
+    def INPUT_TYPES(s):
+        folder = os.path.join(OUTPUT_FOLDER, "control_net")
+        graph_files = [
+            f
+            for f in os.listdir(folder)
+            if os.path.isfile(os.path.join(folder, f)) and f.endswith(".graph")
+        ]
+        return {
+            "required": {
+                "control_net": ("CONTROL_NET",),
+                "graph": (sorted(graph_files),),
+            },
+        }
+
+    RETURN_TYPES = ("CONTROL_NET",)
+    RETURN_NAMES = ("control_net",)
+    FUNCTION = "load_graph"
+    CATEGORY = "OneDiff"
+
+    def load_graph(self, control_net, graph):
+        from .modules.hijack_controlnet import HijackControlLora
+
+        device = model_management.get_torch_device()
+
+        lazy_load_hook = partial(
+            load_graph, graph_filename=graph, device=device, subfolder="control_net"
+        )
+        setattr(HijackControlLora, "lazy_load_hook", lazy_load_hook)
+        return (control_net,)
+
+
+class ControlNetGraphSaver:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "samples": ("LATENT",),
+                "control_net": ("CONTROL_NET",),
+                "filename_prefix": ("STRING", {"default": "control_net"}),
+            },
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "save_graph"
+    CATEGORY = "OneDiff"
+    OUTPUT_NODE = True
+
+    def save_graph(self, samples, control_net, filename_prefix):
+        from .modules.hijack_controlnet import HijackControlLora
+
+        # Unable to directly fetch the controlnet model from comfyui.
+        model = HijackControlLora.oneflow_model
+        device = model_management.get_torch_device()
+
+        save_graph(model, filename_prefix, device, subfolder="control_net")
         return {}

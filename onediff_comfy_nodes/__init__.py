@@ -7,6 +7,9 @@ from ._nodes import (
     VaeSpeedup,
     VaeGraphLoader,
     VaeGraphSaver,
+    ControlNetSpeedup,
+    ControlNetGraphLoader,
+    ControlNetGraphSaver,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -20,6 +23,9 @@ NODE_CLASS_MAPPINGS = {
     "VaeSpeedup": VaeSpeedup,
     "VaeGraphSaver": VaeGraphSaver,
     "VaeGraphLoader": VaeGraphLoader,
+    "ControlNetSpeedup": ControlNetSpeedup,
+    "ControlNetGraphLoader": ControlNetGraphLoader,
+    "ControlNetGraphSaver": ControlNetGraphSaver,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -31,6 +37,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "VaeSpeedup": "VAE Speedup",
     "VaeGraphLoader": "VAE Graph Loader",
     "VaeGraphSaver": "VAE Graph Saver",
+    "ControlNetSpeedup": "ControlNet Speedup",
+    "ControlNetGraphLoader": "ControlNet Graph Loader",
+    "ControlNetGraphSaver": "ControlNet Graph Saver",
 }
 
 if _USE_UNET_INT8:
