@@ -1,23 +1,36 @@
+from typing import Union, List
+from collections import defaultdict
 import torch
+from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
-_nested_counter = 0
+_nested_counter = defaultdict(lambda: 0)
 
 class AutoInplaceAssign:
-    def __init__(self, module: torch.nn.Module) -> None:
-        self.module = module
+    def __init__(self, *modules: List[Union[torch.nn.Module, DeployableModule]]) -> None:
+        self.modules = set()
+        for module in modules:
+            if isinstance(module, torch.nn.Module):
+                self.modules.add(module)
+            elif isinstance(module, DeployableModule):
+                self.modules.add(module._deployable_module_model._torch_module)
+            else:
+                raise TypeError("AutoInplaceAssign can only accept torch.nn.Module or DeployableModule")
     
     def __enter__(self):
         global _nested_counter
-        if _nested_counter == 0:
-            self.module.apply(module_convert_parameter)
-        _nested_counter += 1
+        for module in self.modules:
+            if _nested_counter[module] == 0:
+                module.apply(module_convert_parameter)
+            _nested_counter[module] += 1
 
     def __exit__(self, exc_type, exc_value, traceback):
         global _nested_counter
-        _nested_counter -= 1
-        if _nested_counter == 0:
-            self.module.apply(module_unconvert_parameter)
-            del self.module
+        for module in list(self.modules):
+            _nested_counter[module] -= 1
+            if _nested_counter[module] == 0:
+                module.apply(module_unconvert_parameter)
+                _nested_counter.pop(module)
+                self.modules.remove(module)
 
 
 class AutoInplaceCopyTensor(torch.Tensor):
@@ -43,7 +56,7 @@ class AutoInplaceCopyParameter(torch.nn.Parameter):
         self.data.copy_(new_tensor)
 
 
-def module_convert_parameter(module: torch.nn.Module):
+def module_convert_parameter(module: torch.nn.Module) -> torch.nn.Module:
     for k, v in module.__dict__.items():
         if isinstance(v, torch.Tensor):
             module.__dict__[k] = AutoInplaceCopyTensor(v)
@@ -59,8 +72,10 @@ def module_convert_parameter(module: torch.nn.Module):
             continue
         if buffer is not None:
             module._buffers[k] = AutoInplaceCopyTensor(buffer)
+    return module
 
-def module_unconvert_parameter(module: torch.nn.Module):
+
+def module_unconvert_parameter(module: torch.nn.Module) -> torch.nn.Module:
     for k, v in module.__dict__.items():
         if isinstance(v, AutoInplaceCopyTensor):
             module.__dict__[k] = torch.Tensor(v)
@@ -76,6 +91,7 @@ def module_unconvert_parameter(module: torch.nn.Module):
             continue
         if buffer is not None:
             module._buffers[k] = torch.Tensor(buffer)
+    return module
 
 
 if __name__ == "__main__":
@@ -98,3 +114,23 @@ if __name__ == "__main__":
 
     assert dptr1 == eager.linear1.weight.data.data_ptr()
     assert dptr2 == eager.linear2.weight.data.data_ptr()
+
+    dptr1 = eager.linear1.weight.data.data_ptr()
+    dptr2 = eager.linear2.weight.data.data_ptr()
+    with AutoInplaceAssign(eager.linear1):
+        eager.linear1.weight.data = torch.randn(3, 3)
+        eager.linear2.weight.data = torch.randn(3, 3)
+    assert dptr1 == eager.linear1.weight.data.data_ptr()
+    assert dptr2 != eager.linear2.weight.data.data_ptr()
+
+    dptr1 = eager.linear1.weight.data.data_ptr()
+    dptr2 = eager.linear2.weight.data.data_ptr()
+    with AutoInplaceAssign(eager.linear1):
+        with AutoInplaceAssign(eager.linear2):
+            with AutoInplaceAssign(eager.linear1):
+                pass
+            eager.linear1.weight.data = torch.randn(3, 3)
+            eager.linear2.weight.data = torch.randn(3, 3)
+    assert dptr1 == eager.linear1.weight.data.data_ptr()
+    assert dptr2 == eager.linear2.weight.data.data_ptr()
+    
