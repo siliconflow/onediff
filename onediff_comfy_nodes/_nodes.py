@@ -15,8 +15,10 @@ from comfy.cli_args import args
 
 from .utils import OneFlowSpeedUpModelPatcher, save_graph, load_graph, OUTPUT_FOLDER
 
-# from .modules.hijack_model_management import model_management_hijacker
-# model_management_hijacker.hijack() # add flow.cuda.empty_cache()
+from .modules.hijack_model_management import model_management_hijacker
+
+model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
+
 
 __all__ = [
     "ModelSpeedup",
