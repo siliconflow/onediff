@@ -13,10 +13,11 @@ def set_attr_of(obj, attr, value):
         attrs = attr.split(".")
         for name in attrs[:-1]:
             obj = getattr(obj, name)
-        prev = getattr(obj, attrs[-1])
+        prev = getattr(obj, attrs[-1]) 
         prev.copy_(value)
     else:
         comfy.utils.set_attr(obj, attr, value)
+
 
 
 class HijackControlLora:
@@ -33,7 +34,7 @@ class HijackControlLora:
         # print("Hijacking ControlLora.pre_run")
         dtype = model.get_dtype()
         # super().pre_run(model, percent_to_timestep_function)
-        # ControlNet.pre_run(self, model, percent_to_timestep_function)
+        ControlNet.pre_run(self, model, percent_to_timestep_function)
 
         if HijackControlLora.oneflow_model is None:
             controlnet_config = model.model_config.unet_config.copy()
@@ -63,11 +64,7 @@ class HijackControlLora:
 
         for k in self.control_weights:
             if k not in {"lora_controlnet"}:
-                weight = (
-                    self.control_weights[k]
-                    .to(dtype)
-                    .to(comfy.model_management.get_torch_device())
-                )
+                weight = self.control_weights[k].to(dtype).to(comfy.model_management.get_torch_device()) 
                 set_attr_of(self.control_model, k, weight)
 
         lazy_loader = getattr(HijackControlLora, "lazy_load_hook", None)
