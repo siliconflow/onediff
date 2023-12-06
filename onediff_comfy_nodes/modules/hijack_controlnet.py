@@ -1,7 +1,7 @@
 import comfy
 import oneflow as flow
 from packaging.version import Version
-from comfy.controlnet import ControlLoraOps, ControlNet
+from comfy.controlnet import ControlLoraOps, ControlNet, ControlBase
 from onediff.infer_compiler import oneflow_compile
 from .sd_hijack_utils import Hijacker
 
@@ -17,6 +17,13 @@ def set_attr_of(obj, attr, value):
         prev.copy_(value)
     else:
         comfy.utils.set_attr(obj, attr, value)
+
+
+class HijackControlNet:
+    @staticmethod
+    def pre_run(orig_func, self, model, percent_to_timestep_function):
+        orig_func(self, model, percent_to_timestep_function)
+        self.control_model = oneflow_compile(self.control_model)
 
 
 class HijackControlLora:
@@ -85,6 +92,13 @@ controlnet_hijacker.register(
     orig_func="comfy.controlnet.ControlLora.pre_run",
     sub_func=HijackControlLora.pre_run,
     cond_func=HijackControlLora.cond_func,
+)
+
+
+controlnet_hijacker.register(
+    orig_func=comfy.controlnet.ControlNet.pre_run,
+    sub_func=HijackControlNet.pre_run,
+    cond_func=lambda orig_func, *args, **kwargs: True,
 )
 
 controlnet_hijacker.extend_unhijack(HijackControlLora.cleanup)
