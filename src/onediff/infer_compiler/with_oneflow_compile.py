@@ -200,6 +200,25 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_model.to(*args, **kwargs)
         return self
 
+    @input_output_processor
+    @handle_deployable_exception
+    def encode(self, *args, **kwargs):
+        if self._deployable_module_use_graph:
+
+            def _build(graph, *args, **kwargs):
+                return graph.model.encode(*args, **kwargs)
+
+            dpl_graph = self.get_graph()
+            dpl_graph.build = types.MethodType(_build, dpl_graph)
+            with oneflow_exec_mode():
+                output = dpl_graph(*args, **kwargs)
+        else:
+            with oneflow_exec_mode():
+                output = self._deployable_module_model.oneflow_module.encode(
+                    *args, **kwargs
+                )
+        return output
+
     # TODO(): Just for transformers VAE decoder
     @input_output_processor
     @handle_deployable_exception

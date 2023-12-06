@@ -66,15 +66,17 @@ pipe.to("cuda")
 
 if args.compile:
     from onediff.infer_compiler import oneflow_compile
-    pipe.unet = oneflow_compile(pipe.unet)
-    pipe.vae = oneflow_compile(pipe.vae)
+    #pipe.unet = oneflow_compile(pipe.unet)
+    pipe.vae = oneflow_compile(pipe.vae, use_graph=False)
 if args.compile_ctrlnet:
     from onediff.infer_compiler import oneflow_compile
-    pipe.controlnet = oneflow_compile(pipe.controlnet)
+    #pipe.controlnet = oneflow_compile(pipe.controlnet)
 
 
 # generate image
 generator = torch.manual_seed(args.seed)
+print(f"{id(generator)=}")
+# generator = None
 
 print("Warmup")
 for i in range(args.warmup):
