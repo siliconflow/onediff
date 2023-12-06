@@ -5,10 +5,11 @@ from oneflow.framework.args_tree import ArgsTree
 from onediff.infer_compiler.transform import proxy_class
 
 from oneflow.framework.args_tree import _ONEFLOW_ARGS_TREE_CUSTOM_TYPE_DICT
+import types
 
 import diffusers
 AutoencoderKLOutputOflow = proxy_class(diffusers.models.modeling_outputs.AutoencoderKLOutput)
-def get_flattened_iter(self):
+def flattened_iter(self):
     latent_dist = self.latent_dist
     flattened = [latent_dist.parameters,
                  latent_dist.mean,
@@ -19,9 +20,22 @@ def get_flattened_iter(self):
                  ]
     return iter(flattened)
 
+def flatten_cons(self, *args):
+    self_cls = self.__class__
+    self_latent_dist_cls = self.latent_dist.__class__
+    latent_dist = self_latent_dist_cls.__new__(self_latent_dist_cls)
+    latent_dist.parameters = args[0]
+    latent_dist.mean = args[1]
+    latent_dist.logvar = args[2]
+    latent_dist.deterministic = args[3]
+    latent_dist.std = args[4]
+    latent_dist.var = args[5]
+    return self_cls(latent_dist=latent_dist)
+
 def GetAutoencoderKLOutputOflowIter(self):
     return AutoencoderKLOutputOflowIter(self)
-AutoencoderKLOutputOflow.__iter__ = get_flattened_iter
+AutoencoderKLOutputOflow._flatten_iter = flattened_iter
+AutoencoderKLOutputOflow._flatten_cons= flatten_cons
 
 _ONEFLOW_ARGS_TREE_CUSTOM_TYPE_DICT[AutoencoderKLOutputOflow] = "yes"
 
