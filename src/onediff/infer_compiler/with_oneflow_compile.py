@@ -39,12 +39,11 @@ class DualModule(torch.nn.Module):
         if oneflow_exec_mode_enabled():
             self._oneflow_module.to(*args, **kwargs)
         else:
+            self._torch_module.to(*args, **kwargs)
             if self._oneflow_module is not None:
                 args = [torch2oflow(v) for v in args]
                 kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
-            else:
-                self._torch_module.to(*args, **kwargs)
 
     def __getattr__(self, name):
         if name == "_torch_module":
