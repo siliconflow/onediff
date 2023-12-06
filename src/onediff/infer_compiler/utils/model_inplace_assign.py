@@ -5,7 +5,7 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 _nested_counter = defaultdict(lambda: 0)
 
-class AutoInplaceAssign:
+class TensorInplaceAssign:
     r"""
     This class is used as a context manager, instantiated with either a `torch.nn.Module` or
     `onediff.infer_compiler.with_oneflow_compile.DeployableModule` during initialization.
@@ -30,7 +30,7 @@ class AutoInplaceAssign:
         >>> dptr1 = eager.linear1.weight.data.data_ptr()
         >>> dptr2 = eager.linear2.weight.data.data_ptr()
         >>>
-        >>> with AutoInplaceAssign(eager.linear1):
+        >>> with TensorInplaceAssign(eager.linear1):
         >>>     eager.linear1.weight.data = torch.randn(3, 3)
         >>>     eager.linear2.weight.data = torch.randn(3, 3)
         >>>
@@ -45,7 +45,7 @@ class AutoInplaceAssign:
             elif isinstance(module, DeployableModule):
                 self.modules.add(module._deployable_module_model._torch_module)
             else:
-                raise TypeError("AutoInplaceAssign can only accept torch.nn.Module or DeployableModule")
+                raise TypeError("TensorInplaceAssign can only accept torch.nn.Module or DeployableModule")
     
     def __enter__(self):
         global _nested_counter
@@ -139,7 +139,7 @@ if __name__ == "__main__":
     dptr1 = eager.linear1.weight.data.data_ptr()
     dptr2 = eager.linear2.weight.data.data_ptr()
 
-    with AutoInplaceAssign(eager):
+    with TensorInplaceAssign(eager):
         eager.linear1.weight.data = torch.randn(3, 3)
         eager.linear2.weight.data = torch.randn(3, 3)
 
@@ -148,7 +148,7 @@ if __name__ == "__main__":
 
     dptr1 = eager.linear1.weight.data.data_ptr()
     dptr2 = eager.linear2.weight.data.data_ptr()
-    with AutoInplaceAssign(eager.linear1):
+    with TensorInplaceAssign(eager.linear1):
         eager.linear1.weight.data = torch.randn(3, 3)
         eager.linear2.weight.data = torch.randn(3, 3)
     assert dptr1 == eager.linear1.weight.data.data_ptr()
@@ -156,9 +156,9 @@ if __name__ == "__main__":
 
     dptr1 = eager.linear1.weight.data.data_ptr()
     dptr2 = eager.linear2.weight.data.data_ptr()
-    with AutoInplaceAssign(eager.linear1):
-        with AutoInplaceAssign(eager.linear2):
-            with AutoInplaceAssign(eager.linear1):
+    with TensorInplaceAssign(eager.linear1):
+        with TensorInplaceAssign(eager.linear2):
+            with TensorInplaceAssign(eager.linear1):
                 pass
             eager.linear1.weight.data = torch.randn(3, 3)
             eager.linear2.weight.data = torch.randn(3, 3)
