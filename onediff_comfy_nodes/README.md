@@ -89,6 +89,8 @@ The "Model Graph Loader" node is used to load graph files from the disk, thus sa
 
 ### Quantization
 
+**Note: Quantization feature is only supported in OneDiff Enterprise.**
+
 The "UNet Loader Int8" node is used to load quantized models. Quantized models need to be used in conjunction with the "Model Speedup" node.
 
 ![](workflows/int8-speedup.png)
