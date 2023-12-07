@@ -4,7 +4,8 @@ from comfy.controlnet import ControlLoraOps, ControlNet, ControlLora
 from onediff.infer_compiler import oneflow_compile
 
 
-def set_attr_of(obj, attr, value, *, debug=True):
+def set_attr_of(obj, attr, value):
+    
     def _set_attr_of(obj, attr, value):
         obj = obj._deployable_module_model._oneflow_module
         value = flow.utils.tensor.from_torch(value)
@@ -17,22 +18,6 @@ def set_attr_of(obj, attr, value, *, debug=True):
     exist_oneflow_module = (
         getattr(obj._deployable_module_model, "_oneflow_module", None) is not None
     )
-    if debug and exist_oneflow_module:
-        fail_count = 0
-        try:
-            _set_attr_of(obj, attr, value)
-        except:
-            fail_count += 1
-
-        try:
-            obj = obj._deployable_module_model._torch_module
-            comfy.utils.set_attr(obj, attr, value)
-        except:
-            fail_count += 1
-
-        if fail_count == 1:
-            raise Exception(f"set_attr_of failed {type(obj)} {attr} {type(value)}")
-        return
 
     if exist_oneflow_module:
         _set_attr_of(obj, attr, value)
@@ -81,7 +66,6 @@ class HijackControlLora(ControlLora):
         return c
 
     def pre_run(self, model, percent_to_timestep_function):
-        # print("Hijacking ControlLora.pre_run")
         dtype = model.get_dtype()
         # super().pre_run(model, percent_to_timestep_function)
         ControlNet.pre_run(self, model, percent_to_timestep_function)

@@ -1,3 +1,4 @@
+from functools import partial
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8
 
