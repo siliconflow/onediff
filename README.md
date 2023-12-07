@@ -21,7 +21,7 @@ Updated on Nov 6, 2023.
 ## Features
 - Acceleration for popular libs
   - [ComfyUI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
-  - [HF diffusers](https://github.com/Oneflow-Inc/onediff/tree/main/examples)
+  - [HF diffusers 🤗](https://github.com/Oneflow-Inc/onediff/tree/main/examples)
   - SD Web UI(On the way)
 - Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py) 
