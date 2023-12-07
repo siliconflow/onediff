@@ -26,7 +26,7 @@ parser.add_argument(
 )
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)
-parser.add_argument("--n_steps", type=int, default=30)
+parser.add_argument("--n_steps", type=int, default=7)
 parser.add_argument(
     "--saved_image", type=str, required=False, default="i2i_controlnet-out.png"
 )
@@ -34,7 +34,10 @@ parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--run", type=int, default=3)
 parser.add_argument(
-    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+    "--compile_unet", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
+parser.add_argument(
+    "--compile_vae", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
 )
 parser.add_argument(
     "--compile_ctrlnet",
@@ -64,19 +67,24 @@ pipe = StableDiffusionControlNetImg2ImgPipeline.from_pretrained(
 pipe.scheduler = UniPCMultistepScheduler.from_config(pipe.scheduler.config)
 pipe.to("cuda")
 
-if args.compile:
+if args.compile_unet:
     from onediff.infer_compiler import oneflow_compile
-    #pipe.unet = oneflow_compile(pipe.unet)
-    pipe.vae = oneflow_compile(pipe.vae, use_graph=False)
+    pipe.unet = oneflow_compile(pipe.unet)
+
+if args.compile_vae:
+    from onediff.infer_compiler import oneflow_compile
+    #pipe.vae = oneflow_compile(pipe.vae)
+    # ImageToImage has encoder and decoder, so we need to compile them seperately.
+    pipe.vae.encoder = oneflow_compile(pipe.vae.encoder)
+    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
+
 if args.compile_ctrlnet:
     from onediff.infer_compiler import oneflow_compile
-    #pipe.controlnet = oneflow_compile(pipe.controlnet)
+    pipe.controlnet = oneflow_compile(pipe.controlnet)
 
 
 # generate image
 generator = torch.manual_seed(args.seed)
-print(f"{id(generator)=}")
-# generator = None
 
 print("Warmup")
 for i in range(args.warmup):
@@ -91,7 +99,10 @@ for i in range(args.warmup):
     ).images
 
 print("Run")
-for i in range(args.run):
+from tqdm import tqdm
+import time
+for i in tqdm(range(args.run), desc="Pipe processing", unit="i"):
+    start_t = time.time()
     image = pipe(
         args.prompt,
         height=args.height,
@@ -101,4 +112,8 @@ for i in range(args.run):
         image=image,
         control_image=canny_image,
     ).images[0]
-    image.save(f"{i=}th_{args.saved_image}.png")
+    torch.cuda.synchronize()
+    end_t = time.time()
+    print(f"e2e {i} ) elapsed: {end_t - start_t} s")
+
+image.save(f"{i=}th_{args.saved_image}.png")

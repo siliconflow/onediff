@@ -8,7 +8,11 @@ from oneflow.framework.args_tree import _ONEFLOW_ARGS_TREE_CUSTOM_TYPE_DICT
 import types
 
 import diffusers
-AutoencoderKLOutputOflow = proxy_class(diffusers.models.modeling_outputs.AutoencoderKLOutput)
+AutoencoderKLOutputTorch = diffusers.models.modeling_outputs.AutoencoderKLOutput
+AutoencoderKLOutputOflow = proxy_class(AutoencoderKLOutputTorch)
+DiagonalGaussianDistributionTorch = diffusers.models.vae.DiagonalGaussianDistribution
+DiagonalGaussianDistributionOflow = proxy_class(DiagonalGaussianDistributionTorch)
+
 def flattened_iter(self):
     latent_dist = self.latent_dist
     flattened = [latent_dist.parameters,
@@ -32,29 +36,28 @@ def flatten_cons(self, *args):
     latent_dist.var = args[5]
     return self_cls(latent_dist=latent_dist)
 
-def GetAutoencoderKLOutputOflowIter(self):
-    return AutoencoderKLOutputOflowIter(self)
+def flatten_map_cons(self, cls_map, *args):
+    self_cls = cls_map[self.__class__] if (isinstance(cls_map, dict) and self.__class__ in cls_map) else self.__class__
+    self_latent_dist_cls = cls_map[self.latent_dist.__class__] if (isinstance(cls_map, dict) and self.latent_dist.__class__ in cls_map) else self.latent_dist.__class__
+    latent_dist = self_latent_dist_cls.__new__(self_latent_dist_cls)
+    latent_dist.parameters = args[0]
+    latent_dist.mean = args[1]
+    latent_dist.logvar = args[2]
+    latent_dist.deterministic = args[3]
+    latent_dist.std = args[4]
+    latent_dist.var = args[5]
+    return self_cls(latent_dist=latent_dist)
+
 AutoencoderKLOutputOflow._flatten_iter = flattened_iter
 AutoencoderKLOutputOflow._flatten_cons= flatten_cons
+AutoencoderKLOutputOflow._flatten_map_cons= flatten_map_cons
+output_map_dict = {AutoencoderKLOutputOflow:AutoencoderKLOutputTorch, DiagonalGaussianDistributionOflow:DiagonalGaussianDistributionTorch}
+
+AutoencoderKLOutputTorch._flatten_iter = flattened_iter
+AutoencoderKLOutputTorch._flatten_cons= flatten_cons
 
 _ONEFLOW_ARGS_TREE_CUSTOM_TYPE_DICT[AutoencoderKLOutputOflow] = "yes"
-
-def transform_arg(torch_obj):
-    if isinstance(torch_obj, proxy_class(diffusers.models.modeling_outputs.AutoencoderKLOutput)):
-        obj = torch_obj.latent_dist
-        DiagonalGaussianDistribution = diffusers.models.vae.DiagonalGaussianDistribution
-        dist = DiagonalGaussianDistribution.__new__(DiagonalGaussianDistribution)
-        dist.parameters = flow.utils.tensor.to_torch(obj.parameters)
-        dist.mean = flow.utils.tensor.to_torch(obj.mean)
-        dist.logvar = flow.utils.tensor.to_torch(obj.logvar)
-        dist.deterministic = obj.deterministic
-        dist.std = flow.utils.tensor.to_torch(obj.std)
-        dist.var = flow.utils.tensor.to_torch(obj.var)
-
-        return diffusers.models.modeling_outputs.AutoencoderKLOutput(latent_dist=dist)
-    else:
-        return torch_obj
-
+_ONEFLOW_ARGS_TREE_CUSTOM_TYPE_DICT[AutoencoderKLOutputTorch] = "yes"
 
 def input_output_processor(func):
     def process_input(*args, **kwargs):
@@ -76,10 +79,10 @@ def input_output_processor(func):
             if isinstance(value, flow.Tensor):
                 return flow.utils.tensor.to_torch(value)
             else:
-                return transform_arg(value)
+                return value
 
         out_tree = ArgsTree((output, None), False)
-        out = out_tree.map_leaf(output_fn)
+        out = out_tree.map_leaf(output_fn, output_map_dict)
         return out[0]
 
     def wrapper(cls, *args, **kwargs):
