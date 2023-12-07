@@ -15,8 +15,7 @@
 
 
 ## Performance Community Edition 
-Updated on DEC 7, 2023.
-
+Updated on DEC 7, 2023. Device: RTX 3090
 
 | SDXL1.0-base (1024x1024)                         | torch(Baseline) | oneflow(optimized) | Percentage improvement |
 |--------------------------------------------------|-----------------|--------------------|------------------------|
