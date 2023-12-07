@@ -33,8 +33,7 @@ Updated on Nov 6, 2023.
 - Support drop-in acceleration
   - [ComfyUI Nodes](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
   - [Acceleration with oneflow_compile](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
-- Multi-resolution inputs
-  - [Multi-resolution input](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
+- [Multi-resolution input](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
 - Save/load the compiled result, deploy on different environments
   - [Save and Load](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
   - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
