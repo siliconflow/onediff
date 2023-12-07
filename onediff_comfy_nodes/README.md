@@ -1,7 +1,7 @@
 # OneDiff ComfyUI Nodes
 
 - [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
-  - [Performance Community Edition](#performance-community-edition)
+  - [Performance of Community Edition](#performance-of-community-edition)
   - [Installation Guide](#installation-guide)
   - [Nodes Usage](#nodes-usage)
     - [Model Acceleration](#model-acceleration)
@@ -14,10 +14,10 @@
 
 
 
-## Performance Community Edition 
+## Performance of Community Edition 
 Updated on DEC 7, 2023. Device: RTX 3090
 
-| SDXL1.0-base (1024x1024)                         | torch(Baseline) | oneflow(optimized) | Percentage improvement |
+| SDXL1.0-base (1024x1024)                         | torch(Baseline) | onediff(Optimized) | Percentage improvement |
 |--------------------------------------------------|-----------------|--------------------|------------------------|
 | [Basic workflow](workflows/model-speedup.png)    | 4.08it/s        | 6.13it/s           | 50.25%                 |
 | [Lora workflow](workflows/mode-speedup-lora.png) | 4.05it/s        | 6.14it/s           | 51.60%                 |
