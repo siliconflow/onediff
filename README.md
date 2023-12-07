@@ -25,7 +25,7 @@ Updated on Nov 6, 2023.
   - SD Web UI(On the way)
 - Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py) 
-  - [SD1.5-2.1](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image.py)
+  - [SD 1.5/2.1](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image.py)
   - [LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_lora.py)
   - [ControlNet](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_controlnet.py)
   - [LCM](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
