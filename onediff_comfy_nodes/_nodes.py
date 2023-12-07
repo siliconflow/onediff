@@ -1,3 +1,4 @@
+from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8
 
 import os
@@ -86,7 +87,7 @@ class UNETLoaderInt8:
     CATEGORY = "OneDiff"
 
     def load_unet_int8(self, model_path):
-        from .utils import replace_module_with_quantizable_module
+        from .utils.diffusers_quant_utils import replace_module_with_quantizable_module
 
         for search_path in folder_paths.get_folder_paths("unet_int8"):
             if os.path.exists(search_path):
@@ -258,14 +259,22 @@ class ControlNetSpeedup:
     CATEGORY = "OneDiff"
 
     def apply_controlnet(self, control_net, static_mode):
-        from .modules.hijack_controlnet import controlnet_hijacker
-
         if static_mode == "enable":
-            controlnet_hijacker.hijack()
-        else:
-            controlnet_hijacker.unhijack()
+            from comfy.controlnet import ControlNet, ControlLora
+            from .modules.hijack_controlnet import HijackControlNet, HijackControlLora
 
-        return (control_net,)
+            if isinstance(control_net, ControlLora):
+                control_net = HijackControlLora.from_controllora(control_net)
+                return (control_net,)
+            elif isinstance(control_net, ControlNet):
+                control_net = HijackControlNet.from_controlnet(control_net)
+                return (control_net,)
+            else:
+                raise TypeError(
+                    f"control_net must be ControlNet or ControlLora, got {type(control_net)}"
+                )
+        else:
+            return (control_net,)
 
 
 class ControlNetGraphLoader:
@@ -298,6 +307,7 @@ class ControlNetGraphLoader:
             load_graph, graph_filename=graph, device=device, subfolder="control_net"
         )
         setattr(HijackControlLora, "lazy_load_hook", lazy_load_hook)
+
         return (control_net,)
 
 
