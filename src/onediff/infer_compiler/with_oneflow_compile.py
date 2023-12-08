@@ -2,10 +2,8 @@ import os
 import types
 import torch
 import oneflow as flow
-from oneflow.utils.tensor import to_torch
 from typing import Any
 from functools import wraps
-from itertools import chain
 from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
@@ -13,12 +11,11 @@ from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enable
 from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
-from .utils.param_utils import parse_device, check_device
 
 
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
-        torch.nn.Module.__init__(self)
+        super().__init__()
         self._torch_module = torch_module
         self._oneflow_module = oneflow_module
 
