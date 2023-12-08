@@ -71,6 +71,7 @@ class DualModule(torch.nn.Module):
                     continue
                 if memo is not None and value in memo:
                     continue
+                memo.add(value)
                 if torch_dict[name] is None:
                     torch_dict[name] = to_torch(value.data)
                 elif torch_dict[name].data_ptr() == value.data_ptr():
