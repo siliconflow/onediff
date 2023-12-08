@@ -22,4 +22,3 @@ def check_device(current_device, target_device) -> bool:
             return flow.device(device)
         return device
     return _convert(current_device) == _convert(target_device)
-        
