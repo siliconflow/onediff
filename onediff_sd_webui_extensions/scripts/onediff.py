@@ -97,8 +97,6 @@ class CrossAttentionOflow(nn.Module):
 
         if mem_required > mem_free_total:
             steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
-            # print(f"Expected tensor size:{tensor_size/gb:0.1f}GB, cuda free:{mem_free_cuda/gb:0.1f}GB "
-            #       f"torch free:{mem_free_torch/gb:0.1f} total:{mem_free_total/gb:0.1f} steps:{steps}")
 
         if steps > 64:
             max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
@@ -178,7 +176,7 @@ def compile(sd_model):
 
 class Script(scripts.Script):  
     def title(self):
-        return "onediff"
+        return "onediff_diffusion_model"
 
     def show(self, is_img2img):
         return not is_img2img
