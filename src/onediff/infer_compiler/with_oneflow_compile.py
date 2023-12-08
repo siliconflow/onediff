@@ -13,6 +13,7 @@ from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enable
 from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
+from .utils.param_utils import parse_device, check_device
 
 
 class DualModule(torch.nn.Module):
@@ -50,7 +51,14 @@ class DualModule(torch.nn.Module):
                 self._torch_module.to(*args, **kwargs)
 
     def torch_align_oneflow_module(self):
+        """
+        Make sure all tensor of torch module have the same data_ptr with
+        relative tensor of oneflow module, especially for tensors which are
+        not in `module._parameters` and `module._buffers`.
+        """
         def _traverse(torch_module, oneflow_module, memo=None):
+            if oneflow_module is None:
+                return
             for name, oneflow_submodule in oneflow_module._modules.items():
                 if name in torch_module._modules:
                     torch_submodule = torch_module._modules[name]
@@ -240,7 +248,18 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def to(self, *args, **kwargs):
-        # TODO: Check if self.to will modify the device of dpl_graph
+        if self._deployable_module_dpl_graph is None:
+            self._deployable_module_model.to(*args, **kwargs)
+            return self
+
+        # assert the target device is same as graph device
+        target_device = parse_device(args, kwargs)
+        if target_device is not None:
+            current_device = self._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()[1][0].device
+            if not check_device(current_device, target_device):
+                raise RuntimeError(
+                    f"After graph built, the device of graph can't be modified, current device: {current_device}, target device: {target_device}"
+                )
         self._deployable_module_model.to(*args, **kwargs)
         return self
 
