@@ -21,4 +21,5 @@ images_fusion = pipe(
     width=1024,
     num_inference_steps=30,
 ).images[0]
+
 images_fusion.save("test_sdxl_lora.png")
