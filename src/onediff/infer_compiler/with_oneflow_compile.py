@@ -46,50 +46,8 @@ class DualModule(torch.nn.Module):
                 args = [torch2oflow(v) for v in args]
                 kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
-                self.torch_align_oneflow_module()
             else:
                 self._torch_module.to(*args, **kwargs)
-
-    def torch_align_oneflow_module(self):
-        """
-        Make sure all tensor of torch module have the same data_ptr with
-        relative tensor of oneflow module, especially for tensors which are
-        not in `module._parameters` and `module._buffers`.
-        """
-        def _traverse(torch_module, oneflow_module, memo=None):
-            if oneflow_module is None:
-                return
-            for name, oneflow_submodule in oneflow_module._modules.items():
-                if name in torch_module._modules:
-                    torch_submodule = torch_module._modules[name]
-                    _traverse(torch_submodule, oneflow_submodule, memo)
-
-            of_dict = oneflow_module.__dict__
-            torch_dict = torch_module.__dict__
-            for name, value in of_dict.items():
-                if not isinstance(value, flow.Tensor) or (not name in torch_dict):
-                    continue
-                if memo is not None and value in memo:
-                    continue
-                memo.add(value)
-                if torch_dict[name] is None:
-                    torch_dict[name] = to_torch(value.data)
-                elif torch_dict[name].data_ptr() == value.data_ptr():
-                    continue
-                else:
-                    torch_dict[name].data = to_torch(value.data)
-
-        for name, tensor in chain.from_iterable([
-            self._oneflow_module.named_parameters(),
-            self._oneflow_module.named_buffers(),
-        ]):
-            torch_tensor = self._torch_module.get_parameter(name)
-            if (
-                torch_tensor is not None
-                and torch_tensor.data_ptr() != tensor.data_ptr()
-            ):
-                torch_tensor.data = to_torch(tensor.data)
-        _traverse(self._torch_module, self._oneflow_module)
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -110,7 +68,7 @@ class DualModule(torch.nn.Module):
             return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
-            return get_mixed_dual_module(torch_attr.__class__)(torch_attr, oneflow_attr)
+            return DualModule(torch_attr, oneflow_attr)
         else:
             return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
 
@@ -138,7 +96,7 @@ class DualModuleList(torch.nn.ModuleList):
         for torch_module, oneflow_module in zip(
             self._torch_modules, self._oneflow_modules
         ):
-            dual_modules.append(get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module))
+            dual_modules.append(DualModule(torch_module, oneflow_module))
         # clear self._modules since `self._torch_modules = torch_modules` will append a module to self._modules
         self._modules.clear()
         self += dual_modules
@@ -160,13 +118,6 @@ class DualModuleList(torch.nn.ModuleList):
             value = torch2oflow(value)
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
-
-def get_mixed_dual_module(module_cls):
-    class MixedDualModule(DualModule, module_cls):
-        def __init__(self, torch_module, oneflow_module):
-            DualModule.__init__(self, torch_module, oneflow_module)
-
-    return MixedDualModule
 
 
 def handle_deployable_exception(func):
@@ -190,7 +141,7 @@ def handle_deployable_exception(func):
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
+        self._deployable_module_model = DualModule(torch_module, oneflow_module)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
@@ -249,18 +200,6 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def to(self, *args, **kwargs):
-        if self._deployable_module_dpl_graph is None:
-            self._deployable_module_model.to(*args, **kwargs)
-            return self
-
-        # assert the target device is same as graph device
-        target_device = parse_device(args, kwargs)
-        if target_device is not None:
-            current_device = self._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()[1][0].device
-            if not check_device(current_device, target_device):
-                raise RuntimeError(
-                    f"After graph built, the device of graph can't be modified, current device: {current_device}, target device: {target_device}"
-                )
         self._deployable_module_model.to(*args, **kwargs)
         return self
 
