@@ -12,6 +12,7 @@ from sgm.modules.attention import default, CrossAttention
 from sgm.modules.diffusionmodules.util import GroupNorm32
 from omegaconf import OmegaConf, ListConfig
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
+from onediff.infer_compiler import oneflow_compile, register
 
 
 @torch2oflow.register
@@ -156,17 +157,18 @@ class TimeEmbedModule(nn.Module):
         return self._time_embed_module(t_emb.half())
 
 
+torch2oflow_class_map = {
+    CrossAttention: CrossAttentionOflow,
+    GroupNorm32: GroupNorm32Oflow,
+}
+register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
+
+
 def compile(sd_model):
     unet_model = sd_model.model.diffusion_model
     full_name = f"{unet_model.__module__}.{unet_model.__class__.__name__}"
     if full_name != "sgm.modules.diffusionmodules.openaimodel.UNetModel":
         return
-    from onediff.infer_compiler import oneflow_compile, register
-    torch2oflow_class_map = {
-        CrossAttention: CrossAttentionOflow,
-        GroupNorm32: GroupNorm32Oflow,
-    }
-    register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
     global _compiled
     _compiled = oneflow_compile(sd_model.model.diffusion_model, use_graph=True)
     time_embed_wrapper = TimeEmbedModule(_compiled._deployable_module_model.oneflow_module.time_embed)
