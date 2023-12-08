@@ -12,7 +12,8 @@ env:
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
-  UNET_INT8: /share_nfs/hf_models/unet_int8
+  UNET_INT8: /share_nfs/hf_models/unet_int8 
+  CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
   SELENIUM_CONTAINER_NAME: selenium-test
   SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 concurrency:
