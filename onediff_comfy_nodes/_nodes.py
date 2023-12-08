@@ -262,13 +262,16 @@ class ControlNetSpeedup:
     def apply_controlnet(self, control_net, static_mode):
         if static_mode == "enable":
             from comfy.controlnet import ControlNet, ControlLora
-            from .modules.hijack_controlnet import HijackControlNet, HijackControlLora
+            from .modules.onediff_controlnet import (
+                OneDiffControlNet,
+                OneDiffControlLora,
+            )
 
             if isinstance(control_net, ControlLora):
-                control_net = HijackControlLora.from_controllora(control_net)
+                control_net = OneDiffControlLora.from_controllora(control_net)
                 return (control_net,)
             elif isinstance(control_net, ControlNet):
-                control_net = HijackControlNet.from_controlnet(control_net)
+                control_net = OneDiffControlNet.from_controlnet(control_net)
                 return (control_net,)
             else:
                 raise TypeError(
@@ -300,7 +303,7 @@ class ControlNetGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, control_net, graph):
-        from .modules.hijack_controlnet import HijackControlLora
+        from .modules.onediff_controlnet import HijackControlLora
 
         device = model_management.get_torch_device()
 
@@ -329,7 +332,7 @@ class ControlNetGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, samples, control_net, filename_prefix):
-        from .modules.hijack_controlnet import HijackControlLora
+        from .modules.onediff_controlnet import HijackControlLora
 
         # Unable to directly fetch the controlnet model from comfyui.
         model = HijackControlLora.oneflow_model

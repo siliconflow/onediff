@@ -3,9 +3,10 @@ import oneflow as flow
 from comfy.controlnet import ControlLoraOps, ControlNet, ControlLora
 from onediff.infer_compiler import oneflow_compile
 
+__all__ = ["OneDiffControlNet", "OneDiffControlLora"]
+
 
 def set_attr_of(obj, attr, value):
-    
     def _set_attr_of(obj, attr, value):
         obj = obj._deployable_module_model._oneflow_module
         value = flow.utils.tensor.from_torch(value)
@@ -25,7 +26,7 @@ def set_attr_of(obj, attr, value):
         comfy.utils.set_attr(obj, attr, value)
 
 
-class HijackControlNet(ControlNet):
+class OneDiffControlNet(ControlNet):
     @classmethod
     def from_controlnet(cls, controlnet: ControlNet):
         c = cls(
@@ -43,14 +44,14 @@ class HijackControlNet(ControlNet):
         self.control_model = oneflow_compile(self.control_model)
 
     def copy(self):
-        c = HijackControlNet(
+        c = OneDiffControlNet(
             self.control_model, global_average_pooling=self.global_average_pooling
         )
         self.copy_to(c)
         return c
 
 
-class HijackControlLora(ControlLora):
+class OneDiffControlLora(ControlLora):
     oneflow_model = None
 
     @classmethod
@@ -70,7 +71,7 @@ class HijackControlLora(ControlLora):
         # super().pre_run(model, percent_to_timestep_function)
         ControlNet.pre_run(self, model, percent_to_timestep_function)
 
-        if HijackControlLora.oneflow_model is None:
+        if OneDiffControlLora.oneflow_model is None:
             controlnet_config = model.model_config.unet_config.copy()
             controlnet_config.pop("out_channels")
             controlnet_config["hint_channels"] = self.control_weights[
@@ -80,9 +81,9 @@ class HijackControlLora(ControlLora):
             self.control_model = comfy.cldm.cldm.ControlNet(**controlnet_config)
             self.control_model.to(dtype)
             self.control_model.to(comfy.model_management.get_torch_device())
-            HijackControlLora.oneflow_model = oneflow_compile(self.control_model)
+            OneDiffControlLora.oneflow_model = oneflow_compile(self.control_model)
 
-        self.control_model = HijackControlLora.oneflow_model
+        self.control_model = OneDiffControlLora.oneflow_model
 
         diffusion_model = model.diffusion_model
         sd = diffusion_model.state_dict()
@@ -105,13 +106,13 @@ class HijackControlLora(ControlLora):
                 )
                 set_attr_of(self.control_model, k, weight)
 
-        lazy_loader = getattr(HijackControlLora, "lazy_load_hook", None)
+        lazy_loader = getattr(OneDiffControlLora, "lazy_load_hook", None)
         if lazy_loader and callable(lazy_loader):
-            lazy_loader(HijackControlLora.oneflow_model)
-            delattr(HijackControlLora, "lazy_load_hook")
+            lazy_loader(OneDiffControlLora.oneflow_model)
+            delattr(OneDiffControlLora, "lazy_load_hook")
 
     def copy(self):
-        c = HijackControlLora(
+        c = OneDiffControlLora(
             self.control_weights, global_average_pooling=self.global_average_pooling
         )
         self.copy_to(c)
