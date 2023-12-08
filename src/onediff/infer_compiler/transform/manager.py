@@ -23,10 +23,6 @@ def gen_unique_id():
     return f"{process_id}_{timestamp}_{uuid_str}"
 
 
-PREFIX = "mock_"
-SUFFIX = f"_oflow_{gen_unique_id()}"
-
-
 class TransformManager:
     """TransformManager
 
@@ -38,22 +34,15 @@ class TransformManager:
     def __init__(self, debug_mode=False, tmp_dir="./output"):
         self.debug_mode = debug_mode
         self._torch_to_oflow_cls_map = {}
-        self._create_temp_dir(tmp_dir)
         self._setup_logger()
-        self.mocker = LazyMocker(
-            prefix=PREFIX, suffix=SUFFIX, tmp_dir=self.tmp_dir / ".mock_cache"
-        )
-
-    def _create_temp_dir(self, tmp_dir):
-        self.tmp_dir = Path(tmp_dir)
-        self.tmp_dir.mkdir(parents=True, exist_ok=True)
+        self.mocker = LazyMocker(prefix="", suffix="", tmp_dir=None)
 
     def _setup_logger(self):
         name = "ONEDIFF"
         file_name = f"onediff_{gen_unique_id()}.log"
         level = logging.DEBUG if self.debug_mode else logging.ERROR
         logger.configure_logging(
-            name=name, file_name=file_name, level=level, log_dir=self.tmp_dir
+            name=name, file_name=file_name, level=level, log_dir=None
         )
         self.logger = logger
 
@@ -115,8 +104,7 @@ class TransformManager:
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG", "0") == "1"
-tmp_dir = os.getenv("ONEDIFF_MOCK_TMP_PATH", "./tmp")
-transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=tmp_dir)
+transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=None)
 
 if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)

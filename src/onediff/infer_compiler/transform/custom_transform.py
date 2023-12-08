@@ -66,7 +66,6 @@ def register(
     torch2oflow_class_map: Optional[Dict[type, type]] = None,
     torch2oflow_funcs: Optional[List[Callable]] = None,
 ):
-
     if package_names:
         package_names = ensure_list(package_names)
         transform_mgr.load_class_proxies_from_packages(package_names)
