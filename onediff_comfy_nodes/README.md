@@ -117,7 +117,7 @@ The compilation result of the quantized model can also be saved as a graph and l
 
 ### VAE Acceleration
 
-The VAE nodes used for accelerating, saving, and loading VAE graphs operate in a manner very similar to the usage of Model nodes. 
+The VAE nodes used for accelerating, saving, and loading VAE graphs operate in a manner very similar to the usage of Model nodes.
 
 Omitting specific details here, the following workflow can be loaded and tested.
 
