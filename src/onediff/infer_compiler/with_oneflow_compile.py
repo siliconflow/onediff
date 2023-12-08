@@ -143,6 +143,11 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
+        self._deployable_module_record_input = False
+        if "record_input" in options and options["record_input"]:
+            self._deployable_module_record_input= True
+            self._deployable_module_input_record = []
+            self._deployable_module_input_record_str = []
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, options=None):
@@ -168,9 +173,9 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module, size, all_dynamic
         )
-        if "debug" in self._deployable_module_options:
+        if "v" in self._deployable_module_options:
             self._deployable_module_dpl_graph.debug(
-                self._deployable_module_options["debug"]
+                self._deployable_module_options["v"]
             )
         return self._deployable_module_dpl_graph
 
@@ -191,6 +196,10 @@ class DeployableModule(torch.nn.Module):
     @input_output_processor
     @handle_deployable_exception
     def __call__(self, *args, **kwargs):
+        if self._deployable_module_record_input:
+            output = self._deployable_module_model._torch_module(*args, **kwargs)
+            return output
+
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
@@ -249,7 +258,7 @@ class OneflowGraph(flow.nn.Graph):
 
         os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
         os.environ["ONEFLOW_MLIR_CSE"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+        # os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"

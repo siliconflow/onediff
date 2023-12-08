@@ -29,9 +29,14 @@ def input_output_processor(func):
         out = out_tree.map_leaf(output_fn)
         return out[0]
 
-    def wrapper(cls, *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
+        if self._deployable_module_record_input:
+            self._deployable_module_input_record.append((args, kwargs))
+            self._deployable_module_input_record_str.append(repr(ArgsTree((args, kwargs), True, tensor_type=torch.Tensor)))
+            return func(self, *args, **kwargs)
+
         mapped_args, mapped_kwargs = process_input(*args, **kwargs)
-        output = func(cls, *mapped_args, **mapped_kwargs)
+        output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
 
     return wrapper
