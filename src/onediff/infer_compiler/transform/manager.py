@@ -1,9 +1,6 @@
-import atexit
 import os
-import sys
 import types
 import warnings
-import shutil
 import time
 import uuid
 import logging
@@ -45,6 +42,7 @@ class TransformManager:
             name=name, file_name=file_name, level=level, log_dir=None
         )
         self.logger = logger
+
 
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
@@ -105,4 +103,3 @@ if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=FutureWarning)
 
 
-atexit.register(transform_mgr.cleanup)
