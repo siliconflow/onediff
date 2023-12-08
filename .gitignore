@@ -174,5 +174,6 @@ log
 unet_graphs
 *.json
 
-ComfyUI/
-comfyui-speedup/
+# onediff_comfy_nodes
+*.pt
+*.graph
