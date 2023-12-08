@@ -108,8 +108,6 @@ jobs:
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-unet-speedup-graph-saver.json
-        if: matrix.test-suite == 'comfy'
-        run: |
           docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-unet-control-lora-speedup.json
           
       - if: matrix.test-suite == 'diffusers_examples'
