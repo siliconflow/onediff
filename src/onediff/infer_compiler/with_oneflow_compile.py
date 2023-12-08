@@ -2,8 +2,10 @@ import os
 import types
 import torch
 import oneflow as flow
+from oneflow.utils.tensor import to_torch
 from typing import Any
 from functools import wraps
+from itertools import chain
 from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
@@ -39,11 +41,46 @@ class DualModule(torch.nn.Module):
         if oneflow_exec_mode_enabled():
             self._oneflow_module.to(*args, **kwargs)
         else:
-            self._torch_module.to(*args, **kwargs)
             if self._oneflow_module is not None:
                 args = [torch2oflow(v) for v in args]
                 kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
+                self.torch_align_oneflow_module()
+            else:
+                self._torch_module.to(*args, **kwargs)
+
+    def torch_align_oneflow_module(self):
+        def _traverse(torch_module, oneflow_module, memo=None):
+            for name, oneflow_submodule in oneflow_module._modules.items():
+                if name in torch_module._modules:
+                    torch_submodule = torch_module._modules[name]
+                    _traverse(torch_submodule, oneflow_submodule, memo)
+
+            of_dict = oneflow_module.__dict__
+            torch_dict = torch_module.__dict__
+            for name, value in of_dict.items():
+                if not isinstance(value, flow.Tensor) or (not name in torch_dict):
+                    continue
+                if memo is not None and value in memo:
+                    continue
+                if torch_dict[name] is None:
+                    torch_dict[name] = to_torch(value.data)
+                elif torch_dict[name].data_ptr() == value.data_ptr():
+                    continue
+                else:
+                    torch_dict[name].data = to_torch(value.data)
+
+        for name, tensor in chain.from_iterable([
+            self._oneflow_module.named_parameters(),
+            self._oneflow_module.named_buffers(),
+        ]):
+            torch_tensor = self._torch_module.get_parameter(name)
+            if (
+                torch_tensor is not None
+                and torch_tensor.data_ptr() != tensor.data_ptr()
+            ):
+                torch_tensor.data = to_torch(tensor.data)
+        _traverse(self._torch_module, self._oneflow_module)
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -203,6 +240,7 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def to(self, *args, **kwargs):
+        # TODO: Check if self.to will modify the device of dpl_graph
         self._deployable_module_model.to(*args, **kwargs)
         return self
 
