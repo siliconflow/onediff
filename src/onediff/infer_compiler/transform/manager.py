@@ -46,12 +46,6 @@ class TransformManager:
         )
         self.logger = logger
 
-    def cleanup(self):
-        mock_cache_dir = self.tmp_dir / ".mock_cache"
-        if mock_cache_dir.exists():
-            self.logger.info("Cleaning up mock files...")
-            self.mocker.cleanup()
-
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
 
