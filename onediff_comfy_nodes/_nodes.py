@@ -30,6 +30,7 @@ __all__ = [
     "VaeSpeedup",
     "VaeGraphLoader",
     "VaeGraphSaver",
+    "SVDSpeedup",
 ]
 
 if not args.dont_upcast_attention:
@@ -156,6 +157,33 @@ class ModelGraphSaver:
         diffusion_model = model.model.diffusion_model
         save_graph(diffusion_model, filename_prefix, "cuda", subfolder="unet")
         return {}
+
+
+class SVDSpeedup:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "static_mode": (["enable", "disable"],),
+            },
+        }
+
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "speedup"
+    CATEGORY = "OneDiff"
+
+    def speedup(self, model, static_mode):
+        from onediff.infer_compiler import oneflow_compile
+
+        use_graph = static_mode == "enable"
+
+        new_model = copy.deepcopy(model) 
+        new_model.model.diffusion_model = oneflow_compile(
+            new_model.model.diffusion_model, use_graph=use_graph
+        )
+
+        return (new_model,)
 
 
 class VaeSpeedup:

@@ -10,6 +10,7 @@ from ._nodes import (
     ControlNetSpeedup,
     ControlNetGraphLoader,
     ControlNetGraphSaver,
+    SVDSpeedup,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -26,6 +27,7 @@ NODE_CLASS_MAPPINGS = {
     "ControlNetSpeedup": ControlNetSpeedup,
     "ControlNetGraphLoader": ControlNetGraphLoader,
     "ControlNetGraphSaver": ControlNetGraphSaver,
+    "SVDSpeedup": SVDSpeedup,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -40,6 +42,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ControlNetSpeedup": "ControlNet Speedup",
     "ControlNetGraphLoader": "ControlNet Graph Loader",
     "ControlNetGraphSaver": "ControlNet Graph Saver",
+    "SVDSpeedup": "SVD Speedup",
 }
 
 if _USE_UNET_INT8:
