@@ -29,9 +29,11 @@ services:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
       - ${PWD}/${COMFYUI_SRC_DIR}:/app/ComfyUI
-      - ${PWD}/onediff_comfy_nodes:/app/ComfyUI/custom_nodes/comfyui-speedup
+      - ${PWD}/onediff_comfy_nodes:/app/ComfyUI/custom_nodes/onediff_comfy_nodes
       - ${SDXL_BASE}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro
       - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
+      - ${CONTROL_LORA_OPENPOSEXL2_RANK256}:/app/ComfyUI/models/controlnet/control-lora-openposeXL2-rank256.safetensors:ro
+      - $PWD/tests/comfyui/workflows/input/control:/app/ComfyUI/input/control:ro
       - $PWD:/src/onediff
     working_dir: /src/onediff
     restart: 'no'

@@ -13,6 +13,7 @@ export COMFYUI_PORT=8855
 export CONTAINER_NAME=onediff-test
 export SDXL_BASE=/share_nfs/hf_models/sd_xl_base_1.0.safetensors
 export UNET_INT8=/share_nfs/hf_models/unet_int8
+export CONTROL_LORA_OPENPOSEXL2_RANK256=/share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
 
 And then:
 
@@ -27,7 +28,7 @@ docker compose -f tests/comfy-docker-compose.yml up -d
 docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 docker exec $CONTAINER_NAME python3 -m pip install -r tests/comfyui/requirements.txt --user
 docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
-docker exec -it $CONTAINER_NAME python3 /app/ComfyUI/main.py
+docker exec -it $CONTAINER_NAME python3 /app/ComfyUI/main.py --cuda-device 0
 
 Run the test script:
 
