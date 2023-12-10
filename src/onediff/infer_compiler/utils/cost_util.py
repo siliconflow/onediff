@@ -1,13 +1,48 @@
+from functools import wraps
 import oneflow as flow
 import time
 import inspect
 from .log_utils import logger
 
 
-def cost_cnt(debug=False):
-    def decorate(func):
+class cost_cnt:
+    def __init__(self, debug=False, message="\t"):
+        self.debug = debug
+        self.message = message
+
+    def __enter__(self):
+        if not self.debug:
+            return
+        flow._oneflow_internal.eager.Sync()
+        before_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        before_host_used = flow._oneflow_internal.GetCPUMemoryUsed()
+        logger.debug(f"====> {self.message} try to run...")
+        logger.debug(f"{self.message} cuda mem before {before_used} MB")
+        logger.debug(f"{self.message} host mem before {before_host_used} MB")
+        self.before_used = before_used
+        self.before_host_used = before_host_used
+        self.start_time = time.time()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.debug:
+            return
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        after_host_used = flow._oneflow_internal.GetCPUMemoryUsed()
+        logger.debug(f"{self.message} run time {end_time - self.start_time} seconds")
+        logger.debug(f"{self.message} cuda mem after {after_used} MB")
+        logger.debug(f"{self.message} cuda mem diff {after_used - self.before_used} MB")
+        logger.debug(f"{self.message} host mem after {after_host_used} MB")
+        logger.debug(
+            f"{self.message} host mem diff {after_host_used - self.before_host_used} MB"
+        )
+        logger.debug(f"<==== {self.message} finish run.")
+
+    def __call__(self, func):
+        @wraps(func)
         def clocked(*args, **kwargs):
-            if not debug:
+            if not self.debug:
                 return func(*args, **kwargs)
             module = inspect.getmodule(func)
             logger.debug(
@@ -43,5 +78,3 @@ def cost_cnt(debug=False):
             return out
 
         return clocked
-
-    return decorate

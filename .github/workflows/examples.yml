@@ -11,9 +11,9 @@ env:
   REGION_ID: cn-beijing
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
-  COMFYUI_SPEEDUP_DIR: comfyui-speedup
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
-  UNET_INT8: /share_nfs/hf_models/unet_int8
+  UNET_INT8: /share_nfs/hf_models/unet_int8 
+  CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
   SELENIUM_CONTAINER_NAME: selenium-test
   SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 concurrency:
@@ -54,13 +54,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
-      - name: Checkout ConfyUI Speedup Nodes
-        uses: actions/checkout@v2
-        if: matrix.test-suite == 'comfy'
-        with:
-          repository: ${{ secrets.ONEFLOW_PRIV_ORG }}/comfyui-speedup
-          token: ${{ secrets.ONEFLOW_PRIV_GH_TOKEN }}
-          path: ${{ env.COMFYUI_SPEEDUP_DIR }}
 
       - run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
@@ -79,7 +72,6 @@ jobs:
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
           COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
-          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
@@ -93,8 +85,6 @@ jobs:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
-          COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
-          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
 
@@ -118,7 +108,8 @@ jobs:
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-unet-speedup-graph-saver.json
-      
+          docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-control-lora-speedup.json --timeout 300
+          
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
@@ -143,7 +134,6 @@ jobs:
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
           COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
-          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
@@ -157,7 +147,5 @@ jobs:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
-          COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
-          COMFYUI_SPEEDUP_DIR: ${{ env.COMFYUI_SPEEDUP_DIR }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}

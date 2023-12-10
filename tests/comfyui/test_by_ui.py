@@ -7,13 +7,13 @@ Please set the following environment variables (whose values are for reference o
 export ACR_ORG=registry.cn-beijing.aliyuncs.com/oneflow
 export MATRIX_IMAGE=onediff-pro:cu121
 export COMFYUI_SRC_DIR=ComfyUI
-export COMFYUI_SPEEDUP_DIR=comfyui-speedup
 export SELENIUM_IMAGE=standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 export SELENIUM_CONTAINER_NAME=selenium-test
 export COMFYUI_PORT=8855
 export CONTAINER_NAME=onediff-test
 export SDXL_BASE=/share_nfs/hf_models/sd_xl_base_1.0.safetensors
 export UNET_INT8=/share_nfs/hf_models/unet_int8
+export CONTROL_LORA_OPENPOSEXL2_RANK256=/share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
 
 And then:
 
@@ -23,18 +23,20 @@ unless you are fully aware of the implications of executing them in a different
 directory.
 
 git clone https://github.com/comfyanonymous/ComfyUI.git
-git clone url-of-comfyui-speedup-repo
 
 docker compose -f tests/comfy-docker-compose.yml up -d
 docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
 docker exec $CONTAINER_NAME python3 -m pip install -r tests/comfyui/requirements.txt --user
 docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
-docker exec -d $CONTAINER_NAME python3 /app/ComfyUI/main.py
+docker exec -it $CONTAINER_NAME python3 /app/ComfyUI/main.py --cuda-device 0
 
 Run the test script:
 
 python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-unet-speedup-graph-saver.json
 
+If you need to shutdown the test containers, run:
+
+docker compose -f tests/comfy-docker-compose.yml down
 """
 import argparse
 import os
