@@ -12,6 +12,7 @@ except ImportError as e:
     subprocess.check_call(["pip", "install", "scikit-image"])
     from skimage.metrics import structural_similarity
 
+
 class CompareModel:
     r"""
     This node is used to compare the weight values corresponding to each same key in PyTorch and Oneflow Graph,

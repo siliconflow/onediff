@@ -11,7 +11,6 @@ import torch
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
-from onediff.optimization import rewrite_self_attention
 from diffusers import AutoPipelineForText2Image
 
 parser = argparse.ArgumentParser()
@@ -52,7 +51,6 @@ base.to("cuda")
 # Compile unet with oneflow
 if args.compile:
     print("unet is compiled to oneflow.")
-    rewrite_self_attention(base.unet)
     base.unet = oneflow_compile(base.unet)
     print("vae is compiled to oneflow.")
     base.vae = oneflow_compile(base.vae)
