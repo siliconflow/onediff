@@ -16,7 +16,7 @@ cp -r ../onediff/onediff_sd_webui_extensions stable-diffusion-webui/extensions/
 # Install all of stable-diffusion-webui's dependencies.
 venv_dir=- bash webui.sh --port=8080
 
-# Exit webui server and upgrade some of the components that conflict with onediff
+# Exit webui server and upgrade some of the components that conflict with onediff.
 cd repositories/generative-models && git checkout 9d759324 && cd -
 pip install -U einops==0.7.0
 ```
