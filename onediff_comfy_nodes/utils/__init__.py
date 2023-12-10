@@ -3,7 +3,11 @@ import re
 import time
 
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
-
+from .diffusers_quant_utils import (
+    replace_module_with_quantizable_module,
+    _use_graph,
+    quantized_and_save_model,
+)
 from .model_patcher import OneFlowSpeedUpModelPatcher
 
 OUTPUT_FOLDER = os.path.join(

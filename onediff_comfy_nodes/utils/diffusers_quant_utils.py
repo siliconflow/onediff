@@ -2,7 +2,7 @@ import os
 import comfy
 import torch
 import torch.nn as nn
-from diffusers_quant.utils import get_quantize_module
+from diffusers_quant.utils import get_quantize_module, symm_quantize
 from diffusers_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
 from torch._dynamo import allow_in_graph as maybe_allow_in_graph
 
@@ -249,3 +249,115 @@ def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path)
 
     except Exception as e:
         print(e)
+
+
+def find_quantizable_modules(
+    module, name="", *, quantize_conv=True, quantize_linear=True
+):
+    if isinstance(module, nn.Conv2d) and quantize_conv:
+        return {name: module}
+
+    if isinstance(module, nn.Linear) and quantize_linear:
+        return {name: module}
+
+    res = {}
+    for child_name, child in module.named_children():
+        res.update(
+            find_quantizable_modules(
+                child,
+                name + "." + child_name if name != "" else child_name,
+                quantize_conv=quantize_conv,
+                quantize_linear=quantize_linear,
+            )
+        )
+    return res
+
+
+def symm_quantize_sub_module(
+    module, sub_module_name, scale, maxq, *, save_as_float=False
+):
+    assert sub_module_name != ""
+    if "." not in sub_module_name:
+        if sub_module_name.isdigit():
+            org_module = module[int(sub_module_name)]
+        else:
+            org_module = getattr(module, sub_module_name)
+        if save_as_float:
+            org_module.weight.data = fake_symm_quantize(
+                org_module.weight.data, scale.to(org_module.weight.data.device), maxq
+            )
+        else:
+            org_module.weight.requires_grad = False
+            org_module.weight.data = symm_quantize(
+                org_module.weight.data, scale.to(org_module.weight.data.device), maxq
+            )
+        return
+
+    index = sub_module_name.index(".")
+    sub_name = sub_module_name[:index]
+    if sub_name.isdigit():
+        sub_module = module[int(sub_name)]
+    else:
+        sub_module = getattr(module, sub_name)
+    return symm_quantize_sub_module(
+        sub_module, sub_module_name[index + 1 :], scale, maxq
+    )
+
+
+def quantized_and_save_model(
+    diffusion_model,
+    output_dir,
+    *,
+    quantize_conv=True,
+    quantize_linear=True,
+    verbose=False,
+    bits=8,
+):
+    import time
+    from safetensors.torch import save_model
+    from diffusers_quant import Quantizer
+
+    start_time = time.time()
+
+    print("Find the quantizable modules...")
+    quantizable_modules = find_quantizable_modules(
+        diffusion_model, quantize_conv=quantize_conv, quantize_linear=quantize_linear
+    )
+    print(f"quantizable_modules size: {len(quantizable_modules)}")
+
+    if verbose:
+        for name, module in quantizable_modules.items():
+            print(name, ": ", module)
+
+    calibrate_info = {}
+
+    enum_quantizable_modules = enumerate(quantizable_modules.items())
+    _quant_total = len(quantizable_modules.items())
+    for i, (name, module) in enum_quantizable_modules:
+        if verbose:
+            print(f"Calculate quantization infos of {name} ...")
+        quantizer = Quantizer()
+        quantizer.configure(bits=bits, perchannel=True)
+        quantizer.find_params(module.weight.float(), weight=True)
+        shape = [-1] + [1] * (len(module.weight.shape) - 1)
+        scale = quantizer.scale.reshape(*shape)
+        symm_quantize_sub_module(diffusion_model, name, scale, quantizer.maxq)
+        calibrate_info[name] = [scale]
+
+    print(f"""save quantized model to {output_dir}""")
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+    save_model(diffusion_model, os.path.join(output_dir, "unet_int8.safetensors"))
+
+    print(f'save calibrate_info to {os.path.join(output_dir, "calibrate_info.txt")}')
+
+    with open(os.path.join(output_dir, "calibrate_info.txt"), "w") as f:
+        for name, info in calibrate_info.items():
+            input_scale = 0
+            input_zero_point = 0
+            weight_scale = [str(x) for x in info[0].reshape(-1).tolist()]
+            f.write(
+                f"{name} {input_scale} {input_zero_point} {','.join(weight_scale)}\n"
+            )
+
+    print(f"Quantize module time: {time.time() - start_time}s")
