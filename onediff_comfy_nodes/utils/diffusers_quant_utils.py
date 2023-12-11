@@ -2,8 +2,7 @@ import os
 import comfy
 import torch
 import torch.nn as nn
-from diffusers_quant.utils import get_quantize_module, symm_quantize
-from diffusers_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
+
 from torch._dynamo import allow_in_graph as maybe_allow_in_graph
 
 __all__ = ["replace_module_with_quantizable_module"]
@@ -147,6 +146,8 @@ def _can_use_flash_attn(attn):
 
 
 def _rewrite_attention(attn):
+    from diffusers_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
+
     dim_head = attn.to_q.out_features // attn.heads
     has_bias = attn.to_q.bias is not None
     attn.to_qkv = nn.Linear(
@@ -208,6 +209,8 @@ def _rewrite_attention(attn):
 
 
 def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path):
+    from diffusers_quant.utils import get_quantize_module
+
     _use_graph()
 
     calibrate_info = _load_calibrate_info(calibrate_info_path)
@@ -276,6 +279,8 @@ def find_quantizable_modules(
 def symm_quantize_sub_module(
     module, sub_module_name, scale, maxq, *, save_as_float=False
 ):
+    from diffusers_quant.utils import symm_quantize
+
     assert sub_module_name != ""
     if "." not in sub_module_name:
         if sub_module_name.isdigit():
@@ -304,7 +309,7 @@ def symm_quantize_sub_module(
     )
 
 
-def quantized_and_save_model(
+def quantize_and_save_model(
     diffusion_model,
     output_dir,
     *,
@@ -347,6 +352,10 @@ def quantized_and_save_model(
     print(f"""save quantized model to {output_dir}""")
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
+    else:
+        raise RuntimeError(
+            f"{os.path.basename(output_dir)} has existed, rename the out_dir and try again."
+        )
     save_model(diffusion_model, os.path.join(output_dir, "unet_int8.safetensors"))
 
     print(f'save calibrate_info to {os.path.join(output_dir, "calibrate_info.txt")}')
