@@ -276,39 +276,6 @@ def find_quantizable_modules(
     return res
 
 
-def symm_quantize_sub_module(
-    module, sub_module_name, scale, maxq, *, save_as_float=False
-):
-    from diffusers_quant.utils import symm_quantize
-
-    assert sub_module_name != ""
-    if "." not in sub_module_name:
-        if sub_module_name.isdigit():
-            org_module = module[int(sub_module_name)]
-        else:
-            org_module = getattr(module, sub_module_name)
-        if save_as_float:
-            org_module.weight.data = fake_symm_quantize(
-                org_module.weight.data, scale.to(org_module.weight.data.device), maxq
-            )
-        else:
-            org_module.weight.requires_grad = False
-            org_module.weight.data = symm_quantize(
-                org_module.weight.data, scale.to(org_module.weight.data.device), maxq
-            )
-        return
-
-    index = sub_module_name.index(".")
-    sub_name = sub_module_name[:index]
-    if sub_name.isdigit():
-        sub_module = module[int(sub_name)]
-    else:
-        sub_module = getattr(module, sub_name)
-    return symm_quantize_sub_module(
-        sub_module, sub_module_name[index + 1 :], scale, maxq
-    )
-
-
 def quantize_and_save_model(
     diffusion_model,
     output_dir,
@@ -321,6 +288,7 @@ def quantize_and_save_model(
     import time
     from safetensors.torch import save_model
     from diffusers_quant import Quantizer
+    from diffusers_quant.utils import symm_quantize_sub_module
 
     print(
         f"quantize and save_model, conv={quantize_conv}, linear={quantize_linear}, verbose={verbose}, output={output_dir}"
