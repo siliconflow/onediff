@@ -322,6 +322,9 @@ def quantize_and_save_model(
     from safetensors.torch import save_model
     from diffusers_quant import Quantizer
 
+    print(
+        f"quantize and save_model, conv={quantize_conv}, linear={quantize_linear}, verbose={verbose}, output={output_dir}"
+    )
     start_time = time.time()
 
     print("Find the quantizable modules...")
