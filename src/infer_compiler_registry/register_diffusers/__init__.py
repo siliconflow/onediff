@@ -19,7 +19,7 @@ register(torch2oflow_class_map=torch2oflow_class_map)
 
 
 from onediff.infer_compiler.transform import transform_mgr
-from onediff.infer_compiler.transform.builtin_transform import proxy_class
+from onediff.infer_compiler.transform import proxy_class
 
 
 _ONEFLOW_HAS_REGISTER_RELAXED_TYPE_API = False
