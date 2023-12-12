@@ -174,6 +174,7 @@ def compile(sd_model):
     time_embed_wrapper = TimeEmbedModule(_compiled._deployable_module_model.oneflow_module.time_embed)
     # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/openaimodel.py#L984
     setattr(_compiled._deployable_module_model.oneflow_module, "time_embed", time_embed_wrapper)
+    # for refiner model
     shared.sd_model.model.diffusion_model = _compiled
 
 
