@@ -46,7 +46,14 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 }
 
 if _USE_UNET_INT8:
-    from ._nodes import UNETLoaderInt8
+    from ._nodes import UNETLoaderInt8, Quant8Model
 
-    NODE_CLASS_MAPPINGS.update({"UNETLoaderInt8": UNETLoaderInt8})
-    NODE_DISPLAY_NAME_MAPPINGS.update({"UNETLoaderInt8": "UNET Loader Int8"})
+    NODE_CLASS_MAPPINGS.update(
+        {"UNETLoaderInt8": UNETLoaderInt8, "Quant8Model": Quant8Model}
+    )
+    NODE_DISPLAY_NAME_MAPPINGS.update(
+        {
+            "UNETLoaderInt8": "UNET Loader Int8",
+            "Quant8Model": "Model Quantization(int8)",
+        }
+    )

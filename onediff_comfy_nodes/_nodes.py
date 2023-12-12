@@ -178,7 +178,7 @@ class SVDSpeedup:
 
         use_graph = static_mode == "enable"
 
-        new_model = copy.deepcopy(model) 
+        new_model = copy.deepcopy(model)
         new_model.model.diffusion_model = oneflow_compile(
             new_model.model.diffusion_model, use_graph=use_graph
         )
@@ -367,4 +367,38 @@ class ControlNetGraphSaver:
         device = model_management.get_torch_device()
 
         save_graph(model, filename_prefix, device, subfolder="control_net")
+        return {}
+
+
+class Quant8Model:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "output_dir": ("STRING", {"default": "int8"}),
+                "conv": (["enable", "disable"],),
+                "linear": (["enable", "disable"],),
+            },
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "quantize_model"
+    CATEGORY = "OneDiff"
+    OUTPUT_NODE = True
+
+    def quantize_model(self, model, output_dir, conv, linear):
+        from .utils import quantize_and_save_model
+
+        diffusion_model = model.model.diffusion_model
+        output_dir = os.path.join(folder_paths.models_dir, "unet_int8", output_dir)
+        is_quantize_conv = conv == "enable"
+        is_quantize_linear = linear == "enable"
+        quantize_and_save_model(
+            diffusion_model,
+            output_dir,
+            quantize_conv=is_quantize_conv,
+            quantize_linear=is_quantize_linear,
+            verbose=False,
+        )
         return {}
