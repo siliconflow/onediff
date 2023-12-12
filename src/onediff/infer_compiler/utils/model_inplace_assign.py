@@ -72,8 +72,8 @@ class AutoInplaceCopyTensor(torch.Tensor):
     @data.setter
     def data(self, new_tensor):
         if not isinstance(new_tensor, torch.Tensor):
-            raise TypeError
-        self.copy_(new_tensor)
+            raise TypeError(f"Cannot assign type {type(new_tensor)} to AutoInplaceCopyTensor")
+        self.copy_(new_tensor.detach())
 
 class AutoInplaceCopyParameter(torch.nn.Parameter):
     @property
@@ -83,44 +83,36 @@ class AutoInplaceCopyParameter(torch.nn.Parameter):
     @data.setter
     def data(self, new_tensor):
         if not isinstance(new_tensor, torch.Tensor):
-            raise TypeError
-        self.data.copy_(new_tensor)
+            raise TypeError(f"Cannot assign type {type(new_tensor)} to AutoInplaceCopyParameter")
+        self.data.copy_(new_tensor.detach())
 
 
 def module_convert_parameter(module: torch.nn.Module) -> torch.nn.Module:
     for k, v in module.__dict__.items():
-        if isinstance(v, torch.Tensor):
-            module.__dict__[k] = AutoInplaceCopyTensor(v)
-        elif isinstance(v, torch.nn.Parameter):
+        if isinstance(v, torch.nn.Parameter):
             module.__dict__[k] = AutoInplaceCopyParameter(v)
+        elif isinstance(v, torch.Tensor):
+            module.__dict__[k] = AutoInplaceCopyTensor(v)
     for k, param in module._parameters.items():
-        if isinstance(param, (AutoInplaceCopyParameter, AutoInplaceCopyTensor)):
-            continue
-        if param is not None:
+        if not isinstance(param, AutoInplaceCopyParameter) and param is not None:
             module._parameters[k] = AutoInplaceCopyParameter(param)
     for k, buffer in module._buffers.items():
-        if isinstance(param, (AutoInplaceCopyParameter, AutoInplaceCopyTensor)):
-            continue
-        if buffer is not None:
+        if not isinstance(buffer, AutoInplaceCopyTensor) and buffer is not None:
             module._buffers[k] = AutoInplaceCopyTensor(buffer)
     return module
 
 
 def module_unconvert_parameter(module: torch.nn.Module) -> torch.nn.Module:
     for k, v in module.__dict__.items():
-        if isinstance(v, AutoInplaceCopyTensor):
-            module.__dict__[k] = torch.Tensor(v)
-        elif isinstance(v, torch.nn.Parameter):
+        if isinstance(v, AutoInplaceCopyParameter):
             module.__dict__[k] = torch.nn.Parameter(torch.Tensor(v.data))
+        elif isinstance(v, AutoInplaceCopyTensor):
+            module.__dict__[k] = torch.Tensor(v)
     for k, param in module._parameters.items():
-        if not isinstance(param, (AutoInplaceCopyParameter, AutoInplaceCopyTensor)):
-            continue
-        if param is not None:
+        if isinstance(param, AutoInplaceCopyParameter):
             module._parameters[k] = torch.nn.Parameter(torch.Tensor(param.data))
     for k, buffer in module._buffers.items():
-        if not isinstance(param, (AutoInplaceCopyParameter, AutoInplaceCopyTensor)):
-            continue
-        if buffer is not None:
+        if isinstance(buffer, AutoInplaceCopyTensor):
             module._buffers[k] = torch.Tensor(buffer)
     return module
 
