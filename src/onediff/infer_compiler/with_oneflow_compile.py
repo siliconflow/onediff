@@ -56,22 +56,19 @@ class DualModule(torch.nn.Module):
         relative tensor of oneflow module, especially for tensors which are
         not in `module._parameters` and `module._buffers`.
         """
-        def _traverse(torch_module, oneflow_module, memo=None):
+        def _traverse(torch_module, oneflow_module):
             if oneflow_module is None:
                 return
             for name, oneflow_submodule in oneflow_module._modules.items():
                 if name in torch_module._modules:
                     torch_submodule = torch_module._modules[name]
-                    _traverse(torch_submodule, oneflow_submodule, memo)
+                    _traverse(torch_submodule, oneflow_submodule)
 
             of_dict = oneflow_module.__dict__
             torch_dict = torch_module.__dict__
             for name, value in of_dict.items():
                 if not isinstance(value, flow.Tensor) or (not name in torch_dict):
                     continue
-                if memo is not None and value in memo:
-                    continue
-                memo.add(value)
                 if torch_dict[name] is None:
                     torch_dict[name] = to_torch(value.data)
                 elif torch_dict[name].data_ptr() == value.data_ptr():
