@@ -64,7 +64,9 @@ class DualModule(torch.nn.Module):
                     tensor.data = tensor.to(*args, **kwargs)
                 else:
                     oneflow_tensor = oneflow_module.get_parameter(name)
-                    if oneflow_tensor is not None and tensor.data_ptr() != oneflow_tensor.data_ptr():
+                    if oneflow_tensor is None:
+                        tensor.data = tensor.to(*args, **kwargs)
+                    elif tensor.data_ptr() != oneflow_tensor.data_ptr():
                         tensor.data = to_torch(oneflow_tensor.data)
 
         oneflow_module_list = set([x for x, _ in self._oneflow_module.named_modules()])
