@@ -9,10 +9,18 @@ from .attention import CrossAttention as CrossAttention1f
 from .attention import SpatialTransformer as SpatialTransformer1f
 from .linear import Linear as Linear1f
 
+if hasattr(comfy.ops, "disable_weight_init"):
+    comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
+else:
+    print(
+        "Warning: ComfyUI version is too old, please upgrade it. github: git@github.com:comfyanonymous/ComfyUI.git "
+    )
+    comfy_ops_Linear = comfy.ops.Linear
+
 torch2of_class_map = {
     comfy.ldm.modules.attention.CrossAttention: CrossAttention1f,
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
-    comfy.ops.Linear: Linear1f,
+    comfy_ops_Linear: Linear1f,
 }
 
 

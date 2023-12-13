@@ -1,10 +1,17 @@
 import oneflow as torch
 
-from onediff.infer_compiler.transform import proxy_class
-import comfy
+from onediff.infer_compiler.transform import transform_mgr
+
+transformed_comfy = transform_mgr.transform_package("comfy")
+proxy_ops = transformed_comfy.ops
+
+if hasattr(proxy_ops, "disable_weight_init"):
+    proxy_linear = proxy_ops.disable_weight_init.Linear
+else:
+    proxy_linear = proxy_ops.Linear
 
 
-class Linear(proxy_class(comfy.ops.Linear)):
+class Linear(proxy_linear):
     def __init__(
         self,
         in_features: int,
