@@ -10,7 +10,7 @@ Updated on DEC 13, 2023. Device: RTX 3090. Resolution: 1024x1024
 
 | torch(Baseline) | onediff(Optimized) | Percentage improvement |
 | --------------- | ------------------ | ---------------------- |
-| 2.99it/s        | 4.49it/s           | 50%                    |
+| 2.99it/s        | 4.49it/s           | 50.17%                 |
 
 ## Installation Guide
 
