@@ -1,6 +1,6 @@
 [![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
 [![Docker image build](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml)
-[![Run examples](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml)
+[![Run examples](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
 # OneDiff
 
