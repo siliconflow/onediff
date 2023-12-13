@@ -77,7 +77,22 @@ class OneDiffControlLora(ControlLora):
             controlnet_config["hint_channels"] = self.control_weights[
                 "input_hint_block.0.weight"
             ].shape[1]
-            controlnet_config["operations"] = ControlLoraOps()
+
+            self.manual_cast_dtype = model.manual_cast_dtype
+            dtype = model.get_dtype()
+            if self.manual_cast_dtype is None:
+
+                class control_lora_ops(ControlLoraOps, comfy.ops.disable_weight_init):
+                    pass
+
+            else:
+
+                class control_lora_ops(ControlLoraOps, comfy.ops.manual_cast):
+                    pass
+
+                dtype = self.manual_cast_dtype
+
+            controlnet_config["operations"] = control_lora_ops()
             self.control_model = comfy.cldm.cldm.ControlNet(**controlnet_config)
             self.control_model.to(dtype)
             self.control_model.to(comfy.model_management.get_torch_device())
