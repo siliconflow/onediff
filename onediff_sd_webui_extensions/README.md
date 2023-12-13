@@ -1,7 +1,15 @@
 # Stable-Diffusion-WebUI-OneDiff
 
+- Performance of Community Edition
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
+
+## Performance of Community Edition
+
+Updated on DEC 13, 2023. Device: RTX 3090. Resolution: 1024x1024
+
+torch(Baseline) | onediff(Optimized) | Percentage improvement
+2.97it/s | 4.45it/s | 50%
 
 ## Installation Guide
 
