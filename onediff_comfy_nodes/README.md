@@ -129,6 +129,18 @@ Omitting specific details here, the following workflow can be loaded and tested.
 
 ![](workflows/vae-graph-loader.png)
 
+
+### SVD Acceleration
+
+Similar to the usage of "Model Speedup" nodes, it's used to accelerate the Stable Video Diffusion (SVD) model, completing the acceleration of the text-to-video pipeline.
+
+Compatible with "Model Graph Loader" node and "Model Graph Saver" node.
+
+Omitting specific details here, the following workflow can be loaded and tested.
+
+![](workflows/text-to-video-speedup.png)
+
+
 ### Image Distinction Scanner
 
 The "Image Distinction Scanner" node is used to compare the differences between two images and visualize the resulting variances.

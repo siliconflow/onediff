@@ -3,7 +3,7 @@
 
 # OneDiff
 
-A **drop-in acceleration lib** for **ComfyUI**, **HF diffusers**, and other diffusion models.
+A **drop-in acceleration lib** for **ComfyUI**, **HF diffusers**, **Stable Diffusion web UI**, and other diffusion models.
 
 ## Performance of OneDiff Community Edition 
 
@@ -22,7 +22,7 @@ Updated on Nov 6, 2023.
 - Acceleration for popular libs
   - [ComfyUI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
   - [HF diffusers 🤗](https://github.com/Oneflow-Inc/onediff/tree/main/examples)
-  - SD Web UI(On the way)
+  - [Stable Diffusion web UI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_sd_webui_extensions)
 - Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py) 
   - [SD 1.5/2.1](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image.py)
@@ -51,8 +51,9 @@ If you need **unrestricted multiple resolution**, **quantization** support or an
 | LoRA                 | Limited             | Yes         |
 | LCM                  | Limited             | Yes         |
 | Multiple Resolutions | Limited             | Yes         |
-| Technical Support    | Community           | Yes         |
 | ComfyUI              | Community           | Yes         |
+| Stable Diffusion web UI | Community           | Yes         |
+| Technical Support    | Community           | Yes         |
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
 

@@ -10,7 +10,6 @@ import torch
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
-from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
@@ -63,7 +62,6 @@ base.to("cuda")
 # Compile unet with oneflow
 if args.compile_unet:
     print("Compiling unet with oneflow.")
-    rewrite_self_attention(base.unet)
     base.unet = oneflow_compile(base.unet)
 
 # Compile vae with oneflow

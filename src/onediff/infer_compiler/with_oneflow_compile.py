@@ -161,8 +161,12 @@ class DeployableModule(torch.nn.Module):
             size = self._deployable_module_options["size"]
         else:
             size = 9
+        if "all_dynamic" in self._deployable_module_options:
+            all_dynamic = self._deployable_module_options["all_dynamic"]
+        else:
+            all_dynamic = False
         self._deployable_module_dpl_graph = get_oneflow_graph(
-            self._deployable_module_model.oneflow_module, size
+            self._deployable_module_model.oneflow_module, size, all_dynamic
         )
         if "debug" in self._deployable_module_options:
             self._deployable_module_dpl_graph.debug(
@@ -282,9 +286,10 @@ class OneflowGraph(flow.nn.Graph):
         flow.save(state_dict, file_path)
 
 
-def get_oneflow_graph(model, size=9):
+def get_oneflow_graph(model, size=9, all_dynamic=False):
     g = OneflowGraph(model)
     g._dynamic_input_graph_cache.set_cache_size(size)
+    g._dynamic_input_graph_cache.enable_shared(not all_dynamic)
     return g
 
 

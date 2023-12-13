@@ -7,6 +7,10 @@ from ._nodes import (
     VaeSpeedup,
     VaeGraphLoader,
     VaeGraphSaver,
+    ControlNetSpeedup,
+    ControlNetGraphLoader,
+    ControlNetGraphSaver,
+    SVDSpeedup,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -20,6 +24,10 @@ NODE_CLASS_MAPPINGS = {
     "VaeSpeedup": VaeSpeedup,
     "VaeGraphSaver": VaeGraphSaver,
     "VaeGraphLoader": VaeGraphLoader,
+    "ControlNetSpeedup": ControlNetSpeedup,
+    "ControlNetGraphLoader": ControlNetGraphLoader,
+    "ControlNetGraphSaver": ControlNetGraphSaver,
+    "SVDSpeedup": SVDSpeedup,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -31,10 +39,21 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "VaeSpeedup": "VAE Speedup",
     "VaeGraphLoader": "VAE Graph Loader",
     "VaeGraphSaver": "VAE Graph Saver",
+    "ControlNetSpeedup": "ControlNet Speedup",
+    "ControlNetGraphLoader": "ControlNet Graph Loader",
+    "ControlNetGraphSaver": "ControlNet Graph Saver",
+    "SVDSpeedup": "SVD Speedup",
 }
 
 if _USE_UNET_INT8:
-    from ._nodes import UNETLoaderInt8
+    from ._nodes import UNETLoaderInt8, Quant8Model
 
-    NODE_CLASS_MAPPINGS.update({"UNETLoaderInt8": UNETLoaderInt8})
-    NODE_DISPLAY_NAME_MAPPINGS.update({"UNETLoaderInt8": "UNET Loader Int8"})
+    NODE_CLASS_MAPPINGS.update(
+        {"UNETLoaderInt8": UNETLoaderInt8, "Quant8Model": Quant8Model}
+    )
+    NODE_DISPLAY_NAME_MAPPINGS.update(
+        {
+            "UNETLoaderInt8": "UNET Loader Int8",
+            "Quant8Model": "Model Quantization(int8)",
+        }
+    )

@@ -1,3 +1,5 @@
+from functools import partial
+from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8
 
 import os
@@ -15,6 +17,11 @@ from comfy.cli_args import args
 
 from .utils import OneFlowSpeedUpModelPatcher, save_graph, load_graph, OUTPUT_FOLDER
 
+from .modules.hijack_model_management import model_management_hijacker
+
+model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
+
+
 __all__ = [
     "ModelSpeedup",
     "ModelGraphLoader",
@@ -23,6 +30,7 @@ __all__ = [
     "VaeSpeedup",
     "VaeGraphLoader",
     "VaeGraphSaver",
+    "SVDSpeedup",
 ]
 
 if not args.dont_upcast_attention:
@@ -81,7 +89,7 @@ class UNETLoaderInt8:
     CATEGORY = "OneDiff"
 
     def load_unet_int8(self, model_path):
-        from .utils import replace_module_with_quantizable_module
+        from .utils.diffusers_quant_utils import replace_module_with_quantizable_module
 
         for search_path in folder_paths.get_folder_paths("unet_int8"):
             if os.path.exists(search_path):
@@ -149,6 +157,33 @@ class ModelGraphSaver:
         diffusion_model = model.model.diffusion_model
         save_graph(diffusion_model, filename_prefix, "cuda", subfolder="unet")
         return {}
+
+
+class SVDSpeedup:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "static_mode": (["enable", "disable"],),
+            },
+        }
+
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "speedup"
+    CATEGORY = "OneDiff"
+
+    def speedup(self, model, static_mode):
+        from onediff.infer_compiler import oneflow_compile
+
+        use_graph = static_mode == "enable"
+
+        new_model = copy.deepcopy(model)
+        new_model.model.diffusion_model = oneflow_compile(
+            new_model.model.diffusion_model, use_graph=use_graph
+        )
+
+        return (new_model,)
 
 
 class VaeSpeedup:
@@ -233,4 +268,137 @@ class VaeGraphSaver:
         vae_device = model_management.vae_offload_device()
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
 
+        return {}
+
+
+class ControlNetSpeedup:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "control_net": ("CONTROL_NET",),
+                "static_mode": (["enable", "disable"],),
+            }
+        }
+
+    RETURN_TYPES = ("CONTROL_NET",)
+    RETURN_NAMES = ("control_net",)
+    FUNCTION = "apply_controlnet"
+
+    CATEGORY = "OneDiff"
+
+    def apply_controlnet(self, control_net, static_mode):
+        if static_mode == "enable":
+            from comfy.controlnet import ControlNet, ControlLora
+            from .modules.onediff_controlnet import (
+                OneDiffControlNet,
+                OneDiffControlLora,
+            )
+
+            if isinstance(control_net, ControlLora):
+                control_net = OneDiffControlLora.from_controllora(control_net)
+                return (control_net,)
+            elif isinstance(control_net, ControlNet):
+                control_net = OneDiffControlNet.from_controlnet(control_net)
+                return (control_net,)
+            else:
+                raise TypeError(
+                    f"control_net must be ControlNet or ControlLora, got {type(control_net)}"
+                )
+        else:
+            return (control_net,)
+
+
+class ControlNetGraphLoader:
+    @classmethod
+    def INPUT_TYPES(s):
+        folder = os.path.join(OUTPUT_FOLDER, "control_net")
+        graph_files = [
+            f
+            for f in os.listdir(folder)
+            if os.path.isfile(os.path.join(folder, f)) and f.endswith(".graph")
+        ]
+        return {
+            "required": {
+                "control_net": ("CONTROL_NET",),
+                "graph": (sorted(graph_files),),
+            },
+        }
+
+    RETURN_TYPES = ("CONTROL_NET",)
+    RETURN_NAMES = ("control_net",)
+    FUNCTION = "load_graph"
+    CATEGORY = "OneDiff"
+
+    def load_graph(self, control_net, graph):
+        from .modules.onediff_controlnet import HijackControlLora
+
+        device = model_management.get_torch_device()
+
+        lazy_load_hook = partial(
+            load_graph, graph_filename=graph, device=device, subfolder="control_net"
+        )
+        setattr(HijackControlLora, "lazy_load_hook", lazy_load_hook)
+
+        return (control_net,)
+
+
+class ControlNetGraphSaver:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "samples": ("LATENT",),
+                "control_net": ("CONTROL_NET",),
+                "filename_prefix": ("STRING", {"default": "control_net"}),
+            },
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "save_graph"
+    CATEGORY = "OneDiff"
+    OUTPUT_NODE = True
+
+    def save_graph(self, samples, control_net, filename_prefix):
+        from .modules.onediff_controlnet import HijackControlLora
+
+        # Unable to directly fetch the controlnet model from comfyui.
+        model = HijackControlLora.oneflow_model
+        device = model_management.get_torch_device()
+
+        save_graph(model, filename_prefix, device, subfolder="control_net")
+        return {}
+
+
+class Quant8Model:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "output_dir": ("STRING", {"default": "int8"}),
+                "conv": (["enable", "disable"],),
+                "linear": (["enable", "disable"],),
+            },
+        }
+
+    RETURN_TYPES = ()
+    FUNCTION = "quantize_model"
+    CATEGORY = "OneDiff"
+    OUTPUT_NODE = True
+
+    def quantize_model(self, model, output_dir, conv, linear):
+        from .utils import quantize_and_save_model
+
+        diffusion_model = model.model.diffusion_model
+        output_dir = os.path.join(folder_paths.models_dir, "unet_int8", output_dir)
+        is_quantize_conv = conv == "enable"
+        is_quantize_linear = linear == "enable"
+        quantize_and_save_model(
+            diffusion_model,
+            output_dir,
+            quantize_conv=is_quantize_conv,
+            quantize_linear=is_quantize_linear,
+            verbose=False,
+        )
         return {}
