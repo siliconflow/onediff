@@ -46,11 +46,11 @@ class DualModule(torch.nn.Module):
                 args = [torch2oflow(v) for v in args]
                 kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
                 self._oneflow_module.to(*args, **kwargs)
-                self.torch_align_oneflow_module()
+                self._torch_module_to_with_check(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
 
-    def torch_align_oneflow_module(self):
+    def _torch_module_to_with_check(self, *args, **kwargs):
         """
         Make sure all tensor of torch module have the same data_ptr with
         relative tensor of oneflow module, especially for tensors which are
@@ -58,34 +58,39 @@ class DualModule(torch.nn.Module):
         """
         def _traverse(torch_module, oneflow_module):
             if oneflow_module is None:
+                torch_module.to(*args, **kwargs)
                 return
-            for name, oneflow_submodule in oneflow_module._modules.items():
-                if name in torch_module._modules:
-                    torch_submodule = torch_module._modules[name]
+
+            for name, torch_submodule in torch_module._modules.items():
+                if name in oneflow_module._modules:
+                    oneflow_submodule = oneflow_module._modules[name]
                     _traverse(torch_submodule, oneflow_submodule)
+                else:
+                    torch_module.to(*args, **kwargs)
 
             of_dict = oneflow_module.__dict__
             torch_dict = torch_module.__dict__
-            for name, value in of_dict.items():
-                if not isinstance(value, flow.Tensor) or (not name in torch_dict):
+            for name, value in torch_dict.items():
+                if not isinstance(value, torch.Tensor):
                     continue
-                if torch_dict[name] is None:
-                    torch_dict[name] = to_torch(value.data)
-                elif torch_dict[name].data_ptr() == value.data_ptr():
+                if name not in of_dict:
+                    torch_dict[name] = value.to(*args, **kwargs)
                     continue
-                else:
-                    torch_dict[name].data = to_torch(value.data)
-
+                of_value = of_dict[name]
+                if not isinstance(of_value, flow.Tensor) or value.data_ptr() == of_value.data_ptr():
+                    continue
+                torch_dict[name].data = to_torch(value.data)
+                    
         for name, tensor in chain.from_iterable([
-            self._oneflow_module.named_parameters(),
-            self._oneflow_module.named_buffers(),
+            self._torch_module.named_parameters(),
+            self._torch_module.named_buffers(),
         ]):
-            torch_tensor = self._torch_module.get_parameter(name)
+            oneflow_tensor = self._oneflow_module.get_parameter(name)
             if (
-                torch_tensor is not None
-                and torch_tensor.data_ptr() != tensor.data_ptr()
+                oneflow_tensor is not None
+                and oneflow_tensor.data_ptr() != tensor.data_ptr()
             ):
-                torch_tensor.data = to_torch(tensor.data)
+                tensor.data = to_torch(oneflow_tensor.data)
         _traverse(self._torch_module, self._oneflow_module)
 
     def __getattr__(self, name):
@@ -256,8 +261,8 @@ class DeployableModule(torch.nn.Module):
 
         # assert the target device is same as graph device
         target_device = parse_device(args, kwargs)
-        if target_device is not None:
-            current_device = self._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()[1][0].device
+        if target_device is not None and len(self._deployable_module_dpl_graph._blocks) > 0:
+            current_device = next(self._deployable_module_dpl_graph._state()).device
             if not check_device(current_device, target_device):
                 raise RuntimeError(
                     f"After graph built, the device of graph can't be modified, current device: {current_device}, target device: {target_device}"
