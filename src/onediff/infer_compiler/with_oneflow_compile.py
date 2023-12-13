@@ -51,47 +51,29 @@ class DualModule(torch.nn.Module):
                 self._torch_module.to(*args, **kwargs)
 
     def _torch_module_to_with_check(self, *args, **kwargs):
-        """
-        Make sure all tensor of torch module have the same data_ptr with
-        relative tensor of oneflow module, especially for tensors which are
-        not in `module._parameters` and `module._buffers`.
-        """
-        def _traverse(torch_module, oneflow_module):
-            if oneflow_module is None:
-                torch_module.to(*args, **kwargs)
-                return
-
-            for name, torch_submodule in torch_module._modules.items():
-                if name in oneflow_module._modules:
-                    oneflow_submodule = oneflow_module._modules[name]
-                    _traverse(torch_submodule, oneflow_submodule)
+        def _align_tensor(torch_module, oneflow_module):
+            oneflow_tensor_list = set(
+                [x for x, _ in oneflow_module.named_parameters()]
+                + [x for x, _ in oneflow_module.named_buffers()]
+            )
+            for name, tensor in chain.from_iterable([
+                torch_module.named_parameters(),
+                torch_module.named_buffers(),
+            ]):
+                if name not in oneflow_tensor_list:
+                    tensor.data = tensor.to(*args, **kwargs)
                 else:
-                    torch_module.to(*args, **kwargs)
+                    oneflow_tensor = oneflow_module.get_parameter(name)
+                    if oneflow_tensor is not None and tensor.data_ptr() != oneflow_tensor.data_ptr():
+                        tensor.data = to_torch(oneflow_tensor.data)
 
-            of_dict = oneflow_module.__dict__
-            torch_dict = torch_module.__dict__
-            for name, value in torch_dict.items():
-                if not isinstance(value, torch.Tensor):
-                    continue
-                if name not in of_dict:
-                    torch_dict[name] = value.to(*args, **kwargs)
-                    continue
-                of_value = of_dict[name]
-                if not isinstance(of_value, flow.Tensor) or value.data_ptr() == of_value.data_ptr():
-                    continue
-                torch_dict[name].data = to_torch(value.data)
-                    
-        for name, tensor in chain.from_iterable([
-            self._torch_module.named_parameters(),
-            self._torch_module.named_buffers(),
-        ]):
-            oneflow_tensor = self._oneflow_module.get_parameter(name)
-            if (
-                oneflow_tensor is not None
-                and oneflow_tensor.data_ptr() != tensor.data_ptr()
-            ):
-                tensor.data = to_torch(oneflow_tensor.data)
-        _traverse(self._torch_module, self._oneflow_module)
+        oneflow_module_list = set([x for x, _ in self._oneflow_module.named_modules()])
+        for name, module in self._torch_module.named_modules():
+            if name not in oneflow_module_list:
+                module.to(*args, **kwargs)
+            else:
+                _align_tensor(module, self._oneflow_module.get_submodule(name))
+
 
     def __getattr__(self, name):
         if name == "_torch_module":
