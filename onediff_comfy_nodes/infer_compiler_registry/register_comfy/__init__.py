@@ -11,10 +11,18 @@ from .linear import Linear as Linear1f
 from .openaimodel import Upsample as Upsample1f
 from .openaimodel import UNetModel as UNetModel1f
 
+if hasattr(comfy.ops, "disable_weight_init"):
+    comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
+else:
+    print(
+        "Warning: ComfyUI version is too old, please upgrade it. github: git@github.com:comfyanonymous/ComfyUI.git "
+    )
+    comfy_ops_Linear = comfy.ops.Linear
+
 torch2of_class_map = {
     comfy.ldm.modules.attention.CrossAttention: CrossAttention1f,
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
-    comfy.ops.Linear: Linear1f,
+    comfy_ops_Linear: Linear1f,
     comfy.ldm.modules.diffusionmodules.openaimodel.Upsample: Upsample1f,
     comfy.ldm.modules.diffusionmodules.openaimodel.UNetModel: UNetModel1f,
 }
