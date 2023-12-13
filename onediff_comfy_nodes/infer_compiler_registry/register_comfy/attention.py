@@ -113,7 +113,8 @@ class SpatialTransformer(proxy_class(comfy.ldm.modules.attention.SpatialTransfor
             x = self.proj_in(x)
         # NOTE: rearrange in ComfyUI is replaced with reshape and use -1 to enable for
         # dynamic shape inference (multi resolution compilation)
-        x = x.reshape(b, c, -1).permute(0, 2, 1)
+        x = x.flatten(2, 3).permute(0, 2, 1)
+        # x = x.reshape(b, c, -1).permute(0, 2, 1)
         # x = rearrange(x, 'b c h w -> b (h w) c').contiguous()
         if self.use_linear:
             x = self.proj_in(x)
