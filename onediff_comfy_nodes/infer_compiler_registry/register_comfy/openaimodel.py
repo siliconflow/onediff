@@ -2,6 +2,9 @@ import comfy
 import oneflow as th  # 'th' is the way ComfyUI name the torch
 import oneflow.nn.functional as F
 from onediff.infer_compiler.transform import proxy_class
+from onediff.infer_compiler.transform import transform_mgr
+
+onediff_comfy = transform_mgr.transform_package("comfy")
 
 
 class Upsample(proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.Upsample)):
@@ -44,9 +47,6 @@ class UNetModel(proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.UNetM
         transformer_options={},
         **kwargs
     ):
-        from onediff.infer_compiler.transform import transform_mgr
-
-        onediff_comfy = transform_mgr.transform_package("comfy")
         timestep_embedding = (
             onediff_comfy.ldm.modules.diffusionmodules.util.timestep_embedding
         )
