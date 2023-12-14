@@ -3,6 +3,7 @@ import os
 import time
 import torch
 import torch.nn as nn
+import oneflow as flow
 
 # oneflow_compile should be imported before importing any diffusers
 from onediff.infer_compiler import oneflow_compile
@@ -26,9 +27,7 @@ parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument(
-    "--graph",
-    default=True,
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    "--graph", default=True, type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
 )
 args = parser.parse_args()
 
@@ -71,4 +70,6 @@ image = pipe(
 
 end_t = time.time()
 cuda_memory_usage = flow._oneflow_internal.GetCUDAMemoryUsed()
-print(f"e2e ({args.steps} steps) elapsed: {end_t - start_t} s, cuda memory usage: {cuda_memory_usage} MiB")
+print(
+    f"e2e ({args.steps} steps) elapsed: {end_t - start_t} s, cuda memory usage: {cuda_memory_usage} MiB"
+)

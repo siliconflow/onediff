@@ -16,9 +16,7 @@ def parse_args():
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
     )
     parser.add_argument(
-        "--model",
-        type=str,
-        default="runwayml/stable-diffusion-v1-5",
+        "--model", type=str, default="runwayml/stable-diffusion-v1-5",
     )
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)
@@ -47,16 +45,24 @@ pipe.vae = oneflow_compile(pipe.vae)
 with flow.autocast("cuda"):
     for _ in range(args.warmup):
         images = pipe(
-            args.prompt, height=args.height, width=args.width, num_inference_steps=args.steps
+            args.prompt,
+            height=args.height,
+            width=args.width,
+            num_inference_steps=args.steps,
         ).images
 
     torch.manual_seed(args.seed)
 
     start_t = time.time()
     images = pipe(
-        args.prompt, height=args.height, width=args.width, num_inference_steps=args.steps
+        args.prompt,
+        height=args.height,
+        width=args.width,
+        num_inference_steps=args.steps,
     ).images
     end_t = time.time()
 
     cuda_memory_usage = flow._oneflow_internal.GetCUDAMemoryUsed()
-    print(f"e2e ({args.steps} steps) elapsed: {end_t - start_t} s, cuda memory usage: {cuda_memory_usage} MiB")
+    print(
+        f"e2e ({args.steps} steps) elapsed: {end_t - start_t} s, cuda memory usage: {cuda_memory_usage} MiB"
+    )

@@ -4,6 +4,7 @@ import time
 import torch
 import torch.nn as nn
 from torch._dynamo import allow_in_graph as maybe_allow_in_graph
+import oneflow as flow
 
 # oneflow_compile should be imported before importing any diffusers
 from onediff.infer_compiler import oneflow_compile
@@ -11,6 +12,7 @@ from onediff.schedulers import EulerDiscreteScheduler
 from onediff.optimization import rewrite_self_attention
 
 from diffusers import StableDiffusionXLPipeline
+
 try:
     import diffusers_quant
 except:
@@ -41,9 +43,7 @@ parser.add_argument(
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
 )
 parser.add_argument(
-    "--graph",
-    default=True,
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    "--graph", default=True, type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
 )
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)
@@ -107,4 +107,6 @@ image = pipe(
 
 end_t = time.time()
 cuda_memory_usage = flow._oneflow_internal.GetCUDAMemoryUsed()
-print(f"e2e ({args.steps} steps) elapsed: {end_t - start_t} s, cuda memory usage: {cuda_memory_usage} MiB")
+print(
+    f"e2e ({args.steps} steps) elapsed: {end_t - start_t} s, cuda memory usage: {cuda_memory_usage} MiB"
+)
