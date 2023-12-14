@@ -45,8 +45,9 @@ def setup_repo(repo_item: dict):
     docker_commands = f"COPY {repo_name} /app/{repo_name}"
     extra_cmds = ""
     if cmds is not None:
-        extra_cmds = [f"WORKDIR /app/{repo_name}", "RUN ", " && \\\n".join(cmds)]
+        extra_cmds = ["RUN ", " && \\\n".join(cmds)]
         extra_cmds = " ".join(extra_cmds)
+        extra_cmds = "\n".join([f"WORKDIR /app/{repo_name}", extra_cmds])
     docker_commands = "\n".join([docker_commands, extra_cmds])
 
     return docker_commands
@@ -187,6 +188,10 @@ def build_image(docker_file, imagename, context):
         process.wait()
     except subprocess.CalledProcessError as e:
         print(f"Command execution failed: {e}")
+
+
+def gen_docker_compose_yaml():
+    pass
 
 
 if __name__ == "__main__":
