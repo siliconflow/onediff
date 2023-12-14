@@ -427,7 +427,7 @@ class OfModuleDeepCache:
                     "display": "number"
                 }),
                 "cache_block_id": ("INT", {
-                    "default": 0,
+                    "default": 2,
                     "min": 0,
                     "max": 12,
                     "step": 1,
@@ -565,7 +565,7 @@ class ModelDeepCache:
             "required": {
                 "model": ("MODEL", ),
                 "cache_interval": ("INT", {
-                    "default": 5,
+                    "default": 3,
                     "min": 1,
                     "max": 1000,
                     "step": 1,

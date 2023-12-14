@@ -81,48 +81,6 @@
       ]
     },
     {
-      "id": 14,
-      "type": "ModelDeepCache",
-      "pos": [
-        581,
-        48
-      ],
-      "size": {
-        "0": 315,
-        "1": 130
-      },
-      "flags": {},
-      "order": 2,
-      "mode": 0,
-      "inputs": [
-        {
-          "name": "model",
-          "type": "MODEL",
-          "link": 17
-        }
-      ],
-      "outputs": [
-        {
-          "name": "MODEL",
-          "type": "MODEL",
-          "links": [
-            18
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "ModelDeepCache"
-      },
-      "widgets_values": [
-        5,
-        3,
-        0,
-        1000
-      ]
-    },
-    {
       "id": 4,
       "type": "CheckpointLoaderSimple",
       "pos": [
@@ -222,7 +180,7 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        474992940977713,
+        877070900971956,
         "randomize",
         20,
         8,
@@ -347,7 +305,7 @@
         "Node name for S&R": "KSampler"
       },
       "widgets_values": [
-        772119673314469,
+        710158412522745,
         "randomize",
         20,
         8,
@@ -457,6 +415,48 @@
       ]
     },
     {
+      "id": 14,
+      "type": "ModelDeepCache",
+      "pos": [
+        581,
+        48
+      ],
+      "size": {
+        "0": 315,
+        "1": 130
+      },
+      "flags": {},
+      "order": 2,
+      "mode": 0,
+      "inputs": [
+        {
+          "name": "model",
+          "type": "MODEL",
+          "link": 17
+        }
+      ],
+      "outputs": [
+        {
+          "name": "MODEL",
+          "type": "MODEL",
+          "links": [
+            18
+          ],
+          "shape": 3,
+          "slot_index": 0
+        }
+      ],
+      "properties": {
+        "Node name for S&R": "ModelDeepCache"
+      },
+      "widgets_values": [
+        3,
+        3,
+        0,
+        1000
+      ]
+    },
+    {
       "id": 15,
       "type": "OfModuleDeepCache",
       "pos": [
@@ -495,7 +495,7 @@
         "enable",
         3,
         0,
-        0,
+        2,
         0,
         1000
       ]
