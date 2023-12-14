@@ -160,6 +160,11 @@ RUN pip install -f {oneflow_pip_index} oneflow
 {repos_cmds}
 """
 
+    docker_post_cmds=f"""
+#==== Post setting
+WORKDIR /app
+"""
+
     dockerfile_content = "\n".join(
         [
             origin_file_info,
@@ -167,6 +172,7 @@ RUN pip install -f {oneflow_pip_index} oneflow
             dockerfile_set_pip_mirror,
             dockerfile_oneflow,
             dockerfile_repos,
+            docker_post_cmds,
         ]
     )
 
