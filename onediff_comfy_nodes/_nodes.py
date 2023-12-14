@@ -545,6 +545,7 @@ class OfModuleDeepCache:
         return (oneflow_model,)
 
 
+# copy from https://gist.github.com/laksjdjf/435c512bc19636e9c9af4ee7bea9eb86
 '''
 https://arxiv.org/abs/2312.00858
 1. put this file in ComfyUI/custom_nodes
