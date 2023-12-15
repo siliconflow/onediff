@@ -143,7 +143,7 @@ def gen_docker_compose_yaml(container_name, image, envs, volumes, output_dir):
     onediff_benchmark_service = {
         "container_name": None,
         "image": None,
-        "entrypoint": "sleep infinity",
+        # "entrypoint": "sleep infinity",
         "tty": True,
         "stdin_open": True,
         "privileged": True,
@@ -156,6 +156,7 @@ def gen_docker_compose_yaml(container_name, image, envs, volumes, output_dir):
         "volumes": [],
         "working_dir": "/app",
         "restart": "no",
+        "command": "/bin/bash -c \"cd /app/onediff/benchmarks && bash run_benchmark.sh /benchmark_model\"",
     }
     onediff_benchmark_service["container_name"] = container_name
     onediff_benchmark_service["image"] = image
@@ -172,17 +173,11 @@ def gen_docker_compose_yaml(container_name, image, envs, volumes, output_dir):
 
     docker_compose_readme = f"""#========
 # run the OneDiff benchmark container by:
-#    docker compose -f {docker_compose_file} up -d
-#    docker exec -it {container_name} /bin/bash
-#
-# and see /app/README.md of the running container for how to run benchmark
-#
-# to shutdown the container, run:
-#    docker compose -f {docker_compose_file} down
+#    docker compose -f {docker_compose_file} up
 #========
 
 """
-    run_command = f"docker compose -f {docker_compose_file} up -d"
+    run_command = f"docker compose -f {docker_compose_file} up"
     with open(docker_compose_file, "w") as f:
         content = [docker_compose_readme, yaml_string]
         f.write("\n".join(content))
