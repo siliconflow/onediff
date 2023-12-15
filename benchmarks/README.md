@@ -16,7 +16,7 @@ Download models from [here](#About-the-models). If you have downloaded the model
 Start docker container and run the benchmark by the following command.
 
 ```bash
-export BENCHMARK_MODEL_PATH=./benchmark_model
+export BENCHMARK_MODEL_PATH=`pwd`/onediff_benchmark_model
 docker compose -f ./docker-compose.onediff:benchmark-community-default.yaml up
 ```
 
@@ -49,21 +49,18 @@ benchmark_model
 ├── stable-diffusion-xl-base-1.0-int8
 ```
 
-You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them from OSS (including the int8 model). The OSS download method is as follows:
+You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them in a zip file from our server:
 
-- Obtain ossutil by executing the following command:
+```bash
+wget https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff_benchmark_model.zip \
+  -O onediff_benchmark_model.zip && \
+  unzip ./onediff_benchmark_model.zip -d .
+```
 
-  ```bash
-  wget http://gosspublic.alicdn.com/ossutil/1.7.3/ossutil64  && chmod u+x ossutil64
-  ```
+and **set the BENCHMARK_MODEL_PATH**:
 
-- Configure ossutil by referring to [the official example](https://www.alibabacloud.com/help/en/oss/developer-reference/configure-ossutil?spm=a2c63.p38356.0.0.337f374a4pcwa4)
-  ```bash
-  ossutil64 config
-  ```
+```bash
+export BENCHMARK_MODEL_PATH=`pwd`/onediff_benchmark_model
+```
 
-- Download the benchmark models finally
 
-  ```bash
-  ./ossutil64 cp -r oss://oneflow-pro/onediff_benchmark_model/  benchmark_model  --update 
-  ```
