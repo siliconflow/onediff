@@ -1,3 +1,16 @@
+# Bench OneDiff
+
+## Build docker image
+
+```bash
+python3 -m pip install -r requirements.txt
+python3 onediffbox/main.py --yaml ./onediffbox/config/community-default.yaml
+```
+
+## Prepare models
+
+Download models from [here](# About the models). If you have downloaded the models before, please skip it.
+
 ## Run OneDiff Benchmark
 
 To execute the OneDiff benchmarks (within the benchmark container), follow these steps:
