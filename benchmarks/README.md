@@ -9,16 +9,21 @@ python3 docker/main.py --yaml ./docker/config/community-default.yaml
 
 ## Prepare models
 
-Download models from [here](# About the models). If you have downloaded the models before, please skip it.
+Download models from [here](#About the models). If you have downloaded the models before, please skip it.
 
 ## Run OneDiff Benchmark
 
-To execute the OneDiff benchmarks (within the benchmark container), follow these steps:
+To execute the OneDiff benchmarks (within the benchmark container), please follow these steps:
 
-```bash
-cd /app/onediff/benchmarks/
-bash run_benchmark.sh /benchmark_model
-```
+- Start docker container
+  ```bash
+  docker compose -f ./docker-compose.onediff:benchmark-community-default.yaml up -d
+  ```
+
+- Run benchmark
+  ```bash
+  cd /app/onediff/benchmarks && bash run_benchmark.sh /benchmark_model
+  ```
 
 ## About the models
 
@@ -32,16 +37,21 @@ benchmark_model
 ├── stable-diffusion-xl-base-1.0-int8
 ```
 
-You can obtain the models form [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them from OSS (including the int8 model):
+You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them from OSS (including the int8 model):
 
-1. Obtain ossutil by executing the following command:
+- Obtain and configure ossutil by executing the following commands:
 
-```bash
-wget http://gosspublic.alicdn.com/ossutil/1.7.3/ossutil64  && chmod u+x ossutil64
-```
+  ```bash
+  wget http://gosspublic.alicdn.com/ossutil/1.7.3/ossutil64  && chmod u+x ossutil64
+  ```
 
-2. Download the benchmark models:
+- Configure ossutil by referring to [the official example](https://www.alibabacloud.com/help/en/oss/developer-reference/configure-ossutil?spm=a2c63.p38356.0.0.337f374a4pcwa4)
+  ```bash
+  ossutil64 config
+  ```
 
-```bash
-./ossutil64 cp -r oss://oneflow-pro/onediff_benchmark_model/  benchmark_model  --update 
-```
+- Download the benchmark models finally
+
+  ```bash
+  ./ossutil64 cp -r oss://oneflow-pro/onediff_benchmark_model/  benchmark_model  --update 
+  ```
