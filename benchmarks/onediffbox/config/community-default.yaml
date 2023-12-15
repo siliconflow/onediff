@@ -1,6 +1,6 @@
 base_image: nvcr.io/nvidia/pytorch:23.08-py3
 set_pip_mirror: "pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
-oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121"
+oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122"
 repos:
   - onediff:
       repo_url: https://github.com/Oneflow-Inc/onediff.git
@@ -8,14 +8,13 @@ repos:
       cmds:
         - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.19.3"
         - "python3 -m pip install -e ."
-  - ComfyUI:
-      repo_url: "https://github.com/comfyanonymous/ComfyUI.git"
-      branch: master
-      commit: "6c5990f7dba2d5d0ad04c7ed5a702b067926cbe2"
-      cmds:
-        - "python3 -m pip install -r requirements.txt"
+  # - ComfyUI:
+  #     repo_url: "https://github.com/comfyanonymous/ComfyUI.git"
+  #     branch: master
+  #     commit: "6c5990f7dba2d5d0ad04c7ed5a702b067926cbe2"
+  #     cmds:
+  #       - "python3 -m pip install -r requirements.txt"
 proxy: ""
 volumes:
   - '$BENCHMARK_MODEL_PATH:/benchmark_model:ro'
-envs:
-  - ONEFLOW_RUN_GRAPH_BY_VM=1
+envs: []
