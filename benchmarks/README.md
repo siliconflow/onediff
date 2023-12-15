@@ -52,7 +52,9 @@ benchmark_model
 You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them in a zip file from our server:
 
 ```bash
-wget https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff_benchmark_model.zip -O onediff_benchmark_model.zip && unzip ./onediff_benchmark_model.zip -d .
+wget https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff_benchmark_model.zip \
+  -O onediff_benchmark_model.zip && \
+  unzip ./onediff_benchmark_model.zip -d .
 ```
 
 and **set the BENCHMARK_MODEL_PATH**:
