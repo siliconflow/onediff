@@ -70,7 +70,6 @@ def generate_docker_file(yaml_file, file_hash, output_dir, **kwargs):
     oneflow_pip_index = image_config.pop("oneflow_pip_index", None)
     repos = image_config.pop("repos", None)
     proxy = image_config.pop("proxy", None)
-    env = image_config.pop("env", None)
     set_pip_mirror = image_config.pop("set_pip_mirror", None)
 
     origin_file_info = f"""#==== Generated from {yaml_file} ====
@@ -121,7 +120,7 @@ WORKDIR /app
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
     dockerfile_name = os.path.join(output_dir, f"Dockerfile-{file_hash[0:8]}")
-    logger.info(f"Write Dockerfile to {dockerfile_name}")
+    logger.info(f"write Dockerfile to {dockerfile_name}")
     with open(dockerfile_name, "w") as f:
         f.write(dockerfile_content)
     return dockerfile_name
@@ -136,3 +135,55 @@ def build_image(docker_file, imagename, context):
         process.wait()
     except subprocess.CalledProcessError as e:
         print(f"Command execution failed: {e}")
+
+
+def gen_docker_compose_yaml(container_name, image, envs, volumes, output_dir):
+    from collections import OrderedDict
+
+    onediff_benchmark_service = {
+        "container_name": None,
+        "image": None,
+        "entrypoint": "sleep infinity",
+        "tty": True,
+        "stdin_open": True,
+        "privileged": True,
+        "shm_size": "8g",
+        "network_mode": "host",
+        "pids_limit": 2000,
+        "cap_add": ["SYS_PTRACE"],
+        "security_opt": ["seccomp=unconfined"],
+        "environment": ["HF_HUB_OFFLINE=1"],
+        "volumes": [],
+        "working_dir": "/app",
+        "restart": "no",
+    }
+    onediff_benchmark_service["container_name"] = container_name
+    onediff_benchmark_service["image"] = image
+    onediff_benchmark_service["environment"].extend(envs)
+    onediff_benchmark_service["volumes"].extend(volumes)
+    docker_compose_dict = {
+        "version": "3.8",
+        "services": {"onediff-benchmark": onediff_benchmark_service},
+    }
+
+    yaml_string = yaml.dump(docker_compose_dict)
+
+    docker_compose_file = os.path.join(output_dir, f"docker-compose.{image}.yaml")
+
+    docker_compose_readme = f"""#========
+# run the OneDiff benchmark container by:
+#    docker compose -f {docker_compose_file} up -d
+#    docker exec -it {container_name} /bin/bash
+#
+# and see /app/README.md of the running container for how to run benchmark
+#
+# to shutdown the container, run:
+#    docker compose -f {docker_compose_file} down
+#========
+
+"""
+    run_command = f"docker compose -f {docker_compose_file} up -d"
+    with open(docker_compose_file, "w") as f:
+        content = [docker_compose_readme, yaml_string]
+        f.write("\n".join(content))
+    return docker_compose_file, run_command

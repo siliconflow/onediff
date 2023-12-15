@@ -13,6 +13,7 @@ from _utils import (
     load_yaml,
     generate_docker_file,
     build_image,
+    gen_docker_compose_yaml,
 )
 from _logger import logger
 
@@ -66,10 +67,6 @@ def parse_args():
 args = parse_args()
 
 
-def gen_docker_compose_yaml():
-    pass
-
-
 if __name__ == "__main__":
     image_config = load_yaml(file=args.yaml)
     file_hash = calculate_sha256(args.yaml)
@@ -78,6 +75,7 @@ if __name__ == "__main__":
         args.yaml, file_hash, args.output, **image_config
     )
     version = os.path.splitext(os.path.basename(args.yaml))[0]
+    image_name = f"{args.image}:{args.tag}-{version}"
     if not args.quiet:
         build_cmd = (
             f"docker build -f {docker_file} -t {args.image}:{args.tag} {args.context}"
@@ -85,10 +83,25 @@ if __name__ == "__main__":
         print("Ready to build image by:")
         r = input("    " + build_cmd + " [y]/n ")
         if r == "" or r == "y" or r == "Y":
-            logger.info(f"building image {args.image}:{args.tag}")
-            build_image(docker_file, f"{args.image}:{args.tag}-{version}", args.context)
+            logger.info(f"building image {image_name}")
+            build_image(docker_file, image_name, args.context)
         else:
             print("building cancled")
     else:
-        logger.info(f"building image {args.image}:{args.tag}")
-        build_image(docker_file, f"{args.image}:{args.tag}-{version}", args.context)
+        logger.info(f"building image {image_name}")
+        build_image(docker_file, image_name, args.context)
+
+    envs = image_config.pop("envs", [])
+    volumes = image_config.pop(
+        "volumes",
+        [
+            "$BENCHMARK_MODEL_PATH:/benchmark_model:ro",
+        ],
+    )
+    compose_file, run_command = gen_docker_compose_yaml(
+        f"onediff-benchmark-{version}", image_name, envs, volumes, args.output
+    )
+    logger.info(f"write docker-compose file to {compose_file}")
+    logger.info(
+        f"run container by:\n    {run_command}\n    and see {compose_file} for more"
+    )
