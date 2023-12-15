@@ -1,3 +1,4 @@
+import os
 from onediff.infer_compiler import register
 from nodes import *  # must imported before import comfy
 from pathlib import Path
@@ -9,10 +10,8 @@ from .attention import CrossAttention as CrossAttention1f
 from .attention import SpatialTransformer as SpatialTransformer1f
 from .linear import Linear as Linear1f
 from .deep_cache_unet import DeepCacheUNet
-from .of_deep_cache_unet import DeepCacheUNet as OfModuleDeepCacheUNet
-
 from .deep_cache_unet import FastDeepCacheUNet
-from .of_deep_cache_unet import FastDeepCacheUNet as OfFastDeepCacheUNet
+
 
 if hasattr(comfy.ops, "disable_weight_init"):
     comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
@@ -26,8 +25,6 @@ torch2of_class_map = {
     comfy.ldm.modules.attention.CrossAttention: CrossAttention1f,
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
     comfy_ops_Linear: Linear1f,
-    DeepCacheUNet: OfModuleDeepCacheUNet,
-    FastDeepCacheUNet: OfFastDeepCacheUNet,
 }
 
 
