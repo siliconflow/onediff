@@ -4,7 +4,7 @@ oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/commu
 repos:
   - onediff:
       repo_url: https://github.com/Oneflow-Inc/onediff.git
-      branch: dev_update_benchmark_scripts
+      branch: main
       cmds:
         - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.19.3"
         - "python3 -m pip install -e ."
