@@ -37,9 +37,9 @@ benchmark_model
 ├── stable-diffusion-xl-base-1.0-int8
 ```
 
-You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them from OSS (including the int8 model):
+You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them from OSS (including the int8 model). The OSS download method is as follows:
 
-- Obtain and configure ossutil by executing the following commands:
+- Obtain ossutil by executing the following command:
 
   ```bash
   wget http://gosspublic.alicdn.com/ossutil/1.7.3/ossutil64  && chmod u+x ossutil64
