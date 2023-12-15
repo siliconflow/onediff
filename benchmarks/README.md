@@ -16,7 +16,7 @@ Download models from [here](#About-the-models). If you have downloaded the model
 Start docker container and run the benchmark by the following command.
 
 ```bash
-export BENCHMARK_MODEL_PATH=./benchmark_model
+export BENCHMARK_MODEL_PATH=`pwd`/onediff_benchmark_model
 docker compose -f ./docker-compose.onediff:benchmark-community-default.yaml up
 ```
 
