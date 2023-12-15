@@ -4,7 +4,7 @@
 
 ```bash
 python3 -m pip install -r requirements.txt
-python3 onediffbox/main.py --yaml ./onediffbox/config/community-default.yaml
+python3 docker/main.py --yaml ./docker/config/community-default.yaml
 ```
 
 ## Prepare models
