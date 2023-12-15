@@ -9,7 +9,7 @@ python3 docker/main.py --yaml ./docker/config/community-default.yaml
 
 ## Prepare models
 
-Download models from [here](#About the models). If you have downloaded the models before, please skip it.
+Download models from [here](#About-the-models). If you have downloaded the models before, please skip it.
 
 ## Run OneDiff Benchmark
 
