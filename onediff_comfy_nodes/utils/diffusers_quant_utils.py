@@ -217,7 +217,9 @@ def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path)
     for sub_module_name, sub_calibrate_info in calibrate_info.items():
         sub_mod = get_sub_module(diffusion_model, sub_module_name)
 
-        if isinstance(sub_mod, comfy.ops.Linear):
+        if isinstance(sub_mod, comfy.ops.disable_weight_init.Linear) or isinstance(
+            sub_mod, comfy.ops.manual_cast.Linear
+        ):
             # fix diffusers_quant use isinstance(sub_mod, torch.nn.Linear)
             sub_mod.__class__ = torch.nn.Linear
 
