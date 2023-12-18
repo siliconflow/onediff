@@ -13,10 +13,11 @@ sys.path.insert(0, str(COMFYUI_ROOT))
 sys.path.insert(0, str(COMFYUI_SPEEDUP_ROOT))
 sys.path.insert(0, str(INFER_COMPILER_REGISTRY))
 import register_comfy  # load plugins
-from .utils.comfyui_speedup_utils import is_community_version
+from onediff.infer_compiler.utils import is_community_version, get_support_message
 
 if is_community_version():
     _USE_UNET_INT8 = False
+    print(get_support_message())
 
 if _USE_UNET_INT8:
     import register_diffusers_quant  # load plugins
