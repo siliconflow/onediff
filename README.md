@@ -1,11 +1,12 @@
 [![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
 [![Docker image build](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml)
+[![Run examples](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
 # OneDiff
 
 A **drop-in acceleration lib** for **ComfyUI**, **HF diffusers**, **Stable Diffusion web UI**, and other diffusion models.
 
-## Performance of OneDiff Community Edition 
+## Performance of OneDiff Community Edition
 
 Updated on Nov 6, 2023.
 
@@ -24,7 +25,7 @@ Updated on Nov 6, 2023.
   - [HF diffusers 🤗](https://github.com/Oneflow-Inc/onediff/tree/main/examples)
   - [Stable Diffusion web UI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_sd_webui_extensions)
 - Acceleration for state-of-the-art Models
-  - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py) 
+  - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py)
   - [SD 1.5/2.1](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image.py)
   - [LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_lora.py)
   - [ControlNet](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_controlnet.py)
@@ -42,7 +43,7 @@ Updated on Nov 6, 2023.
 
 ## Business inquiry on OneDiff Enterprise Edition
 
-If you need **unrestricted multiple resolution**, **quantization** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+If you need **unrestricted multiple resolution**, **quantization**, **dynamic batchsize** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**!
 
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |

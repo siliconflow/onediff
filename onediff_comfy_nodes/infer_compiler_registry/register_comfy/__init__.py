@@ -1,5 +1,6 @@
 import os
 from onediff.infer_compiler import register
+from onediff.infer_compiler.utils import is_community_version
 from nodes import *  # must imported before import comfy
 from pathlib import Path
 
@@ -26,6 +27,19 @@ torch2of_class_map = {
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
     comfy_ops_Linear: Linear1f,
 }
+
+if not is_community_version():
+    from .openaimodel import Upsample as Upsample1f
+    from .openaimodel import UNetModel as UNetModel1f
+
+    torch2of_class_map.update(
+        {
+            comfy.ldm.modules.diffusionmodules.openaimodel.Upsample: Upsample1f,
+            comfy.ldm.modules.diffusionmodules.openaimodel.UNetModel: UNetModel1f,
+        }
+    )
+else:
+    print("Dynamic batchsize is not supported in community version.")
 
 
 register(torch2oflow_class_map=torch2of_class_map)
