@@ -238,7 +238,7 @@ def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path)
         modify_sub_module(diffusion_model, sub_module_name, sub_mod)
 
     try:
-        # rewrite CrossAttentionPytorch to use qkv
+        # rewrite CrossAttention to use qkv
         from comfy.ldm.modules.attention import CrossAttention
 
         match_func = lambda m: isinstance(m, CrossAttention) and _can_use_flash_attn(m)
