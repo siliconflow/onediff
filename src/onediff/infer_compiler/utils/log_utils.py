@@ -27,7 +27,6 @@ class ConfigurableLogger:
         return getattr(self.logger, name)
 
     def configure_logging(self, name, level, log_dir=None, file_name=None):
-        log_dir = Path(log_dir)
         logger = logging.getLogger(name)
 
         if logger.hasHandlers():
@@ -46,6 +45,7 @@ class ConfigurableLogger:
 
         # Create a file formatter and add it to a file handler if log_dir is provided
         if log_dir:
+            log_dir = Path(log_dir)
             os.makedirs(log_dir, exist_ok=True)
 
             file_prefix = "{}_".format(
