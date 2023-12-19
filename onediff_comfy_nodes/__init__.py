@@ -45,7 +45,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ControlNetGraphLoader": "ControlNet Graph Loader",
     "ControlNetGraphSaver": "ControlNet Graph Saver",
     "SVDSpeedup": "SVD Speedup",
-    "SVDSpeedup": "SVD Speedup",
     "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
 }
 
