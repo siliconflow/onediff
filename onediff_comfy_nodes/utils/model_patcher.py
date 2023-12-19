@@ -77,7 +77,6 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         return n
 
     def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
-        # cond_func
         from comfy.ldm.modules.attention import CrossAttention
 
         is_diffusers_quant_available = False
