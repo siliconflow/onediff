@@ -239,13 +239,11 @@ def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path)
 
     try:
         # rewrite CrossAttentionPytorch to use qkv
-        from comfy.ldm.modules.attention import CrossAttentionPytorch
+        from comfy.ldm.modules.attention import CrossAttention
 
-        match_func = lambda m: isinstance(
-            m, CrossAttentionPytorch
-        ) and _can_use_flash_attn(m)
+        match_func = lambda m: isinstance(m, CrossAttention) and _can_use_flash_attn(m)
         can_rewrite_modules = search_modules(diffusion_model, match_func)
-        print(f"rewrite {len(can_rewrite_modules)=} CrossAttentionPytorch")
+        print(f"rewrite {len(can_rewrite_modules)=} CrossAttention")
         for k, v in can_rewrite_modules.items():
             if f"{k}.to_q" in calibrate_info:
                 _rewrite_attention(v)  # diffusion_model is modified in-place
@@ -253,7 +251,7 @@ def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path)
                 print(f"skip {k+'.to_q'} not in calibrate_info")
 
     except Exception as e:
-        print(e)
+        raise RuntimeError(f"rewrite CrossAttention failed: {e}")
 
 
 def find_quantizable_modules(
