@@ -15,7 +15,13 @@ import folder_paths
 from comfy import model_management
 from comfy.cli_args import args
 
-from .utils import OneFlowSpeedUpModelPatcher, OneFlowDeepCacheSpeedUpModelPatcher, save_graph, load_graph, OUTPUT_FOLDER
+from .utils import (
+    OneFlowSpeedUpModelPatcher,
+    OneFlowDeepCacheSpeedUpModelPatcher,
+    save_graph,
+    load_graph,
+    OUTPUT_FOLDER,
+)
 
 from .modules.hijack_model_management import model_management_hijacker
 
@@ -405,47 +411,51 @@ class Quant8Model:
         )
         return {}
 
+
 class OneFlowModuleDeepCacheSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "model": ("MODEL", ),
+                "model": ("MODEL",),
                 "static_mode": (["enable", "disable"],),
-                "cache_interval": ("INT", {
-                    "default": 3,
-                    "min": 1,
-                    "max": 1000,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "cache_layer_id": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 12,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "cache_block_id": ("INT", {
-                    "default": 2,
-                    "min": 0,
-                    "max": 12,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "start_step": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 1000,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "end_step": ("INT", {
-                    "default": 1000,
-                    "min": 0,
-                    "max": 1000,
-                    "step": 0.1,
-                }),
+                "cache_interval": (
+                    "INT",
+                    {
+                        "default": 3,
+                        "min": 1,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "cache_layer_id": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "cache_block_id": (
+                    "INT",
+                    {"default": 2, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "start_step": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "end_step": (
+                    "INT",
+                    {
+                        "default": 1000,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 0.1,
+                    },
+                ),
             },
         }
 
@@ -454,8 +464,14 @@ class OneFlowModuleDeepCacheSpeedup:
     CATEGORY = "OneDiff"
 
     def deep_cache_convert(
-        self, model, static_mode, cache_interval, cache_layer_id,
-        cache_block_id, start_step, end_step
+        self,
+        model,
+        static_mode,
+        cache_interval,
+        cache_layer_id,
+        cache_block_id,
+        start_step,
+        end_step,
     ):
         use_graph = static_mode == "enable"
 
@@ -522,33 +538,50 @@ class OneFlowModuleDeepCacheSpeedup:
                 current_step = -1
 
             current_t = t[0].item()
-            apply = 1000 - end_step <= current_t <= 1000 - start_step # t is 999->0
-            
-            
+            apply = 1000 - end_step <= current_t <= 1000 - start_step  # t is 999->0
+
             if apply:
                 current_step += 1
             else:
                 current_step = -1
             current_t = t[0].item()
-            
+
             is_slow_step = current_step % cache_interval == 0 and apply
 
             model_output = None
             if is_slow_step:
                 cache_h = None
-                model_output, cache_h = oneflow_model.deep_cache_unet(x, timesteps, context, y, control, transformer_options, **extra_conds)
+                model_output, cache_h = oneflow_model.deep_cache_unet(
+                    x,
+                    timesteps,
+                    context,
+                    y,
+                    control,
+                    transformer_options,
+                    **extra_conds,
+                )
             else:
-                model_output, cache_h = oneflow_model.fast_deep_cache_unet(x, cache_h, timesteps, context, y, control, transformer_options, **extra_conds)
-            
-            return oneflow_model.model.model_sampling.calculate_denoised(sigma, model_output, xa)
+                model_output, cache_h = oneflow_model.fast_deep_cache_unet(
+                    x,
+                    cache_h,
+                    timesteps,
+                    context,
+                    y,
+                    control,
+                    transformer_options,
+                    **extra_conds,
+                )
 
+            return oneflow_model.model.model_sampling.calculate_denoised(
+                sigma, model_output, xa
+            )
 
         oneflow_model.set_model_unet_function_wrapper(apply_model)
         return (oneflow_model,)
 
 
 # copy from https://gist.github.com/laksjdjf/435c512bc19636e9c9af4ee7bea9eb86
-'''
+"""
 https://arxiv.org/abs/2312.00858
 1. put this file in ComfyUI/custom_nodes
 2. load node from <loaders>
@@ -556,51 +589,63 @@ https://arxiv.org/abs/2312.00858
 start_step, end_step: apply this method when the timestep is between start_step and end_step
 cache_interval: interval of caching (1 means no caching)
 cache_depth: depth of caching
-'''
+"""
 
 import torch
-from comfy.ldm.modules.diffusionmodules.openaimodel import forward_timestep_embed, timestep_embedding, th, apply_control
+from comfy.ldm.modules.diffusionmodules.openaimodel import (
+    forward_timestep_embed,
+    timestep_embedding,
+    th,
+    apply_control,
+)
+
 
 class ModuleDeepCacheSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {
-                "model": ("MODEL", ),
-                "cache_interval": ("INT", {
-                    "default": 3,
-                    "min": 1,
-                    "max": 1000,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "cache_depth": ("INT", {
-                    "default": 3,
-                    "min": 0,
-                    "max": 12,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "start_step": ("INT", {
-                    "default": 0,
-                    "min": 0,
-                    "max": 1000,
-                    "step": 1,
-                    "display": "number"
-                }),
-                "end_step": ("INT", {
-                    "default": 1000,
-                    "min": 0,
-                    "max": 1000,
-                    "step": 0.1,
-                }),
+                "model": ("MODEL",),
+                "cache_interval": (
+                    "INT",
+                    {
+                        "default": 3,
+                        "min": 1,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "cache_depth": (
+                    "INT",
+                    {"default": 3, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "start_step": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "end_step": (
+                    "INT",
+                    {
+                        "default": 1000,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 0.1,
+                    },
+                ),
             },
         }
 
-    RETURN_TYPES = ("MODEL", )
+    RETURN_TYPES = ("MODEL",)
     FUNCTION = "apply"
     CATEGORY = "OneDiff"
-    
+
     def apply(self, model, cache_interval, cache_depth, start_step, end_step):
         new_model = model.clone()
 
@@ -609,9 +654,8 @@ class ModuleDeepCacheSpeedup:
         cache_h = None
 
         def apply_model(model_function, kwargs):
-
             nonlocal current_t, current_step, cache_h
-            
+
             xa = kwargs["input"]
             t = kwargs["timestep"]
             c_concat = kwargs["c"].get("c_concat", None)
@@ -654,13 +698,12 @@ class ModuleDeepCacheSpeedup:
             """
             unet = new_model.model.diffusion_model
 
-
             # Assuming that the timestep is increased the next time unet is executed... an error may occur in Refiner etc.
             if t[0].item() > current_t:
                 current_step = -1
 
             current_t = t[0].item()
-            apply = 1000 - end_step <= current_t <= 1000 - start_step # tは999->0
+            apply = 1000 - end_step <= current_t <= 1000 - start_step  # tは999->0
 
             if apply:
                 current_step += 1
@@ -674,7 +717,9 @@ class ModuleDeepCacheSpeedup:
                 unet.num_classes is not None
             ), "must specify y if and only if the model is class-conditional"
             hs = []
-            t_emb = timestep_embedding(timesteps, unet.model_channels, repeat_only=False).to(unet.dtype)
+            t_emb = timestep_embedding(
+                timesteps, unet.model_channels, repeat_only=False
+            ).to(unet.dtype)
             emb = unet.time_embed(t_emb)
 
             if unet.num_classes is not None:
@@ -685,7 +730,7 @@ class ModuleDeepCacheSpeedup:
             for id, module in enumerate(unet.input_blocks):
                 transformer_options["block"] = ("input", id)
                 h = forward_timestep_embed(module, h, emb, context, transformer_options)
-                h = apply_control(h, control, 'input')
+                h = apply_control(h, control, "input")
                 if "input_block_patch" in transformer_patches:
                     patch = transformer_patches["input_block_patch"]
                     for p in patch:
@@ -696,30 +741,32 @@ class ModuleDeepCacheSpeedup:
                     patch = transformer_patches["input_block_patch_after_skip"]
                     for p in patch:
                         h = p(h, transformer_options)
-                
-                if id == cache_depth and apply: 
+
+                if id == cache_depth and apply:
                     if not current_step % cache_interval == 0:
-                        break # Skip after cache position
+                        break  # Skip after cache position
 
             if current_step % cache_interval == 0 or not apply:
                 transformer_options["block"] = ("middle", 0)
-                h = forward_timestep_embed(unet.middle_block, h, emb, context, transformer_options)
-                h = apply_control(h, control, 'middle')
+                h = forward_timestep_embed(
+                    unet.middle_block, h, emb, context, transformer_options
+                )
+                h = apply_control(h, control, "middle")
 
             for id, module in enumerate(unet.output_blocks):
                 if id < len(unet.output_blocks) - cache_depth - 1 and apply:
-                    if not current_step % cache_interval == 0: 
-                        continue # Skip before cache position
-                
-                if id == len(unet.output_blocks) - cache_depth -1 and apply:
+                    if not current_step % cache_interval == 0:
+                        continue  # Skip before cache position
+
+                if id == len(unet.output_blocks) - cache_depth - 1 and apply:
                     if current_step % cache_interval == 0:
-                        cache_h = h # cache
+                        cache_h = h  # cache
                     else:
-                        h = cache_h # load cache
-                
+                        h = cache_h  # load cache
+
                 transformer_options["block"] = ("output", id)
                 hsp = hs.pop()
-                hsp = apply_control(hsp, control, 'output')
+                hsp = apply_control(hsp, control, "output")
 
                 if "output_block_patch" in transformer_patches:
                     patch = transformer_patches["output_block_patch"]
@@ -732,16 +779,20 @@ class ModuleDeepCacheSpeedup:
                     output_shape = hs[-1].shape
                 else:
                     output_shape = None
-                h = forward_timestep_embed(module, h, emb, context, transformer_options, output_shape)
+                h = forward_timestep_embed(
+                    module, h, emb, context, transformer_options, output_shape
+                )
 
             h = h.type(x.dtype)
             if unet.predict_codebook_ids:
-                model_output =  unet.id_predictor(h)
+                model_output = unet.id_predictor(h)
             else:
-                model_output =  unet.out(h)
-            
-            return new_model.model.model_sampling.calculate_denoised(sigma, model_output, xa)
+                model_output = unet.out(h)
+
+            return new_model.model.model_sampling.calculate_denoised(
+                sigma, model_output, xa
+            )
 
         new_model.set_model_unet_function_wrapper(apply_model)
 
-        return (new_model, )
+        return (new_model,)
