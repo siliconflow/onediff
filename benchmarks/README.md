@@ -1,4 +1,4 @@
-# Bench OneDiff
+# OneDiff Benchmark
 
 ## Build docker image
 
@@ -16,7 +16,7 @@ Download models from [here](#About-the-models). If you have downloaded the model
 Start docker container and run the benchmark by the following command.
 
 ```bash
-export BENCHMARK_MODEL_PATH=./benchmark_model
+export BENCHMARK_MODEL_PATH=`pwd`/onediff_benchmark_model
 docker compose -f ./docker-compose.onediff:benchmark-community-default.yaml up
 ```
 
@@ -25,15 +25,15 @@ Wait for a while, you will see the following logs,
 ```bash
 onediff-benchmark-community-default  | Run SD1.5(FP16) 1024x1024...
 onediff-benchmark-community-default  | + python3 ./text_to_image.py --model /benchmark_model/stable-diffusion-v1-5 --warmup 5 --height 1024 --width 1024
-Loading pipeline components...:  43% 3/7 [00:00<00:00, 20.94it/s]`text_config_dict` is provided which will be used to initialize `CLIPTextConfig`. The value `text_config["id2label"]` will be overriden.
-Loading pipeline components...: 100% 7/7 [00:00<00:00, 12.79it/s]
+Loading pipeline components...:  29% 2/7 [00:00<00:00, 12.51it/s]`text_config_dict` is provided which will be used to initialize `CLIPTextConfig`. The value `text_config["id2label"]` will be overriden.
+Loading pipeline components...: 100% 7/7 [00:00<00:00, 12.91it/s]
 100% 30/30 [00:43<00:00,  1.45s/it]  |
-100% 30/30 [00:03<00:00,  7.76it/s]  |
-100% 30/30 [00:03<00:00,  7.74it/s]  |
-100% 30/30 [00:03<00:00,  7.74it/s]  |
-100% 30/30 [00:03<00:00,  7.72it/s]  |
-100% 30/30 [00:03<00:00,  7.72it/s]  |
-onediff-benchmark-community-default  | e2e (30 steps) elapsed: 4.1393163204193115 s, cuda memory usage: 7226.875 MiB
+100% 30/30 [00:03<00:00,  8.47it/s]  |
+100% 30/30 [00:03<00:00,  8.42it/s]  |
+100% 30/30 [00:03<00:00,  8.41it/s]  |
+100% 30/30 [00:03<00:00,  8.40it/s]  |
+100% 30/30 [00:03<00:00,  8.38it/s]  |
+onediff-benchmark-community-default  | e2e (30 steps) elapsed: 3.803581953048706 s, cuda memory usage: 7174.875 MiB
 ......
 ```
 
@@ -49,21 +49,18 @@ benchmark_model
 ├── stable-diffusion-xl-base-1.0-int8
 ```
 
-You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them from OSS (including the int8 model). The OSS download method is as follows:
+You can obtain the models from [HuggingFace](https://huggingface.co) (excluding the int8 model) or download them in a zip file from our server:
 
-- Obtain ossutil by executing the following command:
+```bash
+wget https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff_benchmark_model.zip \
+  -O onediff_benchmark_model.zip && \
+  unzip ./onediff_benchmark_model.zip -d .
+```
 
-  ```bash
-  wget http://gosspublic.alicdn.com/ossutil/1.7.3/ossutil64  && chmod u+x ossutil64
-  ```
+and **set the BENCHMARK_MODEL_PATH**:
 
-- Configure ossutil by referring to [the official example](https://www.alibabacloud.com/help/en/oss/developer-reference/configure-ossutil?spm=a2c63.p38356.0.0.337f374a4pcwa4)
-  ```bash
-  ossutil64 config
-  ```
+```bash
+export BENCHMARK_MODEL_PATH=`pwd`/onediff_benchmark_model
+```
 
-- Download the benchmark models finally
 
-  ```bash
-  ./ossutil64 cp -r oss://oneflow-pro/onediff_benchmark_model/  benchmark_model  --update 
-  ```

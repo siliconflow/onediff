@@ -58,7 +58,7 @@ def parse_args():
         "-q",
         "--quiet",
         action="store_true",
-        help="the path to build context",
+        help="quiet mode",
     )
     args = parser.parse_args()
     return args
