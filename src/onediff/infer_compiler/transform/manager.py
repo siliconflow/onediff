@@ -99,11 +99,18 @@ debug_mode = os.getenv("ONEDIFF_DEBUG", "0") == "1"
 debug_mode = True  # TODO: remove this line
 try:
     import pydantic
-
+    import subprocess
+    print(f'pydantic version: {pydantic.VERSION}')
+    if pydantic.VERSION >= "0.25.2":
+        print("pydantic version >= 0.25.2 is installed")
+    else:
+        subprocess.run(["pip", "install", "pydantic>=0.25.2"])
     print("Successfully import pydantic")
-except ImportError:
+except ImportError as e:
+    
     debug_mode = True
-    print("Failed to import pydantic, set debug_mode=True")
+    print("Failed to import pydantic, set debug_mode=True", e)
+
 ############ DEBUG ############
 
 transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=None)
