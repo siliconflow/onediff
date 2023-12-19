@@ -31,8 +31,8 @@ __all__ = [
     "VaeGraphLoader",
     "VaeGraphSaver",
     "SVDSpeedup",
-    "ModelDeepCache",
-    "OfModuleDeepCache",
+    "ModuleDeepCacheSpeedup",
+    "OneFlowModuleDeepCacheSpeedup",
 ]
 
 if not args.dont_upcast_attention:
@@ -405,7 +405,7 @@ class Quant8Model:
         )
         return {}
 
-class OfModuleDeepCache:
+class OneFlowModuleDeepCacheSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -453,9 +453,10 @@ class OfModuleDeepCache:
     FUNCTION = "deep_cache_convert"
     CATEGORY = "OneDiff"
 
-    def deep_cache_convert(self, model, static_mode, cache_interval, cache_layer_id, cache_block_id, start_step, end_step):
-        from onediff.infer_compiler import oneflow_compile
-
+    def deep_cache_convert(
+        self, model, static_mode, cache_interval, cache_layer_id,
+        cache_block_id, start_step, end_step
+    ):
         use_graph = static_mode == "enable"
 
         offload_device = model_management.unet_offload_device()
@@ -516,11 +517,12 @@ class OfModuleDeepCache:
             :return: an [N x C x ...] Tensor of outputs.
             """
 
+            # reference https://gist.github.com/laksjdjf/435c512bc19636e9c9af4ee7bea9eb86
             if t[0].item() > current_t:
                 current_step = -1
 
             current_t = t[0].item()
-            apply = 1000 - end_step <= current_t <= 1000 - start_step # tは999->0
+            apply = 1000 - end_step <= current_t <= 1000 - start_step # t is 999->0
             
             
             if apply:
@@ -559,7 +561,7 @@ cache_depth: depth of caching
 import torch
 from comfy.ldm.modules.diffusionmodules.openaimodel import forward_timestep_embed, timestep_embedding, th, apply_control
 
-class ModelDeepCache:
+class ModuleDeepCacheSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -653,7 +655,7 @@ class ModelDeepCache:
             unet = new_model.model.diffusion_model
 
 
-            # unet次回実行はtimestepが上がってると仮定・・Refiner等でエラーが起きるかも
+            # Assuming that the timestep is increased the next time unet is executed... an error may occur in Refiner etc.
             if t[0].item() > current_t:
                 current_step = -1
 
@@ -697,7 +699,7 @@ class ModelDeepCache:
                 
                 if id == cache_depth and apply: 
                     if not current_step % cache_interval == 0:
-                        break # cache位置以降はスキップ
+                        break # Skip after cache position
 
             if current_step % cache_interval == 0 or not apply:
                 transformer_options["block"] = ("middle", 0)
@@ -707,7 +709,7 @@ class ModelDeepCache:
             for id, module in enumerate(unet.output_blocks):
                 if id < len(unet.output_blocks) - cache_depth - 1 and apply:
                     if not current_step % cache_interval == 0: 
-                        continue # cache位置以前はスキップ
+                        continue # Skip before cache position
                 
                 if id == len(unet.output_blocks) - cache_depth -1 and apply:
                     if current_step % cache_interval == 0:

@@ -146,12 +146,6 @@ class FastDeepCacheUNet(Module):
             if id == self.cache_depth:
                 break
 
-        # transformer_options["block"] = ("middle", 0)
-        # h = forward_timestep_embed(
-        #     self.unet_module.middle_block, h, emb, context, transformer_options, time_context=time_context, num_video_frames=num_video_frames, image_only_indicator=image_only_indicator)
-        # h = apply_control(h, control, 'middle')
-
-
         for id, module in enumerate(self.unet_module.output_blocks):
             if id < len(self.unet_module.output_blocks) - self.cache_depth - 1:
                 continue

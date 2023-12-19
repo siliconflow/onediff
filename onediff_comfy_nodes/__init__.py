@@ -11,8 +11,8 @@ from ._nodes import (
     ControlNetGraphLoader,
     ControlNetGraphSaver,
     SVDSpeedup,
-    ModelDeepCache,
-    OfModuleDeepCache,
+    ModuleDeepCacheSpeedup,
+    OneFlowModuleDeepCacheSpeedup,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -30,8 +30,8 @@ NODE_CLASS_MAPPINGS = {
     "ControlNetGraphLoader": ControlNetGraphLoader,
     "ControlNetGraphSaver": ControlNetGraphSaver,
     "SVDSpeedup": SVDSpeedup,
-    "ModelDeepCache": ModelDeepCache,
-    "OfModuleDeepCache": OfModuleDeepCache,
+    "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
+    "OneFlowModuleDeepCacheSpeedup": OneFlowModuleDeepCacheSpeedup,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -47,8 +47,9 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ControlNetGraphLoader": "ControlNet Graph Loader",
     "ControlNetGraphSaver": "ControlNet Graph Saver",
     "SVDSpeedup": "SVD Speedup",
-    "ModelDeepCache": "Model DeepCache",
-    "OfModuleDeepCache": "OF Model DeepCache",
+    "SVDSpeedup": "SVD Speedup",
+    "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
+    "OneFlowModuleDeepCacheSpeedup": "OF Model DeepCache Speedup",
 }
 
 if _USE_UNET_INT8:
