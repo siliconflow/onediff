@@ -91,7 +91,6 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         torch_model = self.model.diffusion_model._deployable_module_model._torch_module
         for name, module in torch_model.named_modules():
             if isinstance(module, CrossAttention) and hasattr(module, "to_qkv"):
-                # Warning
                 # TODO(): support bias
                 assert module.to_qkv.bias is None
                 to_q_w_name = f"diffusion_model.{name}.to_q.weight"
