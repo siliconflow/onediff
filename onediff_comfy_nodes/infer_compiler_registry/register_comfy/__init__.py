@@ -1,4 +1,3 @@
-import os
 from onediff.infer_compiler import register
 from onediff.infer_compiler.utils import is_community_version
 from nodes import *  # must imported before import comfy
@@ -12,7 +11,6 @@ from .attention import SpatialTransformer as SpatialTransformer1f
 from .linear import Linear as Linear1f
 from .deep_cache_unet import DeepCacheUNet
 from .deep_cache_unet import FastDeepCacheUNet
-
 
 if hasattr(comfy.ops, "disable_weight_init"):
     comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
