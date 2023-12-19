@@ -88,7 +88,8 @@ class LazyMocker:
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
-        mock_pkg = DynamicMockModule.from_package(attrs[0])
+        self.mocked_packages.add(attrs[0])
+        mock_pkg = DynamicMockModule.from_package(attrs[0], verbose=False)
         for name in attrs[1:]:
             mock_pkg = getattr(mock_pkg, name)
         return mock_pkg

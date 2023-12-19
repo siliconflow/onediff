@@ -43,7 +43,6 @@ class TransformManager:
         )
         self.logger = logger
 
-
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
 
@@ -96,10 +95,19 @@ class TransformManager:
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG", "0") == "1"
+############ DEBUG ############
+debug_mode = True  # TODO: remove this line
+try:
+    import pydantic
+
+    print("Successfully import pydantic")
+except ImportError:
+    debug_mode = True
+    print("Failed to import pydantic, set debug_mode=True")
+############ DEBUG ############
+
 transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=None)
 
 if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
-
-
