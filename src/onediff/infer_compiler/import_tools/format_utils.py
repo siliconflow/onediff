@@ -39,7 +39,6 @@ class MockEntityNameFormatter:
         return self._format_full_class_name(entity)
 
     def unformat(self, mock_entity_name: str) -> str:
-
         if "." in mock_entity_name:
             pkg_name, cls_name = mock_entity_name.split(".", 1)
             return f"{self._reverse_pkg_name(pkg_name)}.{cls_name}"

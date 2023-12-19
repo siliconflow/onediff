@@ -13,6 +13,8 @@ import oneflow as flow
 from .manager import transform_mgr
 from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
+from ..import_tools.importer import is_need_mock
+from functools import singledispatch
 
 __all__ = [
     "proxy_class",
@@ -24,7 +26,6 @@ __all__ = [
     "torch2oflow",
     "default_converter",
 ]
-from functools import singledispatch
 
 
 def singledispatch_proxy(func):
@@ -150,6 +151,8 @@ def torch2oflow(mod, *args, **kwargs):
 
 
 def default_converter(obj, verbose=False, *, proxy_cls=None):
+    if not is_need_mock(type(obj)):
+        return obj
     try:
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
 
