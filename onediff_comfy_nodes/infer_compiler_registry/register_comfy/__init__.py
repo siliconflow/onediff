@@ -9,6 +9,8 @@ import comfy
 from .attention import CrossAttention as CrossAttention1f
 from .attention import SpatialTransformer as SpatialTransformer1f
 from .linear import Linear as Linear1f
+from .deep_cache_unet import DeepCacheUNet
+from .deep_cache_unet import FastDeepCacheUNet
 
 if hasattr(comfy.ops, "disable_weight_init"):
     comfy_ops_Linear = comfy.ops.disable_weight_init.Linear

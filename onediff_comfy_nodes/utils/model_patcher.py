@@ -3,6 +3,8 @@ import copy
 import torch
 import comfy
 
+from register_comfy import DeepCacheUNet, FastDeepCacheUNet
+
 
 def state_dict_hook(module, state_dict, prefix, local_metadata):
     new_state_dict = type(state_dict)()
@@ -475,3 +477,46 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 except Exception as e:
                     print("ERROR", key, e)
         return weight
+
+
+class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
+    def __init__(
+        self,
+        model,
+        load_device,
+        offload_device,
+        cache_layer_id,
+        cache_block_id,
+        size=0,
+        current_device=None,
+        weight_inplace_update=False,
+        *,
+        use_graph=None,
+    ):
+        from onediff.infer_compiler import oneflow_compile
+        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        
+
+        self.weight_inplace_update = weight_inplace_update
+        self.object_patches = {}
+        self.object_patches_backup = {}
+        self.size = size
+        self.model = copy.copy(model)
+        self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
+        self.deep_cache_unet = oneflow_compile(
+            DeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id), use_graph=use_graph
+        )
+        self.fast_deep_cache_unet =oneflow_compile(
+            FastDeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id), use_graph=use_graph
+        )
+        self.model._register_state_dict_hook(state_dict_hook)
+        self.patches = {}
+        self.backup = {}
+        self.model_options = {"transformer_options": {}}
+        self.model_size()
+        self.load_device = load_device
+        self.offload_device = offload_device
+        if current_device is None:
+            self.current_device = self.offload_device
+        else:
+            self.current_device = current_device

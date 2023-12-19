@@ -5,6 +5,14 @@ import torch.nn as nn
 
 from torch._dynamo import allow_in_graph as maybe_allow_in_graph
 
+if hasattr(comfy.ops, "disable_weight_init"):
+    comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
+else:
+    print(
+        "Warning: ComfyUI version is too old, please upgrade it. github: git@github.com:comfyanonymous/ComfyUI.git "
+    )
+    comfy_ops_Linear = comfy.ops.Linear
+
 __all__ = ["replace_module_with_quantizable_module"]
 
 
@@ -219,9 +227,7 @@ def replace_module_with_quantizable_module(
     for sub_module_name, sub_calibrate_info in calibrate_info.items():
         sub_mod = get_sub_module(diffusion_model, sub_module_name)
 
-        if isinstance(sub_mod, comfy.ops.disable_weight_init.Linear) or isinstance(
-            sub_mod, comfy.ops.manual_cast.Linear
-        ):
+        if isinstance(sub_mod, comfy_ops_Linear):
             # fix diffusers_quant use isinstance(sub_mod, torch.nn.Linear)
             sub_mod.__class__ = torch.nn.Linear
 
