@@ -434,7 +434,7 @@ class ModuleDeepCacheSpeedup:
                 ),
                 "cache_block_id": (
                     "INT",
-                    {"default": 2, "min": 0, "max": 12, "step": 1, "display": "number"},
+                    {"default": 1, "min": 0, "max": 12, "step": 1, "display": "number"},
                 ),
                 "start_step": (
                     "INT",
