@@ -1,23 +1,13 @@
 import os
 import types
 import warnings
-import time
-import uuid
 import logging
 from typing import Dict, List, Union
-
 from pathlib import Path
 from ..utils.log_utils import logger
 from ..import_tools.importer import LazyMocker
 
 __all__ = ["transform_mgr"]
-
-
-def gen_unique_id():
-    process_id = os.getpid()
-    timestamp = int(time.time())
-    uuid_str = uuid.uuid4().hex
-    return f"{process_id}_{timestamp}_{uuid_str}"
 
 
 class TransformManager:
@@ -36,13 +26,9 @@ class TransformManager:
 
     def _setup_logger(self):
         name = "ONEDIFF"
-        file_name = f"onediff_{gen_unique_id()}.log"
         level = logging.DEBUG if self.debug_mode else logging.ERROR
-        logger.configure_logging(
-            name=name, file_name=file_name, level=level, log_dir=None
-        )
+        logger.configure_logging(name=name, file_name=None, level=level, log_dir=None)
         self.logger = logger
-
 
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
@@ -102,4 +88,18 @@ if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
 
+try:
+    import pydantic
 
+    if pydantic.VERSION < "2.5.2":
+        logger.warning(
+            f"Pydantic version {pydantic.VERSION} is too low, please upgrade to 2.5.2 or higher."
+        )
+        from oneflow.mock_torch.mock_utils import MockEnableDisableMixin
+
+        MockEnableDisableMixin.hazard_list.append(
+            "huggingface_hub.inference._text_generation"
+        )
+
+except ImportError:
+    pass
