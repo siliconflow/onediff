@@ -101,22 +101,24 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                     or to_v_w_name not in patches
                 ):
                     continue
-                to_q_w = patches[to_q_w_name]
-                to_k_w = patches[to_k_w_name]
-                to_v_w = patches[to_v_w_name]
+                to_q_w = patches[to_q_w_name][1]
+                to_k_w = patches[to_k_w_name][1]
+                to_v_w = patches[to_v_w_name][1]
                 assert to_q_w[2] == to_k_w[2] and to_q_w[2] == to_v_w[2]
                 to_qkv_w_name = f"diffusion_model.{name}.to_qkv.weight"
 
                 dim_head = module.to_qkv.out_features // module.heads // 3
-                patches[to_qkv_w_name] = tuple(
-                    [
-                        torch.stack((to_q_w[0], to_k_w[0], to_v_w[0]), dim=0).reshape(
-                            3, module.heads, dim_head, -1
-                        ),  # (3, H, K, (BM))
-                        torch.stack((to_q_w[1], to_k_w[1], to_v_w[1]), dim=0),
-                    ]
-                    + list(to_q_w[2:])
-                )
+                tmp_list = [
+                    torch.stack((to_q_w[0], to_k_w[0], to_v_w[0]), dim=0).reshape(
+                        3, module.heads, dim_head, -1
+                    ),  # (3, H, K, (BM))
+                    torch.stack((to_q_w[1], to_k_w[1], to_v_w[1]), dim=0),
+                ] + list(to_q_w[2:])
+
+                patch_type = "onediff_int8"
+                patch_value = tuple(tmp_list + [module])
+                patches[to_qkv_w_name] = (patch_type, patch_value)
+
             if is_diffusers_quant_available:
                 if isinstance(
                     module, diffusers_quant.DynamicQuantLinearModule
@@ -392,8 +394,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                         .to(weight.device)
                     )
                     weight = weight.to(torch.float32) * org_weight_scale
-                # if is_rewrite_qkv and is_quant:
-                #     import pdb;pdb.set_trace()
+
                 mat1 = comfy.model_management.cast_to_device(
                     v[0], weight.device, torch.float32
                 )

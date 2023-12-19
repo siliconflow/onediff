@@ -208,7 +208,9 @@ def _rewrite_attention(attn):
         os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = old_env
 
 
-def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path):
+def replace_module_with_quantizable_module(
+    diffusion_model, calibrate_info_path, use_rewrite_attn=True
+):
     from diffusers_quant.utils import get_quantize_module
 
     _use_graph()
@@ -236,24 +238,25 @@ def replace_module_with_quantizable_module(diffusion_model, calibrate_info_path)
             convert_fn=maybe_allow_in_graph,
         )
         modify_sub_module(diffusion_model, sub_module_name, sub_mod)
+    if use_rewrite_attn:
+        print(f"{use_rewrite_attn=}, rewrite CrossAttention")
+        try:
+            # rewrite CrossAttention to use qkv
+            from comfy.ldm.modules.attention import CrossAttention
 
-    try:
-        # rewrite CrossAttentionPytorch to use qkv
-        from comfy.ldm.modules.attention import CrossAttentionPytorch
+            match_func = lambda m: isinstance(
+                m, CrossAttention
+            ) and _can_use_flash_attn(m)
+            can_rewrite_modules = search_modules(diffusion_model, match_func)
+            print(f"rewrite {len(can_rewrite_modules)=} CrossAttention")
+            for k, v in can_rewrite_modules.items():
+                if f"{k}.to_q" in calibrate_info:
+                    _rewrite_attention(v)  # diffusion_model is modified in-place
+                else:
+                    print(f"skip {k+'.to_q'} not in calibrate_info")
 
-        match_func = lambda m: isinstance(
-            m, CrossAttentionPytorch
-        ) and _can_use_flash_attn(m)
-        can_rewrite_modules = search_modules(diffusion_model, match_func)
-        print(f"rewrite {len(can_rewrite_modules)=} CrossAttentionPytorch")
-        for k, v in can_rewrite_modules.items():
-            if f"{k}.to_q" in calibrate_info:
-                _rewrite_attention(v)  # diffusion_model is modified in-place
-            else:
-                print(f"skip {k+'.to_q'} not in calibrate_info")
-
-    except Exception as e:
-        print(e)
+        except Exception as e:
+            raise RuntimeError(f"rewrite CrossAttention failed: {e}")
 
 
 def find_quantizable_modules(
