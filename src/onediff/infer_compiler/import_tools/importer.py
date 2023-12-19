@@ -1,13 +1,11 @@
 import os
 import sys
 import importlib
-import shutil
-from typing import Any, Optional, Union
+from typing import Optional, Union
 from types import FunctionType, ModuleType
 from oneflow.mock_torch import DynamicMockModule
 from pathlib import Path
 from importlib.metadata import requires
-from ..utils.log_utils import logger
 from .format_utils import MockEntityNameFormatter
 
 __all__ = ["import_module_from_path", "LazyMocker", "is_need_mock"]
