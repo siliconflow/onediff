@@ -4,9 +4,9 @@
 
 # OneDiff
 
-A **drop-in acceleration lib** for **ComfyUI**, **HF diffusers**, **Stable Diffusion web UI**, and other diffusion models.
+**An out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
 
-## Performance of OneDiff Community Edition
+## State-of-the-art performance
 
 Updated on Nov 6, 2023.
 
@@ -19,31 +19,35 @@ Updated on Nov 6, 2023.
 
 > **_NOTE:_** OneDiff Enterprise Edition delivers even higher performance and second-to-none deployment flexibility.
 
-## Features
-- Acceleration for popular libs
+## Easy to use
+- Acceleration for popular UIs/libs
   - [ComfyUI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
   - [HF diffusers 🤗](https://github.com/Oneflow-Inc/onediff/tree/main/examples)
   - [Stable Diffusion web UI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_sd_webui_extensions)
 - Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl.py)
+  - [SDXL Turbo](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_turbo.py)
   - [SD 1.5/2.1](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image.py)
-  - [LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_lora.py)
+  - [LoRA (and dynamic switching LoRA)](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_lora.py)
   - [ControlNet](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_controlnet.py)
   - [LCM](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
-  - [SDXL Turbo](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_turbo.py)
-- Drop-in acceleration
+  - [Stable Video Diffusion](https://github.com/Oneflow-Inc/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L169)
+  - [DeepCache](https://github.com/Oneflow-Inc/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L414)
+- Out-of-the-box acceleration
   - [ComfyUI Nodes](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
   - [Acceleration with oneflow_compile](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
-- [Multi-resolution input](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl_save_load.py#L65)
-- Save/load the compiled result, deploy on different environments
+- Multi-resolution input
+- Compile and save the compiled result offline, then load it online for serving
   - [Save and Load](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
   - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
-
+## Need help or talk
+- [Discord of OneDiff](https://discord.gg/RKJTjZMcPQ)
+- GitHub issues
 
 ## Business inquiry on OneDiff Enterprise Edition
 
-If you need **unrestricted multiple resolution**, **quantization**, **dynamic batchsize** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**!
+If you need **unrestricted multiple resolutions**, **quantization**, **dynamic batch size** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale, and requirements**.
 
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
@@ -104,44 +108,3 @@ python3 -m pip install huggingface_hub
 ```bash
 docker pull oneflowinc/onediff:20231106
 ```
-
-
-### Run examples
-
-```
-python3 examples/text_to_image.py
-```
-
-### Release
-
-- run examples to check it works
-
-  ```bash
-  python3 examples/text_to_image.py --model_id=...
-  python3 examples/text_to_image_sdxl.py --base ...
-  bash examples/unet_save_and_load.sh --model_id=...
-  ```
-
-- bump version in these files:
-
-  ```
-  setup.py
-  src/onediff/__init__.py
-  ```
-
-- build wheel
-
-  ```
-  rm -rf dist
-  python3 setup.py bdist_wheel
-  ```
-
-- upload to pypi
-
-  ```bash
-  twine upload dist/*
-  ```
-
-## More about OneFlow
-
-OneFlow's main [repo](https://github.com/Oneflow-Inc/oneflow)
