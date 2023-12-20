@@ -10,6 +10,7 @@
       - [Model Graph Loader](#model-graph-loader)
     - [Quantization](#quantization)
     - [VAE Acceleration](#vae-acceleration)
+    - [SVD Acceleration](#svd-acceleration)
     - [Image Distinction Scanner](#image-distinction-scanner)
 
 
@@ -71,7 +72,26 @@ If you need **unrestricted multiple resolution**, **quantization**, **dynamic ba
 
 ## Nodes Usage
 
-**Note** All the images in this section can be loaded directly into ComfyUI.
+**Note** All the images in this section can be loaded directly into ComfyUI. 
+
+- OneDiff Community                    
+  * [Model Speedup](workflows/model-speedup.png)
+  * [Lora Speedup](workflows/mode-speedup-lora.png)
+  * [ControlNet Speedup](workflows/model-speedup-controlnet.png)
+  * [Module DeepCache SpeedUp](workflows/deep-cache.png)
+  * [SVD Speedup](workflows/text-to-video-speedup.png)
+  * [Model Graph Saver](workflows/model-graph-saver.png)
+  * [Model Graph Loader](workflows/model-graph-loader.png)
+  * [Image Distinction Scanner](workflows/image-distinction-scanner.png)
+
+- OneDiff Enterprise(Advanced Features) 
+  * [Quantization](workflows/int8-speedup.png)
+  * [Quantized Model Saver](workflows/int8-graph-saver.png)
+  * [Quantized Model Loader](workflows/int8-graph-loader.png)
+  * multiple resolutions 
+  * dynamic batch size etc.
+  * contact us for more details email: caishenghang@oneflow.org
+
 
 ### Model Acceleration
 
