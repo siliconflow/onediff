@@ -84,7 +84,7 @@ If you need **unrestricted multiple resolution**, **quantization**, **dynamic ba
   * [Model Graph Loader](workflows/model-graph-loader.png)
   * [Image Distinction Scanner](workflows/image-distinction-scanner.png)
 
-- OneDiff Enterprise(Advanced Features) 
+- Customized Features
   * [Quantization](workflows/int8-speedup.png)
   * [Quantized Model Saver](workflows/int8-graph-saver.png)
   * [Quantized Model Loader](workflows/int8-graph-loader.png)
