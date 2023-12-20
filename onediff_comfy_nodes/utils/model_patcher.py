@@ -103,32 +103,38 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                     or to_v_w_name not in patches
                 ):
                     continue
-                to_q_w = patches[to_q_w_name]
-                to_k_w = patches[to_k_w_name]
-                to_v_w = patches[to_v_w_name]
+                to_q_w = patches[to_q_w_name][1]
+                to_k_w = patches[to_k_w_name][1]
+                to_v_w = patches[to_v_w_name][1]
                 assert to_q_w[2] == to_k_w[2] and to_q_w[2] == to_v_w[2]
                 to_qkv_w_name = f"diffusion_model.{name}.to_qkv.weight"
 
                 dim_head = module.to_qkv.out_features // module.heads // 3
-                patches[to_qkv_w_name] = tuple(
-                    [
-                        torch.stack((to_q_w[0], to_k_w[0], to_v_w[0]), dim=0).reshape(
-                            3, module.heads, dim_head, -1
-                        ),  # (3, H, K, (BM))
-                        torch.stack((to_q_w[1], to_k_w[1], to_v_w[1]), dim=0),
-                    ]
-                    + list(to_q_w[2:])
-                )
+                tmp_list = [
+                    torch.stack((to_q_w[0], to_k_w[0], to_v_w[0]), dim=0).reshape(
+                        3, module.heads, dim_head, -1
+                    ),  # (3, H, K, (BM))
+                    torch.stack((to_q_w[1], to_k_w[1], to_v_w[1]), dim=0),
+                ] + list(to_q_w[2:])
+
+                patch_type = "onediff_int8"
+                patch_value = tuple(tmp_list + [module])
+                patches[to_qkv_w_name] = (patch_type, patch_value)
+
             if is_diffusers_quant_available:
                 if isinstance(
                     module, diffusers_quant.DynamicQuantLinearModule
                 ) or isinstance(module, diffusers_quant.DynamicQuantConvModule):
                     w_name = f"diffusion_model.{name}.weight"
                     if w_name in patches:
-                        patches[w_name] = tuple(list(patches[w_name]) + [module])
+                        patch_type = "onediff_int8"
+                        patch_value = tuple(list(patches[w_name][1]) + [module])
+                        patches[w_name] = (patch_type, patch_value)
                     b_name = f"diffusion_model.{name}.bias"
                     if b_name in patches:
-                        patches[b_name] = tuple(list(patches[b_name]) + [module])
+                        patch_type = "onediff_int8"
+                        patch_value = tuple(list(patches[b_name][1]) + [module])
+                        patches[b_name] = (patch_type, patch_value)
 
         p = set()
         for k in patches:
@@ -148,33 +154,10 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
             is_diffusers_quant_available = True
         except:
             pass
-
         for p in patches:
             alpha = p[0]
             v = p[1]
             strength_model = p[2]
-
-            is_rewrite_qkv = (
-                True if (len(v) == 4 or len(v) == 5) and "to_qkv" in key else False
-            )
-            is_quant = False
-            if (
-                is_diffusers_quant_available
-                and len(v) == 5
-                and (
-                    isinstance(v[4], diffusers_quant.DynamicQuantLinearModule)
-                    or isinstance(v[4], diffusers_quant.DynamicQuantConvModule)
-                )
-            ):
-                is_quant = True
-                org_weight_scale = (
-                    v[4]
-                    .weight_scale.reshape(
-                        [-1] + [1 for _ in range(len(weight.shape) - 1)]
-                    )
-                    .to(weight.device)
-                )
-                weight = weight.to(torch.float32) * org_weight_scale
 
             if strength_model != 1.0:
                 weight *= strength_model
@@ -183,6 +166,12 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 v = (self.calculate_weight(v[1:], v[0].clone(), key),)
 
             if len(v) == 1:
+                patch_type = "diff"
+            elif len(v) == 2:
+                patch_type = v[0]
+                v = v[1]
+
+            if patch_type == "diff":
                 w1 = v[0]
                 if alpha != 0.0:
                     if w1.shape != weight.shape:
@@ -195,7 +184,219 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                         weight += alpha * comfy.model_management.cast_to_device(
                             w1, weight.device, weight.dtype
                         )
-            elif len(v) == 4 or is_rewrite_qkv or is_quant:  # lora/locon
+            elif patch_type == "lora":  # lora/locon
+                mat1 = comfy.model_management.cast_to_device(
+                    v[0], weight.device, torch.float32
+                )
+                mat2 = comfy.model_management.cast_to_device(
+                    v[1], weight.device, torch.float32
+                )
+                if v[2] is not None:
+                    alpha *= v[2] / mat2.shape[0]
+                if v[3] is not None:
+                    # locon mid weights, hopefully the math is fine because I didn't properly test it
+                    mat3 = comfy.model_management.cast_to_device(
+                        v[3], weight.device, torch.float32
+                    )
+                    final_shape = [
+                        mat2.shape[1],
+                        mat2.shape[0],
+                        mat3.shape[2],
+                        mat3.shape[3],
+                    ]
+                    mat2 = (
+                        torch.mm(
+                            mat2.transpose(0, 1).flatten(start_dim=1),
+                            mat3.transpose(0, 1).flatten(start_dim=1),
+                        )
+                        .reshape(final_shape)
+                        .transpose(0, 1)
+                    )
+                try:
+                    weight += (
+                        (
+                            alpha
+                            * torch.mm(
+                                mat1.flatten(start_dim=1), mat2.flatten(start_dim=1)
+                            )
+                        )
+                        .reshape(weight.shape)
+                        .type(weight.dtype)
+                    )
+                except Exception as e:
+                    print("ERROR", key, e)
+            elif patch_type == "lokr":
+                w1 = v[0]
+                w2 = v[1]
+                w1_a = v[3]
+                w1_b = v[4]
+                w2_a = v[5]
+                w2_b = v[6]
+                t2 = v[7]
+                dim = None
+
+                if w1 is None:
+                    dim = w1_b.shape[0]
+                    w1 = torch.mm(
+                        comfy.model_management.cast_to_device(
+                            w1_a, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w1_b, weight.device, torch.float32
+                        ),
+                    )
+                else:
+                    w1 = comfy.model_management.cast_to_device(
+                        w1, weight.device, torch.float32
+                    )
+
+                if w2 is None:
+                    dim = w2_b.shape[0]
+                    if t2 is None:
+                        w2 = torch.mm(
+                            comfy.model_management.cast_to_device(
+                                w2_a, weight.device, torch.float32
+                            ),
+                            comfy.model_management.cast_to_device(
+                                w2_b, weight.device, torch.float32
+                            ),
+                        )
+                    else:
+                        w2 = torch.einsum(
+                            "i j k l, j r, i p -> p r k l",
+                            comfy.model_management.cast_to_device(
+                                t2, weight.device, torch.float32
+                            ),
+                            comfy.model_management.cast_to_device(
+                                w2_b, weight.device, torch.float32
+                            ),
+                            comfy.model_management.cast_to_device(
+                                w2_a, weight.device, torch.float32
+                            ),
+                        )
+                else:
+                    w2 = comfy.model_management.cast_to_device(
+                        w2, weight.device, torch.float32
+                    )
+
+                if len(w2.shape) == 4:
+                    w1 = w1.unsqueeze(2).unsqueeze(2)
+                if v[2] is not None and dim is not None:
+                    alpha *= v[2] / dim
+
+                try:
+                    weight += alpha * torch.kron(w1, w2).reshape(weight.shape).type(
+                        weight.dtype
+                    )
+                except Exception as e:
+                    print("ERROR", key, e)
+            elif patch_type == "loha":
+                w1a = v[0]
+                w1b = v[1]
+                if v[2] is not None:
+                    alpha *= v[2] / w1b.shape[0]
+                w2a = v[3]
+                w2b = v[4]
+                if v[5] is not None:  # cp decomposition
+                    t1 = v[5]
+                    t2 = v[6]
+                    m1 = torch.einsum(
+                        "i j k l, j r, i p -> p r k l",
+                        comfy.model_management.cast_to_device(
+                            t1, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w1b, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w1a, weight.device, torch.float32
+                        ),
+                    )
+
+                    m2 = torch.einsum(
+                        "i j k l, j r, i p -> p r k l",
+                        comfy.model_management.cast_to_device(
+                            t2, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w2b, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w2a, weight.device, torch.float32
+                        ),
+                    )
+                else:
+                    m1 = torch.mm(
+                        comfy.model_management.cast_to_device(
+                            w1a, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w1b, weight.device, torch.float32
+                        ),
+                    )
+                    m2 = torch.mm(
+                        comfy.model_management.cast_to_device(
+                            w2a, weight.device, torch.float32
+                        ),
+                        comfy.model_management.cast_to_device(
+                            w2b, weight.device, torch.float32
+                        ),
+                    )
+
+                try:
+                    weight += (alpha * m1 * m2).reshape(weight.shape).type(weight.dtype)
+                except Exception as e:
+                    print("ERROR", key, e)
+            elif patch_type == "glora":
+                if v[4] is not None:
+                    alpha *= v[4] / v[0].shape[0]
+
+                a1 = comfy.model_management.cast_to_device(
+                    v[0].flatten(start_dim=1), weight.device, torch.float32
+                )
+                a2 = comfy.model_management.cast_to_device(
+                    v[1].flatten(start_dim=1), weight.device, torch.float32
+                )
+                b1 = comfy.model_management.cast_to_device(
+                    v[2].flatten(start_dim=1), weight.device, torch.float32
+                )
+                b2 = comfy.model_management.cast_to_device(
+                    v[3].flatten(start_dim=1), weight.device, torch.float32
+                )
+
+                weight += (
+                    (
+                        (
+                            torch.mm(b2, b1)
+                            + torch.mm(torch.mm(weight.flatten(start_dim=1), a2), a1)
+                        )
+                        * alpha
+                    )
+                    .reshape(weight.shape)
+                    .type(weight.dtype)
+                )
+            elif patch_type == "onediff_int8":
+                # import pdb;pdb.set_trace()
+                is_rewrite_qkv = True if "to_qkv" in key else False
+                is_quant = False
+                if (
+                    is_diffusers_quant_available
+                    and len(v) == 5
+                    and (
+                        isinstance(v[4], diffusers_quant.DynamicQuantLinearModule)
+                        or isinstance(v[4], diffusers_quant.DynamicQuantConvModule)
+                    )
+                ):
+                    is_quant = True
+                    org_weight_scale = (
+                        v[4]
+                        .weight_scale.reshape(
+                            [-1] + [1 for _ in range(len(weight.shape) - 1)]
+                        )
+                        .to(weight.device)
+                    )
+                    weight = weight.to(torch.float32) * org_weight_scale
+
                 mat1 = comfy.model_management.cast_to_device(
                     v[0], weight.device, torch.float32
                 )
@@ -275,129 +476,6 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                         v[4].weight_acc.copy_(weight_acc)
                 except Exception as e:
                     print("ERROR", key, e)
-            elif len(v) == 8:  # lokr
-                w1 = v[0]
-                w2 = v[1]
-                w1_a = v[3]
-                w1_b = v[4]
-                w2_a = v[5]
-                w2_b = v[6]
-                t2 = v[7]
-                dim = None
-
-                if w1 is None:
-                    dim = w1_b.shape[0]
-                    w1 = torch.mm(
-                        comfy.model_management.cast_to_device(
-                            w1_a, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w1_b, weight.device, torch.float32
-                        ),
-                    )
-                else:
-                    w1 = comfy.model_management.cast_to_device(
-                        w1, weight.device, torch.float32
-                    )
-
-                if w2 is None:
-                    dim = w2_b.shape[0]
-                    if t2 is None:
-                        w2 = torch.mm(
-                            comfy.model_management.cast_to_device(
-                                w2_a, weight.device, torch.float32
-                            ),
-                            comfy.model_management.cast_to_device(
-                                w2_b, weight.device, torch.float32
-                            ),
-                        )
-                    else:
-                        w2 = torch.einsum(
-                            "i j k l, j r, i p -> p r k l",
-                            comfy.model_management.cast_to_device(
-                                t2, weight.device, torch.float32
-                            ),
-                            comfy.model_management.cast_to_device(
-                                w2_b, weight.device, torch.float32
-                            ),
-                            comfy.model_management.cast_to_device(
-                                w2_a, weight.device, torch.float32
-                            ),
-                        )
-                else:
-                    w2 = comfy.model_management.cast_to_device(
-                        w2, weight.device, torch.float32
-                    )
-
-                if len(w2.shape) == 4:
-                    w1 = w1.unsqueeze(2).unsqueeze(2)
-                if v[2] is not None and dim is not None:
-                    alpha *= v[2] / dim
-
-                try:
-                    weight += alpha * torch.kron(w1, w2).reshape(weight.shape).type(
-                        weight.dtype
-                    )
-                except Exception as e:
-                    print("ERROR", key, e)
-            else:  # loha
-                w1a = v[0]
-                w1b = v[1]
-                if v[2] is not None:
-                    alpha *= v[2] / w1b.shape[0]
-                w2a = v[3]
-                w2b = v[4]
-                if v[5] is not None:  # cp decomposition
-                    t1 = v[5]
-                    t2 = v[6]
-                    m1 = torch.einsum(
-                        "i j k l, j r, i p -> p r k l",
-                        comfy.model_management.cast_to_device(
-                            t1, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w1b, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w1a, weight.device, torch.float32
-                        ),
-                    )
-
-                    m2 = torch.einsum(
-                        "i j k l, j r, i p -> p r k l",
-                        comfy.model_management.cast_to_device(
-                            t2, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w2b, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w2a, weight.device, torch.float32
-                        ),
-                    )
-                else:
-                    m1 = torch.mm(
-                        comfy.model_management.cast_to_device(
-                            w1a, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w1b, weight.device, torch.float32
-                        ),
-                    )
-                    m2 = torch.mm(
-                        comfy.model_management.cast_to_device(
-                            w2a, weight.device, torch.float32
-                        ),
-                        comfy.model_management.cast_to_device(
-                            w2b, weight.device, torch.float32
-                        ),
-                    )
-
-                try:
-                    weight += (alpha * m1 * m2).reshape(weight.shape).type(weight.dtype)
-                except Exception as e:
-                    print("ERROR", key, e)
-
         return weight
 
 
