@@ -62,7 +62,8 @@ If you need **unrestricted multiple resolutions**, **quantization**, **dynamic b
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
 
-## Install with pip or Using in Docker
+## Install from source or Using in Docker
+> **_NOTE:_** We only support Linux and NVIDIA GPUs for the moment. If you want to use OneDiff on Windows, please use it under WSL.
 ### Install from source
 
 1. Install OneFlow(For CUDA 11.8)
