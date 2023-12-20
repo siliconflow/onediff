@@ -140,6 +140,14 @@ Omitting specific details here, the following workflow can be loaded and tested.
 
 ![](workflows/text-to-video-speedup.png)
 
+### SVD Acceleration with DeepCache
+
+This node can further accelerate onediff's SVD using [DeepCache](https://arxiv.org/abs/2312.00858).
+
+Omitting specific details here, the following workflow can be loaded and tested.
+
+![](workflows/svd-deepcache.png)
+
 
 ### Image Distinction Scanner
 
