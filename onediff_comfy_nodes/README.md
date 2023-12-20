@@ -65,7 +65,7 @@ cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
 
 6. (Optional) Advanced features
 
-If you need **unrestricted multiple resolution**, **quantization**, **dynamic batchsize** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
+If you need **unrestricted multiple resolution**, **quantization**, **dynamic batchsize** support or any other more advanced features, please send an email to business@siliconflow.com . Tell us about your **use case, deployment scale and requirements**! 
 
 
 
