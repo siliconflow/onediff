@@ -71,7 +71,7 @@ If you need **unrestricted multiple resolutions**, **quantization**, **dynamic b
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
 ```
 <details>
-<summary> Click to get OneFlow packages for other CUDA versioins. </summary>
+<summary> Click to get OneFlow packages for other CUDA versions. </summary>
 CUDA 12.1
 
 ```bash
