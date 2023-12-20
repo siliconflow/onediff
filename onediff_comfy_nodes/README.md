@@ -79,7 +79,7 @@ If you need **unrestricted multiple resolution**, **quantization**, **dynamic ba
   * [Lora Speedup](workflows/mode-speedup-lora.png)
   * [ControlNet Speedup](workflows/model-speedup-controlnet.png)
   * [Module DeepCache SpeedUp on SD](workflows/deep-cache.png)
-  * [Module DeepCache SpeedUp on SVD](svd-deepcache.png)
+  * [Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
   * [SVD Speedup](workflows/text-to-video-speedup.png)
   * [Model Graph Saver](workflows/model-graph-saver.png)
   * [Model Graph Loader](workflows/model-graph-loader.png)
