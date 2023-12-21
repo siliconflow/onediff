@@ -2,9 +2,9 @@ import modules.scripts as scripts
 from modules import script_callbacks
 import modules.shared as shared
 from modules.processing import process_images
-
 import math
 import torch
+import gradio as gr
 import oneflow as flow
 from einops import rearrange
 from oneflow import nn, einsum
@@ -13,7 +13,8 @@ from sgm.modules.diffusionmodules.util import GroupNorm32
 from omegaconf import OmegaConf, ListConfig
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 from onediff.infer_compiler import oneflow_compile, register
-
+#/home/fengwen/sd_webui/onediff/src/onediff/optimization/quant_optimizer.py
+from onediff.optimization.quant_optimizer import replace_module_with_quantizable_module
 
 @torch2oflow.register
 def _(mod, verbose=False) -> ListConfig:
@@ -164,8 +165,11 @@ torch2oflow_class_map = {
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile(sd_model):
+def compile(sd_model, quantization=False):
     unet_model = sd_model.model.diffusion_model
+    if quantization:
+        replace_module_with_quantizable_module(unet_model, verbose=True)
+
     full_name = f"{unet_model.__module__}.{unet_model.__class__.__name__}"
     if full_name != "sgm.modules.diffusionmodules.openaimodel.UNetModel":
         return
@@ -180,13 +184,33 @@ class Script(scripts.Script):
     def title(self):
         return "onediff_diffusion_model"
 
-    def show(self, is_img2img):
-        return not is_img2img
 
-    def run(self, p):
+    def ui(self, is_img2img):
+        """this function should create gradio UI elements. See https://gradio.app/docs/#components
+        The return value should be an array of all components that are used in processing.
+        Values of those returned components will be passed to run() and process() functions.
+        """
+        
+        quant = gr.inputs.Checkbox(label="Model Quantization(int8) Speed Up")
+        return [quant]
+
+
+    def show(self, is_img2img):
+        """
+        is_img2img is True if this function is called for the img2img interface, and Fasle otherwise
+
+        This function should return:
+         - False if the script should not be shown in UI at all
+         - True if the script should be shown in UI if it's selected in the scripts dropdown
+         - script.AlwaysVisible if the script should be shown in UI at all times
+         """
+        return True
+
+
+    def run(self, p, quantization):
         global _compiled
         if _compiled is None:
-            compile(shared.sd_model)
+            compile(shared.sd_model, quantization)
         # compile(shared.sd_model)
         original = shared.sd_model.model.diffusion_model
         from sgm.modules.diffusionmodules.wrappers import OpenAIWrapper
