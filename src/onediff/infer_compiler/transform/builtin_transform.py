@@ -50,6 +50,30 @@ def singledispatch_proxy(func):
     return wrapper
 
 
+def ensure_valid_result(func):
+    def wrapper(*args, **kwargs):
+        try:
+            result = func(*args, **kwargs)
+            if not result:
+                error_message = f"Function '{func.__name__}' returned an empty result with args: {args} and kwargs: {kwargs}"
+                logger.critical(error_message)
+                raise ValueError(error_message)
+            return result
+        except Exception as e:
+            error_details = {
+                "function_name": func.__name__,
+                "error_type": type(e).__name__,
+                "error_message": str(e),
+                "args": args,
+                "kwargs": kwargs,
+            }
+            logger.critical(f"Error details: {error_details}")
+            raise RuntimeError(f"Error details: {error_details}")
+
+    return wrapper
+
+
+@ensure_valid_result
 def proxy_class(cls: type):
     if cls.__module__.startswith("torch"):
         mod_name = cls.__module__.replace("torch", "oneflow")
@@ -168,8 +192,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             logger.info(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        logger.warning(f"Unsupported type: {type(obj)} {e=}")
-        # raise NotImplementedError(f"Unsupported type: {obj}")
+        logger.error(f"Unsupported type: {type(obj)} {e=}")
         return obj
 
 
@@ -321,6 +344,13 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 @torch2oflow.register
 def _(mod: None, verbose=False):
     return mod
+
+
+@torch2oflow.register
+def _(mod: type):
+    if not is_need_mock(mod):
+        return mod
+    return proxy_class(mod)
 
 
 @torch2oflow.register
