@@ -14,7 +14,7 @@ from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import export_to_video
 
 
-set_boolean_env_var("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False)
+set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False)
 
 
 def parse_args():
