@@ -40,12 +40,14 @@ class DeepCacheUNet(Module):
         transformer_options["transformer_index"] = 0
         transformer_patches = transformer_options.get("patches", {})
 
-        num_video_frames = kwargs.get(
+        c_dict = kwargs.get("c", {})
+        num_video_frames = c_dict.get(
             "num_video_frames", self.unet_module.default_num_video_frames
         )
-        image_only_indicator = kwargs.get(
+        image_only_indicator = c_dict.get(
             "image_only_indicator", self.unet_module.default_image_only_indicator
         )
+
         time_context = kwargs.get("time_context", None)
 
         assert (y is not None) == (
@@ -169,12 +171,14 @@ class FastDeepCacheUNet(Module):
         transformer_options["transformer_index"] = 0
         transformer_patches = transformer_options.get("patches", {})
 
-        num_video_frames = kwargs.get(
+        c_dict = kwargs.get("c", {})
+        num_video_frames = c_dict.get(
             "num_video_frames", self.unet_module.default_num_video_frames
         )
-        image_only_indicator = kwargs.get(
+        image_only_indicator = c_dict.get(
             "image_only_indicator", self.unet_module.default_image_only_indicator
         )
+
         time_context = kwargs.get("time_context", None)
 
         assert (y is not None) == (

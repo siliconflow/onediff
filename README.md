@@ -47,7 +47,7 @@ Updated on Nov 6, 2023.
 
 ## Business inquiry on OneDiff Enterprise Edition
 
-If you need **unrestricted multiple resolutions**, **quantization**, **dynamic batch size** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale, and requirements**.
+If you need **unrestricted multiple resolutions**, **quantization**, **dynamic batch size** support or any other more advanced features, please send an email to business@siliconflow.com . Tell us about your **use case, deployment scale, and requirements**.
 
 |                      | OneDiff Community   | OneDiff Enterprise|
 | -------------------- | ------------------- | ----------- |
@@ -62,7 +62,8 @@ If you need **unrestricted multiple resolutions**, **quantization**, **dynamic b
 | Quantization         |                     | Yes         |
 | Source Code Access   |                     | Yes         |
 
-## Install with pip or Using in Docker
+## Install from source or Using in Docker
+> **_NOTE:_** We only support Linux and NVIDIA GPUs for the moment. If you want to use OneDiff on Windows, please use it under WSL.
 ### Install from source
 
 1. Install OneFlow(For CUDA 11.8)
@@ -70,7 +71,7 @@ If you need **unrestricted multiple resolutions**, **quantization**, **dynamic b
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
 ```
 <details>
-<summary> Click to get OneFlow packages for other CUDA versioins. </summary>
+<summary> Click to get OneFlow packages for other CUDA versions. </summary>
 CUDA 12.1
 
 ```bash
