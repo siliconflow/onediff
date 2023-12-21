@@ -1,5 +1,6 @@
 import os
 import time
+import torch
 import torch.nn as nn
 from pathlib import Path
 from copy import deepcopy
@@ -69,6 +70,7 @@ def quantize_model(
 
     if not inplace:
         model = deepcopy(model)
+    from ..infer_compiler.utils.cost_util import cost_cnt
 
     def apply_quantization_to_modules(quantizable_modules):
         nonlocal model
@@ -87,6 +89,7 @@ def quantize_model(
             input_zero_point = 0
             weight_scale = scale.reshape(-1).tolist()
             sub_calibrate_info = [input_scale, input_zero_point, weight_scale]
+
             sub_mod = get_quantize_module(
                 sub_mod,
                 sub_module_name,
@@ -111,7 +114,8 @@ def quantize_model(
             logger.info(f"{len(linear_modules)=}")
 
     logger.info(
-        f"Quantized model {type(model)} successfully!",
-        f"Time: {time.time() - start_time:.4f}s",
+        f"Quantized model {type(model)} successfully! \n"
+        + f"Time: {time.time() - start_time:.4f}s"
     )
+
     return model
