@@ -1050,6 +1050,7 @@ class CrossAttnDownBlock2D(nn.Module):
         attention_mask: Optional[torch.FloatTensor] = None,
         cross_attention_kwargs: Optional[Dict[str, Any]] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
+        exist_block_number=None,
         additional_residuals=None,
     ):
         output_states = ()
@@ -1101,6 +1102,8 @@ class CrossAttnDownBlock2D(nn.Module):
                 hidden_states = hidden_states + additional_residuals
 
             output_states = output_states + (hidden_states,)
+            if exist_block_number is not None and len(output_states) == exist_block_number + 1:
+                return hidden_states, output_states            
 
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
@@ -1163,7 +1166,7 @@ class DownBlock2D(nn.Module):
 
         self.gradient_checkpointing = False
 
-    def forward(self, hidden_states, temb=None, scale: float = 1.0):
+    def forward(self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,):
         output_states = ()
 
         for resnet in self.resnets:
@@ -1187,6 +1190,8 @@ class DownBlock2D(nn.Module):
                 hidden_states = resnet(hidden_states, temb, scale=scale)
 
             output_states = output_states + (hidden_states,)
+            if exist_block_number is not None and len(output_states) == exist_block_number + 1:
+                return hidden_states, output_states 
 
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
