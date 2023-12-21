@@ -18,6 +18,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn
 
+import diffusers
 from diffusers.utils import is_torch_version, logging
 from diffusers.models.activations import get_activation
 if diffusers.__version__ >= '0.22.0':
@@ -30,9 +31,7 @@ from diffusers.models.resnet import Downsample2D, FirDownsample2D, FirUpsample2D
 from diffusers.models.transformer_2d import Transformer2DModel
 
 
-
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
-
 
 def get_down_block(
     down_block_type,
@@ -2197,13 +2196,21 @@ class CrossAttnUpBlock2D(nn.Module):
         upsample_size: Optional[int] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
+        enter_block_number: Optional[int]=None,
     ):
+        prv_f = []
         lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
 
-        for resnet, attn in zip(self.resnets, self.attentions):
+        for i, (resnet, attn) in enumerate(zip(self.resnets, self.attentions)):
             # pop res hidden states
+            
+            if enter_block_number is not None and i < len(self.resnets) - enter_block_number - 1:
+                continue
+
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+
+            prv_f.append(hidden_states)
             hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
 
             if self.training and self.gradient_checkpointing:
@@ -2247,7 +2254,7 @@ class CrossAttnUpBlock2D(nn.Module):
             for upsampler in self.upsamplers:
                 hidden_states = upsampler(hidden_states, upsample_size, scale=lora_scale)
 
-        return hidden_states
+        return hidden_states, prv_f
 
 
 class UpBlock2D(nn.Module):
@@ -2298,11 +2305,18 @@ class UpBlock2D(nn.Module):
 
         self.gradient_checkpointing = False
 
-    def forward(self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, scale: float = 1.0):
-        for resnet in self.resnets:
+    def forward(self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, scale: float = 1.0, enter_block_number: Optional[int]=None,):
+        prv_f = []
+        
+        for idx, resnet in enumerate(self.resnets):
+
+            if enter_block_number is not None and idx < len(self.resnets) - enter_block_number - 1:
+                continue
+
             # pop res hidden states
             res_hidden_states = res_hidden_states_tuple[-1]
             res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+            prv_f.append(hidden_states)
             hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
 
             if self.training and self.gradient_checkpointing:
@@ -2328,7 +2342,7 @@ class UpBlock2D(nn.Module):
             for upsampler in self.upsamplers:
                 hidden_states = upsampler(hidden_states, upsample_size, scale=scale)
 
-        return hidden_states
+        return hidden_states, prv_f
 
 
 class UpDecoderBlock2D(nn.Module):

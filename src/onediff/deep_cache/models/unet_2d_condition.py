@@ -953,7 +953,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         down_block_res_samples = (sample,)
 
-        assert replicate_prv_feature is None:
+        assert replicate_prv_feature is None
         for i, downsample_block in enumerate(self.down_blocks):
             if hasattr(downsample_block, "has_cross_attention") and downsample_block.has_cross_attention:
                 # For t2i-adapter CrossAttnDownBlock2D
@@ -1064,5 +1064,5 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         sample = self.conv_out(sample)
         if not return_dict:
             return (sample, prv_f,)
-        
+
         return UNet2DConditionOutput(sample=sample)
