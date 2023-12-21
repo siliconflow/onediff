@@ -59,7 +59,7 @@ base.to("cuda")
 if args.compile:
     print("Compiling unet with oneflow.")
     base.unet = oneflow_compile(base.unet)
-    base.unet = oneflow_compile(base.fast_unet)
+    base.fast_unet = oneflow_compile(base.fast_unet)
     base.vae = oneflow_compile(base.vae)
 
 
