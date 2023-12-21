@@ -13,8 +13,8 @@ from sgm.modules.diffusionmodules.util import GroupNorm32
 from omegaconf import OmegaConf, ListConfig
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 from onediff.infer_compiler import oneflow_compile, register
-#/home/fengwen/sd_webui/onediff/src/onediff/optimization/quant_optimizer.py
-from onediff.optimization.quant_optimizer import replace_module_with_quantizable_module
+from onediff.optimization.quant_optimizer import quantize_model
+
 
 @torch2oflow.register
 def _(mod, verbose=False) -> ListConfig:
@@ -24,6 +24,7 @@ def _(mod, verbose=False) -> ListConfig:
 
 """oneflow_compiled UNetModel"""
 _compiled = None
+_first_quant = True
 
 
 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/sd_hijack_optimizations.py#L142
@@ -82,16 +83,21 @@ class CrossAttentionOflow(nn.Module):
 
         del context, x
 
-        q, k, v = (rearrange(t, 'b n (h d) -> (b h) n d', h=h) for t in (q_in, k_in, v_in))
+        q, k, v = (
+            rearrange(t, "b n (h d) -> (b h) n d", h=h) for t in (q_in, k_in, v_in)
+        )
         del q_in, k_in, v_in
 
-        r1 = flow.zeros(q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype)
+        r1 = flow.zeros(
+            q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype
+        )
 
         # mem_free_total = get_available_vram()
         from modules import sd_hijack_optimizations
+
         mem_free_total = sd_hijack_optimizations.get_available_vram()
 
-        gb = 1024 ** 3
+        gb = 1024**3
         tensor_size = q.shape[0] * q.shape[1] * k.shape[1] * q.element_size()
         modifier = 3 if q.element_size() == 2 else 2.5
         mem_required = tensor_size * modifier
@@ -102,33 +108,35 @@ class CrossAttentionOflow(nn.Module):
 
         if steps > 64:
             max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
-            raise RuntimeError(f'Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). '
-                            f'Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free')
+            raise RuntimeError(
+                f"Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). "
+                f"Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free"
+            )
 
         slice_size = q.shape[1] // steps
         for i in range(0, q.shape[1], slice_size):
             end = min(i + slice_size, q.shape[1])
-            s1 = einsum('b i d, b j d -> b i j', q[:, i:end], k)
+            s1 = einsum("b i d, b j d -> b i j", q[:, i:end], k)
 
             # s2 = s1.softmax(dim=-1, dtype=q.dtype)
             s2 = s1.softmax(dim=-1)
             del s1
 
-            r1[:, i:end] = einsum('b i j, b j d -> b i d', s2, v)
+            r1[:, i:end] = einsum("b i j, b j d -> b i d", s2, v)
             del s2
 
         del q, k, v
 
         r1 = r1.to(dtype)
 
-        r2 = rearrange(r1, '(b h) n d -> b n (h d)', h=h)
+        r2 = rearrange(r1, "(b h) n d -> b n (h d)", h=h)
         del r1
 
         return self.to_out(r2)
 
 
 # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/wrappers.py#L24
-def forward_wrapper( self, x, t, c, **kwargs):
+def forward_wrapper(self, x, t, c, **kwargs):
     x = torch.cat((x, c.get("concat", torch.Tensor([]).type_as(x))), dim=1)
     with torch.autocast("cuda", enabled=False):
         with flow.autocast("cuda", enabled=False):
@@ -150,7 +158,7 @@ class GroupNorm32Oflow(nn.GroupNorm):
 
 # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/openaimodel.py#L983-L984
 class TimeEmbedModule(nn.Module):
-    def __init__( self, time_embed):
+    def __init__(self, time_embed):
         super().__init__()
         self._time_embed_module = time_embed
 
@@ -168,52 +176,49 @@ register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 def compile(sd_model, quantization=False):
     unet_model = sd_model.model.diffusion_model
     if quantization:
-        replace_module_with_quantizable_module(unet_model, verbose=True)
+        # replace_module_with_quantizable_module
+        quantize_model(unet_model, inplace=True)
 
     full_name = f"{unet_model.__module__}.{unet_model.__class__.__name__}"
     if full_name != "sgm.modules.diffusionmodules.openaimodel.UNetModel":
         return
     global _compiled
     _compiled = oneflow_compile(sd_model.model.diffusion_model, use_graph=True)
-    time_embed_wrapper = TimeEmbedModule(_compiled._deployable_module_model.oneflow_module.time_embed)
+    time_embed_wrapper = TimeEmbedModule(
+        _compiled._deployable_module_model.oneflow_module.time_embed
+    )
     # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/openaimodel.py#L984
-    setattr(_compiled._deployable_module_model.oneflow_module, "time_embed", time_embed_wrapper)
+    setattr(
+        _compiled._deployable_module_model.oneflow_module,
+        "time_embed",
+        time_embed_wrapper,
+    )
 
 
 class Script(scripts.Script):
     def title(self):
         return "onediff_diffusion_model"
 
-
     def ui(self, is_img2img):
         """this function should create gradio UI elements. See https://gradio.app/docs/#components
         The return value should be an array of all components that are used in processing.
         Values of those returned components will be passed to run() and process() functions.
         """
-        
-        quant = gr.inputs.Checkbox(label="Model Quantization(int8) Speed Up")
-        return [quant]
-
+        return [gr.components.Checkbox(label="Model Quantization(int8) Speed Up")]
 
     def show(self, is_img2img):
-        """
-        is_img2img is True if this function is called for the img2img interface, and Fasle otherwise
-
-        This function should return:
-         - False if the script should not be shown in UI at all
-         - True if the script should be shown in UI if it's selected in the scripts dropdown
-         - script.AlwaysVisible if the script should be shown in UI at all times
-         """
-        return True
-
+        return not is_img2img
 
     def run(self, p, quantization):
-        global _compiled
-        if _compiled is None:
+        global _compiled, _first_quant
+
+        if _compiled is None or _first_quant:
+            _first_quant = False
             compile(shared.sd_model, quantization)
         # compile(shared.sd_model)
         original = shared.sd_model.model.diffusion_model
         from sgm.modules.diffusionmodules.wrappers import OpenAIWrapper
+
         orig_forward = OpenAIWrapper.forward
         if _compiled is not None:
             shared.sd_model.model.diffusion_model = _compiled
