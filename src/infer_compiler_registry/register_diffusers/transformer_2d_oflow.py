@@ -10,6 +10,7 @@ from onediff.infer_compiler.transform import transform_mgr
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 
 diffusers_0220_v = version.parse("0.22.0")
+diffusers_02499_v = version.parse("0.24.99")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 if diffusers_version < diffusers_0220_v:
@@ -366,7 +367,7 @@ if diffusers_version < diffusers_0220_v:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
-else:
+elif diffusers_version < diffusers_02499_v:
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
     ImagePositionalEmbeddings = (
@@ -810,3 +811,5 @@ else:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
+else:
+    Transformer2DModel = None
