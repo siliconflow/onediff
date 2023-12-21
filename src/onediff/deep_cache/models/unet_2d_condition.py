@@ -614,7 +614,9 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
 
         return processors
 
-    def set_attn_processor(self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]]):
+    def set_attn_processor(
+        self, processor: Union[AttentionProcessor, Dict[str, AttentionProcessor]], _remove_lora=False
+    ):
         r"""
         Sets the attention processor to use to compute attention.
 
@@ -638,9 +640,9 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         def fn_recursive_attn_processor(name: str, module: torch.nn.Module, processor):
             if hasattr(module, "set_processor"):
                 if not isinstance(processor, dict):
-                    module.set_processor(processor)
+                    module.set_processor(processor, _remove_lora=_remove_lora)
                 else:
-                    module.set_processor(processor.pop(f"{name}.processor"))
+                    module.set_processor(processor.pop(f"{name}.processor"), _remove_lora=_remove_lora)
 
             for sub_name, child in module.named_children():
                 fn_recursive_attn_processor(f"{name}.{sub_name}", child, processor)
@@ -661,7 +663,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                 f"Cannot call `set_default_attn_processor` when attention processors are of type {next(iter(self.attn_processors.values()))}"
             )
 
-        self.set_attn_processor(processor)
+        self.set_attn_processor(processor, _remove_lora=True)
 
     def set_attention_slice(self, slice_size):
         r"""
@@ -745,6 +747,9 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         down_block_additional_residuals: Optional[Tuple[torch.Tensor]] = None,
         mid_block_additional_residual: Optional[torch.Tensor] = None,
         encoder_attention_mask: Optional[torch.Tensor] = None,
+        replicate_prv_feature: Optional[List[torch.Tensor]] = None,
+        cache_layer_id: Optional[int] = None,
+        cache_block_id: Optional[int] = None,
         return_dict: bool = True,
     ) -> Union[UNet2DConditionOutput, Tuple]:
         r"""
@@ -947,7 +952,9 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         is_adapter = mid_block_additional_residual is None and down_block_additional_residuals is not None
 
         down_block_res_samples = (sample,)
-        for downsample_block in self.down_blocks:
+
+        assert replicate_prv_feature is None:
+        for i, downsample_block in enumerate(self.down_blocks):
             if hasattr(downsample_block, "has_cross_attention") and downsample_block.has_cross_attention:
                 # For t2i-adapter CrossAttnDownBlock2D
                 additional_residuals = {}
@@ -1004,19 +1011,29 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             sample = sample + mid_block_additional_residual
 
         # 5. up
+        if cache_block_id is not None:
+            max_block_depth = len(self.down_blocks[cache_layer_id].attentions) if hasattr(self.down_blocks[cache_layer_id], "attentions") else len(self.down_blocks[cache_layer_id].resnets)
+            if cache_block_id == max_block_depth:
+                cache_block_id = 0
+                cache_layer_id += 1
+            else:
+                cache_block_id += 1
+        #print("down_block_res_samples:", [res_sample.shape for res_sample in down_block_res_samples])
+        #print(cache_block_id, cache_layer_id)
+        prv_f = None
         for i, upsample_block in enumerate(self.up_blocks):
             is_final_block = i == len(self.up_blocks) - 1
 
             res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
             down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
-
+            #print(sample.shape, [res_sample.shape for res_sample in res_samples])
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
                 upsample_size = down_block_res_samples[-1].shape[2:]
 
             if hasattr(upsample_block, "has_cross_attention") and upsample_block.has_cross_attention:
-                sample = upsample_block(
+                sample, current_record_f = upsample_block(
                     hidden_states=sample,
                     temb=emb,
                     res_hidden_states_tuple=res_samples,
@@ -1027,7 +1044,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                     encoder_attention_mask=encoder_attention_mask,
                 )
             else:
-                sample = upsample_block(
+                sample, current_record_f = upsample_block(
                     hidden_states=sample,
                     temb=emb,
                     res_hidden_states_tuple=res_samples,
@@ -1035,13 +1052,17 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
                     scale=lora_scale,
                 )
 
+            #print(cache_layer_id, current_record_f is None, i == len(self.up_blocks) - cache_layer_id - 1)
+            #print("Append prv_feature with shape:", sample.shape)
+            if cache_layer_id is not None and current_record_f is not None and i == len(self.up_blocks) - cache_layer_id - 1:
+                prv_f = current_record_f[-cache_block_id-1]
+                
         # 6. post-process
         if self.conv_norm_out:
             sample = self.conv_norm_out(sample)
             sample = self.conv_act(sample)
         sample = self.conv_out(sample)
-
         if not return_dict:
-            return (sample,)
-
+            return (sample, prv_f,)
+        
         return UNet2DConditionOutput(sample=sample)
