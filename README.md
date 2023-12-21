@@ -36,6 +36,7 @@ Updated on Nov 6, 2023.
 - Drop-in acceleration
   - [Stable Video Diffusion](https://github.com/Oneflow-Inc/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L169)
   - [DeepCache](https://github.com/Oneflow-Inc/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L414)
+- Out-of-the-box acceleration
   - [ComfyUI Nodes](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
   - [Acceleration with oneflow_compile](https://github.com/Oneflow-Inc/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
 - Multi-resolution input
