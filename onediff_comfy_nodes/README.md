@@ -74,7 +74,7 @@ If you need **unrestricted multiple resolution**, **quantization**, **dynamic ba
 
 **Note** All the images in this section can be loaded directly into ComfyUI. 
 
-- OneDiff Community                    
+- OneDiff Community Nodes                    
   * [Model Speedup](workflows/model-speedup.png)
   * [Lora Speedup](workflows/mode-speedup-lora.png)
   * [ControlNet Speedup](workflows/model-speedup-controlnet.png)
@@ -85,13 +85,11 @@ If you need **unrestricted multiple resolution**, **quantization**, **dynamic ba
   * [Model Graph Loader](workflows/model-graph-loader.png)
   * [Image Distinction Scanner](workflows/image-distinction-scanner.png)
 
-- Customized Features
-  * Customized node for customized pipeline
+- OneDiff Enterprise Nodes(Please refer to [OneDiff Enterprise Edition](https://github.com/Oneflow-Inc/onediff/blob/main/README.md#onediff-enterprise-edition) )
   * [Quantization](workflows/int8-speedup.png)
   * [Quantized Model Saver](workflows/int8-graph-saver.png)
   * [Quantized Model Loader](workflows/int8-graph-loader.png)
-  * (zero overhead to switch input shape)multiple resolutions and dynamic batch size 
-  * contact us for more details email: caishenghang@oneflow.org
+  
 
 
 ### Model Acceleration
