@@ -11,6 +11,9 @@ class FastUNet2DConditionModel(nn.Module):
     def __init__(self, unet_module):
         super().__init__()
         self.unet_module = unet_module
+    
+    # def __getattr__(self, name):
+    #     getattr(self.unet_module, name)
 
     def forward(
         self,
