@@ -16,6 +16,7 @@ from diffusers.utils import export_to_video
 
 set_boolean_env_var("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False)
 
+
 def parse_args():
     parser = argparse.ArgumentParser(
         description="Generate a video using Stable Video Diffusion."
@@ -29,8 +30,10 @@ def parse_args():
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--decode_chunk_size", type=int, default=8)
     parser.add_argument("--fps", type=int, default=7)
+    parser.add_argument("--num_frames", type=int, default=25)
     parser.add_argument("--output_file", type=str, default="generated.mp4")
     return parser.parse_args()
+
 
 args = parse_args()
 
@@ -52,13 +55,21 @@ with flow.autocast("cuda"):
     start_t = time.time()
     # Warm-up
     for _ in range(args.warmup):
-        _ = pipe(image, decode_chunk_size=args.decode_chunk_size, generator=generator, num_frames=25)
+        _ = pipe(
+            image,
+            decode_chunk_size=args.decode_chunk_size,
+            generator=generator,
+            num_frames=args.num_frames,
+        )
     end_t = time.time()
     print(f"warm-up elapsed: {end_t - start_t} s")
 
     start_t = time.time()
     frames = pipe(
-        image, decode_chunk_size=args.decode_chunk_size, generator=generator, num_frames=25
+        image,
+        decode_chunk_size=args.decode_chunk_size,
+        generator=generator,
+        num_frames=args.num_frames,
     ).frames[0]
 
 export_to_video(frames, args.output_file, fps=args.fps)
