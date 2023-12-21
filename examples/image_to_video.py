@@ -52,13 +52,13 @@ with flow.autocast("cuda"):
     start_t = time.time()
     # Warm-up
     for _ in range(args.warmup):
-        _ = pipe(image, decode_chunk_size=args.decode_chunk_size, generator=generator)
+        _ = pipe(image, decode_chunk_size=args.decode_chunk_size, generator=generator, num_frames=25)
     end_t = time.time()
     print(f"warm-up elapsed: {end_t - start_t} s")
 
     start_t = time.time()
     frames = pipe(
-        image, decode_chunk_size=args.decode_chunk_size, generator=generator
+        image, decode_chunk_size=args.decode_chunk_size, generator=generator, num_frames=25
     ).frames[0]
 
 export_to_video(frames, args.output_file, fps=args.fps)
