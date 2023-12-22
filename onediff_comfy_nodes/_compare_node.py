@@ -114,6 +114,7 @@ class ShowImageDiff:
                 "images2": ("IMAGE",),
                 "rtol": ("STRING", {"default": "1e-4"}),
                 "atol": ("STRING", {"default": "1e-4"}),
+                "ssim_threshold": ("STRING", {"default": "0.9"}),
                 "raise_if_diff": (["enable", "disable"],),
                 "image_id": ("STRING", {"default": "ComfyUI"}),
             },
@@ -133,7 +134,7 @@ class ShowImageDiff:
         images2,
         rtol: str,
         atol: str,
-        ssim: str,
+        ssim_threshold: str,
         raise_if_diff: str,
         image_id="ComfyUI",
         prompt=None,
@@ -186,7 +187,7 @@ class ShowImageDiff:
                 + "\033[0m"
             )
 
-            if raise_if_diff == "enable" and float(ssim) > cur_ssim:
+            if raise_if_diff == "enable" and float(ssim_threshold) > cur_ssim:
                 default_rtol = 1e-4
                 default_atol = 1e-4
                 try:
