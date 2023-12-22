@@ -2,6 +2,11 @@
 [![Docker image build](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/Oneflow-Inc/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/Oneflow-Inc/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
+# Notice
+Development of OneDiff has been **moved to** https://github.com/siliconflow/onediff
+
+Nothing else has changed.
+
 # OneDiff
 
 **An out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
