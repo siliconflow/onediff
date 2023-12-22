@@ -56,6 +56,7 @@ def proxy_class(cls: type):
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
+    # Handling e.g. https://github.com/comfyanonymous/ComfyUI/blob/d35267e85a865c30a5fa63fdb0a21f94f4cc37e7/comfy/ldm/modules/temporal_ae.py#L18
     if cls.__qualname__ == "partialclass.<locals>.NewCls":
         full_qualified_name = cls.__bases__[0].__module__ + "." + cls.__bases__[0].__qualname__
         return transform_mgr.transform_cls(full_qualified_name)
