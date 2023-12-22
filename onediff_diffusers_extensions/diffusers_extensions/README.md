@@ -1,13 +1,13 @@
 # A acceleration library for diffusers
 
-## Install differs_extensions
+## Install diffusers_extensions
 
 - Follow the steps [here](https://github.com/Oneflow-Inc/onediff?tab=readme-ov-file#install-from-source) to install onediff. 
 
-- Install differs_extensions by following these steps
+- Install diffusers_extensions by following these steps
     ```
     git clone https://github.com/Oneflow-Inc/onediff.git
-    cd differs_extensions && python3 -m pip install -e .
+    cd diffusers_extensions && python3 -m pip install -e .
     ```
 
 ## DeepCache Speedup
