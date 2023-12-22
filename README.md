@@ -6,19 +6,6 @@
 
 **An out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
 
-## State-of-the-art performance
-
-Updated on Nov 6, 2023.
-
-|     Device     | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
-| -------------- | --------------- | --------------- | ------------------------- |
-| RTX 3090       | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
-| RTX 4090       | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
-| A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
-| A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
-
-> **_NOTE:_** OneDiff Enterprise Edition delivers even higher performance and second-to-none deployment flexibility.
-
 ## Easy to use
 - Acceleration for popular UIs/libs
   - [ComfyUI](https://github.com/Oneflow-Inc/onediff/tree/main/onediff_comfy_nodes)
@@ -40,6 +27,23 @@ Updated on Nov 6, 2023.
 - Compile and save the compiled result offline, then load it online for serving
   - [Save and Load](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
   - [Change device to do multi-process serving](https://github.com/Oneflow-Inc/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
+
+## State-of-the-art performance
+Updated on Nov 6, 2023.
+
+|     Device     | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
+| -------------- | --------------- | --------------- | ------------------------- |
+| RTX 3090       | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
+| RTX 4090       | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
+| A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
+| A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
+
+> **_NOTE:_** OneDiff Enterprise Edition delivers even higher performance and second-to-none deployment flexibility.
+
+## OS and GPU support
+- Linux
+  - If you want to use OneDiff on Windows, please use it under WSL. 
+- NVIDIA GPUs
 
 ## Need help or talk
 - [Discord of OneDiff](https://discord.gg/RKJTjZMcPQ)
@@ -64,7 +68,6 @@ If you need **Enterprise Level Support** for your system or business, please sen
 | Get the latest technology/feature | Yes | |
 
 ## Install from source or Using in Docker
-> **_NOTE:_** We only support Linux and NVIDIA GPUs for the moment. If you want to use OneDiff on Windows, please use it under WSL.
 ### Install from source
 
 1. Install OneFlow(For CUDA 11.8)
