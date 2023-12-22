@@ -216,8 +216,11 @@ class VaeSpeedup:
             vae
         )  # Loading/offloading will not cause an increase in VRAM.
 
-        new_vae.first_stage_model = oneflow_compile(
-            new_vae.first_stage_model, use_graph=use_graph
+        new_vae.first_stage_model.encoder = oneflow_compile(
+            new_vae.first_stage_model.encoder, use_graph=use_graph
+        )
+        new_vae.first_stage_model.decoder = oneflow_compile(
+            new_vae.first_stage_model.decoder, use_graph=use_graph
         )
 
         return (new_vae,)
