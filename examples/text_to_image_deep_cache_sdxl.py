@@ -11,7 +11,7 @@ import torch
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 
-from onediff.deep_cache import StableDiffusionXLPipeline
+from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -32,7 +32,7 @@ parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
     "--compile",
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=False,
+    default=True,
 )
 parser.add_argument(
     "--use_multiple_resolutions",
