@@ -155,7 +155,7 @@ There is an example demonstrating openpose controlnet while OneDiff seamlessly s
 
 [ControlNet Speedup](workflows/model-speedup-controlnet.png)
 
-### SVD(Stable Video Diffusion)
+### SVD
 
 This example demonstrates the utilization of OneDiff to enhance the performance of a video model (text to video by SVD)
 
