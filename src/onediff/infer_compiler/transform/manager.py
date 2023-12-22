@@ -82,6 +82,12 @@ class TransformManager:
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG", "0") == "1"
+import accelerate
+print(f'=> accelerate version: {accelerate.__version__}')
+print(accelerate.__version__)
+debug_mode = True
+
+
 transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=None)
 
 if not transform_mgr.debug_mode:
