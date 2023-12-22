@@ -41,9 +41,9 @@ DeepCache originality is here https://github.com/horseee/DeepCache
         )
         pipe.to("cuda")
 
-        base.unet = oneflow_compile(base.unet)
-        base.fast_unet = oneflow_compile(base.fast_unet)
-        base.vae = oneflow_compile(base.vae)
+        pipe.unet = oneflow_compile(pipe.unet)
+        pipe.fast_unet = oneflow_compile(pipe.fast_unet)
+        pipe.vae = oneflow_compile(pipe.vae)
 
         prompt = "A photo of a cat. Focus light and create sharp, defined edges."        
         deepcache_output = pipe(
@@ -70,9 +70,9 @@ DeepCache originality is here https://github.com/horseee/DeepCache
         )
         pipe.to("cuda")
 
-        base.unet = oneflow_compile(base.unet)
-        base.fast_unet = oneflow_compile(base.fast_unet)
-        base.vae = oneflow_compile(base.vae)
+        pipe.unet = oneflow_compile(pipe.unet)
+        pipe.fast_unet = oneflow_compile(pipe.fast_unet)
+        pipe.vae = oneflow_compile(pipe.vae)
 
         prompt = "a photo of an astronaut on a moon"       
         deepcache_output = pipe(
