@@ -9,10 +9,12 @@
       - [Model Graph Saver](#model-graph-saver)
       - [Model Graph Loader](#model-graph-loader)
     - [Quantization](#quantization)
-    - [VAE Acceleration](#vae-acceleration)
-    - [SVD Acceleration](#svd-acceleration)
     - [Image Distinction Scanner](#image-distinction-scanner)
   - [Examples](#onediff-community-examples)
+    - [LoRA](#lora)
+    - [ControlNet](#controlnet)
+    - [SVD](#svd-acceleration)
+    - [DeepCache](#deepcache)
 
 
 
@@ -131,25 +133,6 @@ Omitting specific details here, the following workflow can be loaded and tested.
 **VAE Speedup and Graph Loader**
 
 ![](workflows/vae-graph-loader.png)
-
-
-### SVD Acceleration
-
-Similar to the usage of "Model Speedup" nodes, it's used to accelerate the Stable Video Diffusion (SVD) model, completing the acceleration of the text-to-video pipeline.
-
-Compatible with "Model Graph Loader" node and "Model Graph Saver" node.
-
-Omitting specific details here, the following workflow can be loaded and tested.
-
-![](workflows/text-to-video-speedup.png)
-
-### SVD Acceleration with DeepCache
-
-This node can further accelerate onediff's SVD using [DeepCache](https://arxiv.org/abs/2312.00858).
-
-Omitting specific details here, the following workflow can be loaded and tested.
-
-![](workflows/svd-deepcache.png)
 
 
 ### Image Distinction Scanner
