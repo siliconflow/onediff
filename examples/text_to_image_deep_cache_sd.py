@@ -11,7 +11,7 @@ import torch
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 
-from onediff.deep_cache import StableDiffusionXLPipeline
+from onediff.deep_cache import StableDiffusionPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -26,7 +26,7 @@ parser.add_argument(
 parser.add_argument("--height", type=int, default=1024)
 parser.add_argument("--width", type=int, default=1024)
 parser.add_argument("--n_steps", type=int, default=30)
-parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
+parser.add_argument("--saved_image", type=str, required=False, default="sd-out.png")
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
@@ -41,12 +41,12 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-# Normal SDXL pipeline init.
+# Normal SD-1.5 pipeline init.
 OUTPUT_TYPE = "pil"
 
-# SDXL base: StableDiffusionXLPipeline
+# SD-1.5 base: StableDiffusionPipeline
 scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
-base = StableDiffusionXLPipeline.from_pretrained(
+base = StableDiffusionPipeline.from_pretrained(
     args.base,
     scheduler=scheduler,
     torch_dtype=torch.float16,
@@ -79,10 +79,11 @@ for resolution in resolutions:
             width=resolution[1],
             num_inference_steps=args.n_steps,
             output_type=OUTPUT_TYPE,
-            cache_interval=3, cache_layer_id=0, cache_block_id=0,
+            cache_interval=5, cache_layer_id=0, cache_block_id=0,
+            uniform=False, pow=1.4, center=15,
         ).images
 
-# Normal SDXL run
+# Normal SD-1.5 run
 torch.manual_seed(args.seed)
 image = base(
     prompt=args.prompt,
@@ -90,6 +91,7 @@ image = base(
     width=args.width,
     num_inference_steps=args.n_steps,
     output_type=OUTPUT_TYPE,
-    cache_interval=3, cache_layer_id=0, cache_block_id=0,
+    cache_interval=5, cache_layer_id=0, cache_block_id=0,
+    uniform=False, pow=1.4, center=15,
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")

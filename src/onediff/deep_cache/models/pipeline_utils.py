@@ -694,10 +694,25 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
     model.register_to_config(_name_or_path=pretrained_model_name_or_path)
     return model
 
+
+ORIGIN_DIFFUDION_PIPELINE = None
+
+
 def enable_deep_cache_pipeline():
-    diffusers.DiffusionPipeline.from_pretrained = classmethod(from_pretrained)
+    global ORIGIN_DIFFUDION_PIPELINE
+    if ORIGIN_DIFFUDION_PIPELINE is None:
+        ORIGIN_DIFFUDION_PIPELINE = diffusers.DiffusionPipeline.from_pretrained
+        diffusers.DiffusionPipeline.from_pretrained = classmethod(from_pretrained)
+
+
+def disable_deep_cache_pipeline():
+    if ORIGIN_DIFFUDION_PIPELINE is None:
+        return
+    diffusers.DiffusionPipeline.from_pretrained = ORIGIN_DIFFUDION_PIPELINE
+    
 
 
 __all__ = [
     "enable_deep_cache_pipeline",
+    "disable_deep_cache_pipeline",
 ]
