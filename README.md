@@ -48,22 +48,23 @@ Updated on Nov 6, 2023.
 - [Discord of OneDiff](https://discord.gg/RKJTjZMcPQ)
 - GitHub issues
 
-## Business inquiry on OneDiff Enterprise Edition
-
-If you need **unrestricted multiple resolutions**, **quantization**, **dynamic batch size** support or any other more advanced features, please send an email to business@siliconflow.com . Tell us about your **use case, deployment scale, and requirements**.
-
-|                      | OneDiff Community   | OneDiff Enterprise|
+## OneDiff Enterprise Edition
+If you need **Enterprise Level Support** for your system or business, please send an email to business@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+|                      | OneDiff Enterprise   | OneDiff Community |
 | -------------------- | ------------------- | ----------- |
-| diffusers            | Yes                 | Yes         |
-| UNet/VAE/ControlNet Compilation | Yes      | Yes         |
-| LoRA                 | Limited             | Yes         |
-| LCM                  | Limited             | Yes         |
-| Multiple Resolutions | Limited             | Yes         |
-| ComfyUI              | Community           | Yes         |
-| Stable Diffusion web UI | Community           | Yes         |
-| Technical Support    | Community           | Yes         |
-| Quantization         |                     | Yes         |
-| Source Code Access   |                     | Yes         |
+| SD/SDXL series model Optimization| Yes | Yes|
+| UNet/VAE/ControlNet Optimization | Yes      | Yes         |
+| LoRA(and dynamic switching LoRA)                 | Yes             | Yes         |
+| SDXL Turbo/LCM                  | Yes             | Yes         |
+| Stable Video Diffusion |  Yes      | Yes |
+| HF diffusers            | Yes                 | Yes         |
+| ComfyUI              | Yes           | Yes         |
+| Stable Diffusion web UI | Yes          | Yes         |
+| Multiple Resolutions | No time cost for most of the cases       |Cost a few seconds/minutes to compile for new input shape           | 
+| Technical Support for deployment    | High priority support       | Community           | 
+| More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 | 
+| Support customized pipeline/workflow|           Yes              | |
+| Get the latest technology/feature | Yes | |
 
 ## Install from source or Using in Docker
 > **_NOTE:_** We only support Linux and NVIDIA GPUs for the moment. If you want to use OneDiff on Windows, please use it under WSL.
