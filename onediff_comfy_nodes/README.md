@@ -3,7 +3,7 @@
 - [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
   - [Performance of Community Edition](#performance-of-community-edition)
   - [Installation Guide](#installation-guide)
-  - [Nodes Usage](#nodes-usage)
+  - [Basical Nodes Usage](#basical-nodes-usage)
     - [Model Acceleration](#model-acceleration)
       - [Model Speedup](#model-speedup)
       - [Model Graph Saver](#model-graph-saver)
@@ -12,16 +12,18 @@
     - [VAE Acceleration](#vae-acceleration)
     - [SVD Acceleration](#svd-acceleration)
     - [Image Distinction Scanner](#image-distinction-scanner)
+  - [Examples](#onediff-community-examples)
 
 
 
-## Performance of Community Edition 
+## Performance of Community Edition
+
 Updated on DEC 7, 2023. Device: RTX 3090
 
 | SDXL1.0-base (1024x1024)                         | torch(Baseline) | onediff(Optimized) | Percentage improvement |
 |--------------------------------------------------|-----------------|--------------------|------------------------|
 | [Stable Diffusion workflow(UNet)](workflows/model-speedup.png)    | 4.08it/s        | 6.13it/s           | 50.25%                 |
-| [LoRA workflow](workflows/mode-speedup-lora.png) | 4.05it/s        | 6.14it/s           | 51.60%                 |
+| [LoRA workflow](workflows/model-speedup-lora.png) | 4.05it/s        | 6.14it/s           | 51.60%                 |
 
 
 ## Installation Guide
@@ -70,27 +72,9 @@ If you need Enterprise Level Support for your system or business, please refer t
 
 
 
-## Nodes Usage
+## Basical Nodes Usage
 
 **Note** All the images in this section can be loaded directly into ComfyUI. 
-
-- OneDiff Community Nodes                    
-  * [Model Speedup](workflows/model-speedup.png)
-  * [Lora Speedup](workflows/mode-speedup-lora.png)
-  * [ControlNet Speedup](workflows/model-speedup-controlnet.png)
-  * [Module DeepCache SpeedUp on SD](workflows/deep-cache.png)
-  * [Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
-  * [SVD Speedup](workflows/text-to-video-speedup.png)
-  * [Model Graph Saver](workflows/model-graph-saver.png)
-  * [Model Graph Loader](workflows/model-graph-loader.png)
-  * [Image Distinction Scanner](workflows/image-distinction-scanner.png)
-
-- OneDiff Enterprise Nodes(Please refer to [OneDiff Enterprise Edition](https://github.com/Oneflow-Inc/onediff/blob/main/README.md#onediff-enterprise-edition) )
-  * [Quantization](workflows/int8-speedup.png)
-  * [Quantized Model Saver](workflows/int8-graph-saver.png)
-  * [Quantized Model Loader](workflows/int8-graph-loader.png)
-  
-
 
 ### Model Acceleration
 
@@ -173,5 +157,38 @@ Omitting specific details here, the following workflow can be loaded and tested.
 The "Image Distinction Scanner" node is used to compare the differences between two images and visualize the resulting variances.
 
 ![](workflows/image-distinction-scanner.png)
+
+## OneDiff Community Examples 
+
+### LoRA                  
+
+This example shows you how to use Loras. You can change the LoRA models or adjust their strength without needing to recompile.
+
+[Lora Speedup](workflows/model-speedup-lora.png)
+
+### ControlNet
+
+There is an example demonstrating openpose controlnet while OneDiff seamlessly supports a wide range of controlnet types, including depth mapping, canny, and more.
+
+[ControlNet Speedup](workflows/model-speedup-controlnet.png)
+
+### SVD(Stable Video Diffusion)
+
+This example demonstrates the utilization of OneDiff to enhance the performance of a video model (text to video by SVD)
+
+[SVD Speedup](workflows/text-to-video-speedup.png)
+
+### DeepCache
+
+DeepCache is an innovative algorithm designed to significantly enhance the speed of diffusion models by approximately 2x. When combined with OneDiff, it further accelerates the Diffusion model by around 3x.
+
+Here are the example of applying DeepCache to SD and SVD models.
+
+[Module DeepCache SpeedUp on SD](workflows/deep-cache.png)
+
+[Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
+
+
+
 
 
