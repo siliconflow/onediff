@@ -33,7 +33,10 @@ services:
       - ${SDXL_BASE}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro
       - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
       - ${CONTROL_LORA_OPENPOSEXL2_RANK256}:/app/ComfyUI/models/controlnet/control-lora-openposeXL2-rank256.safetensors:ro
+      - ${WATERCOLOR_V1_SDXL_LORA}:/app/ComfyUI/models/loras/watercolor_v1_sdxl_lora.safetensors:ro
       - $PWD/tests/comfyui/workflows/input/control:/app/ComfyUI/input/control:ro
+
+      - $PWD/tests/comfyui/workflows/input/lora:/app/ComfyUI/input/lora:ro
       - $PWD:/src/onediff
     working_dir: /src/onediff
     restart: 'no'
