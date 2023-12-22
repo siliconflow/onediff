@@ -43,9 +43,12 @@ from diffusers.models.embeddings import (
 )
 from diffusers.models.modeling_utils import ModelMixin
 
-from .unet_2d_blocks import (
+from diffusers.models.unet_2d_blocks import (
     UNetMidBlock2DCrossAttn,
     UNetMidBlock2DSimpleCrossAttn,
+)
+
+from .unet_2d_blocks import (
     get_down_block,
     get_up_block,
 )
