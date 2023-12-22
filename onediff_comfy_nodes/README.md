@@ -13,7 +13,7 @@
   - [Examples](#onediff-community-examples)
     - [LoRA](#lora)
     - [ControlNet](#controlnet)
-    - [SVD](#svd-acceleration)
+    - [SVD](#svd)
     - [DeepCache](#deepcache)
 
 
