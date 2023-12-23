@@ -32,10 +32,11 @@ class OneDiffControlNet(ControlNet):
         c = cls(
             controlnet.control_model,
             global_average_pooling=controlnet.global_average_pooling,
+            device=controlnet.device,
+            load_device=controlnet.load_device,
+            manual_cast_dtype=controlnet.manual_cast_dtype,
         )
-        c.cond_hint_original = controlnet.cond_hint_original
-        c.strength = controlnet.strength
-        c.timestep_percent_range = controlnet.timestep_percent_range
+        controlnet.copy_to(c)
         return c
 
     def pre_run(self, model, percent_to_timestep_function):
@@ -45,7 +46,11 @@ class OneDiffControlNet(ControlNet):
 
     def copy(self):
         c = OneDiffControlNet(
-            self.control_model, global_average_pooling=self.global_average_pooling
+            self.control_model,
+            global_average_pooling=self.global_average_pooling,
+            device=self.device,
+            load_device=self.load_device,
+            manual_cast_dtype=self.manual_cast_dtype,
         )
         self.copy_to(c)
         return c
@@ -61,9 +66,7 @@ class OneDiffControlLora(ControlLora):
             global_average_pooling=controlnet.global_average_pooling,
             device=controlnet.device,
         )
-        c.cond_hint_original = controlnet.cond_hint_original
-        c.strength = controlnet.strength
-        c.timestep_percent_range = controlnet.timestep_percent_range
+        controlnet.copy_to(c)
         return c
 
     def pre_run(self, model, percent_to_timestep_function):
@@ -128,7 +131,9 @@ class OneDiffControlLora(ControlLora):
 
     def copy(self):
         c = OneDiffControlLora(
-            self.control_weights, global_average_pooling=self.global_average_pooling
+            self.control_weights,
+            global_average_pooling=self.global_average_pooling,
+            device=self.device,
         )
         self.copy_to(c)
         return c
