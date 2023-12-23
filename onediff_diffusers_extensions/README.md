@@ -32,7 +32,15 @@
     pipe.fast_unet = oneflow_compile(pipe.fast_unet)
     pipe.vae = oneflow_compile(pipe.vae)
 
-    prompt = "A photo of a cat. Focus light and create sharp, defined edges."        
+    prompt = "A photo of a cat. Focus light and create sharp, defined edges."
+    # Warmup
+    for i in range(1):
+        deepcache_output = pipe(
+            prompt, 
+            cache_interval=3, cache_layer_id=0, cache_block_id=0,
+            output_type='pil'
+        ).images[0]
+
     deepcache_output = pipe(
         prompt, 
         cache_interval=3, cache_layer_id=0, cache_block_id=0,
@@ -61,7 +69,15 @@
     pipe.fast_unet = oneflow_compile(pipe.fast_unet)
     pipe.vae = oneflow_compile(pipe.vae)
 
-    prompt = "a photo of an astronaut on a moon"       
+    prompt = "a photo of an astronaut on a moon"
+    # Warmup
+    for i in range(1):
+        deepcache_output = pipe(
+            prompt, 
+            cache_interval=3, cache_layer_id=0, cache_block_id=0,
+            output_type='pil'
+        ).images[0]
+
     deepcache_output = pipe(
         prompt, 
         cache_interval=3, cache_layer_id=0, cache_block_id=0,

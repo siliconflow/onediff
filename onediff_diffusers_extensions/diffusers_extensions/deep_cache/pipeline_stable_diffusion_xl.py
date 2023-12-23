@@ -16,6 +16,9 @@ import inspect
 import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import importlib.metadata
+from packaging import version
+
 import torch
 from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer
 
@@ -440,18 +443,43 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
 
         # 7. Prepare added time ids & embeddings
         add_text_embeds = pooled_prompt_embeds
-        add_time_ids = self._get_add_time_ids(
-            original_size, crops_coords_top_left, target_size, dtype=prompt_embeds.dtype
-        )
-        if negative_original_size is not None and negative_target_size is not None:
-            negative_add_time_ids = self._get_add_time_ids(
-                negative_original_size,
-                negative_crops_coords_top_left,
-                negative_target_size,
-                dtype=prompt_embeds.dtype,
+        diffusers_version = version.parse(importlib.metadata.version("diffusers"))
+        if diffusers_version < version.parse("0.22.0"):
+            add_time_ids = self._get_add_time_ids(
+                original_size, crops_coords_top_left, target_size, dtype=prompt_embeds.dtype
             )
+            if negative_original_size is not None and negative_target_size is not None:
+                negative_add_time_ids = self._get_add_time_ids(
+                    negative_original_size,
+                    negative_crops_coords_top_left,
+                    negative_target_size,
+                    dtype=prompt_embeds.dtype,
+                )
+            else:
+                negative_add_time_ids = add_time_ids
         else:
-            negative_add_time_ids = add_time_ids
+            if self.text_encoder_2 is None:
+                text_encoder_projection_dim = int(pooled_prompt_embeds.shape[-1])
+            else:
+                text_encoder_projection_dim = self.text_encoder_2.config.projection_dim
+
+            add_time_ids = self._get_add_time_ids(
+                original_size,
+                crops_coords_top_left,
+                target_size,
+                dtype=prompt_embeds.dtype,
+                text_encoder_projection_dim=text_encoder_projection_dim,
+            )
+            if negative_original_size is not None and negative_target_size is not None:
+                negative_add_time_ids = self._get_add_time_ids(
+                    negative_original_size,
+                    negative_crops_coords_top_left,
+                    negative_target_size,
+                    dtype=prompt_embeds.dtype,
+                    text_encoder_projection_dim=text_encoder_projection_dim,
+                )
+            else:
+                negative_add_time_ids = add_time_ids
 
         if do_classifier_free_guidance:
             prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds], dim=0)
