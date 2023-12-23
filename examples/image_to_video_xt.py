@@ -1,3 +1,4 @@
+# Run with ONEFLOW_RUN_GRAPH_BY_VM=1 to get faster
 MODEL = 'stabilityai/stable-video-diffusion-img2vid-xt'
 VARIANT = None
 CUSTOM_PIPELINE = None
@@ -28,7 +29,15 @@ import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import set_boolean_env_var
 
-set_boolean_env_var("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False)
+set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
+                    False)
+# The absolute element values of K in the attention layer of SVD is too large.
+# The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
+# But disabling all half accumulations in MHA would slow down the inference,
+# especially for 40xx series cards.
+# So here by partially disabling the half accumulation in MHA, we can get a good balance.
+set_boolean_env_var(
+    "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION", False)
 
 
 def parse_args():
