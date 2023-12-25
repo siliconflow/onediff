@@ -41,7 +41,7 @@ from onediff.infer_compiler.utils import set_boolean_env_var
 # | --------------------------------------------------- | ----------------------------------------------------------| ------ | -------- |
 # | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION | Output | Duration |
 # | False                                               | Any                                                       | OK     | 43.331s  |
-# | True                                                | True                                                      | NaN    | 42.727s  |
+# | True                                                | True                                                      | NaN    | 39.909s  |
 # | True                                                | False                                                     | OK     | 42.967s  |
 set_boolean_env_var(
     "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION", False)
