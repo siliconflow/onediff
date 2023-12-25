@@ -44,6 +44,7 @@ pipe = StableVideoDiffusionPipeline.from_pretrained(
 )
 pipe = pipe.to("cuda")
 pipe.unet = oneflow_compile(pipe.unet)
+# pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
 
 # Load the conditioning image from local file
 image = Image.open(args.image_path)
