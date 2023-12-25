@@ -70,7 +70,9 @@ If you need **Enterprise Level Support** for your system or business, please sen
 ## Install from source or Using in Docker
 ### Install from source
 
-1. Install OneFlow(For CUDA 11.8)
+1. Install OneFlow
+> **_NOTE:_** We has updated oneflow a lot for OneDiff, so please install oneflow by the links below.
+For CUDA 11.8
 ```
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
 ```
