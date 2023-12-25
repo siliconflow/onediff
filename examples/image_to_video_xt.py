@@ -29,13 +29,20 @@ import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import set_boolean_env_var
 
-set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
-                    False)
+# set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
+#                     False)
 # The absolute element values of K in the attention layer of SVD is too large.
 # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
 # But disabling all half accumulations in MHA would slow down the inference,
 # especially for 40xx series cards.
 # So here by partially disabling the half accumulation in MHA, we can get a good balance.
+#
+# On RTX 4090:
+# | --------------------------------------------------- | ----------------------------------------------------------| ------ | -------- |
+# | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION | Output | Duration |
+# | False                                               | Any                                                       | OK     | 43.331s  |
+# | True                                                | True                                                      | NaN    | 42.727s  |
+# | True                                                | False                                                     | OK     | 42.967s  |
 set_boolean_env_var(
     "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION", False)
 
