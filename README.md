@@ -66,7 +66,7 @@ If you need **Enterprise Level Support** for your system or business, please sen
 | HF diffusers            | Yes                 | Yes         |
 | ComfyUI              | Yes           | Yes         |
 | Stable Diffusion web UI | Yes          | Yes         |
-| Multiple Resolutions | Yes(No time cost for most of the cases(       | Yes(Cost a few seconds/minutes to compile for new input shape)           | 
+| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(Cost a few seconds/minutes to compile for new input shape)           | 
 | Technical Support for deployment    | High priority support       | Community           | 
 | More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 | 
 | Support customized pipeline/workflow|           Yes              | |
@@ -75,7 +75,10 @@ If you need **Enterprise Level Support** for your system or business, please sen
 ## Install from source or Using in Docker
 ### Install from source
 
-1. Install OneFlow(For CUDA 11.8)
+#### 1. Install OneFlow
+> **_NOTE:_** We have updated OneFlow a lot for OneDiff, so please install OneFlow by the links below.
+
+For CUDA 11.8
 ```
 python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
 ```
@@ -96,18 +99,18 @@ python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyu
 </details>
 
 
-2. Install torch and diffusers
+#### 2. Install torch and diffusers
 ```
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 ```
 
-3. Install OneDiff
+#### 3. Install OneDiff
 ```
 git clone https://github.com/Oneflow-Inc/onediff.git
 cd onediff && python3 -m pip install -e .
 ```
 
-4. (Optional)Login huggingface-cli
+#### 4. (Optional)Login huggingface-cli
 
 ```
 python3 -m pip install huggingface_hub
