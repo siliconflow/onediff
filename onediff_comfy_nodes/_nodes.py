@@ -51,6 +51,7 @@ class ModelSpeedup:
             "required": {
                 "model": ("MODEL",),
                 "static_mode": (["enable", "disable"],),
+                "quantize_model_speedup": (["disable", "enable"],),
             },
         }
 
@@ -58,8 +59,12 @@ class ModelSpeedup:
     FUNCTION = "speedup"
     CATEGORY = "OneDiff"
 
-    def speedup(self, model, static_mode):
+    def speedup(self, model, static_mode, quantize_model_speedup):
         from onediff.infer_compiler import oneflow_compile
+
+        # from onediff.infer_compiler.utils.quant_utils import quantize_model
+        # if quantize_model_speedup == "enable":
+        #     model.model.diffusion_model = quantize_model(model.model.diffusion_model)
 
         use_graph = static_mode == "enable"
 

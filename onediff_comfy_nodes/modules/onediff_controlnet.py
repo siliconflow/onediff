@@ -1,3 +1,4 @@
+import torch
 import comfy
 import oneflow as flow
 from comfy.controlnet import ControlLoraOps, ControlNet, ControlLora
@@ -23,7 +24,12 @@ def set_attr_of(obj, attr, value):
     if exist_oneflow_module:
         _set_attr_of(obj, attr, value)
     else:
-        comfy.utils.set_attr(obj, attr, value)
+        attrs = attr.split(".")
+        for name in attrs[:-1]:
+            obj = getattr(obj, name)
+        prev = getattr(obj, attrs[-1])
+        setattr(obj, attrs[-1], torch.nn.Parameter(value, requires_grad=False))
+        del prev
 
 
 class OneDiffControlNet(ControlNet):
@@ -101,6 +107,9 @@ class OneDiffControlLora(ControlLora):
             self.control_model.to(comfy.model_management.get_torch_device())
             OneDiffControlLora.oneflow_model = oneflow_compile(self.control_model)
 
+        else:
+            return # debug
+        
         self.control_model = OneDiffControlLora.oneflow_model
 
         diffusion_model = model.diffusion_model
@@ -112,7 +121,8 @@ class OneDiffControlLora(ControlLora):
             )
             try:
                 set_attr_of(self.control_model, k, weight)
-            except:
+            except Exception as e:
+                # print("skip", k ,  f"Error: {e}")
                 pass
 
         for k in self.control_weights:
