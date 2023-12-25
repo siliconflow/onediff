@@ -29,23 +29,6 @@ import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import set_boolean_env_var
 
-# set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
-#                     False)
-# The absolute element values of K in the attention layer of SVD is too large.
-# The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
-# But disabling all half accumulations in MHA would slow down the inference,
-# especially for 40xx series cards.
-# So here by partially disabling the half accumulation in MHA, we can get a good balance.
-#
-# On RTX 4090:
-# | --------------------------------------------------- | ----------------------------------------------------------| ------ | -------- |
-# | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION | Output | Duration |
-# | False                                               | Any                                                       | OK     | 43.331s  |
-# | True                                                | True                                                      | NaN    | 39.909s  |
-# | True                                                | False                                                     | OK     | 42.967s  |
-set_boolean_env_var(
-    "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION", False)
-
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -76,6 +59,8 @@ def parse_args():
                         type=str,
                         default='oneflow',
                         choices=['none', 'oneflow', 'compile'])
+    parser.add_argument('--enable-half-score-accumulation',
+                        action='store_true')
     return parser.parse_args()
 
 
@@ -111,7 +96,26 @@ def load_model(pipeline_cls,
     return model
 
 
-def compile_model(model):
+def compile_model(model, enable_half_score_accumulation=False):
+    if not enable_half_score_accumulation:
+        # set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
+        #                     False)
+        # The absolute element values of K in the attention layer of SVD is too large.
+        # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
+        # But disabling all half accumulations in MHA would slow down the inference,
+        # especially for 40xx series cards.
+        # So here by partially disabling the half accumulation in MHA, we can get a good balance.
+        #
+        # On RTX 4090:
+        # | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION | Output | Duration |
+        # | --------------------------------------------------- | ----------------------------------------------------------| ------ | -------- |
+        # | False                                               | Any                                                       | OK     | 43.331s  |
+        # | True                                                | True                                                      | NaN    | 39.909s  |
+        # | True                                                | False                                                     | OK     | 42.967s  |
+        set_boolean_env_var(
+            "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION", False)
+
+    # model.image_encoder = oneflow_compile(model.image_encoder)
     model.unet = oneflow_compile(model.unet)
     # model.vae = oneflow_compile(model.vae)
     return model
@@ -161,7 +165,9 @@ def main():
     if args.compiler == 'none':
         pass
     elif args.compiler == 'oneflow':
-        model = compile_model(model)
+        model = compile_model(
+            model,
+            enable_half_score_accumulation=args.enable_half_score_accumulation)
     elif args.compiler == 'compile':
         model.unet = torch.compile(model.unet)
         if hasattr(model, 'controlnet'):
@@ -207,7 +213,7 @@ def main():
             kwarg_inputs['control_image'] = control_image
         return kwarg_inputs
 
-    with flow.autocast("cuda"):
+    with flow.autocast('cuda'):
         if args.warmups > 0:
             print('Begin warmup')
             for _ in range(args.warmups):
