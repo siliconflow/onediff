@@ -274,9 +274,9 @@ class DeployableModule(torch.nn.Module):
             )
         return self._deployable_module_dpl_graph
 
-    @graph_file_management
     @input_output_processor
     @handle_deployable_exception
+    @graph_file_management
     def apply_model(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
@@ -289,9 +289,9 @@ class DeployableModule(torch.nn.Module):
                 )
         return output
 
-    @graph_file_management
     @input_output_processor
     @handle_deployable_exception
+    @graph_file_management
     def __call__(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
@@ -322,9 +322,9 @@ class DeployableModule(torch.nn.Module):
         return self
 
     # TODO(): Just for transformers VAE decoder
-    @graph_file_management
     @input_output_processor
     @handle_deployable_exception
+    @graph_file_management
     def decode(self, *args, **kwargs):
         if self._deployable_module_use_graph:
 
