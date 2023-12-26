@@ -4,7 +4,7 @@ setup(
     name="onediff",
     version="0.11.0.dev",
     description="OneFlow backend for diffusers",
-    url="https://github.com/Oneflow-Inc/oneflow",
+    url="https://github.com/siliconflow/oneflow",
     author="OneFlow contributors",
     license="Apache",
     author_email="caishenghang@oneflow.org",
