@@ -596,7 +596,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
 
         diffusion_model = model.model.diffusion_model
         file_path = get_guess_graph_path(ckpt_name, diffusion_model)
-        print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {file_path}")
+        print(f"OneDiff Checkpoint Loader is loading  graph file: {file_path}")
 
         oneflow_model = OneFlowSpeedUpModelPatcher(
             model.model,
