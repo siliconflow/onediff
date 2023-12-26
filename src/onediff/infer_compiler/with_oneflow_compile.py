@@ -161,55 +161,66 @@ def get_mixed_dual_module(module_cls):
     return MixedDualModule
 
 
-def load_graph_from_config(self: "DeployableModule"):
-    try:
-        if self._graph_config is not None:
-            graph_path = self._graph_config[0]
-            if not os.path.exists(graph_path):
-                logger.warning(
-                    f"Graph file {graph_path} not exists,  will generate graph."
-                )
-                return
-            graph_device = torch2oflow(self._graph_config[1])
-            self.load_graph(graph_path, graph_device)
-            self._graph_config = None
-    except Exception as e:
-        logger.error(f"Exception in load_graph_from_config: {e=}")
+def graph_file_management(func):
+    @wraps(func)
+    def wrapper(self: "DeployableModule", *args, **kwargs):
+        graph_file = self._deployable_module_options.get("graph_file", None)
 
+        # Load graph file
+        if graph_file is not None:
+            try:
+                if not os.path.exists(graph_file):
+                    logger.warning(
+                        f"Graph file {graph_file} not exists!, will generate graph."
+                    )
 
-def save_graph_to_config(self: "DeployableModule"):
-    try:
-        if self._graph_config is not None:
-            graph_file = self._graph_config[0]
-            os.makedirs(os.path.dirname(graph_file), exist_ok=True)
-            self.save_graph(self._graph_config[0])
-            logger.info(f"Save graph to {self._graph_config[0]} done!")
-    except Exception as e:
-        logger.error(f"Exception in save_graph_to_config: {e=}")
-    finally:
-        self._graph_config = None
+                else:
+                    graph_device = self._deployable_module_options.get(
+                        "graph_file_device", None
+                    )
+
+                    self.load_graph(graph_file, torch2oflow(graph_device))
+                    logger.info(f"Load graph file: {graph_file}")
+
+                    graph_file = None
+                    self._deployable_module_options["graph_file"] = None
+
+            except Exception as e:
+                logger.error(f"Load graph file: {graph_file} failed! {e=}")
+
+        ret = func(self, *args, **kwargs)
+
+        # Save graph file
+        if graph_file is not None:
+            try:
+                if graph_file is not None:
+                    os.makedirs(os.path.dirname(graph_file), exist_ok=True)
+                    self.save_graph(graph_file)
+                    logger.info(f"Save graph file: {graph_file} done!")
+            except Exception as e:
+                logger.error(f"Save graph file: {graph_file} failed! {e=}")
+            finally:
+                self._deployable_module_options["graph_file"] = None
+
+        return ret
+
+    return wrapper
 
 
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        def _run_func():
-            load_graph_from_config(self)
-            result = func(self, *args, **kwargs)
-            save_graph_to_config(self)
-            return result
-
         if transform_mgr.debug_mode:
-            return _run_func()
+            return func(self, *args, **kwargs)
         else:
             try:
-                return _run_func()
+                return func(self, *args, **kwargs)
             except Exception as e:
                 logger.error(f"Exception in {func.__name__}: {e=}")
                 logger.warning("Recompile oneflow module ...")
                 del self._deployable_module_model.oneflow_module
                 self._deployable_module_dpl_graph = None
-                return _run_func()
+                return func(self, *args, **kwargs)
 
     return wrapper
 
@@ -232,10 +243,6 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
-        if graph_path is not None:
-            self._graph_config = (graph_path, graph_device)
-        else:
-            self._graph_config = None
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, options=None):
@@ -245,7 +252,6 @@ class DeployableModule(torch.nn.Module):
         instance._deployable_module_dpl_graph = (
             existing_module._deployable_module_dpl_graph if use_graph else None
         )
-        instance._graph_config = existing_module._graph_config
         return instance
 
     def get_graph(self):
@@ -268,6 +274,7 @@ class DeployableModule(torch.nn.Module):
             )
         return self._deployable_module_dpl_graph
 
+    @graph_file_management
     @input_output_processor
     @handle_deployable_exception
     def apply_model(self, *args, **kwargs):
@@ -282,6 +289,7 @@ class DeployableModule(torch.nn.Module):
                 )
         return output
 
+    @graph_file_management
     @input_output_processor
     @handle_deployable_exception
     def __call__(self, *args, **kwargs):
@@ -314,6 +322,7 @@ class DeployableModule(torch.nn.Module):
         return self
 
     # TODO(): Just for transformers VAE decoder
+    @graph_file_management
     @input_output_processor
     @handle_deployable_exception
     def decode(self, *args, **kwargs):
@@ -416,7 +425,7 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
 
 
 # Return a DeployableModule that using module_cls as it's parent class.
-def get_mixed_deployable_module(module_cls, graph_path=None, graph_device=None):
+def get_mixed_deployable_module(module_cls):
     class MixedDeployableModule(DeployableModule, module_cls):
         def __init__(
             self,
@@ -456,8 +465,6 @@ def oneflow_compile(
     *,
     use_graph=True,
     options={},
-    graph_path=None,
-    graph_device=None,
 ):
     set_default_registry()
 
@@ -467,7 +474,7 @@ def oneflow_compile(
             return module.__class__.from_existing(module, use_graph, options)
         else:
             return get_mixed_deployable_module(module.__class__)(
-                module, None, use_graph, options, graph_path, graph_device
+                module, None, use_graph, options
             )
 
     model = wrap_module(torch_module)
