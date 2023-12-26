@@ -1,6 +1,6 @@
 import torch
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
-from .transform import map_args, replace_func, ProxySubmodule
+from .transform import map_args, ProxySubmodule
 
 
 class OneFlowInterpreter(torch.fx.Interpreter):
@@ -8,7 +8,7 @@ class OneFlowInterpreter(torch.fx.Interpreter):
 
     def call_function(self, target: Target, args: Tuple, kwargs: Dict) -> Any:
         args, kwargs = map_args(args, kwargs)
-        target = replace_func(target)
+        target = torch2oflow(target)
         return super().call_function(target, args, kwargs)
 
     def call_method(self, target: Target, args: Tuple, kwargs: Dict) -> Any:
