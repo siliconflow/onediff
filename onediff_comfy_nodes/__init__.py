@@ -48,7 +48,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ControlNetGraphSaver": "ControlNet Graph Saver",
     "SVDSpeedup": "SVD Speedup",
     "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
-    "OneDiffCheckpointLoaderSimple": "OneDiff Load Checkpoint",
+    "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
 if _USE_UNET_INT8:
