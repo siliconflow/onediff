@@ -327,7 +327,9 @@ def _(mod: None, verbose=False):
 def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
         mod_name = None
-        if mod.__module__.startswith("torch._C._nn"):
+        if mod == torch._C._nn.linear:
+            return flow.nn.functional.linear
+        elif mod.__module__.startswith("torch._C._nn"):
             mod_name = mod.__module__.replace(
                 "torch._C._nn", "oneflow._oneflow_internal._C"
             )
@@ -373,7 +375,9 @@ def _(mod: partial, verbose=False):
 
 
 def replace_obj(obj):
+    return torch2oflow(obj)
     cls = type(obj)
+    if obj is None: return obj # fix
     if cls == torch.dtype:
         return {
             "torch.float16": flow.float16,
@@ -386,6 +390,7 @@ def replace_obj(obj):
         }[str(obj)]
     if cls == torch.fx.immutable_collections.immutable_list:
         return [e for e in obj]
+    print('cls is', cls)
     replacement = proxy_class(cls)
     if replacement is not None:
         if cls in [torch.device]:
@@ -399,6 +404,7 @@ def replace_obj(obj):
 
 
 def replace_func(func):
+    return torch2oflow(func)
     if func == torch.conv2d:
         return flow.nn.functional.conv2d
     if func == torch.conv3d:
