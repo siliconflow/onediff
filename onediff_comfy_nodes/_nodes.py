@@ -601,7 +601,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             }
         }
 
-    RETURN_TYPES = ("MODEL", "CLIP", "VAE")
+    
     CATEGORY = "OneDiff"
 
     def load_checkpoint(
