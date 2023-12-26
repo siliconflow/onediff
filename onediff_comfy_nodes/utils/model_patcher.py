@@ -50,8 +50,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
             self.model.__dict__["_modules"]["diffusion_model"] = oneflow_compile(
                 self.model.diffusion_model,
                 use_graph=use_graph,
-                graph_path=graph_path,
-                graph_device=graph_device,
+                options={"graph_file": graph_path, "graph_file_device": graph_device},
             )
         self.model._register_state_dict_hook(state_dict_hook)
         self.patches = {}
