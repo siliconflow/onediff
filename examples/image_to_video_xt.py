@@ -16,7 +16,7 @@ FPS = 7
 DECODE_CHUNK_SIZE = 4
 INPUT_IMAGE = 'https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true'
 EXTRA_CALL_KWARGS = None
-ATTENTION_FP16_SCORE_ACCUM_MAX_M = 2304
+ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 
 import importlib
 import inspect
