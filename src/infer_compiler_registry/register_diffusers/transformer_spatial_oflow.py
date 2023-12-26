@@ -150,7 +150,6 @@ class TemporalDecoder(nn.Module):
         batch_frames, channels, height, width = sample.shape
         sample_copy = sample
         batch_size = batch_frames // num_frames
-        ## lixiang mark
         sample = (
             sample[None, :]
             .reshape(batch_size, -1, channels, height, width)
@@ -296,8 +295,6 @@ class TemporalBasicTransformerBlock(nn.Module):
         else:
             hidden_states = ff_output
 
-        print(batch_size, seq_length, num_frames, channels)
-        ## lixiang mark
         hidden_states = hidden_states[None, :].reshape(
             batch_size, -1, num_frames, channels
         )
@@ -374,8 +371,6 @@ class SpatioTemporalResBlock(nn.Module):
         hidden_states_copy = hidden_states
 
         batch_size = batch_frames // num_frames
-        ## lixiang mark
-        # print(batch_size, num_frames, channels, height, width)
         hidden_states_mix = (
             hidden_states[None, :]
             .reshape(batch_size, -1, channels, height, width)
@@ -539,7 +534,6 @@ class TransformerSpatioTemporalModel(nn.Module):
 
         # num_frames_emb = num_frames_emb.repeat(batch_size, 1)
         # num_frames_emb = num_frames_emb.reshape(-1)
-        ## lixiang mark
         num_frames_emb = num_frames_emb.unsqueeze(1)
         num_frames_emb_expanded = num_frames_emb.expand(-1, batch_size)
         num_frames_emb_expanded = num_frames_emb_expanded.reshape(-1)
