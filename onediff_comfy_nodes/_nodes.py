@@ -14,6 +14,7 @@ import comfy
 import folder_paths
 from comfy import model_management
 from comfy.cli_args import args
+from folder_paths import get_input_directory
 
 from .utils import (
     OneFlowSpeedUpModelPatcher,
@@ -577,3 +578,40 @@ class ModuleDeepCacheSpeedup:
 
         oneflow_model.set_model_unet_function_wrapper(apply_model)
         return (oneflow_model,)
+
+
+def get_guess_graph_path(ckpt_name, model):
+    input_dir = get_input_directory()
+    input_dir = Path(input_dir)
+    graph_dir = input_dir / "graphs" / ckpt_name
+    graph_file_path = graph_dir / (type(model).__name__ + ".graph")
+    return graph_file_path
+
+
+from nodes import CheckpointLoaderSimple
+class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
+    def load_checkpoint(self, ckpt_name, output_vae=True, output_clip=True):
+        model, clip, vae = super().load_checkpoint(ckpt_name, output_vae, output_clip)
+        offload_device = model_management.unet_offload_device()
+
+        diffusion_model = model.model.diffusion_model
+        file_path = get_guess_graph_path(ckpt_name, diffusion_model)
+        print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {file_path}")
+
+        oneflow_model = OneFlowSpeedUpModelPatcher(
+            model.model,
+            load_device=model_management.get_torch_device(),
+            offload_device=offload_device,
+            use_graph=True,
+            graph_path=file_path,
+            graph_device=model_management.get_torch_device(),
+        )
+
+        file_path = get_guess_graph_path(ckpt_name, vae.first_stage_model)
+        vae.first_stage_model = oneflow_compile(
+            vae.first_stage_model,
+            use_graph=True,
+            graph_path=file_path,
+            graph_device=model_management.get_torch_device(),
+        )
+        return oneflow_model, clip, vae
