@@ -133,6 +133,7 @@ def compile(sd_model):
         return
     global _compiled
     _compiled = oneflow_compile(sd_model.model.diffusion_model, use_graph=True)
+    # add sgm package path to sys.path to avoid mock error
     import sgm, sys
     sys.path.append(sgm.__path__[0][:-4])
     time_embed_wrapper = TimeEmbedModule(_compiled._deployable_module_model.oneflow_module.time_embed)
