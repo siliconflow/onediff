@@ -56,7 +56,7 @@ pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/bra
 3. Intall onediff
 
 ```bash
-https://github.com/Oneflow-Inc/onediff.git
+git clone https://github.com/siliconflow/onediff.git
 cd onediff && pip install -e .
 ```
 
@@ -69,7 +69,7 @@ cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
 
 6. (Optional) Enterprise Level Support
 
-If you need Enterprise Level Support for your system or business, please refer to [OneDiff Enterprise Edition](https://github.com/Oneflow-Inc/onediff/blob/main/README.md#onediff-enterprise-edition) .
+If you need Enterprise Level Support for your system or business, please refer to [OneDiff Enterprise Edition](https://github.com/siliconflow/onediff/blob/main/README.md#onediff-enterprise-edition) .
 
 
 
