@@ -16,6 +16,7 @@ FPS = 7
 DECODE_CHUNK_SIZE = 4
 INPUT_IMAGE = 'https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true'
 EXTRA_CALL_KWARGS = None
+ATTENTION_FP16_SCORE_ACCUM_MAX_M = 2304
 
 import importlib
 import inspect
@@ -59,8 +60,9 @@ def parse_args():
                         type=str,
                         default='oneflow',
                         choices=['none', 'oneflow', 'compile'])
-    parser.add_argument('--enable-half-score-accumulation',
-                        action='store_true')
+    parser.add_argument('--attention-fp16-score-accum-max-m',
+                        type=int,
+                        default=ATTENTION_FP16_SCORE_ACCUM_MAX_M)
     return parser.parse_args()
 
 
@@ -96,28 +98,31 @@ def load_model(pipeline_cls,
     return model
 
 
-def compile_model(model, enable_half_score_accumulation=False):
-    if not enable_half_score_accumulation:
-        # set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
-        #                     False)
-        # The absolute element values of K in the attention layer of SVD is too large.
-        # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
-        # But disabling all half accumulations in MHA would slow down the inference,
-        # especially for 40xx series cards.
-        # So here by partially disabling the half accumulation in MHA, we can get a good balance.
-        #
-        # On RTX 4090:
-        # | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION | Output | Duration |
-        # | --------------------------------------------------- | ----------------------------------------------------------| ------ | -------- |
-        # | False                                               | Any                                                       | OK     | 43.331s  |
-        # | True                                                | True                                                      | NaN    | 39.909s  |
-        # | True                                                | False                                                     | OK     | 42.967s  |
-        set_boolean_env_var(
-            "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION", False)
+def compile_model(model, attention_fp16_score_accum_max_m=-1):
+    # set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION',
+    #                     False)
+    # The absolute element values of K in the attention layer of SVD is too large.
+    # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
+    # But disabling all half accumulations in MHA would slow down the inference,
+    # especially for 40xx series cards.
+    # So here by partially disabling the half accumulation in MHA partially,
+    # we can get a good balance.
+    #
+    # On RTX 4090:
+    # | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | MAX_M | Output | Duration |
+    # | --------------------------------------------------- | ------| ------ | -------- |
+    # | False                                               | -1    | OK     | 32.251s  |
+    # | True                                                | -1    | NaN    | 29.089s  |
+    # | True                                                | 0     | OK     | 32.197s  |
+    # | True                                                | 2304  | OK     | 31.948s  |
+    set_boolean_env_var(
+        'ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M',
+        attention_fp16_score_accum_max_m)
 
-    # model.image_encoder = oneflow_compile(model.image_encoder)
+    model.image_encoder = oneflow_compile(model.image_encoder)
     model.unet = oneflow_compile(model.unet)
-    # model.vae = oneflow_compile(model.vae)
+    model.vae.decoder = oneflow_compile(model.vae.decoder)
+    model.vae.encoder = oneflow_compile(model.vae.encoder)
     return model
 
 
@@ -165,9 +170,9 @@ def main():
     if args.compiler == 'none':
         pass
     elif args.compiler == 'oneflow':
-        model = compile_model(
-            model,
-            enable_half_score_accumulation=args.enable_half_score_accumulation)
+        model = compile_model(model,
+                              attention_fp16_score_accum_max_m=args.
+                              attention_fp16_score_accum_max_m)
     elif args.compiler == 'compile':
         model.unet = torch.compile(model.unet)
         if hasattr(model, 'controlnet'):
@@ -213,22 +218,21 @@ def main():
             kwarg_inputs['control_image'] = control_image
         return kwarg_inputs
 
-    with flow.autocast('cuda'):
-        if args.warmups > 0:
-            print('Begin warmup')
-            for _ in range(args.warmups):
-                model(**get_kwarg_inputs())
-            print('End warmup')
+    if args.warmups > 0:
+        print('Begin warmup')
+        for _ in range(args.warmups):
+            model(**get_kwarg_inputs())
+        print('End warmup')
 
-        kwarg_inputs = get_kwarg_inputs()
-        iter_profiler = None
-        if 'callback_on_step_end' in inspect.signature(model).parameters:
-            iter_profiler = IterationProfiler()
-            kwarg_inputs[
-                'callback_on_step_end'] = iter_profiler.callback_on_step_end
-        begin = time.time()
-        output_frames = model(**kwarg_inputs).frames
-        end = time.time()
+    kwarg_inputs = get_kwarg_inputs()
+    iter_profiler = None
+    if 'callback_on_step_end' in inspect.signature(model).parameters:
+        iter_profiler = IterationProfiler()
+        kwarg_inputs[
+            'callback_on_step_end'] = iter_profiler.callback_on_step_end
+    begin = time.time()
+    output_frames = model(**kwarg_inputs).frames
+    end = time.time()
 
     print(f'Inference time: {end - begin:.3f}s')
     iter_per_sec = iter_profiler.get_iter_per_sec()
