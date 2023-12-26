@@ -3,24 +3,29 @@
 - [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
   - [Performance of Community Edition](#performance-of-community-edition)
   - [Installation Guide](#installation-guide)
-  - [Nodes Usage](#nodes-usage)
+  - [Basical Nodes Usage](#basical-nodes-usage)
     - [Model Acceleration](#model-acceleration)
       - [Model Speedup](#model-speedup)
       - [Model Graph Saver](#model-graph-saver)
       - [Model Graph Loader](#model-graph-loader)
     - [Quantization](#quantization)
-    - [VAE Acceleration](#vae-acceleration)
     - [Image Distinction Scanner](#image-distinction-scanner)
+  - [Examples](#onediff-community-examples)
+    - [LoRA](#lora)
+    - [ControlNet](#controlnet)
+    - [SVD](#svd)
+    - [DeepCache](#deepcache)
 
 
 
-## Performance of Community Edition 
+## Performance of Community Edition
+
 Updated on DEC 7, 2023. Device: RTX 3090
 
 | SDXL1.0-base (1024x1024)                         | torch(Baseline) | onediff(Optimized) | Percentage improvement |
 |--------------------------------------------------|-----------------|--------------------|------------------------|
 | [Stable Diffusion workflow(UNet)](workflows/model-speedup.png)    | 4.08it/s        | 6.13it/s           | 50.25%                 |
-| [LoRA workflow](workflows/mode-speedup-lora.png) | 4.05it/s        | 6.14it/s           | 51.60%                 |
+| [LoRA workflow](workflows/model-speedup-lora.png) | 4.05it/s        | 6.14it/s           | 51.60%                 |
 
 
 ## Installation Guide
@@ -51,7 +56,7 @@ pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/bra
 3. Intall onediff
 
 ```bash
-https://github.com/Oneflow-Inc/onediff.git
+git clone https://github.com/siliconflow/onediff.git
 cd onediff && pip install -e .
 ```
 
@@ -62,16 +67,16 @@ cd onediff
 cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
 ```
 
-6. (Optional) Advanced features
+6. (Optional) Enterprise Level Support
 
-If you need **unrestricted multiple resolution**, **quantization**, **dynamic batchsize** support or any other more advanced features, please send an email to caishenghang@oneflow.org . Tell us about your **use case, deployment scale and requirements**! 
-
-
+If you need Enterprise Level Support for your system or business, please refer to [OneDiff Enterprise Edition](https://github.com/siliconflow/onediff/blob/main/README.md#onediff-enterprise-edition) .
 
 
-## Nodes Usage
 
-**Note** All the images in this section can be loaded directly into ComfyUI.
+
+## Basical Nodes Usage
+
+**Note** All the images in this section can be loaded directly into ComfyUI. 
 
 ### Model Acceleration
 
@@ -130,21 +135,43 @@ Omitting specific details here, the following workflow can be loaded and tested.
 ![](workflows/vae-graph-loader.png)
 
 
-### SVD Acceleration
-
-Similar to the usage of "Model Speedup" nodes, it's used to accelerate the Stable Video Diffusion (SVD) model, completing the acceleration of the text-to-video pipeline.
-
-Compatible with "Model Graph Loader" node and "Model Graph Saver" node.
-
-Omitting specific details here, the following workflow can be loaded and tested.
-
-![](workflows/text-to-video-speedup.png)
-
-
 ### Image Distinction Scanner
 
 The "Image Distinction Scanner" node is used to compare the differences between two images and visualize the resulting variances.
 
 ![](workflows/image-distinction-scanner.png)
+
+## OneDiff Community Examples 
+
+### LoRA                  
+
+This example shows you how to use Loras. You can change the LoRA models or adjust their strength without needing to recompile.
+
+[Lora Speedup](workflows/model-speedup-lora.png)
+
+### ControlNet
+
+There is an example demonstrating openpose controlnet while OneDiff seamlessly supports a wide range of controlnet types, including depth mapping, canny, and more.
+
+[ControlNet Speedup](workflows/model-speedup-controlnet.png)
+
+### SVD
+
+This example demonstrates the utilization of OneDiff to enhance the performance of a video model (text to video by SVD)
+
+[SVD Speedup](workflows/text-to-video-speedup.png)
+
+### DeepCache
+
+DeepCache is an innovative algorithm designed to significantly enhance the speed of diffusion models by approximately 2x. When combined with OneDiff, it further accelerates the Diffusion model by around 3x.
+
+Here are the example of applying DeepCache to SD and SVD models.
+
+[Module DeepCache SpeedUp on SD](workflows/deep-cache.png)
+
+[Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
+
+
+
 
 

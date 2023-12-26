@@ -27,6 +27,7 @@ _compiled = None
 _first_quant = True
 
 
+
 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/sd_hijack_optimizations.py#L142
 # https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/sd_hijack_optimizations.py#L221
 class CrossAttentionOflow(nn.Module):
@@ -73,66 +74,19 @@ class CrossAttentionOflow(nn.Module):
         k_in = self.to_k(context_k)
         v_in = self.to_v(context_v)
 
-        dtype = q_in.dtype
-        # from modules import shared
-        # if shared.opts.upcast_attn:
-        #     q_in, k_in, v_in = q_in.float(), k_in.float(), v_in if v_in.device.type == 'mps' else v_in.float()
 
-        # with devices.without_autocast(disable=not shared.opts.upcast_attn):
-        k_in = k_in * self.scale
-
-        del context, x
-
-        q, k, v = (
-            rearrange(t, "b n (h d) -> (b h) n d", h=h) for t in (q_in, k_in, v_in)
+        out = flow._C.fused_multi_head_attention_inference_v2(
+            query=q_in,
+            query_layout="BM(HK)",
+            query_head_size=self.to_q.out_features//self.heads,
+            key=k_in,
+            key_layout="BM(HK)",
+            value=v_in,
+            value_layout="BM(HK)",
+            output_layout="BM(HK)",
+            causal=False,
         )
-        del q_in, k_in, v_in
-
-        r1 = flow.zeros(
-            q.shape[0], q.shape[1], v.shape[2], device=q.device, dtype=q.dtype
-        )
-
-        # mem_free_total = get_available_vram()
-        from modules import sd_hijack_optimizations
-
-        mem_free_total = sd_hijack_optimizations.get_available_vram()
-
-        gb = 1024**3
-        tensor_size = q.shape[0] * q.shape[1] * k.shape[1] * q.element_size()
-        modifier = 3 if q.element_size() == 2 else 2.5
-        mem_required = tensor_size * modifier
-        steps = 1
-
-        if mem_required > mem_free_total:
-            steps = 2 ** (math.ceil(math.log(mem_required / mem_free_total, 2)))
-
-        if steps > 64:
-            max_res = math.floor(math.sqrt(math.sqrt(mem_free_total / 2.5)) / 8) * 64
-            raise RuntimeError(
-                f"Not enough memory, use lower resolution (max approx. {max_res}x{max_res}). "
-                f"Need: {mem_required / 64 / gb:0.1f}GB free, Have:{mem_free_total / gb:0.1f}GB free"
-            )
-
-        slice_size = q.shape[1] // steps
-        for i in range(0, q.shape[1], slice_size):
-            end = min(i + slice_size, q.shape[1])
-            s1 = einsum("b i d, b j d -> b i j", q[:, i:end], k)
-
-            # s2 = s1.softmax(dim=-1, dtype=q.dtype)
-            s2 = s1.softmax(dim=-1)
-            del s1
-
-            r1[:, i:end] = einsum("b i j, b j d -> b i d", s2, v)
-            del s2
-
-        del q, k, v
-
-        r1 = r1.to(dtype)
-
-        r2 = rearrange(r1, "(b h) n d -> b n (h d)", h=h)
-        del r1
-
-        return self.to_out(r2)
+        return self.to_out(out)
 
 
 # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/wrappers.py#L24
@@ -170,6 +124,8 @@ torch2oflow_class_map = {
     CrossAttention: CrossAttentionOflow,
     GroupNorm32: GroupNorm32Oflow,
 }
+
+
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
@@ -184,9 +140,12 @@ def compile(sd_model, quantization=False):
         return
     global _compiled
     _compiled = oneflow_compile(sd_model.model.diffusion_model, use_graph=True)
-    time_embed_wrapper = TimeEmbedModule(
-        _compiled._deployable_module_model.oneflow_module.time_embed
-    )
+
+    # add sgm package path to sys.path to avoid mock error
+    import sgm, sys
+    sys.path.append(sgm.__path__[0][:-4])
+    time_embed_wrapper = TimeEmbedModule(_compiled._deployable_module_model.oneflow_module.time_embed)
+
     # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/openaimodel.py#L984
     setattr(
         _compiled._deployable_module_model.oneflow_module,
@@ -209,13 +168,12 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return not is_img2img
 
-    def run(self, p, quantization):
-        global _compiled, _first_quant
 
-        if _compiled is None or _first_quant:
-            _first_quant = False
-            compile(shared.sd_model, quantization)
-        # compile(shared.sd_model)
+    def run(self, p):
+        global _compiled
+        if _compiled is None:
+            compile(shared.sd_model)
+
         original = shared.sd_model.model.diffusion_model
         from sgm.modules.diffusionmodules.wrappers import OpenAIWrapper
 

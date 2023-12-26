@@ -19,8 +19,6 @@ from functools import singledispatch
 __all__ = [
     "proxy_class",
     "ProxySubmodule",
-    "replace_obj",
-    "replace_func",
     "map_args",
     "get_attr",
     "torch2oflow",
@@ -168,7 +166,8 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             logger.info(f"convert {type(obj)} to {type(of_obj)}")
         return of_obj
     except Exception as e:
-        logger.error(f"Unsupported type: {type(obj)} {e=}")
+        logger.warning(f"Unsupported type: {type(obj)} {e=}")
+        # raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
 
 
@@ -326,7 +325,11 @@ def _(mod: None, verbose=False):
 def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
         mod_name = None
-        if mod.__module__.startswith("torch._C._nn"):
+        #TODO: This solution is a compromise for now.
+        #TODO: Should register nn.linear later to solve it elegantly 
+        if mod == torch._C._nn.linear:
+            return flow.nn.functional.linear
+        elif mod.__module__.startswith("torch._C._nn"):
             mod_name = mod.__module__.replace(
                 "torch._C._nn", "oneflow._oneflow_internal._C"
             )
@@ -371,50 +374,9 @@ def _(mod: partial, verbose=False):
 ############################################## Code For Onefx ##############################################
 
 
-def replace_obj(obj):
-    cls = type(obj)
-    if cls == torch.dtype:
-        return {
-            "torch.float16": flow.float16,
-            "torch.float32": flow.float32,
-            "torch.double": flow.double,
-            "torch.int8": flow.int8,
-            "torch.int32": flow.int32,
-            "torch.int64": flow.int64,
-            "torch.uint8": flow.uint8,
-        }[str(obj)]
-    if cls == torch.fx.immutable_collections.immutable_list:
-        return [e for e in obj]
-    replacement = proxy_class(cls)
-    if replacement is not None:
-        if cls in [torch.device]:
-            return replacement(str(obj))
-        elif cls == torch.nn.parameter.Parameter:
-            return flow.utils.tensor.from_torch(obj.data)
-        else:
-            raise RuntimeError("don't know how to create oneflow obj for: " + str(cls))
-    else:
-        return obj
-
-
-def replace_func(func):
-    if func == torch.conv2d:
-        return flow.nn.functional.conv2d
-    if func == torch.conv3d:
-        return flow.nn.functional.conv3d
-    if func == torch._C._nn.linear:
-        return flow.nn.functional.linear
-    if func.__module__.startswith("torch"):
-        mod_name = func.__module__.replace("torch", "oneflow")
-        mod = importlib.import_module(mod_name)
-        return getattr(mod, func.__name__)
-    else:
-        return func
-
-
 def map_args(args, kwargs):
-    args = [replace_obj(a) for a in args]
-    kwargs = dict((k, replace_obj(v)) for (k, v) in kwargs.items())
+    args = [torch2oflow(a) for a in args]
+    kwargs = dict((k, torch2oflow(v)) for (k, v) in kwargs.items())
     return (args, kwargs)
 
 
@@ -422,6 +384,6 @@ def get_attr(gm, node, torch2flow={}):
     attr = getattr(gm, node.target)
     if attr in torch2flow:
         return torch2flow[attr]
-    of_attr = replace_obj(attr)
+    of_attr = torch2oflow(attr)
     torch2flow[attr] = of_attr
     return of_attr
