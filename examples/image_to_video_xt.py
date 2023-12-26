@@ -113,7 +113,7 @@ def compile_model(model, attention_fp16_score_accum_max_m=-1):
     # | --------------------------------------------------- | ------| ------ | -------- |
     # | False                                               | -1    | OK     | 32.251s  |
     # | True                                                | -1    | NaN    | 29.089s  |
-    # | True                                                | 0     | OK     | 32.197s  |
+    # | True                                                | 0     | OK     | 30.947s  |
     # | True                                                | 2304  | OK     | 30.820s  |
     set_boolean_env_var(
         'ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M',
