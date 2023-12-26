@@ -161,41 +161,42 @@ def get_mixed_dual_module(module_cls):
     return MixedDualModule
 
 
+def load_graph_from_config(self: "DeployableModule"):
+    try:
+        if self._graph_config is not None:
+            graph_path = self._graph_config[0]
+            if not os.path.exists(graph_path):
+                logger.warning(
+                    f"Graph file {graph_path} not exists,  will generate graph."
+                )
+                return
+            graph_device = torch2oflow(self._graph_config[1])
+            self.load_graph(graph_path, graph_device)
+            self._graph_config = None
+    except Exception as e:
+        logger.error(f"Exception in load_graph_from_config: {e=}")
+
+
+def save_graph_to_config(self: "DeployableModule"):
+    try:
+        if self._graph_config is not None:
+            graph_file = self._graph_config[0]
+            os.makedirs(os.path.dirname(graph_file), exist_ok=True)
+            self.save_graph(self._graph_config[0])
+            logger.info(f"Save graph to {self._graph_config[0]} done!")
+    except Exception as e:
+        logger.error(f"Exception in save_graph_to_config: {e=}")
+    finally:
+        self._graph_config = None
+
+
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        def load_graph_from_config():
-            try:
-                if self._graph_config is not None:
-                    graph_path = self._graph_config[0]
-                    if not os.path.exists(graph_path):
-                        logger.warning(
-                            f"Graph file {graph_path} not exists, skip load graph."
-                        )
-                        return
-                    graph_device = torch2oflow(self._graph_config[1])
-                    self.load_graph(graph_path, graph_device)
-                    self._graph_config = None
-            except Exception as e:
-                logger.error(f"Exception in load_graph_from_config: {e=}")
-
-        def save_graph_to_config():
-            try:
-                if self._graph_config is not None:
-                    graph_file = self._graph_config[0]
-                    os.makedirs(os.path.dirname(graph_file), exist_ok=True)
-                    self.save_graph(self._graph_config[0])
-                    logger.info(f"Save graph to {self._graph_config[0]} done!")
-            except Exception as e:
-                logger.error(f"Exception in save_graph_to_config: {e=}")
-
-            finally:
-                self._graph_config = None
-
         def _run_func():
-            load_graph_from_config()
+            load_graph_from_config(self)
             result = func(self, *args, **kwargs)
-            save_graph_to_config()
+            save_graph_to_config(self)
             return result
 
         if transform_mgr.debug_mode:

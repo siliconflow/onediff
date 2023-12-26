@@ -580,7 +580,7 @@ class ModuleDeepCacheSpeedup:
         return (oneflow_model,)
 
 
-def get_guess_graph_path(ckpt_name, model):
+def generate_graph_path(ckpt_name, model):
     input_dir = get_input_directory()
     input_dir = Path(input_dir)
     graph_dir = input_dir / "graphs" / ckpt_name
@@ -589,13 +589,29 @@ def get_guess_graph_path(ckpt_name, model):
 
 
 from nodes import CheckpointLoaderSimple
+
+
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
-    def load_checkpoint(self, ckpt_name, output_vae=True, output_clip=True):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "vae_speedup": (["disable", "enable"],),
+            }
+        }
+
+    RETURN_TYPES = ("MODEL", "CLIP", "VAE")
+    CATEGORY = "OneDiff"
+
+    def load_checkpoint(
+        self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
+    ):
         model, clip, vae = super().load_checkpoint(ckpt_name, output_vae, output_clip)
         offload_device = model_management.unet_offload_device()
 
         diffusion_model = model.model.diffusion_model
-        file_path = get_guess_graph_path(ckpt_name, diffusion_model)
+        file_path = generate_graph_path(ckpt_name, diffusion_model)
         print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {file_path}")
 
         oneflow_model = OneFlowSpeedUpModelPatcher(
@@ -607,11 +623,12 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             graph_device=model_management.get_torch_device(),
         )
 
-        file_path = get_guess_graph_path(ckpt_name, vae.first_stage_model)
-        vae.first_stage_model = oneflow_compile(
-            vae.first_stage_model,
-            use_graph=True,
-            graph_path=file_path,
-            graph_device=model_management.get_torch_device(),
-        )
+        if vae_speedup == "enable":
+            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            vae.first_stage_model = oneflow_compile(
+                vae.first_stage_model,
+                use_graph=True,
+                graph_path=file_path,
+                graph_device=model_management.get_torch_device(),
+            )
         return oneflow_model, clip, vae
