@@ -7,9 +7,9 @@
 ## Performance of Community Edition
 
 Updated on DEC 26, 2023. Device: RTX 3090. Resolution: 1024x1024
-| TensorRT-v9.0.1(Baseline) | onediff(Optimized) | Percentage improvement |
-| ------------------------- | ------------------ | ---------------------- |
-| 6.40it/s                  | 6.71it/s           | 4.84%                  |
+| torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
+| --------------- | --------------- | ------------------ | ---------------------- |
+| 2.99it/s        | 6.40it/s        | 6.71it/s           | 224.41%                |
 
 ## Installation Guide
 
