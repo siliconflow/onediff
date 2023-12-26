@@ -390,7 +390,6 @@ def replace_obj(obj):
         }[str(obj)]
     if cls == torch.fx.immutable_collections.immutable_list:
         return [e for e in obj]
-    print('cls is', cls)
     replacement = proxy_class(cls)
     if replacement is not None:
         if cls in [torch.device]:
