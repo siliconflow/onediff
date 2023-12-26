@@ -13,9 +13,15 @@ from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
 from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
 from .transformer_2d_oflow import Transformer2DModel as Transformer2DModelOflow
-from .transformer_spatial_oflow import TransformerSpatioTemporalModel as TransformerSpatioTemporalModelOflow
-from .transformer_spatial_oflow import SpatioTemporalResBlock as SpatioTemporalResBlockOflow
-from .transformer_spatial_oflow import TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow
+from .transformer_spatial_oflow import (
+    TransformerSpatioTemporalModel as TransformerSpatioTemporalModelOflow,
+)
+from .transformer_spatial_oflow import (
+    SpatioTemporalResBlock as SpatioTemporalResBlockOflow,
+)
+from .transformer_spatial_oflow import (
+    TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow,
+)
 from .transformer_spatial_oflow import TemporalDecoder as TemporalDecoderOflow
 
 torch2oflow_class_map = {

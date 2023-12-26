@@ -17,6 +17,7 @@ from oneflow import nn
 
 from typing import Optional, Tuple, Union
 
+
 class TemporalDecoder(nn.Module):
     def __init__(
         self,
@@ -28,7 +29,9 @@ class TemporalDecoder(nn.Module):
         super().__init__()
         self.layers_per_block = layers_per_block
 
-        self.conv_in = nn.Conv2d(in_channels, block_out_channels[-1], kernel_size=3, stride=1, padding=1)
+        self.conv_in = nn.Conv2d(
+            in_channels, block_out_channels[-1], kernel_size=3, stride=1, padding=1
+        )
         self.mid_block = MidBlockTemporalDecoder(
             num_layers=self.layers_per_block,
             in_channels=block_out_channels[-1],
@@ -54,7 +57,9 @@ class TemporalDecoder(nn.Module):
             self.up_blocks.append(up_block)
             prev_output_channel = output_channel
 
-        self.conv_norm_out = nn.GroupNorm(num_channels=block_out_channels[0], num_groups=32, eps=1e-6)
+        self.conv_norm_out = nn.GroupNorm(
+            num_channels=block_out_channels[0], num_groups=32, eps=1e-6
+        )
 
         self.conv_act = nn.SiLU()
         self.conv_out = torch.nn.Conv2d(
@@ -146,12 +151,17 @@ class TemporalDecoder(nn.Module):
         sample_copy = sample
         batch_size = batch_frames // num_frames
         ## lixiang mark
-        sample = sample[None, :].reshape(batch_size, -1, channels, height, width).permute(0, 2, 1, 3, 4)
+        sample = (
+            sample[None, :]
+            .reshape(batch_size, -1, channels, height, width)
+            .permute(0, 2, 1, 3, 4)
+        )
         sample = self.time_conv_out(sample)
 
         sample = sample.permute(0, 2, 1, 3, 4).reshape_as(sample_copy)
 
         return sample
+
 
 class TemporalBasicTransformerBlock(nn.Module):
     r"""
@@ -238,15 +248,21 @@ class TemporalBasicTransformerBlock(nn.Module):
         batch_frames, seq_length, channels = hidden_states.shape
         batch_size = batch_frames // num_frames
 
-        hidden_states = hidden_states[None, :].reshape(batch_size, num_frames, seq_length, channels)
+        hidden_states = hidden_states[None, :].reshape(
+            batch_size, num_frames, seq_length, channels
+        )
         hidden_states = hidden_states.permute(0, 2, 1, 3)
-        hidden_states = hidden_states.reshape(batch_size * seq_length, num_frames, channels)
+        hidden_states = hidden_states.reshape(
+            batch_size * seq_length, num_frames, channels
+        )
 
         residual = hidden_states
         hidden_states = self.norm_in(hidden_states)
 
         if self._chunk_size is not None:
-            hidden_states = _chunked_feed_forward(self.ff, hidden_states, self._chunk_dim, self._chunk_size)
+            hidden_states = _chunked_feed_forward(
+                self.ff, hidden_states, self._chunk_dim, self._chunk_size
+            )
         else:
             hidden_states = self.ff_in(hidden_states)
 
@@ -260,14 +276,18 @@ class TemporalBasicTransformerBlock(nn.Module):
         # 3. Cross-Attention
         if self.attn2 is not None:
             norm_hidden_states = self.norm2(hidden_states)
-            attn_output = self.attn2(norm_hidden_states, encoder_hidden_states=encoder_hidden_states)
+            attn_output = self.attn2(
+                norm_hidden_states, encoder_hidden_states=encoder_hidden_states
+            )
             hidden_states = attn_output + hidden_states
 
         # 4. Feed-forward
         norm_hidden_states = self.norm3(hidden_states)
 
         if self._chunk_size is not None:
-            ff_output = _chunked_feed_forward(self.ff, norm_hidden_states, self._chunk_dim, self._chunk_size)
+            ff_output = _chunked_feed_forward(
+                self.ff, norm_hidden_states, self._chunk_dim, self._chunk_size
+            )
         else:
             ff_output = self.ff(norm_hidden_states)
 
@@ -275,12 +295,16 @@ class TemporalBasicTransformerBlock(nn.Module):
             hidden_states = ff_output + hidden_states
         else:
             hidden_states = ff_output
-        
+
         print(batch_size, seq_length, num_frames, channels)
         ## lixiang mark
-        hidden_states = hidden_states[None, :].reshape(batch_size, -1, num_frames, channels)
-        hidden_states = hidden_states.permute(0, 2, 1, 3) 
-        hidden_states = hidden_states.reshape(batch_size * num_frames, seq_length, channels)
+        hidden_states = hidden_states[None, :].reshape(
+            batch_size, -1, num_frames, channels
+        )
+        hidden_states = hidden_states.permute(0, 2, 1, 3)
+        hidden_states = hidden_states.reshape(
+            batch_size * num_frames, seq_length, channels
+        )
 
         return hidden_states
 
@@ -353,10 +377,14 @@ class SpatioTemporalResBlock(nn.Module):
         ## lixiang mark
         # print(batch_size, num_frames, channels, height, width)
         hidden_states_mix = (
-            hidden_states[None, :].reshape(batch_size, -1, channels, height, width).permute(0, 2, 1, 3, 4)
+            hidden_states[None, :]
+            .reshape(batch_size, -1, channels, height, width)
+            .permute(0, 2, 1, 3, 4)
         )
         hidden_states = (
-            hidden_states[None, :].reshape(batch_size, -1, channels, height, width).permute(0, 2, 1, 3, 4)
+            hidden_states[None, :]
+            .reshape(batch_size, -1, channels, height, width)
+            .permute(0, 2, 1, 3, 4)
         )
 
         if temb is not None:
@@ -369,8 +397,11 @@ class SpatioTemporalResBlock(nn.Module):
             image_only_indicator=image_only_indicator,
         )
 
-        hidden_states = hidden_states.permute(0, 2, 1, 3, 4).reshape_as(hidden_states_copy)
+        hidden_states = hidden_states.permute(0, 2, 1, 3, 4).reshape_as(
+            hidden_states_copy
+        )
         return hidden_states
+
 
 class TransformerSpatioTemporalModel(nn.Module):
     """
@@ -405,7 +436,9 @@ class TransformerSpatioTemporalModel(nn.Module):
 
         # 2. Define input layers
         self.in_channels = in_channels
-        self.norm = torch.nn.GroupNorm(num_groups=32, num_channels=in_channels, eps=1e-6)
+        self.norm = torch.nn.GroupNorm(
+            num_groups=32, num_channels=in_channels, eps=1e-6
+        )
         self.proj_in = nn.Linear(in_channels, inner_dim)
 
         # 3. Define transformers blocks
@@ -436,7 +469,9 @@ class TransformerSpatioTemporalModel(nn.Module):
         )
 
         time_embed_dim = in_channels * 4
-        self.time_pos_embed = TimestepEmbedding(in_channels, time_embed_dim, out_dim=in_channels)
+        self.time_pos_embed = TimestepEmbedding(
+            in_channels, time_embed_dim, out_dim=in_channels
+        )
         self.time_proj = Timesteps(in_channels, True, 0)
         self.time_mixer = AlphaBlender(alpha=0.5, merge_strategy="learned_with_images")
 
@@ -487,25 +522,27 @@ class TransformerSpatioTemporalModel(nn.Module):
         new_shape = (height * width, batch_size, 1, time_context.shape[-1])
         time_context = time_context_first_timestep[None, :].broadcast_to(new_shape)
 
-        time_context = time_context.reshape(height * width * batch_size, 1, time_context.shape[-1])
+        time_context = time_context.reshape(
+            height * width * batch_size, 1, time_context.shape[-1]
+        )
 
         residual = hidden_states
 
         hidden_states = self.norm(hidden_states)
         inner_dim = hidden_states.shape[1]
-        hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch_frames, height * width, inner_dim)
+        hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
+            batch_frames, height * width, inner_dim
+        )
         hidden_states = self.proj_in(hidden_states)
 
         num_frames_emb = torch.arange(num_frames, device=hidden_states.device)
 
-
         # num_frames_emb = num_frames_emb.repeat(batch_size, 1)
         # num_frames_emb = num_frames_emb.reshape(-1)
         ## lixiang mark
-        num_frames_emb = num_frames_emb.unsqueeze(1)  
+        num_frames_emb = num_frames_emb.unsqueeze(1)
         num_frames_emb_expanded = num_frames_emb.expand(-1, batch_size)
         num_frames_emb_expanded = num_frames_emb_expanded.reshape(-1)
-
 
         t_emb = self.time_proj(num_frames_emb_expanded)
 
@@ -518,7 +555,9 @@ class TransformerSpatioTemporalModel(nn.Module):
         emb = emb[:, None, :]
 
         # 2. Blocks
-        for block, temporal_block in zip(self.transformer_blocks, self.temporal_transformer_blocks):
+        for block, temporal_block in zip(
+            self.transformer_blocks, self.temporal_transformer_blocks
+        ):
             if self.training and self.gradient_checkpointing:
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     block,
@@ -550,7 +589,11 @@ class TransformerSpatioTemporalModel(nn.Module):
 
         # 3. Output
         hidden_states = self.proj_out(hidden_states)
-        hidden_states = hidden_states.reshape(batch_frames, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
+        hidden_states = (
+            hidden_states.reshape(batch_frames, height, width, inner_dim)
+            .permute(0, 3, 1, 2)
+            .contiguous()
+        )
 
         output = hidden_states + residual
 
@@ -558,4 +601,3 @@ class TransformerSpatioTemporalModel(nn.Module):
             return (output,)
 
         return TransformerTemporalModelOutput(sample=output)
-        
