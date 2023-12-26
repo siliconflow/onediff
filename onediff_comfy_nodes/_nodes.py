@@ -601,7 +601,6 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             }
         }
 
-    
     CATEGORY = "OneDiff"
 
     def load_checkpoint(
@@ -628,7 +627,9 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             vae.first_stage_model = oneflow_compile(
                 vae.first_stage_model,
                 use_graph=True,
-                graph_path=file_path,
-                graph_device=model_management.get_torch_device(),
+                options={
+                    "graph_file": file_path,
+                    "graph_file_device": model_management.get_torch_device(),
+                },
             )
         return oneflow_model, clip, vae
