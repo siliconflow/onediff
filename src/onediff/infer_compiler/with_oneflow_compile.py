@@ -420,19 +420,6 @@ def get_oneflow_graph(model, size=9, all_dynamic=False):
     return g
 
 
-def state_dict_hook(module, state_dict, prefix, local_metadata):
-    pytorch_key_prefix = "_deployable_module_model._torch_module."
-    new_state_dict = type(state_dict)()
-    for k, v in state_dict.items():
-        # _deployable_module_model._torch_module.out.2.weight => out.2.weight
-        if k.startswith(pytorch_key_prefix):
-            new_k = k[len(pytorch_key_prefix) :]
-            new_state_dict[new_k] = v
-        else:
-            new_state_dict[k] = v
-    return new_state_dict
-
-
 # Return a DeployableModule that using module_cls as it's parent class.
 def get_mixed_deployable_module(module_cls):
     class MixedDeployableModule(DeployableModule, module_cls):
@@ -489,6 +476,5 @@ def oneflow_compile(
     model = wrap_module(torch_module)
     assert isinstance(model, DeployableModule)
     assert isinstance(model, torch_module.__class__)
-    model._register_state_dict_hook(state_dict_hook)
 
     return model

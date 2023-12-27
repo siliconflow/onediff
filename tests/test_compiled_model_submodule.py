@@ -46,5 +46,9 @@ def main():
                 oneflow_param.detach().cpu().numpy()
             )
 
+    torch_state_dict = torch_module.state_dict()
+    oneflow_state_dict = oneflow_module.state_dict()
+    assert set(torch_state_dict.keys()) == set(oneflow_state_dict.keys())
+
 if __name__ == "__main__":
     main()
