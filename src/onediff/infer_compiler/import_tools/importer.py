@@ -87,6 +87,17 @@ class LazyMocker:
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
         self.mocked_packages.add(attrs[0])
+
+        try:
+            attrs_0_pkg = sys.modules.get(attrs[0], None)
+            if attrs_0_pkg is not None:
+                # add package path to sys.path to avoid mock error
+                pkg_path = Path(attrs_0_pkg.__file__).parents[1]
+                if pkg_path not in sys.path:
+                    sys.path.append(pkg_path)
+        except Exception as e:
+            print(e)
+
         mock_pkg = DynamicMockModule.from_package(attrs[0], verbose=False)
         for name in attrs[1:]:
             mock_pkg = getattr(mock_pkg, name)

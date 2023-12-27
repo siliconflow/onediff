@@ -128,21 +128,32 @@ torch2oflow_class_map = {
 
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
+def generate_graph_path(ckpt_name, model_name):
+    from pathlib import Path
+    output_dir = Path("/home/fengwen/sd_webui/stable-diffusion-webui/outputs")/ "graphs"
+    output_dir.mkdir(exist_ok=True)
+    graph_path = output_dir / ckpt_name / f"{model_name}.graph"
+    return graph_path
 
 def compile(sd_model, quantization=False):
     unet_model = sd_model.model.diffusion_model
-    if quantization:
-        # replace_module_with_quantizable_module
-        quantize_model(unet_model, inplace=True)
+
 
     full_name = f"{unet_model.__module__}.{unet_model.__class__.__name__}"
     if full_name != "sgm.modules.diffusionmodules.openaimodel.UNetModel":
         return
     global _compiled
-    _compiled = oneflow_compile(sd_model.model.diffusion_model, use_graph=True)
+    if _compiled is not None:
+        unet_model = _compiled
+    else:
+        if quantization:
+            # replace_module_with_quantizable_module
+            unet_model = quantize_model(unet_model, inplace=False)
+        
+    _compiled = oneflow_compile(unet_model, use_graph=True)
 
     # add sgm package path to sys.path to avoid mock error
-    import sgm, sys
+    import sgm, sys 
     sys.path.append(sgm.__path__[0][:-4])
     time_embed_wrapper = TimeEmbedModule(_compiled._deployable_module_model.oneflow_module.time_embed)
 
@@ -169,10 +180,10 @@ class Script(scripts.Script):
         return not is_img2img
 
 
-    def run(self, p):
+    def run(self, p, quantization=False):
         global _compiled
-        if _compiled is None:
-            compile(shared.sd_model)
+        if _compiled is None or quantization:
+            compile(shared.sd_model, quantization)
 
         original = shared.sd_model.model.diffusion_model
         from sgm.modules.diffusionmodules.wrappers import OpenAIWrapper
@@ -187,4 +198,4 @@ class Script(scripts.Script):
         return proc
 
 
-script_callbacks.on_model_loaded(compile)
+# script_callbacks.on_model_loaded(compile)

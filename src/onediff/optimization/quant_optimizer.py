@@ -1,19 +1,19 @@
-import os
 import time
-import torch
 import torch.nn as nn
-from pathlib import Path
-from copy import deepcopy
+from copy import  deepcopy
 from ..infer_compiler.utils.log_utils import logger
 from ..infer_compiler.utils.version_util import (
     get_support_message,
     is_quantization_enabled,
 )
+from ..infer_compiler.utils.cost_util import cost_cnt
+from ..infer_compiler.transform.manager import transform_mgr
 
-__all__ = ["quantize_model"]
+
+__all__ = ["quantize_model", "varify_can_use_quantization"]
 
 
-def _varify_can_use_quantization():
+def varify_can_use_quantization():
     if not is_quantization_enabled():
         message = get_support_message()
         logger.error(message)
@@ -21,7 +21,7 @@ def _varify_can_use_quantization():
     return True
 
 
-def _modify_sub_module(module, sub_module_name, new_value):
+def _modify_sub_module(module, sub_module_name, new_value, inplace=True):
     """Modify a submodule of a module using dot-separated names.
 
     Args:
@@ -32,7 +32,6 @@ def _modify_sub_module(module, sub_module_name, new_value):
     """
     parts = sub_module_name.split(".")
     current_module = module
-
     for i, part in enumerate(parts):
         try:
             if part.isdigit():
@@ -49,20 +48,20 @@ def _modify_sub_module(module, sub_module_name, new_value):
             raise ModuleNotFoundError(f"Submodule {part} not found.")
 
 
+@cost_cnt(debug=transform_mgr.debug_mode)
 def quantize_model(
     model,  # diffusion_model
     quantize_conv=True,
     quantize_linear=True,
-    verbose=False,
     bits=8,
     *,
     inplace=True,
 ):
     """Quantize a model. inplace=True will modify the model in-place."""
     start_time = time.time()
-    if _varify_can_use_quantization() is False:
+    if varify_can_use_quantization() is False:
         return model
-
+    
     from torch._dynamo import allow_in_graph as maybe_allow_in_graph
     from diffusers_quant.utils import symm_quantize_sub_module, find_quantizable_modules
     from diffusers_quant.utils import get_quantize_module
@@ -70,12 +69,12 @@ def quantize_model(
 
     if not inplace:
         model = deepcopy(model)
-    from ..infer_compiler.utils.cost_util import cost_cnt
 
+    
     def apply_quantization_to_modules(quantizable_modules):
         nonlocal model
-
         for sub_module_name, sub_mod in quantizable_modules.items():
+
             quantizer = Quantizer()
             quantizer.configure(bits=bits, perchannel=True)
             quantizer.find_params(sub_mod.weight.float(), weight=True)
@@ -101,17 +100,17 @@ def quantize_model(
             )
             _modify_sub_module(model, sub_module_name, sub_mod)
 
+
+
     if quantize_conv:
         conv_modules = find_quantizable_modules(model, module_cls=[nn.Conv2d])
         apply_quantization_to_modules(conv_modules)
-        if verbose:
-            print(f"{len(conv_modules)=}")
+        logger.debug(f"{len(conv_modules)=}")
 
     if quantize_linear:
         linear_modules = find_quantizable_modules(model, module_cls=[nn.Linear])
         apply_quantization_to_modules(linear_modules)
-        if verbose:
-            logger.info(f"{len(linear_modules)=}")
+        logger.debug(f"{len(linear_modules)=}")
 
     logger.info(
         f"Quantized model {type(model)} successfully! \n"
