@@ -6,11 +6,10 @@
 
 ## Performance of Community Edition
 
-Updated on DEC 13, 2023. Device: RTX 3090. Resolution: 1024x1024
-
-| torch(Baseline) | onediff(Optimized) | Percentage improvement |
-| --------------- | ------------------ | ---------------------- |
-| 2.99it/s        | 4.49it/s           | 50.17%                 |
+Updated on DEC 26, 2023. Device: RTX 3090. Resolution: 1024x1024
+| torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
+| --------------- | --------------- | ------------------ | ---------------------- |
+| 2.99it/s        | 6.40it/s        | 6.71it/s           | 224.41%                |
 
 ## Installation Guide
 
@@ -18,9 +17,9 @@ It is recommended to create a Python virtual environment in advance. For example
 
 ```bash
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
-git clone https://github.com/Oneflow-Inc/onediff.git
+git clone https://github.com/siliconflow/onediff.git
+cp -r onediff/onediff_sd_webui_extensions stable-diffusion-webui/extensions/
 cd stable-diffusion-webui && git checkout 4afaaf8  # The tested git commit id is 4afaaf8.
-cp -r ../onediff/onediff_sd_webui_extensions stable-diffusion-webui/extensions/
 
 # Install all of stable-diffusion-webui's dependencies.
 venv_dir=- bash webui.sh --port=8080
