@@ -25,7 +25,7 @@ parser.add_argument(
     type=str,
     default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
 )
-parser.add_argument("--n_steps", type=int, default=1)
+parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
