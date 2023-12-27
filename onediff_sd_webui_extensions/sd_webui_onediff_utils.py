@@ -16,7 +16,9 @@ class GroupNorm32Oflow(nn.GroupNorm):
 def timestep_embedding(timesteps, dim, max_period=10000):
     half = dim // 2
     freqs = flow.exp(
-        -math.log(max_period) * flow.arange(start=0, end=half, dtype=flow.float32) / half
+        -math.log(max_period)
+        * flow.arange(start=0, end=half, dtype=flow.float32)
+        / half
     ).to(device=timesteps.device)
     args = timesteps[:, None].float() * freqs[None]
     embedding = flow.cat([flow.cos(args), flow.sin(args)], dim=-1)
@@ -51,7 +53,7 @@ class CrossAttentionOflow(nn.Module):
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
 
-        self.scale = dim_head**-0.5
+        self.scale = dim_head ** -0.5
         self.heads = heads
 
         self.to_q = nn.Linear(query_dim, inner_dim, bias=False)
@@ -83,7 +85,7 @@ class CrossAttentionOflow(nn.Module):
         out = flow._C.fused_multi_head_attention_inference_v2(
             query=q_in,
             query_layout="BM(HK)",
-            query_head_size=self.to_q.out_features//self.heads,
+            query_head_size=self.to_q.out_features // self.heads,
             key=k_in,
             key_layout="BM(HK)",
             value=v_in,

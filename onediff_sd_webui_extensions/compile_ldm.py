@@ -5,14 +5,18 @@ from onediff.infer_compiler import oneflow_compile, register
 from ldm.modules.attention import BasicTransformerBlock, CrossAttention
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
-from sd_webui_onediff_utils import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
+from sd_webui_onediff_utils import (
+    CrossAttentionOflow,
+    GroupNorm32Oflow,
+    timestep_embedding,
+)
 
 __all__ = ["compile_ldm_unet"]
 
 
 # https://github.com/Stability-AI/stablediffusion/blob/b4bdae9916f628461e1e4edbc62aafedebb9f7ed/ldm/modules/diffusionmodules/openaimodel.py#L775
 class UNetModelOflow(flow.nn.Module):
-    def forward(self, x, timesteps=None, context=None, y=None,**kwargs):
+    def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
         assert (y is not None) == (
             self.num_classes is not None
         ), "must specify y if and only if the model is class-conditional"
@@ -43,10 +47,10 @@ torch2oflow_class_map = {
     GroupNorm32: GroupNorm32Oflow,
     UNetModel: UNetModelOflow,
 }
-register(package_names=["ldm"],  torch2oflow_class_map=torch2oflow_class_map)
+register(package_names=["ldm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_ldm_unet(sd_model, * ,  use_graph=True, options={}):
+def compile_ldm_unet(sd_model, *, use_graph=True, options={}):
     unet_model = sd_model.model.diffusion_model
     if not isinstance(unet_model, UNetModel):
         return

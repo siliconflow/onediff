@@ -1,6 +1,10 @@
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile, register
-from sd_webui_onediff_utils import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
+from sd_webui_onediff_utils import (
+    CrossAttentionOflow,
+    GroupNorm32Oflow,
+    timestep_embedding,
+)
 from sgm.modules.attention import CrossAttention
 from sgm.modules.diffusionmodules.openaimodel import UNetModel
 from sgm.modules.diffusionmodules.util import GroupNorm32
@@ -10,7 +14,7 @@ __all__ = ["compile_sgm_unet"]
 
 # https://github.com/Stability-AI/generative-models/blob/059d8e9cd9c55aea1ef2ece39abf605efb8b7cc9/sgm/modules/diffusionmodules/openaimodel.py#L816
 class UNetModelOflow(flow.nn.Module):
-    def forward(self, x, timesteps=None, context=None, y=None,**kwargs):
+    def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
         assert (y is not None) == (
             self.num_classes is not None
         ), "must specify y if and only if the model is class-conditional"
@@ -43,7 +47,7 @@ torch2oflow_class_map = {
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_sgm_unet(sd_model, * ,  use_graph=True, options={}):
+def compile_sgm_unet(sd_model, *, use_graph=True, options={}):
     unet_model = sd_model.model.diffusion_model
     if isinstance(unet_model, UNetModel):
         return oneflow_compile(unet_model, use_graph=use_graph, options=options)

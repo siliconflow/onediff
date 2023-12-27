@@ -23,6 +23,7 @@ compiled_unet = None
 def compile(sd_model):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
+
     unet_model = sd_model.model.diffusion_model
     global compiled_unet
     if isinstance(unet_model, UNetModelLDM):
@@ -34,6 +35,7 @@ def compile(sd_model):
 def supplement_sys_path():
     """add package path to sys.path to avoid mock error"""
     import ldm, sgm, sys
+
     sys_paths = set(sys.path)
     new_paths = [sgm.__path__[0][:-4], ldm.__path__[0][:-4]]
     for path in new_paths:
