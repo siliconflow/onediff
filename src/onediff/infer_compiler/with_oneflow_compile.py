@@ -56,10 +56,9 @@ class DualModule(torch.nn.Module):
                 [x for x, _ in oneflow_module.named_parameters()]
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
-            for name, tensor in chain.from_iterable([
-                torch_module.named_parameters(),
-                torch_module.named_buffers(),
-            ]):
+            for name, tensor in chain.from_iterable(
+                [torch_module.named_parameters(), torch_module.named_buffers(),]
+            ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
                 else:
@@ -75,7 +74,6 @@ class DualModule(torch.nn.Module):
                 module.to(*args, **kwargs)
             else:
                 _align_tensor(module, self._oneflow_module.get_submodule(name))
-
 
     def __getattr__(self, name):
         if name == "_torch_module":
@@ -124,7 +122,11 @@ class DualModuleList(torch.nn.ModuleList):
         for torch_module, oneflow_module in zip(
             self._torch_modules, self._oneflow_modules
         ):
-            dual_modules.append(get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module))
+            dual_modules.append(
+                get_mixed_dual_module(torch_module.__class__)(
+                    torch_module, oneflow_module
+                )
+            )
         # clear self._modules since `self._torch_modules = torch_modules` will append a module to self._modules
         self._modules.clear()
         self += dual_modules
@@ -146,6 +148,7 @@ class DualModuleList(torch.nn.ModuleList):
             value = torch2oflow(value)
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
+
 
 def get_mixed_dual_module(module_cls):
     class MixedDualModule(DualModule, module_cls):
@@ -176,7 +179,9 @@ def handle_deployable_exception(func):
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
+        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+            torch_module, oneflow_module
+        )
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
@@ -245,7 +250,10 @@ class DeployableModule(torch.nn.Module):
 
         # assert the target device is same as graph device
         target_device = parse_device(args, kwargs)
-        if target_device is not None and len(self._deployable_module_dpl_graph._blocks) > 0:
+        if (
+            target_device is not None
+            and len(self._deployable_module_dpl_graph._blocks) > 0
+        ):
             current_device = next(self._deployable_module_dpl_graph._state()).device
             if not check_device(current_device, target_device):
                 raise RuntimeError(
@@ -279,11 +287,11 @@ class DeployableModule(torch.nn.Module):
             return self._modules[name]
         return getattr(self._deployable_module_model, name)
 
-    def load_graph(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
+    def load_graph(self, file_path, device=None, run_warmup=True):
+        self.get_graph().warmup_with_load(file_path, device, run_warmup)
 
-    def warmup_with_load(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
+    def warmup_with_load(self, file_path, device=None, run_warmup=True):
+        self.get_graph().warmup_with_load(file_path, device, run_warmup)
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
@@ -324,11 +332,11 @@ class OneflowGraph(flow.nn.Graph):
         return self.model(*args, **kwargs)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def warmup_with_load(self, file_path, device=None):
+    def warmup_with_load(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
-        self.load_runtime_state_dict(state_dict)
+        self.load_runtime_state_dict(state_dict, warmup_with_run=run_warmup)
 
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
