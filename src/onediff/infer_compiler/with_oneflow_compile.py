@@ -19,8 +19,12 @@ from .utils.param_utils import parse_device, check_device
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         torch.nn.Module.__init__(self)
-        self._torch_module = torch_module
-        self._oneflow_module = oneflow_module
+        # avoid to set key '_torch_module' in self._modules
+        object.__setattr__(self, '_torch_module', torch_module)
+        object.__setattr__(self, '_oneflow_module', oneflow_module)
+        self._modules.update(**torch_module._modules)
+        self._parameters.update(**torch_module._parameters)
+        self._buffers.update(**torch_module._buffers)
 
     @property
     def oneflow_module(self):
@@ -176,7 +180,14 @@ def handle_deployable_exception(func):
 class DeployableModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
+        mixed_dual_module = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
+        # avoid to set '_deployable_module_model' in self._modules
+        object.__setattr__(self, '_deployable_module_model', mixed_dual_module)
+
+        self._modules.update(**self._deployable_module_model._modules)
+        self._parameters.update(**self._deployable_module_model._parameters)
+        self._buffers.update(**self._deployable_module_model._buffers)
+
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
