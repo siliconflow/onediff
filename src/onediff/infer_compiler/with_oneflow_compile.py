@@ -158,6 +158,52 @@ def get_mixed_dual_module(module_cls):
     return MixedDualModule
 
 
+def graph_file_management(func):
+    @wraps(func)
+    def wrapper(self: "DeployableModule", *args, **kwargs):
+        graph_file = self._deployable_module_options.get("graph_file", None)
+
+        # Load graph file
+        if graph_file is not None:
+            try:
+                if not os.path.exists(graph_file):
+                    logger.warning(
+                        f"Graph file {graph_file} not exists!, will generate graph."
+                    )
+
+                else:
+                    graph_device = self._deployable_module_options.get(
+                        "graph_file_device", None
+                    )
+
+                    self.load_graph(graph_file, torch2oflow(graph_device))
+                    logger.info(f"Load graph file: {graph_file}")
+
+                    graph_file = None
+                    self._deployable_module_options["graph_file"] = None
+
+            except Exception as e:
+                logger.error(f"Load graph file: {graph_file} failed! {e=}")
+
+        ret = func(self, *args, **kwargs)
+
+        # Save graph file
+        if graph_file is not None:
+            try:
+                if graph_file is not None:
+                    os.makedirs(os.path.dirname(graph_file), exist_ok=True)
+                    self.save_graph(graph_file)
+                    logger.info(f"Save graph file: {graph_file} done!")
+            except Exception as e:
+                logger.error(f"Save graph file: {graph_file} failed! {e=}")
+            finally:
+                self._deployable_module_options["graph_file"] = None
+
+        return ret
+
+    return wrapper
+
+
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -177,7 +223,15 @@ def handle_deployable_exception(func):
 
 
 class DeployableModule(torch.nn.Module):
-    def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
+    def __init__(
+        self,
+        torch_module,
+        oneflow_module,
+        use_graph=True,
+        options={},
+        graph_path=None,
+        graph_device=None,
+    ):
         torch.nn.Module.__init__(self)
         self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
             torch_module, oneflow_module
@@ -219,6 +273,7 @@ class DeployableModule(torch.nn.Module):
 
     @input_output_processor
     @handle_deployable_exception
+    @graph_file_management
     def apply_model(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
@@ -233,6 +288,7 @@ class DeployableModule(torch.nn.Module):
 
     @input_output_processor
     @handle_deployable_exception
+    @graph_file_management
     def __call__(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
@@ -265,6 +321,7 @@ class DeployableModule(torch.nn.Module):
     # TODO(): Just for transformers VAE decoder
     @input_output_processor
     @handle_deployable_exception
+    @graph_file_management
     def decode(self, *args, **kwargs):
         if self._deployable_module_use_graph:
 
@@ -367,9 +424,23 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
 # Return a DeployableModule that using module_cls as it's parent class.
 def get_mixed_deployable_module(module_cls):
     class MixedDeployableModule(DeployableModule, module_cls):
-        def __init__(self, torch_module, oneflow_module, use_graph=True, options={}):
+        def __init__(
+            self,
+            torch_module,
+            oneflow_module,
+            use_graph=True,
+            options={},
+            graph_path=None,
+            graph_device=None,
+        ):
             DeployableModule.__init__(
-                self, torch_module, oneflow_module, use_graph, options
+                self,
+                torch_module,
+                oneflow_module,
+                use_graph,
+                options,
+                graph_path,
+                graph_device,
             )
             self._is_raw_deployable_module = False
 
@@ -386,7 +457,12 @@ def get_mixed_deployable_module(module_cls):
     return MixedDeployableModule
 
 
-def oneflow_compile(torch_module: torch.nn.Module, *, use_graph=True, options={}):
+def oneflow_compile(
+    torch_module: torch.nn.Module,
+    *,
+    use_graph=True,
+    options={},
+):
     set_default_registry()
 
     def wrap_module(module):
