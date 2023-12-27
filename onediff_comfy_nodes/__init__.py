@@ -12,6 +12,7 @@ from ._nodes import (
     ControlNetGraphSaver,
     SVDSpeedup,
     ModuleDeepCacheSpeedup,
+    OneDiffCheckpointLoaderSimple,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -30,6 +31,7 @@ NODE_CLASS_MAPPINGS = {
     "ControlNetGraphSaver": ControlNetGraphSaver,
     "SVDSpeedup": SVDSpeedup,
     "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
+    "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -46,6 +48,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ControlNetGraphSaver": "ControlNet Graph Saver",
     "SVDSpeedup": "SVD Speedup",
     "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
+    "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
 if _USE_UNET_INT8:
