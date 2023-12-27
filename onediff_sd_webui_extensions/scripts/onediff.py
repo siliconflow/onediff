@@ -5,16 +5,12 @@ from modules.processing import process_images
 
 import torch
 import oneflow as flow
-from oneflow import nn
-from sgm.modules.attention import CrossAttention
-from sgm.modules.diffusionmodules.util import GroupNorm32
-from omegaconf import OmegaConf, ListConfig
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
-from onediff.infer_compiler import oneflow_compile, register
+from omegaconf import OmegaConf, ListConfig
 
 import compiled_model
+from compile_sgm import compile_sgm_unet
 from compile_ldm import compile_ldm_unet
-from sd_webui_onediff_utils import CrossAttentionOflow, GroupNorm32Oflow, TimeEmbedModule
 
 
 @torch2oflow.register
@@ -37,28 +33,14 @@ def forward_wrapper( self, x, t, c, **kwargs):
             )
 
 
-torch2oflow_class_map = {
-    CrossAttention: CrossAttentionOflow,
-    GroupNorm32: GroupNorm32Oflow,
-}
-register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
-
-
 def compile(sd_model):
+    from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
+    from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
     unet_model = sd_model.model.diffusion_model
-    full_name = f"{unet_model.__module__}.{unet_model.__class__.__name__}"
-    if not full_name.endswith(".UNetModel"):
-        return
-    if full_name.startswith("ldm"):
+    if isinstance(unet_model, UNetModelLDM):
         compile_ldm_unet(sd_model)
-    compiled = oneflow_compile(sd_model.model.diffusion_model, use_graph=True)
-    # add sgm package path to sys.path to avoid mock error
-    import sgm, sys
-    sys.path.append(sgm.__path__[0][:-4])
-    time_embed_wrapper = TimeEmbedModule(compiled._deployable_module_model.oneflow_module.time_embed)
-    # https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/openaimodel.py#L984
-    setattr(compiled._deployable_module_model.oneflow_module, "time_embed", time_embed_wrapper)
-    compiled_model.compiled_unet = compiled
+    elif isinstance(unet_model, UNetModelSGM):
+        compile_sgm_unet(sd_model)
 
 
 class Script(scripts.Script):
@@ -70,9 +52,11 @@ class Script(scripts.Script):
 
     def run(self, p):
         if compiled_model.compiled_unet is None:
+            # compile and save result to compiled_model.compiled_unet
             compile(shared.sd_model)
         compiled = compiled_model.compiled_unet
         original = shared.sd_model.model.diffusion_model
+        # set OpenAIWrapper.forward for sgm unet
         from sgm.modules.diffusionmodules.wrappers import OpenAIWrapper
         orig_forward = OpenAIWrapper.forward
         if compiled is not None:
