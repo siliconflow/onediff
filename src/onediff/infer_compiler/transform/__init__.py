@@ -6,8 +6,6 @@ from .custom_transform import register
 from .builtin_transform import (
     ProxySubmodule,
     proxy_class,
-    replace_obj,
     map_args,
-    replace_func,
     get_attr,
 )

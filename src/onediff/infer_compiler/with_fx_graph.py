@@ -5,7 +5,7 @@ import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from .transform import replace_obj, replace_func, get_attr, torch2oflow
+from .transform import get_attr, torch2oflow
 
 
 def fx_node_tranform(gm):
@@ -69,7 +69,7 @@ def to_of_transform(
         elif node.op == "call_function":
             of_node = of_g.create_node(
                 "call_function",
-                replace_func(node.target),
+                torch2oflow(node.target),
                 args=node_replace_args(node.args, name2node),
                 kwargs=node_replace_args(node.kwargs, name2node),
             )
@@ -111,7 +111,7 @@ def replace_node(node, name2node):
     if isinstance(node, torch.fx.Node):
         return name2node[node.name]
     else:
-        return replace_obj(node)
+        return torch2oflow(node)
 
 
 def node_replace_args(args, name2node):

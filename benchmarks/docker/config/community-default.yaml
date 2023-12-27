@@ -3,7 +3,7 @@ set_pip_mirror: "pip config set global.index-url https://pypi.tuna.tsinghua.edu.
 oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122"
 repos:
   - onediff:
-      repo_url: https://github.com/Oneflow-Inc/onediff.git
+      repo_url: https://github.com/siliconflow/onediff.git
       branch: main
       cmds:
         - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.19.3"

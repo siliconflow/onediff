@@ -30,6 +30,8 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         weight_inplace_update=False,
         *,
         use_graph=None,
+        graph_path=None,
+        graph_device=None,
     ):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
@@ -46,7 +48,9 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
             ] = self.model.diffusion_model
         else:
             self.model.__dict__["_modules"]["diffusion_model"] = oneflow_compile(
-                self.model.diffusion_model, use_graph=use_graph
+                self.model.diffusion_model,
+                use_graph=use_graph,
+                options={"graph_file": graph_path, "graph_file_device": graph_device},
             )
         self.model._register_state_dict_hook(state_dict_hook)
         self.patches = {}
@@ -495,7 +499,6 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
     ):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
-        
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}
@@ -504,10 +507,14 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.model = copy.copy(model)
         self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
         self.deep_cache_unet = oneflow_compile(
-            DeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id), use_graph=use_graph
+            DeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id),
+            use_graph=use_graph,
         )
-        self.fast_deep_cache_unet =oneflow_compile(
-            FastDeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id), use_graph=use_graph
+        self.fast_deep_cache_unet = oneflow_compile(
+            FastDeepCacheUNet(
+                self.model.diffusion_model, cache_layer_id, cache_block_id
+            ),
+            use_graph=use_graph,
         )
         self.model._register_state_dict_hook(state_dict_hook)
         self.patches = {}
