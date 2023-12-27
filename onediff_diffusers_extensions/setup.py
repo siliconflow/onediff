@@ -4,7 +4,7 @@ setup(
     name="diffusers_extensions",
     version="0.1.0",
     description="onediff extensions for diffusers",
-    url="https://github.com/Oneflow-Inc/oneflow",
+    url="https://github.com/siliconflow/oneflow",
     author="OneFlow contributors",
     license="Apache",
     author_email="caishenghang@oneflow.org",
@@ -12,7 +12,7 @@ setup(
     python_requires=">=3.7.0",
     install_requires=[
         "transformers>=4.27.1",
-        "diffusers>=0.19.3",
+        "diffusers>=0.21.1",
         "accelerate",
         "torch",
         "onefx",

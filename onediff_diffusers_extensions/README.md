@@ -2,11 +2,11 @@
 
 ## Install diffusers_extensions
 
-- Follow the steps [here](https://github.com/Oneflow-Inc/onediff?tab=readme-ov-file#install-from-source) to install onediff. 
+- Follow the steps [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-from-source) to install onediff. 
 
 - Install diffusers_extensions by following these steps
     ```
-    git clone https://github.com/Oneflow-Inc/onediff.git
+    git clone https://github.com/siliconflow/onediff.git
     cd diffusers_extensions && python3 -m pip install -e .
     ```
 
