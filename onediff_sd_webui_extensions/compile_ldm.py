@@ -2,27 +2,15 @@ import math
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile, register
 
-import compiled_model
 from ldm.modules.attention import BasicTransformerBlock, CrossAttention
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
-from sd_webui_onediff_utils import CrossAttentionOflow, GroupNorm32Oflow
+from sd_webui_onediff_utils import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
 
 __all__ = ["compile_ldm_unet"]
 
 
-def timestep_embedding(timesteps, dim, max_period=10000):
-    half = dim // 2
-    freqs = flow.exp(
-        -math.log(max_period) * flow.arange(start=0, end=half, dtype=flow.float32) / half
-    ).to(device=timesteps.device)
-    args = timesteps[:, None].float() * freqs[None]
-    embedding = flow.cat([flow.cos(args), flow.sin(args)], dim=-1)
-    if dim % 2:
-        embedding = flow.cat([embedding, flow.zeros_like(embedding[:, :1])], dim=-1)
-    return embedding
-
-
+# https://github.com/Stability-AI/stablediffusion/blob/b4bdae9916f628461e1e4edbc62aafedebb9f7ed/ldm/modules/diffusionmodules/openaimodel.py#L775
 class UNetModelOflow(flow.nn.Module):
     def forward(self, x, timesteps=None, context=None, y=None,**kwargs):
         assert (y is not None) == (
@@ -58,7 +46,7 @@ torch2oflow_class_map = {
 register(package_names=["ldm"],  torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_ldm_unet(sd_model):
+def compile_ldm_unet(sd_model, * ,  use_graph=True, options={}):
     unet_model = sd_model.model.diffusion_model
     if not isinstance(unet_model, UNetModel):
         return
@@ -67,5 +55,4 @@ def compile_ldm_unet(sd_model):
             module.checkpoint = False
         if isinstance(module, ResBlock):
             module.use_checkpoint = False
-    compiled = oneflow_compile(unet_model, use_graph=True)
-    compiled_model.compiled_unet = compiled
+    return oneflow_compile(unet_model, use_graph=use_graph, options=options)

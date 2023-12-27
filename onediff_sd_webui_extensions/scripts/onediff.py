@@ -3,12 +3,9 @@ from modules import script_callbacks
 import modules.shared as shared
 from modules.processing import process_images
 
-import torch
-import oneflow as flow
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 from omegaconf import OmegaConf, ListConfig
 
-import compiled_model
 from compile_sgm import compile_sgm_unet
 from compile_ldm import compile_ldm_unet
 
@@ -19,28 +16,29 @@ def _(mod, verbose=False) -> ListConfig:
     return OmegaConf.create(converted_list)
 
 
-# https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/wrappers.py#L24
-def forward_wrapper( self, x, t, c, **kwargs):
-    x = torch.cat((x, c.get("concat", torch.Tensor([]).type_as(x))), dim=1)
-    with torch.autocast("cuda", enabled=False):
-        with flow.autocast("cuda", enabled=False):
-            return self.diffusion_model(
-                x.half(),
-                timesteps=t.half(),
-                context=c.get("crossattn", None).half(),
-                y=c.get("vector", None).half(),
-                **kwargs,
-            )
+"""oneflow_compiled UNetModel"""
+compiled_unet = None
 
 
 def compile(sd_model):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
     unet_model = sd_model.model.diffusion_model
+    global compiled_unet
     if isinstance(unet_model, UNetModelLDM):
-        compile_ldm_unet(sd_model)
+        compiled_unet = compile_ldm_unet(sd_model)
     elif isinstance(unet_model, UNetModelSGM):
-        compile_sgm_unet(sd_model)
+        compiled_unet = compile_sgm_unet(sd_model)
+
+
+def supplement_sys_path():
+    """add package path to sys.path to avoid mock error"""
+    import ldm, sgm, sys
+    sys_paths = set(sys.path)
+    new_paths = [sgm.__path__[0][:-4], ldm.__path__[0][:-4]]
+    for path in new_paths:
+        if path not in sys_paths:
+            sys.path.append(path)
 
 
 class Script(scripts.Script):
@@ -51,20 +49,14 @@ class Script(scripts.Script):
         return not is_img2img
 
     def run(self, p):
-        if compiled_model.compiled_unet is None:
-            # compile and save result to compiled_model.compiled_unet
-            compile(shared.sd_model)
-        compiled = compiled_model.compiled_unet
+        global compiled_unet
+        if compiled_unet is None:
+            compiled_unet = compile(shared.sd_model)
         original = shared.sd_model.model.diffusion_model
-        # set OpenAIWrapper.forward for sgm unet
-        from sgm.modules.diffusionmodules.wrappers import OpenAIWrapper
-        orig_forward = OpenAIWrapper.forward
-        if compiled is not None:
-            shared.sd_model.model.diffusion_model = compiled
-            setattr(OpenAIWrapper, "forward", forward_wrapper)
+        shared.sd_model.model.diffusion_model = compiled_unet
+        supplement_sys_path()
         proc = process_images(p)
         shared.sd_model.model.diffusion_model = original
-        setattr(OpenAIWrapper, "forward", orig_forward)
         return proc
 
 

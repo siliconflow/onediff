@@ -1,3 +1,4 @@
+import math
 from inspect import isfunction
 
 import oneflow as flow
@@ -8,18 +9,20 @@ from oneflow import nn
 # https://github.com/Stability-AI/stablediffusion/blob/b4bdae9916f628461e1e4edbc62aafedebb9f7ed/ldm/modules/diffusionmodules/util.py#L224
 class GroupNorm32Oflow(nn.GroupNorm):
     def forward(self, x):
-        # return super().forward(x.float()).type(x.dtype)
         return super().forward(x)
 
 
-# https://github.com/Stability-AI/generative-models/blob/e5963321482a091a78375f3aeb2c3867562c913f/sgm/modules/diffusionmodules/openaimodel.py#L983-L984
-class TimeEmbedModule(nn.Module):
-    def __init__( self, time_embed):
-        super().__init__()
-        self._time_embed_module = time_embed
-
-    def forward(self, t_emb):
-        return self._time_embed_module(t_emb.half())
+# https://github.com/Stability-AI/generative-models/blob/059d8e9cd9c55aea1ef2ece39abf605efb8b7cc9/sgm/modules/diffusionmodules/util.py#L207
+def timestep_embedding(timesteps, dim, max_period=10000):
+    half = dim // 2
+    freqs = flow.exp(
+        -math.log(max_period) * flow.arange(start=0, end=half, dtype=flow.float32) / half
+    ).to(device=timesteps.device)
+    args = timesteps[:, None].float() * freqs[None]
+    embedding = flow.cat([flow.cos(args), flow.sin(args)], dim=-1)
+    if dim % 2:
+        embedding = flow.cat([embedding, flow.zeros_like(embedding[:, :1])], dim=-1)
+    return embedding
 
 
 def exists(val):
