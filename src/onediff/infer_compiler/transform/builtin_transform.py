@@ -325,12 +325,11 @@ def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
         mod_name = None
         if mod.__module__.startswith("torch._C._nn"):
-            try:
-                # The equivalence of mod inside torch._C._nn may be
-                # defined in flow.nn.functional
-                ofmod = getattr(flow.nn.functional, mod.__name__)
-                return ofmod
-            except:
+            # The equivalence of mod inside torch._C._nn may be
+            # defined in flow.nn.functional
+            if getattr(flow.nn.functional, mod.__name__):
+                mod_name = "oneflow.nn.functional"
+            else:
                 mod_name = mod.__module__.replace(
                     "torch._C._nn", "oneflow._oneflow_internal._C"
                 )
