@@ -47,6 +47,10 @@ def supplement_sys_path():
 class UnetCompileCtx(object):
     def __enter__(self):
         self._original_model = shared.sd_model.model.diffusion_model
+        global compiled_unet
+        if compiled_unet is None:
+            compiled_unet = compile(shared.sd_model)
+        shared.sd_model.model.diffusion_model = compiled_unet
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         shared.sd_model.model.diffusion_model = self._original_model
@@ -61,11 +65,7 @@ class Script(scripts.Script):
         return not is_img2img
 
     def run(self, p):
-        global compiled_unet
-        if compiled_unet is None:
-            compiled_unet = compile(shared.sd_model)
         with UnetCompileCtx(), VaeCompileCtx():
-            shared.sd_model.model.diffusion_model = compiled_unet
             supplement_sys_path()
             proc = process_images(p)
         return proc
