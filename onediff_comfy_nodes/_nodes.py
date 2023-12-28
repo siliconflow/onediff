@@ -44,6 +44,53 @@ __all__ = [
 if not args.dont_upcast_attention:
     os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
 
+def get_mixed_speedup_class(module_cls):
+    class MixedSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher, module_cls):
+        def __init__(
+            self,
+            model_patcher,
+            load_device,
+            offload_device,
+            size=0,
+            current_device=None,
+            weight_inplace_update=False,
+            *,
+            use_graph=None,
+        ):
+            self.__dict__.update(**model_patcher.__dict__)
+            OneFlowSpeedUpModelPatcher.__init__(
+                self,
+                model_patcher.model,
+                load_device,
+                offload_device,
+                size,
+                current_device,
+                weight_inplace_update,
+                use_graph=use_graph,
+            )
+
+        def clone(self):
+            cloned = module_cls.clone(self)
+            n = OneFlowSpeedUpModelPatcher(
+                cloned.model,
+                self.load_device,
+                self._1f_offload_device,
+                self._1f_size,
+                self._1f_current_device,
+                weight_inplace_update=self._1f_weight_inplace_update,
+            )
+            n.patches = {}
+            for k in self.patches:
+                n.patches[k] = self.patches[k][:]
+
+            n.object_patches = self.object_patches.copy()
+            n.model_options = copy.deepcopy(self.model_options)
+            n.model_keys = self.model_keys
+            return n
+
+
+    return MixedSpeedUpModelPatcher
+
 
 class ModelSpeedup:
     @classmethod
@@ -65,8 +112,8 @@ class ModelSpeedup:
         use_graph = static_mode == "enable"
 
         offload_device = model_management.unet_offload_device()
-        oneflow_model = OneFlowSpeedUpModelPatcher(
-            model.model,
+        oneflow_model = get_mixed_speedup_class(model.__class__)(
+            model,
             load_device=model_management.get_torch_device(),
             offload_device=offload_device,
             use_graph=use_graph,

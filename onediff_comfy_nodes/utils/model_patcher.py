@@ -36,9 +36,9 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
-        self.weight_inplace_update = weight_inplace_update
-        self.object_patches = {}
-        self.object_patches_backup = {}
+        self._1f_weight_inplace_update = weight_inplace_update
+        self._1f_object_patches = {}
+        self._1f_object_patches_backup = {}
         self.size = size
         self.model = copy.copy(model)
         self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
@@ -53,25 +53,25 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 options={"graph_file": graph_path, "graph_file_device": graph_device},
             )
         self.model._register_state_dict_hook(state_dict_hook)
-        self.patches = {}
-        self.backup = {}
-        self.model_options = {"transformer_options": {}}
+        self._1f_patches = {}
+        self._1f_backup = {}
+        self._1f_model_options = {"transformer_options": {}}
         self.model_size()
         self.load_device = load_device
-        self.offload_device = offload_device
+        self._1f_offload_device = offload_device
         if current_device is None:
-            self.current_device = self.offload_device
+            self._1f_current_device = self._1f_offload_device
         else:
-            self.current_device = current_device
+            self._1f_current_device = current_device
 
     def clone(self):
         n = OneFlowSpeedUpModelPatcher(
-            self.model,
+            self,
             self.load_device,
-            self.offload_device,
-            self.size,
-            self.current_device,
-            weight_inplace_update=self.weight_inplace_update,
+            self._1f_offload_device,
+            self._1f_size,
+            self._1f_current_device,
+            weight_inplace_update=self._1f_weight_inplace_update,
         )
         n.patches = {}
         for k in self.patches:
@@ -93,7 +93,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         except:
             pass
 
-        torch_model = self.model.diffusion_model._deployable_module_model._torch_module
+        torch_model = self._1f_model.diffusion_model._deployable_module_model._torch_module
         for name, module in torch_model.named_modules():
             if isinstance(module, CrossAttention) and hasattr(module, "to_qkv"):
                 # TODO(): support bias
