@@ -1,4 +1,5 @@
 import os
+import warnings
 import gradio as gr
 import modules.scripts as scripts
 import modules.shared as shared
@@ -52,7 +53,11 @@ def compile_unet(
     elif isinstance(unet_model, UNetModelSGM):
         return compile_sgm_unet(unet_model, use_graph=use_graph, options=options)
     else:
-        raise NotImplementedError(f"compile for {type(unet_model)} is not implemented")
+        warnings.warn(
+            f"Unsupported model type: {type(unet_model)} for compilation , skip",
+            RuntimeWarning,
+        )
+        return unet_model
 
 
 class Script(scripts.Script):

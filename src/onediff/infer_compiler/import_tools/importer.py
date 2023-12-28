@@ -83,11 +83,14 @@ class LazyMocker:
         return self.load_entity_with_mock(entity)
 
     def add_mocked_package(self, package: str):
+        if package in self.mocked_packages:
+            return
+
         self.mocked_packages.add(package)
         package = sys.modules.get(package, None)
         # TODO remove code below
         # fix the mock error in https://github.com/siliconflow/oneflow/blob/main/python/oneflow/mock_torch/mock_importer.py#L105-L118
-        if package is not None and hasattr(package, "__file__"):
+        if package and getattr(package, "__file__", None) is not None:
             pkg_path = Path(package.__file__).parents[1]
             if pkg_path not in sys.path:
                 sys.path.append(pkg_path)
