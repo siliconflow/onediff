@@ -1,0 +1,40 @@
+name: Pylint
+
+on:
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "**/*.md"
+      - "LICENSE*"
+
+concurrency:
+  group: sd-lint-py-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.8", "3.10"]
+    steps:
+      - uses: actions/checkout@v4
+      - run: cat examples/requirements.txt | sed 's/cu118/cpu/g' > requirements-dev.txt
+      - run: cat examples/requirements.txt
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "pip"
+          cache-dependency-path: "**/requirements-dev.txt"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements-dev.txt
+          pip install pylint
+      - name: Analysing the code with pylint
+        run: |
+          pylint $(git ls-files '*.py') \
+            --ignore=src/onediff/schedulers/scheduling_euler_discrete.py \
+            --ignore=src/infer_compiler_registry/register_diffusers/attention_processor_oflow.py
