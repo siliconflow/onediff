@@ -51,6 +51,9 @@ Updated on Nov 6, 2023.
 
 ## OneDiff Enterprise Edition
 If you need **Enterprise Level Support** for your system or business, please send an email to business@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+
+OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/product.html
+
 |                      | OneDiff Enterprise   | OneDiff Community |
 | -------------------- | ------------------- | ----------- |
 | SD/SDXL series model Optimization| Yes | Yes|
