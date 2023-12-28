@@ -29,16 +29,9 @@
   - [Change device to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
 ## State-of-the-art performance
-Updated on Nov 6, 2023.
+Updated on December 28, 2023.
 
-|     Device     | SD1.5 (512x512) | SD2.1 (512x512) | SDXL1.0-base（1024x1024） |
-| -------------- | --------------- | --------------- | ------------------------- |
-| RTX 3090       | 42.38it/s       | 42.33it/s       | 6.66it/s                  |
-| RTX 4090       | 74.71it/s       | 73.57it/s       | 13.57it/s                 |
-| A100-PCIE-40GB | 54.4it/s        | 54.06it/s       | 10.22it/s                 |
-| A100-SXM4-80GB | 59.68it/s       | 61.91it/s       | 11.80it/s                 |
-
-> **_NOTE:_** OneDiff Enterprise Edition delivers even higher performance and second-to-none deployment flexibility.
+<img src="benchmarks/pics/sdxl_e2e_a100.png" width="600" height="400">
 
 ## OS and GPU support
 - Linux
