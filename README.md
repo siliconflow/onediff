@@ -31,7 +31,7 @@
 ## State-of-the-art performance
 Updated on December 28, 2023.
 
-<img src="benchmarks/pics/sdxl_e2e_a100.png" width="600" height="400">
+<img src="benchmarks/pics/231228_sdxl_e2e_a100.png" width="600" height="400">
 
 ## OS and GPU support
 - Linux
