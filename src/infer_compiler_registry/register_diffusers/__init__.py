@@ -11,7 +11,7 @@ from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 from diffusers.models.transformer_2d import Transformer2DModel
 from diffusers.models.resnet import SpatioTemporalResBlock
 from diffusers.models.attention import TemporalBasicTransformerBlock
-if diffusers_version > version.parse("0.24.99"):
+if diffusers_version >= version.parse("0.25.00"):
     from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import TemporalDecoder
 else:
     from diffusers.models.autoencoder_kl_temporal_decoder import TemporalDecoder
