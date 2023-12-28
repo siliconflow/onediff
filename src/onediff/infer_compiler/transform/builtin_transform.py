@@ -9,7 +9,6 @@ from typing import Union, Any
 import torch
 import oneflow as flow
 
-
 from .manager import transform_mgr
 from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
@@ -272,17 +271,20 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
+_dtype_map = {
+    "torch.float16": flow.float16,
+    "torch.float32": flow.float32,
+    "torch.double": flow.double,
+    "torch.int8": flow.int8,
+    "torch.int32": flow.int32,
+    "torch.int64": flow.int64,
+    "torch.uint8": flow.uint8,
+}
+
+
 @torch2oflow.register
 def _(mod: torch.dtype, verbose=False) -> flow.dtype:
-    return {
-        "torch.float16": flow.float16,
-        "torch.float32": flow.float32,
-        "torch.double": flow.double,
-        "torch.int8": flow.int8,
-        "torch.int32": flow.int32,
-        "torch.int64": flow.int64,
-        "torch.uint8": flow.uint8,
-    }[str(mod)]
+    return _dtype_map[str(mod)]
 
 
 @torch2oflow.register
@@ -325,14 +327,15 @@ def _(mod: None, verbose=False):
 def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
         mod_name = None
-        #TODO: This solution is a compromise for now.
-        #TODO: Should register nn.linear later to solve it elegantly 
-        if mod == torch._C._nn.linear:
-            return flow.nn.functional.linear
-        elif mod.__module__.startswith("torch._C._nn"):
-            mod_name = mod.__module__.replace(
-                "torch._C._nn", "oneflow._oneflow_internal._C"
-            )
+        if mod.__module__.startswith("torch._C._nn"):
+            # The equivalence of mod inside torch._C._nn may be
+            # defined in flow.nn.functional
+            if getattr(flow.nn.functional, mod.__name__):
+                mod_name = "oneflow.nn.functional"
+            else:
+                mod_name = mod.__module__.replace(
+                    "torch._C._nn", "oneflow._oneflow_internal._C"
+                )
         elif mod.__module__.startswith("torch"):
             try:
                 if getattr(torch.nn.functional, mod.__name__) == mod:

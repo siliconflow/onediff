@@ -61,10 +61,7 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [
-                    torch_module.named_parameters(),
-                    torch_module.named_buffers(),
-                ]
+                [torch_module.named_parameters(), torch_module.named_buffers(),]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -356,11 +353,11 @@ class DeployableModule(torch.nn.Module):
             return self._modules[name]
         return getattr(self._deployable_module_model, name)
 
-    def load_graph(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
+    def load_graph(self, file_path, device=None, run_warmup=True):
+        self.get_graph().warmup_with_load(file_path, device, run_warmup)
 
-    def warmup_with_load(self, file_path, device=None):
-        self.get_graph().warmup_with_load(file_path, device)
+    def warmup_with_load(self, file_path, device=None, run_warmup=True):
+        self.get_graph().warmup_with_load(file_path, device, run_warmup)
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
@@ -401,11 +398,11 @@ class OneflowGraph(flow.nn.Graph):
         return self.model(*args, **kwargs)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def warmup_with_load(self, file_path, device=None):
+    def warmup_with_load(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
-        self.load_runtime_state_dict(state_dict)
+        self.load_runtime_state_dict(state_dict, warmup_with_run=run_warmup)
 
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
