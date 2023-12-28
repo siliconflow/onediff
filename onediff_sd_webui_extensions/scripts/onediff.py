@@ -6,8 +6,9 @@ from modules.processing import process_images
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 from omegaconf import OmegaConf, ListConfig
 
-from compile_sgm import compile_sgm_unet
 from compile_ldm import compile_ldm_unet
+from compile_sgm import compile_sgm_unet
+from compile_vae import VaeCompileCtx
 
 
 @torch2oflow.register
@@ -43,6 +44,15 @@ def supplement_sys_path():
             sys.path.append(path)
 
 
+class UnetCompileCtx(object):
+    def __enter__(self):
+        self._original_model = shared.sd_model.model.diffusion_model
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        shared.sd_model.model.diffusion_model = self._original_model
+        return False
+
+
 class Script(scripts.Script):
     def title(self):
         return "onediff_diffusion_model"
@@ -54,11 +64,10 @@ class Script(scripts.Script):
         global compiled_unet
         if compiled_unet is None:
             compiled_unet = compile(shared.sd_model)
-        original = shared.sd_model.model.diffusion_model
-        shared.sd_model.model.diffusion_model = compiled_unet
-        supplement_sys_path()
-        proc = process_images(p)
-        shared.sd_model.model.diffusion_model = original
+        with UnetCompileCtx(), VaeCompileCtx():
+            shared.sd_model.model.diffusion_model = compiled_unet
+            supplement_sys_path()
+            proc = process_images(p)
         return proc
 
 
