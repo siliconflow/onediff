@@ -90,6 +90,9 @@ if not args.mlir_enable_inference_optimization:
 else:
     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
 
+pipe.load_lora_weights(args.adapter_id)
+pipe.fuse_lora()
+
 for _ in range(args.warmup):
     images = pipe(
         args.prompt,
