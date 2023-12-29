@@ -28,11 +28,8 @@ def generate_graph_path(ckpt_name: str, model_name: str) -> str:
 
 def is_compiled(ckpt_name):
     global compiled_unet, compiled_ckpt_name
-    if compiled_unet is None:
-        return False
-    if compiled_ckpt_name != ckpt_name:
-        return False
-    return True
+
+    return compiled_unet is not None and compiled_ckpt_name == ckpt_name
 
 
 def compile_unet(
