@@ -5,17 +5,14 @@
   - [Installation Guide](#installation-guide)
   - [Basical Nodes Usage](#basical-nodes-usage)
     - [Model Acceleration](#model-acceleration)
-      - [Model Speedup](#model-speedup)
-      - [Model Graph Saver](#model-graph-saver)
-      - [Model Graph Loader](#model-graph-loader)
+      - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Quantization](#quantization)
     - [Image Distinction Scanner](#image-distinction-scanner)
-  - [Examples](#onediff-community-examples)
+  - [OneDiff Community Examples](#onediff-community-examples)
     - [LoRA](#lora)
     - [ControlNet](#controlnet)
     - [SVD](#svd)
     - [DeepCache](#deepcache)
-
 
 
 ## Performance of Community Edition
@@ -80,29 +77,17 @@ If you need Enterprise Level Support for your system or business, please refer t
 
 ### Model Acceleration
 
-#### Model Speedup
+#### Load Checkpoint - OneDiff
 
-The "Model Speedup" node takes a model as input and outputs an optimized model.
+The "Load Checkpoint - OneDiff" node  is optimized for OneDiff. 
 
-If the `static_mode` is `enabled` (which is the default), it will take some time to compile before the first inference.
-
-If `static_model` is `disabled`, there is no need for additional compilation time before the first inference, but the inference speed will be slower compared to `enabled`, albeit slightly.
+It can be used to load checkpoints and accelerate the model.
 
 ![](workflows/model-speedup.png)
 
-#### Model Graph Saver
 
-The optimized model from the "Model Speedup" node can be saved to "graph" by the "Model Graph Saver" node, allowing it to be used in other scenarios without the need for recompilation.
+The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
-![](workflows/model-graph-saver.png)
-
-You can set different file name prefixes for different types of models.
-
-#### Model Graph Loader
-
-The "Model Graph Loader" node is used to load graph files from the disk, thus saving the time required for the initial compilation.
-
-![](workflows/model-graph-loader.png)
 
 ### Quantization
 
@@ -113,27 +98,6 @@ The "UNet Loader Int8" node is used to load quantized models. Quantized models n
 ![](workflows/int8-speedup.png)
 
 The compilation result of the quantized model can also be saved as a graph and loaded when needed.
-
- 
-![quantized model saver](workflows/int8-graph-saver.png)
-
-![quantized model loader](workflows/int8-graph-loader.png)
-
-
-### VAE Acceleration
-
-The VAE nodes used for accelerating, saving, and loading VAE graphs operate in a manner very similar to the usage of Model nodes.
-
-Omitting specific details here, the following workflow can be loaded and tested.
-
-**VAE Speedup and Graph Saver**
-
-![](workflows/vae-graph-saver.png)
-
-**VAE Speedup and Graph Loader**
-
-![](workflows/vae-graph-loader.png)
-
 
 ### Image Distinction Scanner
 
