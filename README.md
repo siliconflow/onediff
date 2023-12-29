@@ -6,9 +6,9 @@
 <img src="imgs/onediff_logo.png" height="100">
 </p>
 
-# OneDiff
+---
 
-**An out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
+OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
 
 ## Easy to use
 - Acceleration for popular UIs/libs
