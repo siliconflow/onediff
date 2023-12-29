@@ -50,8 +50,7 @@ torch2oflow_class_map = {
 register(package_names=["ldm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_ldm_unet(sd_model, *, use_graph=True, options={}):
-    unet_model = sd_model.model.diffusion_model
+def compile_ldm_unet(unet_model, *, use_graph=True, options={}):
     if not isinstance(unet_model, UNetModel):
         return
     for module in unet_model.modules():
