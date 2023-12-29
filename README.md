@@ -2,7 +2,9 @@
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
-<center><img src="imgs/onediff_logo.png" height="100"></center>
+<p align="center">
+<img src="imgs/onediff_logo.png" height="100">
+</p>
 
 # OneDiff
 
