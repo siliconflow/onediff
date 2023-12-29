@@ -34,11 +34,7 @@ def is_compiled(ckpt_name):
 
 
 def compile_unet(
-    unet_model,
-    quantization=False,
-    *,
-    use_graph=True,
-    options={},
+    unet_model, quantization=False, *, use_graph=True, options={},
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
@@ -59,6 +55,11 @@ def compile_unet(
 
 
 class UnetCompileCtx(object):
+    """The unet model is stored in a global variable.
+    The global variables need to be replaced with compiled_unet before process_images is run,
+    and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
+    """
+
     def __enter__(self):
         self._original_model = shared.sd_model.model.diffusion_model
         global compiled_unet
@@ -80,7 +81,7 @@ class Script(scripts.Script):
         """
         if not varify_can_use_quantization():
             ret = gr.HTML(
-                    """
+                """
                     <div style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f9f9f9;">
                         <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #31708f;">
                             Hints Message
@@ -100,7 +101,7 @@ class Script(scripts.Script):
                         </p>
                     </div>
                     """
-                )
+            )
 
         else:
             ret = gr.components.Checkbox(label="Model Quantization(int8) Speed Up")
