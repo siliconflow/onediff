@@ -6,7 +6,7 @@ from modules.processing import process_images
 from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 from omegaconf import OmegaConf, ListConfig
 
-from compile_ldm import compile_ldm_unet
+from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
 
@@ -65,7 +65,7 @@ class Script(scripts.Script):
         return not is_img2img
 
     def run(self, p):
-        with UnetCompileCtx(), VaeCompileCtx():
+        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx():
             supplement_sys_path()
             proc = process_images(p)
         return proc
