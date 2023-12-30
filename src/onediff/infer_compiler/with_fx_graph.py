@@ -29,8 +29,8 @@ def fx_node_tranform(gm):
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+        # os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+        # os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
@@ -39,7 +39,7 @@ def fx_node_tranform(gm):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
-                self.config.enable_cudnn_conv_heuristic_search_algo(False)
+                # self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
 
             def build(self, *args, **kwargs):
