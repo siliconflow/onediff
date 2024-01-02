@@ -47,7 +47,6 @@ torch2oflow_class_map = {
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_sgm_unet(sd_model, *, use_graph=True, options={}):
-    unet_model = sd_model.model.diffusion_model
+def compile_sgm_unet(unet_model, *, use_graph=True, options={}):
     if isinstance(unet_model, UNetModel):
         return oneflow_compile(unet_model, use_graph=use_graph, options=options)
