@@ -19,12 +19,8 @@ from .utils.param_utils import parse_device, check_device
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         torch.nn.Module.__init__(self)
-        # avoid to set key '_torch_module' in self._modules
-        object.__setattr__(self, '_torch_module', torch_module)
-        object.__setattr__(self, '_oneflow_module', oneflow_module)
-        self._modules.update(**torch_module._modules)
-        self._parameters.update(**torch_module._parameters)
-        self._buffers.update(**torch_module._buffers)
+        self._torch_module = torch_module
+        self._oneflow_module = oneflow_module
 
     @property
     def oneflow_module(self):
@@ -237,14 +233,9 @@ class DeployableModule(torch.nn.Module):
         graph_device=None,
     ):
         torch.nn.Module.__init__(self)
-        mixed_dual_module = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
-        # avoid to set '_deployable_module_model' in self._modules
-        object.__setattr__(self, '_deployable_module_model', mixed_dual_module)
-
-        self._modules.update(**self._deployable_module_model._modules)
-        self._parameters.update(**self._deployable_module_model._parameters)
-        self._buffers.update(**self._deployable_module_model._buffers)
-
+        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+            torch_module, oneflow_module
+        )
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
@@ -368,7 +359,7 @@ class OneflowGraph(flow.nn.Graph):
     def __init__(self, model):
         super().__init__(enable_get_runtime_state_dict=True)
         self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        # self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
         os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
@@ -381,9 +372,9 @@ class OneflowGraph(flow.nn.Graph):
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+        # os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
         os.environ["ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+        # os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
         os.environ["ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL"] = "1"
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
@@ -415,6 +406,19 @@ def get_oneflow_graph(model, size=9, all_dynamic=False):
     g._dynamic_input_graph_cache.set_cache_size(size)
     g._dynamic_input_graph_cache.enable_shared(not all_dynamic)
     return g
+
+
+def state_dict_hook(module, state_dict, prefix, local_metadata):
+    pytorch_key_prefix = "_deployable_module_model._torch_module."
+    new_state_dict = type(state_dict)()
+    for k, v in state_dict.items():
+        # _deployable_module_model._torch_module.out.2.weight => out.2.weight
+        if k.startswith(pytorch_key_prefix):
+            new_k = k[len(pytorch_key_prefix) :]
+            new_state_dict[new_k] = v
+        else:
+            new_state_dict[k] = v
+    return new_state_dict
 
 
 # Return a DeployableModule that using module_cls as it's parent class.
@@ -473,5 +477,6 @@ def oneflow_compile(
     model = wrap_module(torch_module)
     assert isinstance(model, DeployableModule)
     assert isinstance(model, torch_module.__class__)
+    model._register_state_dict_hook(state_dict_hook)
 
     return model
