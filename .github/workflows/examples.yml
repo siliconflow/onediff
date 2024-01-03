@@ -27,7 +27,7 @@ concurrency:
 jobs:
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
-    runs-on: [self-hosted, gpu]
+    runs-on: [self-hosted, cuda]
     strategy:
       fail-fast: false
       max-parallel: 5

@@ -5,7 +5,7 @@ import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from .transform import replace_obj, replace_func, get_attr, torch2oflow
+from .transform import get_attr, torch2oflow
 
 
 def fx_node_tranform(gm):
@@ -29,8 +29,8 @@ def fx_node_tranform(gm):
         os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
+        # os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
+        # os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
         os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
         os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
@@ -39,7 +39,7 @@ def fx_node_tranform(gm):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
-                self.config.enable_cudnn_conv_heuristic_search_algo(False)
+                # self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
 
             def build(self, *args, **kwargs):
@@ -69,7 +69,7 @@ def to_of_transform(
         elif node.op == "call_function":
             of_node = of_g.create_node(
                 "call_function",
-                replace_func(node.target),
+                torch2oflow(node.target),
                 args=node_replace_args(node.args, name2node),
                 kwargs=node_replace_args(node.kwargs, name2node),
             )
@@ -111,7 +111,7 @@ def replace_node(node, name2node):
     if isinstance(node, torch.fx.Node):
         return name2node[node.name]
     else:
-        return replace_obj(node)
+        return torch2oflow(node)
 
 
 def node_replace_args(args, name2node):
