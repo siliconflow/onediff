@@ -11,7 +11,10 @@ Updated on DEC 26, 2023. Device: RTX 3090. Resolution: 1024x1024
 | --------------- | --------------- | ------------------ | ---------------------- |
 | 2.99it/s        | 6.40it/s        | 6.71it/s           | 224.41%                |
 
-Generating a 1024x1024 image with sdxl on 3090 takes 4.46s for onediff and 7.75s for torch.
+Time to enerate a 1024x1024 image with sdxl (20 steps) on 3090
+| torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) |
+| --------------- | --------------- | ------------------ |
+| 7.75s           | 5.04            | 4.46s              |
 
 ## Installation Guide
 
