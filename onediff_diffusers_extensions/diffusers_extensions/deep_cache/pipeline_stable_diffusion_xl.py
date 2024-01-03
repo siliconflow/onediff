@@ -187,6 +187,11 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
 
         self.fast_unet=FastUNet2DConditionModel(self.unet)
 
+        self.vae_upcasted =  False
+
+        # make sure the VAE is in float32 mode, as it overflows in float16
+        self.needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+
         if add_watermarker:
             self.watermark = StableDiffusionXLWatermarker()
         else:
@@ -574,18 +579,14 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
                         callback(i, t, latents)
 
         if not output_type == "latent":
-            # make sure the VAE is in float32 mode, as it overflows in float16
-            needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
-
-            if needs_upcasting:
-                self.upcast_vae()
-                latents = latents.to(next(iter(self.vae.post_quant_conv.parameters())).dtype)
+            if self.needs_upcasting:
+                if not self.vae_upcasted:
+                    self.upcast_vae()
+                    self.vae_upcasted = True
+                dtype = next(iter(self.vae.post_quant_conv.parameters())).dtype
+                latents = latents.to(dtype)
 
             image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
-
-            # cast back to fp16 if needed
-            if needs_upcasting:
-                self.vae.to(dtype=torch.float16)
         else:
             image = latents
 
