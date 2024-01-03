@@ -359,7 +359,7 @@ class OneflowGraph(flow.nn.Graph):
     def __init__(self, model):
         super().__init__(enable_get_runtime_state_dict=True)
         self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        # self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
         os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
