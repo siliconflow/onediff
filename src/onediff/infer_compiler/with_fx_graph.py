@@ -39,7 +39,7 @@ def fx_node_tranform(gm):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
-                # self.config.enable_cudnn_conv_heuristic_search_algo(False)
+                self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
 
             def build(self, *args, **kwargs):
