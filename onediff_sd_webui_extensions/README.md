@@ -11,10 +11,10 @@ Updated on DEC 26, 2023. Device: RTX 3090. Resolution: 1024x1024
 | --------------- | --------------- | ------------------ | ---------------------- |
 | 2.99it/s        | 6.40it/s        | 6.71it/s           | 224.41%                |
 
-Time to enerate a 1024x1024 image with sdxl (30 steps) on 3090
+End2end time(seconds) to generate a 1024x1024 image with SDXL (30 steps) on NVIDIA RTX 3090:
 | torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
 | --------------- | --------------- | ------------------ | ---------------------- |
-| 11.03s          | 5.55            | 5.29s              | 208.51%                |
+| 11.03           | 5.55            | 5.29               | 208.51%                |
 
 ## Installation Guide
 
