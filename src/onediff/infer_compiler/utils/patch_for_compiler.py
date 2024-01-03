@@ -98,6 +98,14 @@ class FakeCuda:
         )
         return out
 
+# TODO(): remove this patch
+org_to = flow._C.to 
+def to(*args, **kwargs):
+    kwargs.pop("non_blocking", None)
+    return org_to(*args, **kwargs)
+flow._C.to = to
+
+
 
 flow.cuda.current_device = FakeCuda.current_device
 flow.cuda.mem_get_info = FakeCuda.mem_get_info
