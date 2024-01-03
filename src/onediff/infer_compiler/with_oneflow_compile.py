@@ -26,9 +26,7 @@ class DualModule(torch.nn.Module):
     def oneflow_module(self):
         if self._oneflow_module is not None:
             return self._oneflow_module
-
-        from .utils.quant_utils import quantize_model
-        self._torch_module = quantize_model(self._torch_module)
+        
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
         logger.debug(f"Convert {id(self._torch_module)=} done!")
