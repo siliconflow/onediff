@@ -1,5 +1,5 @@
 from modules import shared
-from modules.sd_vae_approx import sd_vae_approx_models
+from modules.sd_vae_approx import model as get_vae_model, sd_vae_approx_models
 from onediff.infer_compiler import oneflow_compile
 
 __all__ = ["VaeCompileCtx"]
@@ -18,7 +18,7 @@ class VaeCompileCtx(object):
             if getattr(shared.sd_model, "is_sdxl", False)
             else "model.pt"
         )
-        self._original_model = sd_vae_approx_models.get(self._model_name)
+        self._original_model = get_vae_model()
 
     def __enter__(self):
         if self._original_model is None:

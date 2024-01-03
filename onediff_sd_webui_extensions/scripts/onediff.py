@@ -120,18 +120,8 @@ class Script(scripts.Script):
         )
 
         if not is_compiled(ckpt_name):
-            graph_file = generate_graph_path(
-                ckpt_name, original_diffusion_model.__class__.__name__
-            )
-            graph_file_device = shared.device
-            compile_options = {
-                "graph_file_device": graph_file_device,
-                "graph_file": graph_file,
-            }
             compiled_unet = compile_unet(
-                original_diffusion_model,
-                quantization=quantization,
-                options=compile_options,
+                original_diffusion_model, quantization=quantization,
             )
             compiled_ckpt_name = ckpt_name
 
