@@ -1,10 +1,11 @@
-import math
+import os
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile, register
 
 from ldm.modules.attention import BasicTransformerBlock, CrossAttention
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
+from modules import shared
 from sd_webui_onediff_utils import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
@@ -59,3 +60,19 @@ def compile_ldm_unet(unet_model, *, use_graph=True, options={}):
         if isinstance(module, ResBlock):
             module.use_checkpoint = False
     return oneflow_compile(unet_model, use_graph=use_graph, options=options)
+
+
+class SD21CompileCtx(object):
+    """to avoid results for NaN when the model is v2-1_768-ema-pruned"""
+
+    _var_name = "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION"
+
+    def __enter__(self):
+        self._original = os.getenv(self._var_name)
+        if shared.opts.sd_model_checkpoint.startswith("v2-1"):
+            os.environ[self._var_name] = "0"
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self._original is not None:
+            os.environ[self._var_name] = self._original
+        return False
