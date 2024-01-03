@@ -11,6 +11,8 @@ Updated on DEC 26, 2023. Device: RTX 3090. Resolution: 1024x1024
 | --------------- | --------------- | ------------------ | ---------------------- |
 | 2.99it/s        | 6.40it/s        | 6.71it/s           | 224.41%                |
 
+Generating a 1024x1024 image with sdxl on 3090 takes 4.46s for onediff and 7.75s for torch.
+
 ## Installation Guide
 
 It is recommended to create a Python virtual environment in advance. For example `conda create -n sd-webui python=3.10`.

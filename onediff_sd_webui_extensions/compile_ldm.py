@@ -63,11 +63,12 @@ def compile_ldm_unet(unet_model, *, use_graph=True, options={}):
 
 
 class SD21CompileCtx(object):
+    """to avoid results for NaN when the model is v2-1_768-ema-pruned"""
+
     _var_name = "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION"
 
     def __enter__(self):
         self._original = os.getenv(self._var_name)
-        # to avoid results for NaN when the model is v2-1_768-ema-pruned
         if shared.opts.sd_model_checkpoint.startswith("v2-1"):
             os.environ[self._var_name] = "0"
 
