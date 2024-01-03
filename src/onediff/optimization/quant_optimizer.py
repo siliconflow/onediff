@@ -16,7 +16,7 @@ __all__ = ["quantize_model", "varify_can_use_quantization"]
 def varify_can_use_quantization():
     if not is_quantization_enabled():
         message = get_support_message()
-        logger.error(message)
+        logger.warn(message)
         return False
     return True
 
