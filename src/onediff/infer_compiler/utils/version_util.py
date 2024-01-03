@@ -17,12 +17,15 @@ def is_oneflow_pro() -> bool:
         return sysconfig.with_enterprise()
     except Exception as e:
         logger.warning(f"Unable to determine if OneFlow is Pro or not. {e}")
-        logger.warning(get_support_message())
         return False
 
 
-def is_community_version():
-    return not is_oneflow_pro()
+def is_community_version(show_support_message=True) -> bool:
+    if not is_oneflow_pro():
+        if show_support_message:
+            print(get_support_message())
+        return True
+    return False
 
 
 def is_quantization_enabled() -> bool:
@@ -34,5 +37,4 @@ def is_quantization_enabled() -> bool:
         return True
     except Exception as e:
         logger.warning(f"Quantization is not enabled. {e}")
-        logger.warning(get_support_message())
         return False
