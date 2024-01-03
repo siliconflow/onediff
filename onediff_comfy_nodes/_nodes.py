@@ -1,4 +1,5 @@
 from functools import partial
+from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8
 
@@ -14,6 +15,7 @@ import comfy
 import folder_paths
 from comfy import model_management
 from comfy.cli_args import args
+from folder_paths import get_input_directory
 
 from .utils import (
     OneFlowSpeedUpModelPatcher,
@@ -22,7 +24,7 @@ from .utils import (
     load_graph,
     OUTPUT_FOLDER,
 )
-
+from .utils.model_patcher import state_dict_hook
 from .modules.hijack_model_management import model_management_hijacker
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
@@ -577,3 +579,77 @@ class ModuleDeepCacheSpeedup:
 
         oneflow_model.set_model_unet_function_wrapper(apply_model)
         return (oneflow_model,)
+
+
+def generate_graph_path(ckpt_name, model) -> Path:
+    input_dir = get_input_directory()
+    input_dir = Path(input_dir)
+    graph_dir = input_dir / "graphs" / ckpt_name
+    graph_file_path = graph_dir / (type(model).__name__ + ".graph")
+    return graph_file_path
+
+
+from nodes import CheckpointLoaderSimple
+
+
+class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "vae_speedup": (["disable", "enable"],),
+            }
+        }
+
+    CATEGORY = "OneDiff"
+
+    def load_checkpoint(
+        self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
+    ):
+        modelpatcher, clip, vae = super().load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+        offload_device = model_management.unet_offload_device()
+        load_device = model_management.get_torch_device()
+
+        diffusion_model = modelpatcher.model.diffusion_model
+        file_path = generate_graph_path(ckpt_name, diffusion_model)
+        print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {file_path}")
+
+        use_graph = True
+        compile_options = {
+            "graph_file": file_path,
+            "graph_file_device": load_device,
+        }
+
+        if offload_device.type == "cuda" and file_path.exists():
+            diffusion_model = oneflow_compile(
+                diffusion_model,
+                use_graph=use_graph,
+            )
+            diffusion_model.load_graph(file_path, torch2oflow(offload_device))
+        else:
+            diffusion_model = oneflow_compile(
+                diffusion_model,
+                use_graph=use_graph,
+                options=compile_options,
+            )
+
+        modelpatcher.model.diffusion_model = diffusion_model
+        modelpatcher.model._register_state_dict_hook(state_dict_hook)
+
+        if vae_speedup == "enable":
+            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            vae.first_stage_model = oneflow_compile(
+                vae.first_stage_model,
+                use_graph=True,
+                options={
+                    "graph_file": file_path,
+                    "graph_file_device": model_management.get_torch_device(),
+                },
+            )
+
+        # set inplace update
+        modelpatcher.weight_inplace_update = True
+        return modelpatcher, clip, vae
