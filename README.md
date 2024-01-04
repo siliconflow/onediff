@@ -11,8 +11,8 @@
 OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
 
 ## Need help or talk
-- GitHub Issues
-- Discord of OneDiff: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ)](https://discord.gg/RKJTjZMcPQ)
+- [Creating an issue on GitHub](https://github.com/siliconflow/onediff/issues)
+- Join OneDiff Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 
 ## Easy to use
 - Acceleration for popular UIs/libs
