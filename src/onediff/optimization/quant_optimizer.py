@@ -1,6 +1,7 @@
 import time
+import torch
 import torch.nn as nn
-from copy import  deepcopy
+from copy import deepcopy
 from ..infer_compiler.utils.log_utils import logger
 from ..infer_compiler.utils.version_util import (
     get_support_message,
@@ -56,24 +57,69 @@ def quantize_model(
     bits=8,
     *,
     inplace=True,
+    quant_config_file=None,
+    conv_ssim_threshold=0.9,
+    linear_ssim_threshold=0.9,
+    compute_density_threshold=600,
 ):
     """Quantize a model. inplace=True will modify the model in-place."""
     start_time = time.time()
     if varify_can_use_quantization() is False:
         return model
-    
+
     from torch._dynamo import allow_in_graph as maybe_allow_in_graph
     from diffusers_quant.utils import symm_quantize_sub_module, find_quantizable_modules
     from diffusers_quant.utils import get_quantize_module
     from diffusers_quant import Quantizer
 
+    quantize_conv_cnt, quantize_linear_cnt = 0, 0
+
     if not inplace:
         model = deepcopy(model)
 
-    
+    if quant_config_file is not None:
+        # load quantization config file
+        quant_config = torch.load(quant_config_file)
+
+    def no_quantizable(sub_module_name, module):
+        if quant_config_file:
+            conf = quant_config.get(sub_module_name, None)
+            if conf is None:
+                return True
+            if conf.get("ssim", 1) < conv_ssim_threshold and isinstance(
+                module, nn.Conv2d
+            ):
+                logger.debug(
+                    f'skip {module.__class__}: {sub_module_name} with ssim {conf.get("ssim", 1)}'
+                )
+                return True
+            if conf.get("ssim", 1) < linear_ssim_threshold and isinstance(
+                module, nn.Linear
+            ):
+                logger.debug(
+                    f'skip {module.__class__}: {sub_module_name} with ssim {conf.get("ssim", 1)}'
+                )
+                return True
+            if conf.get("compute_density", 0) < compute_density_threshold:
+                logger.debug(
+                    f'skip: {module.__class__} with compute_density {conf.get("compute_density", 0)}'
+                )
+                return True
+            return False
+        else:
+            return False
+
     def apply_quantization_to_modules(quantizable_modules):
-        nonlocal model
+        nonlocal model, quantize_conv_cnt, quantize_linear_cnt
+
         for sub_module_name, sub_mod in quantizable_modules.items():
+            if no_quantizable(sub_module_name, sub_mod):
+                continue
+
+            if isinstance(sub_mod, nn.Conv2d):
+                quantize_conv_cnt += 1
+            elif isinstance(sub_mod, nn.Linear):
+                quantize_linear_cnt += 1
 
             quantizer = Quantizer()
             quantizer.configure(bits=bits, perchannel=True)
@@ -98,9 +144,8 @@ def quantize_model(
                 nbits=bits,
                 convert_fn=maybe_allow_in_graph,
             )
+
             _modify_sub_module(model, sub_module_name, sub_mod)
-
-
 
     if quantize_conv:
         conv_modules = find_quantizable_modules(model, module_cls=[nn.Conv2d])
@@ -114,7 +159,9 @@ def quantize_model(
 
     logger.info(
         f"Quantized model {type(model)} successfully! \n"
-        + f"Time: {time.time() - start_time:.4f}s"
+        + f"Quantized conv: {quantize_conv_cnt} \n"
+        + f"Quantized linear: {quantize_linear_cnt} \n"
+        + f"Time: {time.time() - start_time:.4f}s \n"
     )
 
     return model

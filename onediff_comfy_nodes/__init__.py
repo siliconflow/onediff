@@ -51,8 +51,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
+
 if _USE_UNET_INT8:
     from ._nodes import UNETLoaderInt8, Quant8Model
+    from ._quant_nodes import QuantKSampler, DeepCacheQuantKSampler
 
     NODE_CLASS_MAPPINGS.update(
         {"UNETLoaderInt8": UNETLoaderInt8, "Quant8Model": Quant8Model}
@@ -62,4 +64,10 @@ if _USE_UNET_INT8:
             "UNETLoaderInt8": "UNET Loader Int8",
             "Quant8Model": "Model Quantization(int8)",
         }
+    )
+    NODE_CLASS_MAPPINGS.update({"QuantKSampler": QuantKSampler})
+    NODE_CLASS_MAPPINGS.update({"DeepCacheQuantKSampler": DeepCacheQuantKSampler})
+    NODE_DISPLAY_NAME_MAPPINGS.update({"QuantKSampler": "Quant K Sampler"})
+    NODE_DISPLAY_NAME_MAPPINGS.update(
+        {"DeepCacheQuantKSampler": "DeepCache Quant K Sampler"}
     )

@@ -50,10 +50,7 @@ class ModelSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"model": ("MODEL",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -86,11 +83,7 @@ class UNETLoaderInt8:
                     if "calibrate_info.txt" in files:
                         paths.append(os.path.relpath(root, start=search_path))
 
-        return {
-            "required": {
-                "model_path": (paths,),
-            }
-        }
+        return {"required": {"model_path": (paths,),}}
 
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "load_unet_int8"
@@ -127,10 +120,7 @@ class ModelGraphLoader:
             if os.path.isfile(os.path.join(unet_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {
-                "model": ("MODEL",),
-                "graph": (sorted(graph_files),),
-            },
+            "required": {"model": ("MODEL",), "graph": (sorted(graph_files),),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -172,10 +162,7 @@ class SVDSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"model": ("MODEL",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -199,10 +186,7 @@ class VaeSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "vae": ("VAE",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"vae": ("VAE",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -235,10 +219,7 @@ class VaeGraphLoader:
             if os.path.isfile(os.path.join(vae_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {
-                "vae": ("VAE",),
-                "graph": (sorted(graph_files),),
-            },
+            "required": {"vae": ("VAE",), "graph": (sorted(graph_files),),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -450,12 +431,7 @@ class ModuleDeepCacheSpeedup:
                 ),
                 "end_step": (
                     "INT",
-                    {
-                        "default": 1000,
-                        "min": 0,
-                        "max": 1000,
-                        "step": 0.1,
-                    },
+                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
                 ),
             },
         }
@@ -622,18 +598,23 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             "graph_file": file_path,
             "graph_file_device": load_device,
         }
+        compile_options = {}
+        # onediff/src/onediff/optimization/quant_optimizer.py
+        from onediff.optimization.quant_optimizer import quantize_model
+
+        quant_config_file = (
+            "/home/fengwen/quant/ComfyUI/quantize_info_and_relevance_metrics.pt"
+        )
+        diffusion_model = quantize_model(
+            diffusion_model, quant_config_file=quant_config_file
+        )
 
         if offload_device.type == "cuda" and file_path.exists():
-            diffusion_model = oneflow_compile(
-                diffusion_model,
-                use_graph=use_graph,
-            )
+            diffusion_model = oneflow_compile(diffusion_model, use_graph=use_graph,)
             diffusion_model.load_graph(file_path, torch2oflow(offload_device))
         else:
             diffusion_model = oneflow_compile(
-                diffusion_model,
-                use_graph=use_graph,
-                options=compile_options,
+                diffusion_model, use_graph=use_graph, options=compile_options,
             )
 
         modelpatcher.model.diffusion_model = diffusion_model

@@ -506,17 +506,14 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.size = size
         self.model = copy.copy(model)
         self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
-        self.deep_cache_unet = oneflow_compile(
-            DeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id),
-            use_graph=use_graph,
+        self.deep_cache_unet = DeepCacheUNet(
+            self.model.diffusion_model, cache_layer_id, cache_block_id
         )
-        self.fast_deep_cache_unet = oneflow_compile(
-            FastDeepCacheUNet(
-                self.model.diffusion_model, cache_layer_id, cache_block_id
-            ),
-            use_graph=use_graph,
+
+        self.fast_deep_cache_unet = FastDeepCacheUNet(
+            self.model.diffusion_model, cache_layer_id, cache_block_id
         )
-        self.model._register_state_dict_hook(state_dict_hook)
+
         self.patches = {}
         self.backup = {}
         self.model_options = {"transformer_options": {}}
