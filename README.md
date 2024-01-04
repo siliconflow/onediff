@@ -1,18 +1,19 @@
-[![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff)
-[![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
-[![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
-
 <p align="center">
 <img src="imgs/onediff_logo.png" height="100">
 </p>
 
 ---
 
+<!--- [![PyPI version](https://badge.fury.io/py/onediff.svg)](https://badge.fury.io/py/onediff) -->
+[![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
+[![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
+
 OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
 
 ## Need help or talk
-- [Creating an issue on GitHub](https://github.com/siliconflow/onediff/issues)
-- Join OneDiff Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
+- [Create an issue](https://github.com/siliconflow/onediff/issues)
+- Chat in Discord [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
+- [Email for business inquiry](#onediff-enterprise-edition)
 
 ## Easy to use
 - Acceleration for popular UIs/libs
