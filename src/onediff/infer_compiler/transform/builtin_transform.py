@@ -157,7 +157,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
                 self.__dict__[k] = torch2oflow(attr)
-
+  
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
 
@@ -173,9 +173,9 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
 @torch2oflow.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
-
+    
     new_md_cls = proxy_class(type(mod))
-
+    
     def init(self):
         nonlocal proxy_md
 
@@ -220,6 +220,36 @@ def _(mod: torch.nn.Module, verbose=False):
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
     of_mod = of_mod_cls()
+
+    # TODO: Maybe we can add a register to avoid this if-else trap
+    '''
+    WARNING: 1. Potential bug - the value of channel_pos attribute may be incorrectly assigned
+    
+    > AdaptiveAvgPool2d has a unassigned parameter (data_format) in its __init__ that can
+    > affect the value of channel_pos, but since it's not considered by torch2flow,
+    > I ignore it in the following if-else code.
+    
+    WARNING: 2. Theoretically, compiling resnet50 with oneflow will succeed if the env 'ONEFLOW_ENABLE_NHWC' 
+    is the same as 'ONEFLOW_MLIR_PREFER_NHWC'. But when they are all open the compilation fails.
+    So please TURNS THEM OFF for now.
+    '''
+    if new_md_cls.__name__ == 'BatchNorm2d':
+        if os.getenv("ONEFLOW_ENABLE_NHWC"):
+            new_md_cls.channel_axis = 3
+        else:
+            new_md_cls.channel_axis = 1
+    elif new_md_cls.__name__ == 'BatchNorm1d' or new_md_cls.__name__ == 'BatchNorm3d':
+        new_md_cls.channel_axis = 1
+    elif new_md_cls.__name__ == 'MaxPool1d' or new_md_cls.__name__ == 'AvgPool1d':
+        new_md_cls.channel_pos = 'channels_first'
+    elif new_md_cls.__name__ == 'MaxPool2d' or new_md_cls.__name__ == 'AvgPool2d' or new_md_cls.__name__ == 'AdaptiveAvgPool2d':
+        if os.getenv("ONEFLOW_ENABLE_NHWC"):
+            new_md_cls.channel_pos = 'channels_last'
+        else:
+            new_md_cls.channel_pos = 'channels_first'
+    elif new_md_cls.__name__ == 'MaxPool3d' or new_md_cls.__name__ == 'AvgPool3d':
+        new_md_cls.channel_pos = 'channels_first'
+    
     if of_mod.training:
         of_mod.training = False
         if verbose:
