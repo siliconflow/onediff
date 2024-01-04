@@ -1,4 +1,4 @@
-name: Build OneFlow Stable Diffusion
+name: Build OneDiff
 
 on:
   push:
