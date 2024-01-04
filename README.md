@@ -10,6 +10,10 @@
 
 OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
 
+## Need help or talk
+- GitHub Issues
+- Discord of OneDiff: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ)](https://discord.gg/RKJTjZMcPQ)
+
 ## Easy to use
 - Acceleration for popular UIs/libs
   - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
@@ -41,10 +45,6 @@ Updated on December 28, 2023.
 - Linux
   - If you want to use OneDiff on Windows, please use it under WSL. 
 - NVIDIA GPUs
-
-## Need help or talk
-- [Discord of OneDiff](https://discord.gg/RKJTjZMcPQ)
-- GitHub issues
 
 ## OneDiff Enterprise Edition
 If you need **Enterprise Level Support** for your system or business, please send an email to business@siliconflow.com and tell us about your user case, deployment scale, and requirements.
