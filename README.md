@@ -43,7 +43,7 @@ Updated on December 28, 2023.
 
 ## OS and GPU support
 - Linux
-  - If you want to use OneDiff on Windows, please use it under WSL. 
+  - If you want to use OneDiff on Windows, please use it under WSL.
 - NVIDIA GPUs
 
 ## OneDiff Enterprise Edition
@@ -61,9 +61,9 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | HF diffusers            | Yes                 | Yes         |
 | ComfyUI              | Yes           | Yes         |
 | Stable Diffusion web UI | Yes          | Yes         |
-| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(Cost a few seconds/minutes to compile for new input shape)           | 
-| Technical Support for deployment    | High priority support       | Community           | 
-| More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 | 
+| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(Cost a few seconds/minutes to compile for new input shape)           |
+| Technical Support for deployment    | High priority support       | Community           |
+| More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 |
 | Support customized pipeline/workflow|           Yes              | |
 | Get the latest technology/feature | Yes | |
 
@@ -116,3 +116,32 @@ python3 -m pip install huggingface_hub
 ```bash
 docker pull oneflowinc/onediff:20231106
 ```
+
+## Release
+
+- run examples to check it works
+
+  ```bash
+  python3 examples/text_to_image.py
+  python3 examples/text_to_image_dpmsolver.py
+  ```
+
+- bump version in these files:
+
+  ```
+  setup.py
+  src/onediff/__init__.py
+  ```
+
+- build wheel
+
+  ```
+  rm -rf dist
+  python3 setup.py bdist_wheel
+  ```
+
+- upload to pypi
+
+  ```bash
+  twine upload dist/*
+  ```
