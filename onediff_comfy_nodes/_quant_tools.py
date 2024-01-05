@@ -101,7 +101,6 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
         return images
 
     def generate_pipeline(self, vae, model, *args, **kwargs):
-
         generate_img = self.generate_img
 
         class ImageGenerationPipeline:
@@ -214,7 +213,6 @@ class UnetQuantKSampler(KSampleQuantumBase):
     def generate_quantized_config(
         self, vae, fastquant_model_prefix, only_compute_density, model, *args, **kwargs
     ):
-
         models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
         models_dir.mkdir(parents=True, exist_ok=True)
         model_name = model.model.__class__.__qualname__
