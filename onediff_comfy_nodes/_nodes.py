@@ -187,7 +187,7 @@ class SVDSpeedup:
         from onediff.infer_compiler import oneflow_compile
         # To avoid overflow issues while maintaining performance, 
         # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
-        set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", 0)
+        set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M', 0)
 
         use_graph = static_mode == "enable"
 
