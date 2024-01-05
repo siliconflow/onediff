@@ -48,8 +48,8 @@ def singledispatch_proxy(func):
 
 
 def proxy_class(cls: type):
-    if cls.__module__.startswith("torch"):
-        mod_name = cls.__module__.replace("torch", "oneflow")
+    if cls.__module__.startswith("torch."):
+        mod_name = cls.__module__.replace("torch.", "oneflow.")
         mod = importlib.import_module(mod_name)
         return getattr(mod, cls.__name__)
 
@@ -173,7 +173,6 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
 @torch2oflow.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
-    
     new_md_cls = proxy_class(type(mod))
     
     def init(self):
