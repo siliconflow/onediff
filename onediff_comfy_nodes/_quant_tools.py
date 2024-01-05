@@ -1,22 +1,28 @@
+from ._config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from abc import ABC, abstractmethod
 import os
-import time
 import torch
-from typing import Any
 import numpy as np
 import torch.nn as nn
 from PIL import Image
+from pathlib import Path
 from contextlib import contextmanager
+
+# onediff
 from onediff.infer_compiler.utils.module_operations import (
     modify_sub_module,
     get_sub_module,
 )
+
+# ComfyUI
+import folder_paths
 from nodes import KSampler, VAEDecode
+
+# diffusers_quant
 from diffusers_quant.utils import find_quantizable_modules
 from diffusers_quant.utils import (
     compare_ssim,
     get_quantize_module,
-    fake_symm_quantize,
     symm_quantize,
     metric_quantize_costs,
 )
@@ -79,7 +85,7 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
         return ret
 
     RETURN_TYPES = ("IMAGE",)
-    CATEGORY = "OneDiff/Quant"
+    CATEGORY = "OneDiff/Quant_Tools"
     FUNCTION = "generate_quantized_config"
 
     def generate_img(self, vae, model, *args, **kwargs):
@@ -114,6 +120,7 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
         self,
         vae,
         model_patcher,
+        only_compute_density: bool = False,
         bits=8,
         quantized_model_generator: callable = lambda x: [x.model.diffusion_model],
         resume: bool = True,
@@ -140,6 +147,15 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
             quantize_costs = metric_quantize_costs(
                 pipe, pipe_kwargs={}, quantizable_modules=quantizable_modules
             )
+
+            if only_compute_density:
+                for sub_name, sub_module in quantizable_modules.items():
+                    compute_density = quantize_costs.get_compute_density(sub_name)
+                    quantize_info_and_relevance_metrics[sub_name] = {
+                        "compute_density": compute_density,
+                    }
+                torch.save(quantize_info_and_relevance_metrics, config_file_path)
+                return images
 
             length = len(quantizable_modules)
             for index, (sub_name, sub_module) in enumerate(quantizable_modules.items()):
@@ -185,49 +201,35 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
         pass
 
 
-class QuantKSampler(KSampleQuantumBase):
+class UnetQuantKSampler(KSampleQuantumBase):
     @classmethod
     def INPUT_TYPES(s):
         ret = KSampleQuantumBase.INPUT_TYPES()
+        ret["required"].update(
+            {"fastquant_model_prefix": ("STRING", {"default": "unet"})}
+        )
+        ret["required"].update({"only_compute_density": (["disable", "enable"],)})
         return ret
 
-    def generate_quantized_config(self, vae, model, *args, **kwargs):
-        quantize_config_file = "quantize_info_and_relevance_metrics.pt"
+    def generate_quantized_config(
+        self, vae, fastquant_model_prefix, only_compute_density, model, *args, **kwargs
+    ):
+
+        models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+        models_dir.mkdir(parents=True, exist_ok=True)
+        model_name = model.model.__class__.__qualname__
+        quantize_config_file = (
+            models_dir / f"{fastquant_model_prefix}_{model_name}_quantize_info.pth"
+        )
+
         images = self.quantize_diffusion_model(
             vae=vae,
             model_patcher=model,
+            only_compute_density=(only_compute_density == "enable"),
             bits=8,
             resume=True,
             config_file_path=quantize_config_file,
             model_cls=[nn.Linear, nn.Conv2d],
-            *args,
-            **kwargs,
-        )
-        return images
-
-
-class DeepCacheQuantKSampler(KSampleQuantumBase):
-    @classmethod
-    def INPUT_TYPES(s):
-        ret = KSampleQuantumBase.INPUT_TYPES()
-        return ret
-
-    def generate_quantized_config(self, vae, model, *args, **kwargs):
-        model_patcher = model
-        bits = 8
-        quantize_config_file = "quantize_info_and_relevance_metrics_deep_cache.pt"
-
-        def quantized_model_generator(model_patcher):
-            return [model_patcher.deep_cache_unet, model_patcher.fast_deep_cache_unet]
-
-        images = self.quantize_diffusion_model(
-            vae=vae,
-            model_patcher=model_patcher,
-            bits=bits,
-            resume=True,
-            config_file_path=quantize_config_file,
-            model_cls=[nn.Linear, nn.Conv2d],
-            quantized_model_generator=quantized_model_generator,
             *args,
             **kwargs,
         )

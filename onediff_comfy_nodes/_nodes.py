@@ -1,7 +1,7 @@
 from functools import partial
 from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
-from ._config import _USE_UNET_INT8
+from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 
 import os
 import re
@@ -579,13 +579,9 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         }
 
     CATEGORY = "OneDiff"
+    FUNCTION = "onediff_load_checkpoint"
 
-    def load_checkpoint(
-        self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
-    ):
-        modelpatcher, clip, vae = super().load_checkpoint(
-            ckpt_name, output_vae, output_clip
-        )
+    def speedup_unet(self, ckpt_name, modelpatcher):
         offload_device = model_management.unet_offload_device()
         load_device = model_management.get_torch_device()
 
@@ -598,16 +594,6 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             "graph_file": file_path,
             "graph_file_device": load_device,
         }
-        compile_options = {}
-        # onediff/src/onediff/optimization/quant_optimizer.py
-        from onediff.optimization.quant_optimizer import quantize_model
-
-        quant_config_file = (
-            "/home/fengwen/quant/ComfyUI/quantize_info_and_relevance_metrics.pt"
-        )
-        diffusion_model = quantize_model(
-            diffusion_model, quant_config_file=quant_config_file
-        )
 
         if offload_device.type == "cuda" and file_path.exists():
             diffusion_model = oneflow_compile(diffusion_model, use_graph=use_graph,)
@@ -620,6 +606,17 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         modelpatcher.model.diffusion_model = diffusion_model
         modelpatcher.model._register_state_dict_hook(state_dict_hook)
 
+        return modelpatcher
+
+    def onediff_load_checkpoint(
+        self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
+    ):
+        modelpatcher, clip, vae = CheckpointLoaderSimple.load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+
+        modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
+
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
             vae.first_stage_model = oneflow_compile(
@@ -630,6 +627,61 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
                     "graph_file_device": model_management.get_torch_device(),
                 },
             )
+
+        # set inplace update
+        modelpatcher.weight_inplace_update = True
+        return modelpatcher, clip, vae
+
+
+class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
+    @classmethod
+    def INPUT_TYPES(s):
+        paths = []
+        for search_path in folder_paths.get_folder_paths(
+            ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+        ):
+            if os.path.exists(search_path):
+                search_path = Path(search_path)
+                paths.extend(
+                    [
+                        os.path.relpath(p, start=search_path)
+                        for p in search_path.glob("*.pt")
+                    ]
+                )
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "model_path": (paths,),
+            }
+        }
+
+    CATEGORY = "OneDiff/Loaders"
+    FUNCTION = "onediff_load_checkpoint"
+    def onediff_load_checkpoint(
+        self,
+        ckpt_name,
+        model_path,
+        output_vae=True,
+        output_clip=True,
+    ):
+        from onediff.optimization.quant_optimizer import quantize_model
+
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+
+        ckpt_name = f"{ckpt_name}_quant"
+        model_path = (
+            Path(folder_paths.models_dir)
+            / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+            / model_path
+        )
+        diffusion_model = modelpatcher.model.diffusion_model
+        diffusion_model = quantize_model(
+            model=diffusion_model, inplace=True, quant_config_file=str(model_path)
+        )
+        modelpatcher.model.diffusion_model = diffusion_model
+        modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
 
         # set inplace update
         modelpatcher.weight_inplace_update = True

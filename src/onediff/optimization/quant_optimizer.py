@@ -22,7 +22,7 @@ def varify_can_use_quantization():
     return True
 
 
-def _modify_sub_module(module, sub_module_name, new_value, inplace=True):
+def _modify_sub_module(module, sub_module_name, new_value):
     """Modify a submodule of a module using dot-separated names.
 
     Args:
@@ -60,7 +60,7 @@ def quantize_model(
     quant_config_file=None,
     conv_ssim_threshold=0.9,
     linear_ssim_threshold=0.9,
-    compute_density_threshold=600,
+    compute_density_threshold=200,
 ):
     """Quantize a model. inplace=True will modify the model in-place."""
     start_time = time.time()
@@ -78,13 +78,14 @@ def quantize_model(
         model = deepcopy(model)
 
     if quant_config_file is not None:
-        # load quantization config file
         quant_config = torch.load(quant_config_file)
+        logger.debug(f"quant_config: {len(quant_config)=} ")
 
     def no_quantizable(sub_module_name, module):
         if quant_config_file:
             conf = quant_config.get(sub_module_name, None)
             if conf is None:
+                print(f"{sub_module_name=}")
                 return True
             if conf.get("ssim", 1) < conv_ssim_threshold and isinstance(
                 module, nn.Conv2d
@@ -100,7 +101,10 @@ def quantize_model(
                     f'skip {module.__class__}: {sub_module_name} with ssim {conf.get("ssim", 1)}'
                 )
                 return True
-            if conf.get("compute_density", 0) < compute_density_threshold:
+            if (
+                "compute_density" in conf
+                and conf.get("compute_density", 0) < compute_density_threshold
+            ):
                 logger.debug(
                     f'skip: {module.__class__} with compute_density {conf.get("compute_density", 0)}'
                 )

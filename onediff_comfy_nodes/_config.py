@@ -3,8 +3,8 @@ import os
 import sys
 from pathlib import Path
 
+ONEDIFF_QUANTIZED_OPTIMIZED_MODELS = "onediff_fastquant_models"
 _USE_UNET_INT8 = True
-
 COMFYUI_ROOT = Path(os.path.abspath(__file__)).parents[2]
 COMFYUI_SPEEDUP_ROOT = Path(os.path.abspath(__file__)).parents[0]
 INFER_COMPILER_REGISTRY = Path(COMFYUI_SPEEDUP_ROOT) / "infer_compiler_registry"
@@ -28,5 +28,13 @@ if _USE_UNET_INT8:
     unet_int8_model_dir.mkdir(parents=True, exist_ok=True)
     folder_names_and_paths["unet_int8"] = (
         [str(unet_int8_model_dir)],
+        supported_pt_extensions,
+    )
+
+    opt_models_dir = Path(models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+    opt_models_dir.mkdir(parents=True, exist_ok=True)
+
+    folder_names_and_paths[ONEDIFF_QUANTIZED_OPTIMIZED_MODELS] = (
+        [str(opt_models_dir)],
         supported_pt_extensions,
     )
