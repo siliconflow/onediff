@@ -1,6 +1,7 @@
 from functools import partial
 from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
+from onediff.infer_compiler.utils import set_boolean_env_var
 from ._config import _USE_UNET_INT8
 
 import os
@@ -184,6 +185,9 @@ class SVDSpeedup:
 
     def speedup(self, model, static_mode):
         from onediff.infer_compiler import oneflow_compile
+        # To avoid overflow issues while maintaining performance, 
+        # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
+        set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", 0)
 
         use_graph = static_mode == "enable"
 
