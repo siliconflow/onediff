@@ -11,7 +11,7 @@ class FakeCuda:
 
     @staticmethod
     def mem_get_info(dev):
-        return 1024 * 1024 * 1024, 1024 * 1024 * 1024
+        return torch.cuda.mem_get_info(str(dev))
 
     @staticmethod
     def _scaled_dot_product_attention_math(
