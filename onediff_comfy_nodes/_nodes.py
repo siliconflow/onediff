@@ -420,6 +420,7 @@ class ModuleDeepCacheSpeedup:
             "required": {
                 "model": ("MODEL",),
                 "static_mode": (["enable", "disable"],),
+                "no_compile": (["disable", "enable"],),
                 "cache_interval": (
                     "INT",
                     {
@@ -468,6 +469,7 @@ class ModuleDeepCacheSpeedup:
         self,
         model,
         static_mode,
+        no_compile,
         cache_interval,
         cache_layer_id,
         cache_block_id,
@@ -475,6 +477,7 @@ class ModuleDeepCacheSpeedup:
         end_step,
     ):
         use_graph = static_mode == "enable"
+        no_compile = (no_compile == "enable") or (not use_graph)
 
         offload_device = model_management.unet_offload_device()
         oneflow_model = OneFlowDeepCacheSpeedUpModelPatcher(
@@ -484,6 +487,7 @@ class ModuleDeepCacheSpeedup:
             cache_layer_id=cache_layer_id,
             cache_block_id=cache_block_id,
             use_graph=use_graph,
+            no_compile=no_compile,
         )
 
         current_t = -1
@@ -677,10 +681,22 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
                         for p in search_path.glob("*.pt")
                     ]
                 )
+
         return {
             "required": {
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "model_path": (paths,),
+                "no_compile": (["disable", "enable"],),
+                "compute_density_threshold": (
+                    "INT",
+                    {
+                        "default": 600,
+                        "min": 1,
+                        "max": 10000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
             }
         }
 
@@ -690,10 +706,13 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
     def onediff_load_checkpoint(
         self,
         ckpt_name,
+        no_compile,
+        compute_density_threshold,
         model_path,
         output_vae=True,
         output_clip=True,
     ):
+        no_compile = no_compile == "enable"
         from onediff.optimization.quant_optimizer import quantize_model
 
         modelpatcher, clip, vae = self.load_checkpoint(
@@ -706,12 +725,20 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
             / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
             / model_path
         )
+
         diffusion_model = modelpatcher.model.diffusion_model
         diffusion_model = quantize_model(
-            model=diffusion_model, inplace=True, quant_config_file=str(model_path)
+            model=diffusion_model,
+            inplace=True,
+            quant_config_file=str(model_path),
+            compute_density_threshold=compute_density_threshold,
+            conv_ssim_threshold=0.98,
+            linear_ssim_threshold=0.98,
         )
         modelpatcher.model.diffusion_model = diffusion_model
-        modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
+
+        if not no_compile:
+            modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
 
         # set inplace update
         modelpatcher.weight_inplace_update = True

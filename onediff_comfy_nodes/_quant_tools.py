@@ -1,6 +1,8 @@
+from typing import Dict
 from ._config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from abc import ABC, abstractmethod
 import os
+import copy
 import torch
 import numpy as np
 import torch.nn as nn
@@ -13,6 +15,8 @@ from onediff.infer_compiler.utils.module_operations import (
     modify_sub_module,
     get_sub_module,
 )
+from onediff.optimization.quant_optimizer import quantize_model
+from onediff.infer_compiler import oneflow_compile
 
 # ComfyUI
 import folder_paths
@@ -127,12 +131,13 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
         model_cls=[nn.Linear, nn.Conv2d],
         *args,
         **kwargs,
-    ):
-        quantize_info_and_relevance_metrics = {}
+    ) -> Dict:
+        """return calibrate_info"""
+        calibrate_info = {}
         if resume and config_file_path:
             if os.path.exists(config_file_path):
                 print(f"Resuming from {config_file_path}")
-                quantize_info_and_relevance_metrics = torch.load(config_file_path)
+                calibrate_info = torch.load(config_file_path)
 
         images = self.generate_img(vae, model_patcher, *args, **kwargs)
         original_image = format_image(images[0])
@@ -150,16 +155,15 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
             if only_compute_density:
                 for sub_name, sub_module in quantizable_modules.items():
                     compute_density = quantize_costs.get_compute_density(sub_name)
-                    quantize_info_and_relevance_metrics[sub_name] = {
+                    calibrate_info[sub_name] = {
                         "compute_density": compute_density,
                     }
-                torch.save(quantize_info_and_relevance_metrics, config_file_path)
-                return images
+                torch.save(calibrate_info, config_file_path)
 
             length = len(quantizable_modules)
             for index, (sub_name, sub_module) in enumerate(quantizable_modules.items()):
                 print(f"Quantizing {index+1}/{length} {sub_name}...")
-                if sub_name in quantize_info_and_relevance_metrics:
+                if sub_name in calibrate_info:
                     continue
 
                 with quantize_sub_module_context(
@@ -180,7 +184,7 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
                     compute_density = quantize_costs.get_compute_density(sub_name)
                     print(f"SSIM for {sub_name}: {ssim} density: {compute_density}")
 
-                    quantize_info_and_relevance_metrics[sub_name] = {
+                    calibrate_info[sub_name] = {
                         "scale": scale.to("cpu"),
                         "maxq": maxq,
                         "ssim": ssim,
@@ -189,11 +193,9 @@ class KSampleQuantumBase(ABC, KSampler, VAEDecode):
 
                     # save
                     if index % 10 == 0 or index == length - 1:
-                        torch.save(
-                            quantize_info_and_relevance_metrics, config_file_path
-                        )
+                        torch.save(calibrate_info, config_file_path)
 
-        return images
+        return images[0], calibrate_info
 
     @abstractmethod
     def generate_quantized_config(self, vae, model, *args, **kwargs):
@@ -208,27 +210,181 @@ class UnetQuantKSampler(KSampleQuantumBase):
             {"fastquant_model_prefix": ("STRING", {"default": "unet"})}
         )
         ret["required"].update({"only_compute_density": (["disable", "enable"],)})
+        ret["required"].update({"quantize_conv": (["enable", "disable"],)})
+        ret["required"].update({"quantize_linear": (["enable", "disable"],)})
         return ret
 
+    RETURN_TYPES = (
+        "IMAGE",
+        "CALIBRATE_INFO",
+    )
+
     def generate_quantized_config(
-        self, vae, fastquant_model_prefix, only_compute_density, model, *args, **kwargs
+        self,
+        vae,
+        fastquant_model_prefix,
+        only_compute_density,
+        quantize_conv,
+        quantize_linear,
+        model,
+        *args,
+        **kwargs,
     ):
         models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
         models_dir.mkdir(parents=True, exist_ok=True)
         model_name = model.model.__class__.__qualname__
         quantize_config_file = (
-            models_dir / f"{fastquant_model_prefix}_{model_name}_quantize_info.pth"
+            models_dir / f"{fastquant_model_prefix}_{model_name}_quantize_info.pt"
         )
 
-        images = self.quantize_diffusion_model(
+        model_cls = []
+        if quantize_conv == "enable":
+            model_cls.append(nn.Conv2d)
+        if quantize_linear == "enable":
+            model_cls.append(nn.Linear)
+
+        image, calibrate_info = self.quantize_diffusion_model(
             vae=vae,
             model_patcher=model,
             only_compute_density=(only_compute_density == "enable"),
             bits=8,
             resume=True,
             config_file_path=quantize_config_file,
-            model_cls=[nn.Linear, nn.Conv2d],
+            model_cls=model_cls,
             *args,
             **kwargs,
         )
-        return images
+        return (
+            image,
+            calibrate_info,
+        )
+
+
+class FineTuneCalibrateInfo:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "calibrate_info": ("CALIBRATE_INFO",),
+                "conv_ssim_threshold": (
+                    "FLOAT",
+                    {
+                        "default": 0.9,
+                        "min": 0,
+                        "max": 1,
+                        "step": 0.01,
+                        "display": "number",
+                    },
+                ),
+                "linear_ssim_threshold": (
+                    "FLOAT",
+                    {
+                        "default": 0.9,
+                        "min": 0,
+                        "max": 1,
+                        "step": 0.01,
+                        "display": "number",
+                    },
+                ),
+                "compute_density_threshold": (
+                    "INT",
+                    {
+                        "default": 100,
+                        "min": 0,
+                        "max": 10000,
+                        "step": 10,
+                        "display": "number",
+                    },
+                ),
+            },
+        }
+
+    RETURN_TYPES = (
+        "MODEL",
+        "CALIBRATE_INFO",
+    )
+    FUNCTION = "fine_tune_calibrate_info"
+    CATEGORY = "OneDiff/Quant_Tools"
+
+    def fine_tune_calibrate_info(
+        self,
+        model,
+        calibrate_info,
+        conv_ssim_threshold,
+        linear_ssim_threshold,
+        compute_density_threshold,
+    ):
+        modelpatcher = model.clone()
+        model.model = copy.deepcopy(modelpatcher.model)
+
+        new_calibrate_info = {}
+        for sub_name, sub_info in calibrate_info.items():
+            if sub_info["compute_density"] < compute_density_threshold:
+                continue
+
+            sub_model = get_sub_module(modelpatcher.model.diffusion_model, sub_name)
+
+            if isinstance(sub_model, nn.Conv2d):
+                if sub_info["ssim"] < conv_ssim_threshold:
+                    continue
+
+            if isinstance(sub_model, nn.Linear):
+                if sub_info["ssim"] < linear_ssim_threshold:
+                    continue
+
+            new_calibrate_info[sub_name] = sub_info
+
+        diffusion_model = modelpatcher.model.diffusion_model
+
+        quant_module = quantize_model(
+            diffusion_model, inplace=True, calibrate_info=new_calibrate_info
+        )
+        modelpatcher.model.diffusion_model = quant_module
+        return (modelpatcher, new_calibrate_info)
+
+
+class LoadQuantizedConfig:
+    @classmethod
+    def INPUT_TYPES(s):
+        paths = folder_paths.get_filename_list(ONEDIFF_QUANTIZED_OPTIMIZED_MODELS)
+        return {
+            "required": {
+                "model_name": (paths,),
+            },
+        }
+
+    RETURN_TYPES = ("CALIBRATE_INFO",)
+    FUNCTION = "load_quantized_config"
+    CATEGORY = "OneDiff/Quant_Tools"
+
+    def load_quantized_config(self, model_name):
+        models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+        quantize_config_file = models_dir / model_name
+        calibrate_info = torch.load(quantize_config_file)
+        return (calibrate_info,)
+
+
+class SaveQuantizedConfig:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "calibrate_info": ("CALIBRATE_INFO",),
+                "model_name": ("STRING", {"default": "unet"}),
+            },
+        }
+
+    RETURN_TYPES = ()
+    OUTPUT_NODE = True
+    FUNCTION = "save_quantized_config"
+    CATEGORY = "OneDiff/Quant_Tools"
+
+    def save_quantized_config(self, model_name, calibrate_info):
+        model_name = f"{model_name}_calibrate_info.pt"
+        models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+        quantize_config_file = models_dir / model_name
+
+        torch.save(calibrate_info, quantize_config_file)
+
+        return {"ui": {"model_name": model_name}}

@@ -8,6 +8,7 @@ from ..infer_compiler.utils.version_util import (
     is_quantization_enabled,
 )
 from ..infer_compiler.utils.cost_util import cost_cnt
+from ..infer_compiler.utils.module_operations import modify_sub_module
 from ..infer_compiler.transform.manager import transform_mgr
 
 
@@ -22,33 +23,6 @@ def varify_can_use_quantization():
     return True
 
 
-def _modify_sub_module(module, sub_module_name, new_value):
-    """Modify a submodule of a module using dot-separated names.
-
-    Args:
-        module (nn.Module): The base module.
-        sub_module_name (str): Dot-separated name of the submodule.
-        new_value: The new value to assign to the submodule.
-
-    """
-    parts = sub_module_name.split(".")
-    current_module = module
-    for i, part in enumerate(parts):
-        try:
-            if part.isdigit():
-                if i == len(parts) - 1:
-                    current_module[int(part)] = new_value
-                else:
-                    current_module = current_module[int(part)]
-            else:
-                if i == len(parts) - 1:
-                    setattr(current_module, part, new_value)
-                else:
-                    current_module = getattr(current_module, part)
-        except (IndexError, AttributeError):
-            raise ModuleNotFoundError(f"Submodule {part} not found.")
-
-
 @cost_cnt(debug=transform_mgr.debug_mode)
 def quantize_model(
     model,  # diffusion_model
@@ -57,10 +31,7 @@ def quantize_model(
     bits=8,
     *,
     inplace=True,
-    quant_config_file=None,
-    conv_ssim_threshold=0.9,
-    linear_ssim_threshold=0.9,
-    compute_density_threshold=200,
+    calibrate_info: dict = None,
 ):
     """Quantize a model. inplace=True will modify the model in-place."""
     start_time = time.time()
@@ -77,37 +48,10 @@ def quantize_model(
     if not inplace:
         model = deepcopy(model)
 
-    if quant_config_file is not None:
-        quant_config = torch.load(quant_config_file)
-        logger.debug(f"quant_config: {len(quant_config)=} ")
-
-    def no_quantizable(sub_module_name, module):
-        if quant_config_file:
-            conf = quant_config.get(sub_module_name, None)
+    def no_quantizable(sub_module_name):
+        if calibrate_info is not None:
+            conf = calibrate_info.get(sub_module_name, None)
             if conf is None:
-                print(f"{sub_module_name=}")
-                return True
-            if conf.get("ssim", 1) < conv_ssim_threshold and isinstance(
-                module, nn.Conv2d
-            ):
-                logger.debug(
-                    f'skip {module.__class__}: {sub_module_name} with ssim {conf.get("ssim", 1)}'
-                )
-                return True
-            if conf.get("ssim", 1) < linear_ssim_threshold and isinstance(
-                module, nn.Linear
-            ):
-                logger.debug(
-                    f'skip {module.__class__}: {sub_module_name} with ssim {conf.get("ssim", 1)}'
-                )
-                return True
-            if (
-                "compute_density" in conf
-                and conf.get("compute_density", 0) < compute_density_threshold
-            ):
-                logger.debug(
-                    f'skip: {module.__class__} with compute_density {conf.get("compute_density", 0)}'
-                )
                 return True
             return False
         else:
@@ -117,7 +61,7 @@ def quantize_model(
         nonlocal model, quantize_conv_cnt, quantize_linear_cnt
 
         for sub_module_name, sub_mod in quantizable_modules.items():
-            if no_quantizable(sub_module_name, sub_mod):
+            if no_quantizable(sub_module_name):
                 continue
 
             if isinstance(sub_mod, nn.Conv2d):
@@ -149,7 +93,7 @@ def quantize_model(
                 convert_fn=maybe_allow_in_graph,
             )
 
-            _modify_sub_module(model, sub_module_name, sub_mod)
+            modify_sub_module(model, sub_module_name, sub_mod)
 
     if quantize_conv:
         conv_modules = find_quantizable_modules(model, module_cls=[nn.Conv2d])

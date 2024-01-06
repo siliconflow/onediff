@@ -496,6 +496,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         weight_inplace_update=False,
         *,
         use_graph=None,
+        no_compile=False,
     ):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
@@ -506,6 +507,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.size = size
         self.model = copy.copy(model)
         self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
+
         self.deep_cache_unet = DeepCacheUNet(
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
@@ -513,6 +515,17 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.fast_deep_cache_unet = FastDeepCacheUNet(
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
+
+        if not no_compile:
+            self.deep_cache_unet = oneflow_compile(
+                self.deep_cache_unet,
+                use_graph=use_graph,
+            )
+            self.fast_deep_cache_unet = oneflow_compile(
+                self.fast_deep_cache_unet,
+                use_graph=use_graph,
+            )
+            self.model._register_state_dict_hook(state_dict_hook)
 
         self.patches = {}
         self.backup = {}
