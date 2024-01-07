@@ -53,6 +53,11 @@ def set_default_registry():
     except Exception as e:
         logger.info(f"Failed to register_diffusers_quant {e=}")
 
+    try:
+        import_module_from_path(registry_path / "register_diffusers_enterprise_lite")
+    except Exception as e:
+        logger.info(f"Failed to register_diffusers_enterprise_lite {e=}")
+
 
 def ensure_list(obj):
     if isinstance(obj, list):
