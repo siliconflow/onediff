@@ -307,6 +307,18 @@ class FineTuneCalibrateInfo:
     FUNCTION = "fine_tune_calibrate_info"
     CATEGORY = "OneDiff/Quant_Tools"
 
+    def _new_modelpatcher(self, model):
+        modelpatcher = getattr(model, "modelpatcher", None)
+        if modelpatcher is None:
+            modelpatcher = model.clone()
+
+        modelpatcher.model = copy.copy(model.model)
+        modelpatcher.model.__dict__["_modules"] = copy.copy(
+            model.model.__dict__["_modules"]
+        )
+        self.modelpatcher = modelpatcher
+        return modelpatcher
+
     def fine_tune_calibrate_info(
         self,
         model,
@@ -315,8 +327,7 @@ class FineTuneCalibrateInfo:
         linear_ssim_threshold,
         compute_density_threshold,
     ):
-        modelpatcher = model.clone()
-        model.model = copy.deepcopy(modelpatcher.model)
+        modelpatcher = self._new_modelpatcher(model)
 
         new_calibrate_info = {}
         for sub_name, sub_info in calibrate_info.items():
@@ -338,8 +349,9 @@ class FineTuneCalibrateInfo:
         diffusion_model = modelpatcher.model.diffusion_model
 
         quant_module = quantize_model(
-            diffusion_model, inplace=True, calibrate_info=new_calibrate_info
+            diffusion_model, inplace=False, calibrate_info=new_calibrate_info
         )
+
         modelpatcher.model.diffusion_model = quant_module
         return (modelpatcher, new_calibrate_info)
 
