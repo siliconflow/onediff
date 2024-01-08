@@ -9,7 +9,7 @@ from .attention_processor import FusedSelfAttnProcessor
 _IS_DIFFUSERS_QUANT_AVAILABLE = 0
 try:
     import diffusers_quant
-    from diffusers_quant import StaticQuantLinearModule, DynamicQuantLinearModule
+    from diffusers_quant import ProxyStaticLinearModule, ProxyDynamicLinearModule
 
     _IS_DIFFUSERS_QUANT_AVAILABLE = 1
 except ImportError as e:
@@ -85,7 +85,7 @@ def rewrite_self_attention(model):
             attn.to_qkv.bias.data = qkv_bias
 
         if _IS_DIFFUSERS_QUANT_AVAILABLE and isinstance(
-            attn.to_q, (DynamicQuantLinearModule, StaticQuantLinearModule)
+            attn.to_q, (ProxyDynamicLinearModule, ProxyStaticLinearModule)
         ):
             cls = type(attn.to_q)
             weight_scale = (

@@ -154,7 +154,7 @@ def _can_use_flash_attn(attn):
 
 
 def _rewrite_attention(attn):
-    from diffusers_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
+    from diffusers_quant.models import ProxyStaticLinearModule, ProxyDynamicLinearModule
 
     dim_head = attn.to_q.out_features // attn.heads
     has_bias = attn.to_q.bias is not None
@@ -190,8 +190,8 @@ def _rewrite_attention(attn):
         )
         attn.to_qkv.bias.data = qkv_bias
 
-    if isinstance(attn.to_q, StaticQuantLinearModule) or isinstance(
-        attn.to_q, DynamicQuantLinearModule
+    if isinstance(attn.to_q, ProxyStaticLinearModule) or isinstance(
+        attn.to_q, ProxyDynamicLinearModule
     ):
         cls = type(attn.to_q)
         weight_scale = (

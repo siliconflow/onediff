@@ -127,8 +127,8 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
 
             if is_diffusers_quant_available:
                 if isinstance(
-                    module, diffusers_quant.DynamicQuantLinearModule
-                ) or isinstance(module, diffusers_quant.DynamicQuantConvModule):
+                    module, diffusers_quant.ProxyDynamicLinearModule
+                ) or isinstance(module, diffusers_quant.ProxyDynamicConvModule):
                     w_name = f"diffusion_model.{name}.weight"
                     if w_name in patches:
                         patch_type = "onediff_int8"
@@ -387,8 +387,8 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                     is_diffusers_quant_available
                     and len(v) == 5
                     and (
-                        isinstance(v[4], diffusers_quant.DynamicQuantLinearModule)
-                        or isinstance(v[4], diffusers_quant.DynamicQuantConvModule)
+                        isinstance(v[4], diffusers_quant.ProxyDynamicLinearModule)
+                        or isinstance(v[4], diffusers_quant.ProxyDynamicConvModule)
                     )
                 ):
                     is_quant = True
