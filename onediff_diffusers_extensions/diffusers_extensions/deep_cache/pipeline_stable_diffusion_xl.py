@@ -197,6 +197,10 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
         else:
             self.watermark = None
 
+    def upcast_vae(self):
+        super().upcast_vae()
+        self.vae_upcasted = True
+
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
@@ -582,7 +586,6 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
             if self.needs_upcasting:
                 if not self.vae_upcasted:
                     self.upcast_vae()
-                    self.vae_upcasted = True
                 dtype = next(iter(self.vae.post_quant_conv.parameters())).dtype
                 latents = latents.to(dtype)
 
