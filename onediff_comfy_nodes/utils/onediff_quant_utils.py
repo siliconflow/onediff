@@ -154,7 +154,7 @@ def _can_use_flash_attn(attn):
 
 
 def _rewrite_attention(attn):
-    from onediff_quant.models import ProxyStaticLinearModule, ProxyDynamicLinearModule
+    from onediff_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
 
     dim_head = attn.to_q.out_features // attn.heads
     has_bias = attn.to_q.bias is not None
