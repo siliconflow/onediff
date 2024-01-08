@@ -687,16 +687,6 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "model_path": (paths,),
                 "no_compile": (["disable", "enable"],),
-                "compute_density_threshold": (
-                    "INT",
-                    {
-                        "default": 600,
-                        "min": 1,
-                        "max": 10000,
-                        "step": 1,
-                        "display": "number",
-                    },
-                ),
             }
         }
 
@@ -707,7 +697,6 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
         self,
         ckpt_name,
         no_compile,
-        compute_density_threshold,
         model_path,
         output_vae=True,
         output_clip=True,
@@ -719,22 +708,20 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
             ckpt_name, output_vae, output_clip
         )
 
-        ckpt_name = f"{ckpt_name}_quant"
+        ckpt_name = f"{ckpt_name}_quant_{model_path}"
         model_path = (
             Path(folder_paths.models_dir)
             / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
             / model_path
         )
-
+        calibrate_info = torch.load(model_path)
         diffusion_model = modelpatcher.model.diffusion_model
         diffusion_model = quantize_model(
             model=diffusion_model,
             inplace=True,
-            quant_config_file=str(model_path),
-            compute_density_threshold=compute_density_threshold,
-            conv_ssim_threshold=0.98,
-            linear_ssim_threshold=0.98,
+            calibrate_info = calibrate_info
         )
+
         modelpatcher.model.diffusion_model = diffusion_model
 
         if not no_compile:

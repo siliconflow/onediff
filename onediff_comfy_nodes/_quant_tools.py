@@ -356,7 +356,7 @@ class FineTuneCalibrateInfo:
         return (modelpatcher, new_calibrate_info)
 
 
-class LoadQuantizedConfig:
+class LoadQuantizedCalibrateInfo:
     @classmethod
     def INPUT_TYPES(s):
         paths = folder_paths.get_filename_list(ONEDIFF_QUANTIZED_OPTIMIZED_MODELS)
@@ -367,17 +367,17 @@ class LoadQuantizedConfig:
         }
 
     RETURN_TYPES = ("CALIBRATE_INFO",)
-    FUNCTION = "load_quantized_config"
+    FUNCTION = "load_quantized_calibrate_info"
     CATEGORY = "OneDiff/Quant_Tools"
 
-    def load_quantized_config(self, model_name):
+    def load_quantized_load_quantized_calibrate_infoconfig(self, model_name):
         models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
         quantize_config_file = models_dir / model_name
         calibrate_info = torch.load(quantize_config_file)
         return (calibrate_info,)
 
 
-class SaveQuantizedConfig:
+class SaveQuantizedCalibrateInfo:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -389,10 +389,10 @@ class SaveQuantizedConfig:
 
     RETURN_TYPES = ()
     OUTPUT_NODE = True
-    FUNCTION = "save_quantized_config"
+    FUNCTION = "save_quantized_calibrate_info"
     CATEGORY = "OneDiff/Quant_Tools"
 
-    def save_quantized_config(self, model_name, calibrate_info):
+    def save_quantized_calibrate_info(self, model_name, calibrate_info):
         model_name = f"{model_name}_calibrate_info.pt"
         models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
         quantize_config_file = models_dir / model_name
