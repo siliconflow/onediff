@@ -9,7 +9,7 @@ from .attention_processor import FusedSelfAttnProcessor
 _IS_ONEDIFF_QUANT_AVAILABLE = 0
 try:
     import onediff_quant
-    from onediff_quant import ProxyStaticLinearModule, ProxyDynamicLinearModule
+    from onediff_quant import StaticQuantLinearModule, DynamicQuantLinearModule
 
     _IS_ONEDIFF_QUANT_AVAILABLE = 1
 except ImportError as e:
