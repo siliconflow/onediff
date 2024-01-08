@@ -37,9 +37,8 @@ OneDiff is **an out-of-the-box acceleration library for diffusion models**  (esp
   - [Change device to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
 ## State-of-the-art performance
-Updated on December 28, 2023.
 
-<img src="benchmarks/pics/231228_sdxl_e2e_a100.png" width="600" height="400">
+<img src="benchmarks/pics/240105_sdxl_e2e_a100.png" width="600" height="400">
 
 ## OS and GPU support
 - Linux
