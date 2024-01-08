@@ -85,7 +85,7 @@ def rewrite_self_attention(model):
             attn.to_qkv.bias.data = qkv_bias
 
         if _IS_ONEDIFF_QUANT_AVAILABLE and isinstance(
-            attn.to_q, (ProxyDynamicLinearModule, ProxyStaticLinearModule)
+            attn.to_q, (DynamicQuantLinearModule, StaticQuantLinearModule)
         ):
             cls = type(attn.to_q)
             weight_scale = (

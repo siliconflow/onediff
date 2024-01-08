@@ -190,8 +190,8 @@ def _rewrite_attention(attn):
         )
         attn.to_qkv.bias.data = qkv_bias
 
-    if isinstance(attn.to_q, ProxyStaticLinearModule) or isinstance(
-        attn.to_q, ProxyDynamicLinearModule
+    if isinstance(attn.to_q, StaticQuantLinearModule) or isinstance(
+        attn.to_q, DynamicQuantLinearModule
     ):
         cls = type(attn.to_q)
         weight_scale = (
