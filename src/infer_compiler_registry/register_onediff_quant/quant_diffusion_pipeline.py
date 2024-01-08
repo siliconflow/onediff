@@ -2,8 +2,8 @@ import os
 from typing import Any, List, Optional, Union
 import torch
 from diffusers import StableDiffusionXLPipeline
-import diffusers_quant
-from diffusers_quant.utils import (
+import onediff_quant
+from onediff_quant.utils import (
     rewrite_sdxl_pipeline_attention,
     replace_sub_module_with_quantizable_module,
 )
@@ -62,7 +62,7 @@ class QuantDiffusionPipeline:
         graph=True,
         **kwargs
     ):
-        diffusers_quant.enable_load_quantized_model()
+        onediff_quant.enable_load_quantized_model()
 
         pipe = StableDiffusionXLPipeline.from_pretrained(
             pretrained_model_name_or_path,
