@@ -20,7 +20,7 @@ if is_community_version():
     print(get_support_message())
 
 if _USE_UNET_INT8:
-    import register_diffusers_quant  # load plugins
+    import register_onediff_quant  # load plugins
 
     from folder_paths import folder_names_and_paths, supported_pt_extensions, models_dir
 
