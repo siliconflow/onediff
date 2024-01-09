@@ -57,7 +57,10 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [torch_module.named_parameters(), torch_module.named_buffers(),]
+                [
+                    torch_module.named_parameters(),
+                    torch_module.named_buffers(),
+                ]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -190,10 +193,12 @@ def graph_file_management(func):
         # Save graph file
         if graph_file is not None:
             try:
-                if graph_file is not None:
+                parent_dir = os.path.dirname(graph_file)
+                if parent_dir != "":
                     os.makedirs(os.path.dirname(graph_file), exist_ok=True)
-                    self.save_graph(graph_file)
-                    logger.info(f"Save graph file: {graph_file} done!")
+
+                self.save_graph(graph_file)
+                logger.info(f"Save graph file: {graph_file} done!")
             except Exception as e:
                 logger.error(f"Save graph file: {graph_file} failed! {e=}")
             finally:
