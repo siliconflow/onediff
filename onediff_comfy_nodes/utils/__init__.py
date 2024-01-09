@@ -3,7 +3,7 @@ import re
 import time
 
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
-from .diffusers_quant_utils import (
+from .onediff_quant_utils import (
     replace_module_with_quantizable_module,
     _use_graph,
     quantize_and_save_model,
