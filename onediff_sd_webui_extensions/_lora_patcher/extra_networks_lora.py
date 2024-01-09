@@ -9,10 +9,20 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
         super().__init__('lora')
 
         self.errors = {}
+
+        self.switch_from_onediff = False
         """mapping of network names to the number of errors the network had during operation"""
 
     def activate(self, p, params_list):
         additional = shared.opts.sd_lora
+
+        # When switch from OneDiff to PyTorch, modules with LoRA need to reload LoRA
+        # since `network_apply_weights` in forward is not called
+        if self.switch_from_onediff and not isinstance(p.sd_model.model.diffusion_model, DeployableModule):
+            for name, sub_module in p.sd_model.model.diffusion_model.named_modules():
+                if hasattr(sub_module, "network_current_names"):
+                    setattr(sub_module, "network_current_names", ())
+            self.switch_from_onediff = False
 
         self.errors.clear()
 
@@ -63,6 +73,7 @@ class ExtraNetworkLora(extra_networks.ExtraNetwork):
                 p.extra_generation_params["Lora hashes"] = ", ".join(network_hashes)
 
         if isinstance(p.sd_model.model.diffusion_model, DeployableModule):
+            self.switch_from_onediff = True
             onediff_sd_model: DeployableModule = p.sd_model.model.diffusion_model
             for name, sub_module in onediff_sd_model.named_modules():
                 if not isinstance(
