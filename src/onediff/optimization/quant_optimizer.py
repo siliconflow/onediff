@@ -39,9 +39,9 @@ def quantize_model(
         return model
 
     from torch._dynamo import allow_in_graph as maybe_allow_in_graph
-    from diffusers_quant.utils import symm_quantize_sub_module, find_quantizable_modules
-    from diffusers_quant.utils import get_quantize_module
-    from diffusers_quant import Quantizer
+    from onediff_quant.utils import symm_quantize_sub_module, find_quantizable_modules
+    from onediff_quant.utils import get_quantize_module
+    from onediff_quant import Quantizer
 
     quantize_conv_cnt, quantize_linear_cnt = 0, 0
 

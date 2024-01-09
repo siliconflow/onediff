@@ -14,13 +14,13 @@ from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionXLPipeline
 
 try:
-    import diffusers_quant
+    import onediff_quant
 except:
-    print("Skip quantized SDXL since diffusers_quant is not installed.")
+    print("Skip quantized SDXL since onediff_quant is not installed.")
     exit()
-from diffusers_quant.utils import replace_sub_module_with_quantizable_module
+from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
-diffusers_quant.enable_load_quantized_model()
+onediff_quant.enable_load_quantized_model()
 
 
 parser = argparse.ArgumentParser()

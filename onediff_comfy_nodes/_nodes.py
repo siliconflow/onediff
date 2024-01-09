@@ -2,6 +2,8 @@ from functools import partial
 from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+from onediff.infer_compiler.utils import set_boolean_env_var
+
 
 import os
 import re
@@ -98,7 +100,7 @@ class UNETLoaderInt8:
     CATEGORY = "OneDiff"
 
     def load_unet_int8(self, model_path):
-        from .utils.diffusers_quant_utils import replace_module_with_quantizable_module
+        from .utils.onediff_quant_utils import replace_module_with_quantizable_module
 
         for search_path in folder_paths.get_folder_paths("unet_int8"):
             if os.path.exists(search_path):
@@ -184,6 +186,9 @@ class SVDSpeedup:
 
     def speedup(self, model, static_mode):
         from onediff.infer_compiler import oneflow_compile
+        # To avoid overflow issues while maintaining performance, 
+        # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
+        set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M', 0)
 
         use_graph = static_mode == "enable"
 
