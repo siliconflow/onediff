@@ -9,7 +9,8 @@ diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 from diffusers.models.transformer_2d import Transformer2DModel
-from diffusers.models.resnet import SpatioTemporalResBlock
+if diffusers_version >= version.parse("0.24.00"):
+    from diffusers.models.resnet import SpatioTemporalResBlock
 if diffusers_version >= version.parse("0.25.00"):
     from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import TemporalDecoder
 else:
@@ -24,13 +25,22 @@ from .spatio_temporal_oflow import (
 )
 from .spatio_temporal_oflow import TemporalDecoder as TemporalDecoderOflow
 
-torch2oflow_class_map = {
-    Attention: AttentionOflow,
-    AttnProcessor2_0: AttnProcessorOflow,
-    LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
-    SpatioTemporalResBlock: SpatioTemporalResBlockOflow,
-    TemporalDecoder: TemporalDecoderOflow,
-}
+# For CI
+if diffusers_version >= version.parse("0.24.00"):
+    torch2oflow_class_map = {
+        Attention: AttentionOflow,
+        AttnProcessor2_0: AttnProcessorOflow,
+        LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
+        SpatioTemporalResBlock: SpatioTemporalResBlockOflow,
+        TemporalDecoder: TemporalDecoderOflow,
+    }
+else:
+    torch2oflow_class_map = {
+        Attention: AttentionOflow,
+        AttnProcessor2_0: AttnProcessorOflow,
+        LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
+    }
+
 torch2oflow_class_map.update({Transformer2DModel: Transformer2DModelOflow})
 
 register(torch2oflow_class_map=torch2oflow_class_map)
