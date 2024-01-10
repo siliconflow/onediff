@@ -526,9 +526,8 @@ class AttnProcessor:
 
         if input_ndim == 4:
             batch_size, channel, height, width = hidden_states.shape
-            hidden_states = hidden_states.reshape(
-                batch_size, channel, -1
-            ).transpose(1, 2)
+            # Note(lixiang): For SVD VAE Compile with VM.
+            hidden_states = hidden_states.flatten(2, 3).transpose(1, 2)
 
         batch_size, sequence_length, _ = (
             hidden_states.shape
