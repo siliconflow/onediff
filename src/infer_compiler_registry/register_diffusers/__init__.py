@@ -14,7 +14,6 @@ torch2oflow_class_map = {
     AttnProcessor2_0: AttnProcessorOflow,
     LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
 }
-if Transformer2DModelOflow is not None:
-    torch2oflow_class_map.update({Transformer2DModel: Transformer2DModelOflow})
+torch2oflow_class_map.update({Transformer2DModel: Transformer2DModelOflow})
 
 register(torch2oflow_class_map=torch2oflow_class_map)
