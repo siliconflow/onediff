@@ -99,7 +99,7 @@ class UNETLoaderInt8:
     CATEGORY = "OneDiff"
 
     def load_unet_int8(self, model_path):
-        from .utils.diffusers_quant_utils import replace_module_with_quantizable_module
+        from .utils.onediff_quant_utils import replace_module_with_quantizable_module
 
         for search_path in folder_paths.get_folder_paths("unet_int8"):
             if os.path.exists(search_path):
