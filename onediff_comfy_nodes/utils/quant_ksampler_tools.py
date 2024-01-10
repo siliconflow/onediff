@@ -1,20 +1,16 @@
 import time
 from typing import Dict
-from ._config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 import os
 import torch
-import numpy as np
 import torch.nn as nn
-from PIL import Image
-from pathlib import Path
+
+import torch
 
 # onediff
 from onediff.infer_compiler.utils.module_operations import (
     modify_sub_module,
     get_sub_module,
 )
-from onediff.optimization.quant_optimizer import quantize_model
-from onediff.infer_compiler import oneflow_compile
 
 
 # ComfyUI
@@ -317,90 +313,3 @@ class SaveQuantizedCalibrateInfoMixin:
         print(f"Saved quantize config file to {quantize_config_file}")
 
         return quantize_config_file
-
-
-class QuantKSampler(
-    KSampleQuantumBase, FineTuneCalibrateInfoMixin, SaveQuantizedCalibrateInfoMixin
-):
-    @classmethod
-    def INPUT_TYPES(s):
-        ret = KSampleQuantumBase.INPUT_TYPES()
-        ret["required"].update(FineTuneCalibrateInfoMixin.INPUT_TYPES()["required"])
-        ret["required"].update(
-            SaveQuantizedCalibrateInfoMixin.INPUT_TYPES()["required"]
-        )
-        return ret
-
-    RETURN_TYPES = ("LATENT",)
-    CATEGORY = "OneDiff/Quant_Tools"
-    FUNCTION = "onediff_quant_sample"
-
-    def onediff_quant_sample(
-        self,
-        onediff_quant,
-        process_cache_file_prefix,
-        quantize_conv,
-        quantize_linear,
-        conv_ssim_threshold,
-        linear_ssim_threshold,
-        compute_density_threshold,
-        save_filename_prefix,
-        overwrite,
-        bits,
-        model,
-        *args,
-        **kwargs,
-    ):
-        only_compute_density = conv_ssim_threshold == 0 and linear_ssim_threshold == 0
-        models_dir = Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-        models_dir.mkdir(parents=True, exist_ok=True)
-        model_name = model.model.__class__.__qualname__
-
-        cached_process_output_path = (
-            models_dir
-            / f"{process_cache_file_prefix}_{model_name}_cache_info_{only_compute_density}.pt"
-        )
-        print(f"cached_process_output_path: {cached_process_output_path}")
-
-        model_cls = []
-        if quantize_conv == "enable":
-            model_cls.append(nn.Conv2d)
-        if quantize_linear == "enable":
-            model_cls.append(nn.Linear)
-
-        calibrate_info = self.generate_calibrate_info(
-            model_patcher=model,
-            only_compute_density=only_compute_density,
-            bits=bits,
-            resume=True,
-            cached_process_output_path=cached_process_output_path,
-            model_cls=model_cls,
-            *args,
-            **kwargs,
-        )
-
-        new_calibrate_info = self.fine_tune_calibrate_info(
-            model,
-            calibrate_info,
-            conv_ssim_threshold,
-            linear_ssim_threshold,
-            compute_density_threshold,
-        )
-
-        quantize_config_file = (
-            models_dir / f"{save_filename_prefix}_{model_name}_quantize_info.pt"
-        )
-
-        self.save_quantized_calibrate_info(
-            quantize_config_file, overwrite, new_calibrate_info
-        )
-
-        with quantized_model_patcher(
-            model_patcher=model,
-            layers=list(new_calibrate_info.keys()),
-            bits=bits,
-            verbose=True,
-        ) as qmpatcher:
-            latent_sample = self.generate_latent_sample(qmpatcher, *args, **kwargs)
-
-        return (latent_sample,)

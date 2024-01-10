@@ -55,21 +55,15 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 if _USE_UNET_INT8:
     from ._nodes import UNETLoaderInt8, Quant8Model, OneDiffQuantCheckpointLoaderSimple
     from ._quant_tools import (
-        UnetQuantKSampler,
-        FineTuneCalibrateInfo,
-        LoadQuantizedCalibrateInfo,
-        SaveQuantizedCalibrateInfo,
+        QuantKSampler,
     )
 
     NODE_CLASS_MAPPINGS.update(
         {
             "UNETLoaderInt8": UNETLoaderInt8,
             "Quant8Model": Quant8Model,
-            "UnetQuantKSampler": UnetQuantKSampler,
             "OneDiffQuantCheckpointLoaderSimple": OneDiffQuantCheckpointLoaderSimple,
-            "FineTuneCalibrateInfo": FineTuneCalibrateInfo,
-            "SaveCalibrateInfo": SaveQuantizedCalibrateInfo,
-            "LoadCalibrateInfo": LoadQuantizedCalibrateInfo,
+            "QuantKSampler": QuantKSampler,
         }
     )
 
@@ -77,12 +71,7 @@ if _USE_UNET_INT8:
         {
             "UNETLoaderInt8": "UNET Loader Int8",
             "Quant8Model": "Model Quantization(int8)",
-            "UnetQuantKSampler": "Unet Quant K Sampler",
             "OneDiffQuantCheckpointLoaderSimple": "Load Checkpoint - OneDiff Quant",
-            "FineTuneCalibrateInfo": "Fine Tune Calibrate Info",
-            "SaveCalibrateInfo": "Save Calibrate Info",
-            "LoadCalibrateInfo": "Load Calibrate Info",
+            "QuantKSampler": "Quant K Sampler",
         }
     )
-
-

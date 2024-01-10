@@ -186,9 +186,12 @@ class SVDSpeedup:
 
     def speedup(self, model, static_mode):
         from onediff.infer_compiler import oneflow_compile
-        # To avoid overflow issues while maintaining performance, 
+
+        # To avoid overflow issues while maintaining performance,
         # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
-        set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M', 0)
+        set_boolean_env_var(
+            "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
+        )
 
         use_graph = static_mode == "enable"
 
@@ -691,7 +694,7 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
             "required": {
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "model_path": (paths,),
-                "no_compile": (["disable", "enable"],),
+                "compile": (["enable", "disable"],),
             }
         }
 
@@ -701,12 +704,12 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
     def onediff_load_checkpoint(
         self,
         ckpt_name,
-        no_compile,
+        compile,
         model_path,
         output_vae=True,
         output_clip=True,
     ):
-        no_compile = no_compile == "enable"
+        need_compile = compile == "enable"
         from onediff.optimization.quant_optimizer import quantize_model
 
         modelpatcher, clip, vae = self.load_checkpoint(
@@ -722,14 +725,12 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
         calibrate_info = torch.load(model_path)
         diffusion_model = modelpatcher.model.diffusion_model
         diffusion_model = quantize_model(
-            model=diffusion_model,
-            inplace=True,
-            calibrate_info = calibrate_info
+            model=diffusion_model, inplace=True, calibrate_info=calibrate_info
         )
 
         modelpatcher.model.diffusion_model = diffusion_model
 
-        if not no_compile:
+        if need_compile:
             modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
 
         # set inplace update
