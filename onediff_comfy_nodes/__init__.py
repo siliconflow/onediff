@@ -1,4 +1,4 @@
-"""OneFlow ComfyUI Speedup Module"""
+"""OneDiff ComfyUI Speedup Module"""
 from ._config import _USE_UNET_INT8
 from ._nodes import (
     ModelSpeedup,

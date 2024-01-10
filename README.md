@@ -7,12 +7,14 @@
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
-OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
+OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI). 
+
+OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
 ## Need help or talk
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
-- Chat in Discord [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
-- [Email for business inquiry](#onediff-enterprise-edition)
+- Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
+- Email for business inquiry: contact@siliconflow.com
 
 ## Easy to use
 - Acceleration for popular UIs/libs
@@ -46,7 +48,7 @@ OneDiff is **an out-of-the-box acceleration library for diffusion models**  (esp
 - NVIDIA GPUs
 
 ## OneDiff Enterprise Edition
-If you need **Enterprise Level Support** for your system or business, please send an email to business@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+If you need **Enterprise-level Support** for your system or business, please send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
 OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/product.html
 
