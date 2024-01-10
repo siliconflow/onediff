@@ -2,7 +2,7 @@
 This example shows how to reuse the components of a pipeline to create new pipelines.
 
 Usage:
-    $ python reuse_pipeline_components.py --ckpt_path <ckpt_path> 
+    $ CUDA_VISIBLE_DEVICES=7 python reuse_pipeline_components.py --ckpt_path <ckpt_path> 
 """
 import PIL
 import argparse
@@ -31,13 +31,9 @@ args = get_args()
 
 
 def initialize_pipelines(ckpt_path, model_params):
-    pipeline = StableDiffusionPipeline.from_pretrained(
-        ckpt_path, device="cpu", **model_params
-    )
+    pipeline = StableDiffusionPipeline.from_pretrained(ckpt_path, **model_params)
 
-    device = torch.device("cuda:7")
-
-    pipeline.to(device)
+    pipeline.to("cuda")
     pipeline.unet = oneflow_compile(pipeline.unet)
     img2img_pipe = StableDiffusionImg2ImgPipeline(**pipeline.components)
     inpaint_pipe = StableDiffusionInpaintPipeline(**pipeline.components)
