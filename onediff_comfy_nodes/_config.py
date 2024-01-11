@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-ONEDIFF_QUANTIZED_OPTIMIZED_MODELS = "onediff_fastquant_models"
+ONEDIFF_QUANTIZED_OPTIMIZED_MODELS = "onediff_quant"
 _USE_UNET_INT8 = True
 COMFYUI_ROOT = Path(os.path.abspath(__file__)).parents[2]
 COMFYUI_SPEEDUP_ROOT = Path(os.path.abspath(__file__)).parents[0]
