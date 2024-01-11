@@ -1,6 +1,8 @@
 #!/bin/bash
 set -x
 
+export ONEFLOW_RUN_GRAPH_BY_VM=1
+
 if [ $# != 1 ]; then
   echo "Usage: bash run_benchmark.sh /path/model" && exit 1
 fi
