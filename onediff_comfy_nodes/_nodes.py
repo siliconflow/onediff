@@ -3,7 +3,7 @@ from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from onediff.infer_compiler.utils import set_boolean_env_var
-
+from onediff.optimization.quant_optimizer import quantize_model
 
 import os
 import re
@@ -13,6 +13,7 @@ import warnings
 from pathlib import Path
 
 import torch
+import torch.nn as nn
 import comfy
 import folder_paths
 from comfy import model_management
@@ -27,6 +28,7 @@ from .utils import (
     OUTPUT_FOLDER,
 )
 from .utils.model_patcher import state_dict_hook
+from .utils.loader_sample_tools import compoile_unet, quantize_unet
 from .modules.hijack_model_management import model_management_hijacker
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
@@ -600,7 +602,6 @@ def generate_graph_path(ckpt_name, model) -> Path:
     graph_file_path = graph_dir / (type(model).__name__ + ".graph")
     return graph_file_path
 
-
 from nodes import CheckpointLoaderSimple
 
 
@@ -617,46 +618,15 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     CATEGORY = "OneDiff"
     FUNCTION = "onediff_load_checkpoint"
 
-    def speedup_unet(self, ckpt_name, modelpatcher):
-        offload_device = model_management.unet_offload_device()
-        load_device = model_management.get_torch_device()
-
-        diffusion_model = modelpatcher.model.diffusion_model
-        file_path = generate_graph_path(ckpt_name, diffusion_model)
-        print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {file_path}")
-
-        use_graph = True
-        compile_options = {
-            "graph_file": file_path,
-            "graph_file_device": load_device,
-        }
-
-        if offload_device.type == "cuda" and file_path.exists():
-            diffusion_model = oneflow_compile(
-                diffusion_model,
-                use_graph=use_graph,
-            )
-            diffusion_model.load_graph(file_path, torch2oflow(offload_device))
-        else:
-            diffusion_model = oneflow_compile(
-                diffusion_model,
-                use_graph=use_graph,
-                options=compile_options,
-            )
-
-        modelpatcher.model.diffusion_model = diffusion_model
-        modelpatcher.model._register_state_dict_hook(state_dict_hook)
-
-        return modelpatcher
-
+   
     def onediff_load_checkpoint(
         self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
     ):
         modelpatcher, clip, vae = CheckpointLoaderSimple.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-
-        modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
+        unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
+        modelpatcher = compoile_unet(modelpatcher.model.diffusion_model, unet_graph_file)
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
@@ -710,7 +680,6 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
         output_clip=True,
     ):
         need_compile = compile == "enable"
-        from onediff.optimization.quant_optimizer import quantize_model
 
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
@@ -722,17 +691,115 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
             / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
             / model_path
         )
-        calibrate_info = torch.load(model_path)
-        diffusion_model = modelpatcher.model.diffusion_model
-        diffusion_model = quantize_model(
-            model=diffusion_model, inplace=True, calibrate_info=calibrate_info
-        )
 
-        modelpatcher.model.diffusion_model = diffusion_model
+        calibrate_info = torch.load(model_path)
+        quant_unet = quantize_unet(diffusion_model = modelpatcher.model.diffusion_model, inplace=True, calibrate_info=calibrate_info)
+        modelpatcher.model.diffusion_model = quant_unet
+
 
         if need_compile:
-            modelpatcher = self.speedup_unet(ckpt_name, modelpatcher)
+            compiled_unet = compoile_unet( modelpatcher.model.diffusion_model, None)
+            modelpatcher.model.diffusion_model = compiled_unet
 
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
+
+
+if _USE_UNET_INT8:
+    from .utils.quant_ksampler_tools import (
+        KSampleQuantumBase,
+        FineTuneCalibrateInfoMixin,
+        SaveQuantizedCalibrateInfoMixin,
+        quantized_model_patcher,
+    )
+
+    class QuantKSampler(
+        KSampleQuantumBase, FineTuneCalibrateInfoMixin, SaveQuantizedCalibrateInfoMixin
+    ):
+        @classmethod
+        def INPUT_TYPES(s):
+            ret = KSampleQuantumBase.INPUT_TYPES()
+            ret["required"].update(FineTuneCalibrateInfoMixin.INPUT_TYPES()["required"])
+            ret["required"].update(
+                SaveQuantizedCalibrateInfoMixin.INPUT_TYPES()["required"]
+            )
+            return ret
+
+        RETURN_TYPES = ("LATENT",)
+        CATEGORY = "OneDiff/Quant_Tools"
+        FUNCTION = "onediff_quant_sample"
+
+        def onediff_quant_sample(
+            self,
+            onediff_quant,
+            process_cache_file_prefix,
+            quantize_conv,
+            quantize_linear,
+            conv_ssim_threshold,
+            linear_ssim_threshold,
+            compute_density_threshold,
+            save_filename_prefix,
+            overwrite,
+            bits,
+            model,
+            *args,
+            **kwargs,
+        ):
+            only_compute_density = (
+                conv_ssim_threshold == 0 and linear_ssim_threshold == 0
+            )
+            models_dir = (
+                Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+            )
+            models_dir.mkdir(parents=True, exist_ok=True)
+            model_name = model.model.__class__.__qualname__
+
+            cached_process_output_path = (
+                models_dir
+                / f"{process_cache_file_prefix}_{model_name}_cache_info_{only_compute_density}.pt"
+            )
+            print(f"cached_process_output_path: {cached_process_output_path}")
+
+            model_cls = []
+            if quantize_conv == "enable":
+                model_cls.append(nn.Conv2d)
+            if quantize_linear == "enable":
+                model_cls.append(nn.Linear)
+
+            calibrate_info = self.generate_calibrate_info(
+                model_patcher=model,
+                only_compute_density=only_compute_density,
+                bits=bits,
+                resume=True,
+                cached_process_output_path=cached_process_output_path,
+                model_cls=model_cls,
+                *args,
+                **kwargs,
+            )
+
+            new_calibrate_info = self.fine_tune_calibrate_info(
+                model,
+                calibrate_info,
+                conv_ssim_threshold,
+                linear_ssim_threshold,
+                compute_density_threshold,
+            )
+
+            quantize_config_file = (
+                models_dir / f"{save_filename_prefix}_{model_name}_quantize_info.pt"
+            )
+
+            self.save_quantized_calibrate_info(
+                quantize_config_file, overwrite, new_calibrate_info
+            )
+
+            with quantized_model_patcher(
+                model_patcher=model,
+                layers=list(new_calibrate_info.keys()),
+                bits=bits,
+                verbose=True,
+            ) as qmpatcher:
+                latent_sample = self.generate_latent_sample(qmpatcher, *args, **kwargs)
+
+            return (latent_sample,)

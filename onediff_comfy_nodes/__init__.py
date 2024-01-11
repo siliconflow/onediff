@@ -54,7 +54,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
 
 if _USE_UNET_INT8:
     from ._nodes import UNETLoaderInt8, Quant8Model, OneDiffQuantCheckpointLoaderSimple
-    from ._quant_tools import (
+    from ._nodes import (
         QuantKSampler,
     )
 
