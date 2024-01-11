@@ -6,7 +6,7 @@ We have designed the acceleration of workflows with LoRA using DeepCache, refere
 For the Aether Cloud style of LoRA, it can be downloaded from https://civitai.com/models/141029/aether-cloud-lora-for-sdxl.
 
 
-Test results on A100:
+Test results on A100 GPU:
 
 |             | LoRA                | LoRA with DeepCache |
 | ----------- | ------------------- | ------------------- |
