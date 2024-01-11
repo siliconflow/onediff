@@ -29,7 +29,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - [ControlNet](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_controlnet.py)
   - [LCM](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/examples/image_to_video.py)
-  - [DeepCache for ComfyUI](https://github.com/siliconflow/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L414)
+  - [DeepCache](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_deep_cache_sdxl.py)
 - Out-of-the-box acceleration
   - [ComfyUI Nodes](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
