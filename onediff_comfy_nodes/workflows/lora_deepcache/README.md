@@ -17,4 +17,4 @@ However, due to the characteristics of DeepCache, combining it with LoRA introdu
 ![](compare.png)
 
 
-Note: If your system or business requires more personalized support, Please check: https://github.com/siliconflow/onediff?tab=readme-ov-file#onediff-enterprise-edition
+Note: If your system or business requires more personalized support, please check: https://github.com/siliconflow/onediff?tab=readme-ov-file#onediff-enterprise-edition
