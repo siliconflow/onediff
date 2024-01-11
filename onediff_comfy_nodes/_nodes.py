@@ -602,6 +602,7 @@ def generate_graph_path(ckpt_name, model) -> Path:
     graph_file_path = graph_dir / (type(model).__name__ + ".graph")
     return graph_file_path
 
+
 from nodes import CheckpointLoaderSimple
 
 
@@ -618,15 +619,17 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     CATEGORY = "OneDiff"
     FUNCTION = "onediff_load_checkpoint"
 
-   
     def onediff_load_checkpoint(
-        self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
+        self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
     ):
-        modelpatcher, clip, vae = CheckpointLoaderSimple.load_checkpoint(
+        # CheckpointLoaderSimple.load_checkpoint
+        modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
         unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
-        modelpatcher = compoile_unet(modelpatcher.model.diffusion_model, unet_graph_file)
+        modelpatcher.model.diffusion_model = compoile_unet(
+            modelpatcher.model.diffusion_model, unet_graph_file
+        )
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
@@ -644,7 +647,48 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         return modelpatcher, clip, vae
 
 
-class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
+class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "vae_speedup": (["disable", "enable"],),
+            }
+        }
+
+    CATEGORY = "OneDiff/Loaders"
+    FUNCTION = "onediff_load_checkpoint"
+
+    def onediff_load_checkpoint(
+        self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
+    ):
+        # CheckpointLoaderSimple.load_checkpoint
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+        ckpt_name = f"{ckpt_name}_quant"
+        unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
+        unet_model = quantize_model(modelpatcher.model.diffusion_model, inplace=True)
+        modelpatcher.model.diffusion_model = compoile_unet(unet_model, unet_graph_file)
+
+        if vae_speedup == "enable":
+            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            vae.first_stage_model = oneflow_compile(
+                vae.first_stage_model,
+                use_graph=True,
+                options={
+                    "graph_file": file_path,
+                    "graph_file_device": model_management.get_torch_device(),
+                },
+            )
+
+        # set inplace update
+        modelpatcher.weight_inplace_update = True
+        return modelpatcher, clip, vae
+
+
+class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
     @classmethod
     def INPUT_TYPES(s):
         paths = []
@@ -665,6 +709,7 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "model_path": (paths,),
                 "compile": (["enable", "disable"],),
+                "vae_speedup": (["disable", "enable"],),
             }
         }
 
@@ -674,13 +719,15 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
     def onediff_load_checkpoint(
         self,
         ckpt_name,
-        compile,
         model_path,
+        compile,
+        vae_speedup,
         output_vae=True,
         output_clip=True,
     ):
         need_compile = compile == "enable"
 
+        # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
@@ -691,15 +738,32 @@ class OneDiffQuantCheckpointLoaderSimple(OneDiffCheckpointLoaderSimple):
             / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
             / model_path
         )
+        graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
 
         calibrate_info = torch.load(model_path)
-        quant_unet = quantize_unet(diffusion_model = modelpatcher.model.diffusion_model, inplace=True, calibrate_info=calibrate_info)
+        quant_unet = quantize_unet(
+            diffusion_model=modelpatcher.model.diffusion_model,
+            inplace=True,
+            calibrate_info=calibrate_info,
+        )
         modelpatcher.model.diffusion_model = quant_unet
 
-
         if need_compile:
-            compiled_unet = compoile_unet( modelpatcher.model.diffusion_model, None)
+            compiled_unet = compoile_unet(
+                modelpatcher.model.diffusion_model, graph_file
+            )
             modelpatcher.model.diffusion_model = compiled_unet
+
+        if vae_speedup == "enable":
+            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            vae.first_stage_model = oneflow_compile(
+                vae.first_stage_model,
+                use_graph=True,
+                options={
+                    "graph_file": file_path,
+                    "graph_file_device": model_management.get_torch_device(),
+                },
+            )
 
         # set inplace update
         modelpatcher.weight_inplace_update = True
