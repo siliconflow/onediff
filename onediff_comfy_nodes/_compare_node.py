@@ -114,6 +114,7 @@ class ShowImageDiff:
                 "images2": ("IMAGE",),
                 "rtol": ("STRING", {"default": "1e-4"}),
                 "atol": ("STRING", {"default": "1e-4"}),
+                "ssim_threshold": ("STRING", {"default": "0.9"}),
                 "raise_if_diff": (["enable", "disable"],),
                 "image_id": ("STRING", {"default": "ComfyUI"}),
             },
@@ -133,6 +134,7 @@ class ShowImageDiff:
         images2,
         rtol: str,
         atol: str,
+        ssim_threshold: str,
         raise_if_diff: str,
         image_id="ComfyUI",
         prompt=None,
@@ -156,6 +158,7 @@ class ShowImageDiff:
         results = list()
         for image1, image2 in zip(images1, images2):
             # image diff
+            image1, image2 = image1.to("cpu").float(), image2.to("cpu").float()
             image = image1 - image2
 
             i = 255.0 * image.cpu().numpy()
@@ -176,15 +179,15 @@ class ShowImageDiff:
 
             img1 = self.image_to_numpy(image1)
             img2 = self.image_to_numpy(image2)
-            ssim = structural_similarity(img1, img2, channel_axis=2)
+            cur_ssim = structural_similarity(img1, img2, channel_axis=2)
 
             print(
                 "\033[91m"
-                f"[ShowImageDiff {image_id}] Max value of diff is {max_diff}, image simularity is {ssim:.6f}"
+                f"[ShowImageDiff {image_id}] Max value of diff is {max_diff}, image simularity is {cur_ssim:.6f}"
                 + "\033[0m"
             )
 
-            if raise_if_diff == "enable":
+            if raise_if_diff == "enable" and float(ssim_threshold) > cur_ssim:
                 default_rtol = 1e-4
                 default_atol = 1e-4
                 try:

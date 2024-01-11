@@ -14,6 +14,7 @@ export CONTAINER_NAME=onediff-test
 export SDXL_BASE=/share_nfs/hf_models/sd_xl_base_1.0.safetensors
 export UNET_INT8=/share_nfs/hf_models/unet_int8
 export CONTROL_LORA_OPENPOSEXL2_RANK256=/share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
+export WATERCOLOR_V1_SDXL_LORA=/share_nfs/hf_models/watercolor_v1_sdxl_lora.safetensors
 
 And then:
 
