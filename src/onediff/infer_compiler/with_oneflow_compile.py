@@ -369,7 +369,9 @@ class OneflowGraph(flow.nn.Graph):
         os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
         os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
         os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
+        # WARNING: this switch is temporarily turned off
+        # If opening it, a shape mismatch may encounter
+        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "0"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
         os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
         # os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"

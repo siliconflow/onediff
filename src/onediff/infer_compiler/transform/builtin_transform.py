@@ -14,6 +14,7 @@ from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
 from functools import singledispatch
+from torchvision.ops import Conv2dNormActivation
 
 __all__ = [
     "proxy_class",
@@ -44,6 +45,7 @@ def singledispatch_proxy(func):
         return result
 
     wrapper.register = dispatcher.register
+    wrapper.dispatch = dispatcher.dispatch
     return wrapper
 
 
@@ -169,7 +171,6 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         # raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
 
-
 @torch2oflow.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
@@ -219,35 +220,6 @@ def _(mod: torch.nn.Module, verbose=False):
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
     of_mod = of_mod_cls()
-
-    # TODO: Maybe we can add a register to avoid this if-else trap
-    '''
-    WARNING: 1. Potential bug - the value of channel_pos attribute may be incorrectly assigned
-    
-    > AdaptiveAvgPool2d has a unassigned parameter (data_format) in its __init__ that can
-    > affect the value of channel_pos, but since it's not considered by torch2flow,
-    > I ignore it in the following if-else code.
-    
-    WARNING: 2. Theoretically, compiling resnet50 with oneflow will succeed if the env 'ONEFLOW_ENABLE_NHWC' 
-    is the same as 'ONEFLOW_MLIR_PREFER_NHWC'. But when they are all open the compilation fails.
-    So please TURNS THEM OFF for now.
-    '''
-    if new_md_cls.__name__ == 'BatchNorm2d':
-        if os.getenv("ONEFLOW_ENABLE_NHWC"):
-            new_md_cls.channel_axis = 3
-        else:
-            new_md_cls.channel_axis = 1
-    elif new_md_cls.__name__ == 'BatchNorm1d' or new_md_cls.__name__ == 'BatchNorm3d':
-        new_md_cls.channel_axis = 1
-    elif new_md_cls.__name__ == 'MaxPool1d' or new_md_cls.__name__ == 'AvgPool1d':
-        new_md_cls.channel_pos = 'channels_first'
-    elif new_md_cls.__name__ == 'MaxPool2d' or new_md_cls.__name__ == 'AvgPool2d' or new_md_cls.__name__ == 'AdaptiveAvgPool2d':
-        if os.getenv("ONEFLOW_ENABLE_NHWC"):
-            new_md_cls.channel_pos = 'channels_last'
-        else:
-            new_md_cls.channel_pos = 'channels_first'
-    elif new_md_cls.__name__ == 'MaxPool3d' or new_md_cls.__name__ == 'AvgPool3d':
-        new_md_cls.channel_pos = 'channels_first'
     
     if of_mod.training:
         of_mod.training = False
@@ -266,6 +238,98 @@ def _(mod: torch.nn.Module, verbose=False):
 
 
 @torch2oflow.register
+def _(mod: torch.nn.BatchNorm1d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    of_mod.channel_axis = 1
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.BatchNorm2d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    if os.getenv("ONEFLOW_ENABLE_NHWC"):
+        of_mod.channel_axis = 3
+    else:
+        of_mod.channel_axis = 1 
+
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.BatchNorm3d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    of_mod.channel_axis = 1
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.MaxPool1d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.MaxPool2d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    if os.getenv("ONEFLOW_ENABLE_NHWC"):
+        of_mod.channel_pos = 'channels_last'
+    else:
+        of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.MaxPool3d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.AvgPool1d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.AvgPool2d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    if os.getenv("ONEFLOW_ENABLE_NHWC"):
+        of_mod.channel_pos = 'channels_last'
+    else:
+        of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.AvgPool3d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
+def _(mod: torch.nn.AdaptiveAvgPool2d, verbose=False):
+    of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
+    if os.getenv("ONEFLOW_ENABLE_NHWC"):
+        of_mod.channel_pos = 'channels_last'
+    else:
+        of_mod.channel_pos = 'channels_first'
+    
+    return of_mod
+
+
+@torch2oflow.register
 def _(mod: torch.nn.ModuleList, verbose=False):
     of_mod_list = flow.nn.ModuleList()
     for original_submod in mod:
@@ -276,6 +340,11 @@ def _(mod: torch.nn.ModuleList, verbose=False):
 
 
 @torch2oflow.register
+def _(mod: Conv2dNormActivation, verbose=False):
+    return flow.nn.Sequential(*[torch2oflow(layer) for layer in mod])
+
+
+@torch2oflow.register
 def _(mod: torch.nn.Sequential, verbose=False):
     of_mod_list = []
     for original_submod in mod:
@@ -283,6 +352,7 @@ def _(mod: torch.nn.Sequential, verbose=False):
         of_mod_list.append(submod)
 
     of_mod_seq = proxy_class(type(mod))(*of_mod_list)
+    
     return of_mod_seq
 
 
