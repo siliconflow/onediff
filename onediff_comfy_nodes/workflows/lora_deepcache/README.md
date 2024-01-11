@@ -8,7 +8,7 @@ For the Aether Cloud style of LoRA, it can be downloaded from https://civitai.co
 
 #### Performance of Community Edition:
 
-Updated on Jan 11, 2024. Device: A100
+Updated on Jan 11, 2024. Device: A100 GPU
 
 |                                      | LoRA | LoRA + DeepCache | Percentage improvement |
 | -------------------------------------------------------------- | --------------- | ------------------ | ---------------------- |
