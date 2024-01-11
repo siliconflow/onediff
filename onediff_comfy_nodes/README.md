@@ -135,7 +135,7 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 [Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
 
-[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/lora-deepcache.png)
+[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md)
 
 
 
