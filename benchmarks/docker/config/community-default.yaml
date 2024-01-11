@@ -4,9 +4,14 @@ oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/
 repos:
   - onediff:
       repo_url: https://github.com/siliconflow/onediff.git
-      branch: main
+      branch: dev_bench_onediff_pro
       cmds:
         - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.19.3"
+        - "python3 -m pip install -e ."
+  - onediff_quant:
+      repo_url: https://github.com/siliconflow/onediff-quant.git
+      branch: master
+      cmds:
         - "python3 -m pip install -e ."
   # - ComfyUI:
   #     repo_url: "https://github.com/comfyanonymous/ComfyUI.git"
