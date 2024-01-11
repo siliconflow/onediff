@@ -5,7 +5,9 @@ on:
     branches:
       - main
       - use-community-whl-in-tests
-
+  schedule:
+    # every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
 # Environment variables available to all jobs and steps in this workflow.
 env:
