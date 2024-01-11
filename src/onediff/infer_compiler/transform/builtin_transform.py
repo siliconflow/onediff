@@ -351,7 +351,6 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 def _(mod: None, verbose=False):
     return mod
 
-
 @torch2oflow.register
 def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):

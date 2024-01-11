@@ -53,10 +53,10 @@ def set_default_registry():
     except Exception as e:
         logger.info(f"Failed to register_diffusers_quant {e=}")
     
-    try:
-        import_module_from_path(registry_path / "register_torchvision")
-    except Exception as e:
-        logger.info(f"Failed to register_torchvision {e=}")
+    # try:
+    #     import_module_from_path(registry_path / "register_torchvision")
+    # except Exception as e:
+    #     logger.info(f"Failed to register_torchvision {e=}")
 
 
 def ensure_list(obj):
