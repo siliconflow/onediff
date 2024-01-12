@@ -69,6 +69,89 @@ class UnetCompileCtx(object):
         shared.sd_model.model.diffusion_model = self._original_model
         return False
 
+class HijackLoraActivate(object):
+    def hijacked_activate(activate_func):
+        import torch
+        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        import networks
+        def activate(self, p, params_list):
+            # When switch from OneDiff to PyTorch, modules with LoRA need to reload LoRA
+            # since `network_apply_weights` in forward is not called
+            if not hasattr(self, "switch_from_onediff"):
+                self.switch_from_onediff = False
+            if self.switch_from_onediff and not isinstance(p.sd_model.model.diffusion_model, DeployableModule):
+                for name, sub_module in p.sd_model.model.diffusion_model.named_modules():
+                    if hasattr(sub_module, "network_current_names"):
+                        setattr(sub_module, "network_current_names", ())
+                self.switch_from_onediff = False
+            activate_func(self, p, params_list)
+            if isinstance(p.sd_model.model.diffusion_model, DeployableModule):
+                self.switch_from_onediff = True
+                onediff_sd_model: DeployableModule = p.sd_model.model.diffusion_model
+                for name, sub_module in onediff_sd_model.named_modules():
+                    if not isinstance(
+                        sub_module,
+                        (
+                            torch.nn.Linear,
+                            torch.nn.Conv2d,
+                            torch.nn.GroupNorm,
+                            torch.nn.LayerNorm,
+                        ),
+                    ):
+                        continue
+                    networks.network_apply_weights(sub_module)
+        return activate
+
+    def hijacked_deactivate(deactivate_func):
+        import torch
+        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        import networks
+        def deactivate(self, p):
+            deactivate_func(self, p)
+            if isinstance(p.sd_model.model.diffusion_model, DeployableModule):
+                onediff_sd_model: DeployableModule = p.sd_model.model.diffusion_model
+                for name, sub_module in onediff_sd_model.named_modules():
+                    if not isinstance(
+                        sub_module,
+                        (
+                            torch.nn.Linear,
+                            torch.nn.Conv2d,
+                            torch.nn.GroupNorm,
+                            torch.nn.LayerNorm,
+                        ),
+                    ):
+                        continue
+                    with torch.no_grad():
+                        networks.network_restore_weights_from_backup(sub_module)
+        return deactivate
+
+    def __init__(self):
+        self.original_activate_func = None
+        self.original_deactivate_func = None
+
+
+    def __enter__(self):
+        from modules import extra_networks
+        if 'lora' in extra_networks.extra_network_registry:
+            # Hijick
+            cls_extra_network_lora = type(extra_networks.extra_network_registry['lora'])
+            self.original_activate_func = cls_extra_network_lora.activate
+            self.original_deactivate_func = cls_extra_network_lora.deactivate
+            cls_extra_network_lora.activate = HijackLoraActivate.hijacked_activate(cls_extra_network_lora.activate)
+            cls_extra_network_lora.deactivate = HijackLoraActivate.hijacked_deactivate(cls_extra_network_lora.deactivate)
+
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        from modules import extra_networks
+        if 'lora' in extra_networks.extra_network_registry and self.original_activate_func is not None and self.original_deactivate_func is not None:
+            cls_extra_network_lora = type(extra_networks.extra_network_registry['lora'])
+            cls_extra_network_lora.activate = self.original_activate_func
+            cls_extra_network_lora.deactivate = self.original_deactivate_func
+            self.original_activate_func = None
+            self.original_deactivate_func = None
+
+
+
 
 class Script(scripts.Script):
     def title(self):
@@ -124,6 +207,13 @@ class Script(scripts.Script):
                 original_diffusion_model, quantization=quantization,
             )
             compiled_ckpt_name = ckpt_name
+
+        from modules import extra_networks
+        if 'lora' in extra_networks.extra_network_registry:
+            # Hijack
+            cls_extra_network_lora = type(extra_networks.extra_network_registry['lora'])
+            cls_extra_network_lora.activate = HijackLoraActivate.hijacked_activate(cls_extra_network_lora.activate)
+            cls_extra_network_lora.deactivate = HijackLoraActivate.hijacked_deactivate(cls_extra_network_lora.deactivate)
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx():
             proc = process_images(p)
