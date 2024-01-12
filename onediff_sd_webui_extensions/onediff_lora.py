@@ -2,7 +2,7 @@ import torch
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 
-class HijackedActivate:
+class HijackLoraActivate:
     def __init__(self):
         from modules import extra_networks
         if "lora" in extra_networks.extra_network_registry:
