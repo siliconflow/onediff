@@ -62,10 +62,9 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | HF diffusers            | Yes                 | Yes         |
 | ComfyUI              | Yes           | Yes         |
 | Stable Diffusion web UI | Yes          | Yes         |
-| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(Cost a few seconds/minutes to compile for new input shape)           |
+| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(No time cost for most of the cases)           |
+| More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
 | Technical Support for deployment    | High priority support       | Community           |
-| More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 |
-| Support customized pipeline/workflow|           Yes              | |
 | Get the latest technology/feature | Yes | |
 
 ## Install from source or Using in Docker
