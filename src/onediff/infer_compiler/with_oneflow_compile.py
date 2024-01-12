@@ -367,6 +367,7 @@ class OneflowGraph(flow.nn.Graph):
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
+        os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
         os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
         os.environ["ONEFLOW_MLIR_CSE"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
