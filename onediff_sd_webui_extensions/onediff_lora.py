@@ -34,9 +34,8 @@ def hijacked_activate(activate_func):
     def activate(self, p, params_list):
         activate_func(self, p, params_list)
         if isinstance(p.sd_model.model.diffusion_model, DeployableModule):
-            self.switch_from_onediff = True
             onediff_sd_model: DeployableModule = p.sd_model.model.diffusion_model
-            for name, sub_module in onediff_sd_model.named_modules():
+            for sub_module in onediff_sd_model.modules():
                 if not isinstance(
                     sub_module,
                     (
