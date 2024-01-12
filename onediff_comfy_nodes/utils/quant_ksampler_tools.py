@@ -207,14 +207,14 @@ class KSampleQuantumBase(KSampler):
 
                 mse = torch.mean((org_latent_sample - cur_latent_sample) ** 2)
 
-                ssim = 1 - mse
+                similarity_mse = 1 - mse
                 compute_density = quantize_costs.get_compute_density(sub_name)
                 print(
-                    f"ssim: {ssim:.4f}, mse: {mse:.4f}, compute_density: {compute_density:.4f}"
+                    f"similarity_mse: {similarity_mse:.4f}, compute_density: {compute_density:.4f}"
                 )
 
                 calibrate_info[sub_name] = {
-                    "ssim": ssim,
+                    "ssim": similarity_mse,
                     "compute_density": compute_density,
                 }
 
