@@ -430,7 +430,7 @@ class ModuleDeepCacheSpeedup:
             "required": {
                 "model": ("MODEL",),
                 "static_mode": (["enable", "disable"],),
-                "no_compile": (["disable", "enable"],),
+                "compile": (["enable", "disable"],),
                 "cache_interval": (
                     "INT",
                     {
@@ -479,7 +479,7 @@ class ModuleDeepCacheSpeedup:
         self,
         model,
         static_mode,
-        no_compile,
+        compile,
         cache_interval,
         cache_layer_id,
         cache_block_id,
@@ -487,7 +487,7 @@ class ModuleDeepCacheSpeedup:
         end_step,
     ):
         use_graph = static_mode == "enable"
-        no_compile = (no_compile == "enable") or (not use_graph)
+        no_compile = (compile == "disable") or (not use_graph)
 
         offload_device = model_management.unet_offload_device()
         oneflow_model = OneFlowDeepCacheSpeedUpModelPatcher(
@@ -616,7 +616,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             }
         }
 
-    CATEGORY = "OneDiff"
+    CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_checkpoint"
 
     def onediff_load_checkpoint(
@@ -630,7 +630,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         modelpatcher.model.diffusion_model = compoile_unet(
             modelpatcher.model.diffusion_model, unet_graph_file
         )
-
+        modelpatcher.model._register_state_dict_hook(state_dict_hook)
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
             vae.first_stage_model = oneflow_compile(
@@ -670,7 +670,17 @@ class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
         ckpt_name = f"{ckpt_name}_quant"
         unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
         unet_model = quantize_model(modelpatcher.model.diffusion_model, inplace=True)
-        modelpatcher.model.diffusion_model = compoile_unet(unet_model, unet_graph_file)
+        modelpatcher.model.diffusion_model = unet_model
+
+        offload_device = model_management.unet_offload_device()
+        modelpatcher = OneFlowSpeedUpModelPatcher(
+            modelpatcher.model,
+            load_device=model_management.get_torch_device(),
+            offload_device=offload_device,
+            use_graph=True,
+            graph_path=unet_graph_file,
+            graph_device=model_management.get_torch_device(),
+        )
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
@@ -749,10 +759,19 @@ class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
         modelpatcher.model.diffusion_model = quant_unet
 
         if need_compile:
-            compiled_unet = compoile_unet(
-                modelpatcher.model.diffusion_model, graph_file
+            # compiled_unet = compoile_unet(
+            #     modelpatcher.model.diffusion_model, graph_file
+            # )
+            # modelpatcher.model.diffusion_model = compiled_unet
+            offload_device = model_management.unet_offload_device()
+            modelpatcher = OneFlowSpeedUpModelPatcher(
+                modelpatcher.model,
+                load_device=model_management.get_torch_device(),
+                offload_device=offload_device,
+                use_graph=True,
+                graph_path=graph_file,
+                graph_device=model_management.get_torch_device(),
             )
-            modelpatcher.model.diffusion_model = compiled_unet
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
