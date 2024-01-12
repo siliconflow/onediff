@@ -24,10 +24,6 @@ It is recommended to create a Python virtual environment in advance. For example
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 git clone https://github.com/siliconflow/onediff.git
 cp -r onediff/onediff_sd_webui_extensions stable-diffusion-webui/extensions/
-
-# Enable LoRA compatible with OneDiff (Ignore this line if you do not need LoRA compatible with OneDiff)
-cp onediff/onediff_sd_webui_extensions/_lora_patcher/extra_network_lora.py stable-diffusion-webui/extensions-builtin/Lora
-
 cd stable-diffusion-webui && git checkout 4afaaf8  # The tested git commit id is 4afaaf8.
 
 # Install all of stable-diffusion-webui's dependencies.
