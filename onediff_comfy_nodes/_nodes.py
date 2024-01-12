@@ -1,5 +1,7 @@
 from functools import partial
+from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
+from onediff.infer_compiler.utils import set_boolean_env_var
 from ._config import _USE_UNET_INT8
 
 import os
@@ -23,7 +25,7 @@ from .utils import (
     load_graph,
     OUTPUT_FOLDER,
 )
-
+from .utils.model_patcher import state_dict_hook
 from .modules.hijack_model_management import model_management_hijacker
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
@@ -97,7 +99,7 @@ class UNETLoaderInt8:
     CATEGORY = "OneDiff"
 
     def load_unet_int8(self, model_path):
-        from .utils.diffusers_quant_utils import replace_module_with_quantizable_module
+        from .utils.onediff_quant_utils import replace_module_with_quantizable_module
 
         for search_path in folder_paths.get_folder_paths("unet_int8"):
             if os.path.exists(search_path):
@@ -183,6 +185,9 @@ class SVDSpeedup:
 
     def speedup(self, model, static_mode):
         from onediff.infer_compiler import oneflow_compile
+        # To avoid overflow issues while maintaining performance, 
+        # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
+        set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M', 0)
 
         use_graph = static_mode == "enable"
 
@@ -580,7 +585,7 @@ class ModuleDeepCacheSpeedup:
         return (oneflow_model,)
 
 
-def generate_graph_path(ckpt_name, model):
+def generate_graph_path(ckpt_name, model) -> Path:
     input_dir = get_input_directory()
     input_dir = Path(input_dir)
     graph_dir = input_dir / "graphs" / ckpt_name
@@ -606,21 +611,37 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     def load_checkpoint(
         self, ckpt_name, output_vae=True, output_clip=True, vae_speedup="disable"
     ):
-        model, clip, vae = super().load_checkpoint(ckpt_name, output_vae, output_clip)
+        modelpatcher, clip, vae = super().load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
         offload_device = model_management.unet_offload_device()
+        load_device = model_management.get_torch_device()
 
-        diffusion_model = model.model.diffusion_model
+        diffusion_model = modelpatcher.model.diffusion_model
         file_path = generate_graph_path(ckpt_name, diffusion_model)
         print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {file_path}")
 
-        oneflow_model = OneFlowSpeedUpModelPatcher(
-            model.model,
-            load_device=model_management.get_torch_device(),
-            offload_device=offload_device,
-            use_graph=True,
-            graph_path=file_path,
-            graph_device=model_management.get_torch_device(),
-        )
+        use_graph = True
+        compile_options = {
+            "graph_file": file_path,
+            "graph_file_device": load_device,
+        }
+
+        if offload_device.type == "cuda" and file_path.exists():
+            diffusion_model = oneflow_compile(
+                diffusion_model,
+                use_graph=use_graph,
+            )
+            diffusion_model.load_graph(file_path, torch2oflow(offload_device))
+        else:
+            diffusion_model = oneflow_compile(
+                diffusion_model,
+                use_graph=use_graph,
+                options=compile_options,
+            )
+
+        modelpatcher.model.diffusion_model = diffusion_model
+        modelpatcher.model._register_state_dict_hook(state_dict_hook)
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
@@ -632,4 +653,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
                     "graph_file_device": model_management.get_torch_device(),
                 },
             )
-        return oneflow_model, clip, vae
+
+        # set inplace update
+        modelpatcher.weight_inplace_update = True
+        return modelpatcher, clip, vae
