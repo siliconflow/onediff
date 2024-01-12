@@ -5,9 +5,10 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 class HijackedActivate:
     def __init__(self):
         from modules import extra_networks
-        if 'lora' in extra_networks.extra_network_registry:
+
+        if "lora" in extra_networks.extra_network_registry:
             # Hijack
-            cls_extra_network_lora = type(extra_networks.extra_network_registry['lora'])
+            cls_extra_network_lora = type(extra_networks.extra_network_registry["lora"])
         else:
             cls_extra_network_lora = None
         self.lora_class = cls_extra_network_lora
@@ -51,5 +52,6 @@ def hijacked_activate(activate_func):
                 ):
                     continue
                 networks.network_apply_weights(sub_module)
+
     activate._onediff_hijacked = True
     return activate

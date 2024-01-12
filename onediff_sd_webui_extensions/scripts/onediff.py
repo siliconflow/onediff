@@ -8,7 +8,7 @@ from modules.processing import process_images
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
-from onediff_lora import hijacked_activate, HijackedActivate
+from onediff_lora import HijackedActivate
 
 from onediff.optimization.quant_optimizer import (
     quantize_model,
@@ -70,6 +70,7 @@ class UnetCompileCtx(object):
         shared.sd_model.model.diffusion_model = self._original_model
         return False
 
+
 class Script(scripts.Script):
     def title(self):
         return "onediff_diffusion_model"
@@ -127,5 +128,4 @@ class Script(scripts.Script):
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackedActivate():
             proc = process_images(p)
-
         return proc
