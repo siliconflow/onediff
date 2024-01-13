@@ -14,7 +14,6 @@ from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
 from functools import singledispatch
-from torchvision.ops import Conv2dNormActivation
 
 __all__ = [
     "proxy_class",
@@ -337,11 +336,6 @@ def _(mod: torch.nn.ModuleList, verbose=False):
         of_mod_list.append(submod)
 
     return of_mod_list
-
-
-@torch2oflow.register
-def _(mod: Conv2dNormActivation, verbose=False):
-    return flow.nn.Sequential(*[torch2oflow(layer) for layer in mod])
 
 
 @torch2oflow.register
