@@ -57,7 +57,10 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [torch_module.named_parameters(), torch_module.named_buffers(),]
+                [
+                    torch_module.named_parameters(),
+                    torch_module.named_buffers(),
+                ]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -190,10 +193,12 @@ def graph_file_management(func):
         # Save graph file
         if graph_file is not None:
             try:
-                if graph_file is not None:
+                parent_dir = os.path.dirname(graph_file)
+                if parent_dir != "":
                     os.makedirs(os.path.dirname(graph_file), exist_ok=True)
-                    self.save_graph(graph_file)
-                    logger.info(f"Save graph file: {graph_file} done!")
+
+                self.save_graph(graph_file)
+                logger.info(f"Save graph file: {graph_file} done!")
             except Exception as e:
                 logger.error(f"Save graph file: {graph_file} failed! {e=}")
             finally:
@@ -362,6 +367,7 @@ class OneflowGraph(flow.nn.Graph):
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
+        os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
         os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
         os.environ["ONEFLOW_MLIR_CSE"] = "1"
         os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
