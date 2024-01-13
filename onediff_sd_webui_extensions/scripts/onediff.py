@@ -5,8 +5,9 @@ import modules.scripts as scripts
 import modules.shared as shared
 from modules.processing import process_images
 
+from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
-from compile_ldm import compile_ldm_unet
+from compile_vae import VaeCompileCtx
 
 from onediff.optimization.quant_optimizer import (
     quantize_model,
@@ -33,11 +34,7 @@ def is_compiled(ckpt_name):
 
 
 def compile_unet(
-    unet_model,
-    quantization=False,
-    *,
-    use_graph=True,
-    options={},
+    unet_model, quantization=False, *, use_graph=True, options={},
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
@@ -57,6 +54,22 @@ def compile_unet(
         return unet_model
 
 
+class UnetCompileCtx(object):
+    """The unet model is stored in a global variable.
+    The global variables need to be replaced with compiled_unet before process_images is run,
+    and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
+    """
+
+    def __enter__(self):
+        self._original_model = shared.sd_model.model.diffusion_model
+        global compiled_unet
+        shared.sd_model.model.diffusion_model = compiled_unet
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        shared.sd_model.model.diffusion_model = self._original_model
+        return False
+
+
 class Script(scripts.Script):
     def title(self):
         return "onediff_diffusion_model"
@@ -68,7 +81,7 @@ class Script(scripts.Script):
         """
         if not varify_can_use_quantization():
             ret = gr.HTML(
-                    """
+                """
                     <div style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f9f9f9;">
                         <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #31708f;">
                             Hints Message
@@ -88,7 +101,7 @@ class Script(scripts.Script):
                         </p>
                     </div>
                     """
-                )
+            )
 
         else:
             ret = gr.components.Checkbox(label="Model Quantization(int8) Speed Up")
@@ -107,22 +120,11 @@ class Script(scripts.Script):
         )
 
         if not is_compiled(ckpt_name):
-            graph_file = generate_graph_path(
-                ckpt_name, original_diffusion_model.__class__.__name__
-            )
-            graph_file_device = shared.device
-            compile_options = {
-                "graph_file_device": graph_file_device,
-                "graph_file": graph_file,
-            }
             compiled_unet = compile_unet(
-                original_diffusion_model,
-                quantization=quantization,
-                options=compile_options,
+                original_diffusion_model, quantization=quantization,
             )
             compiled_ckpt_name = ckpt_name
 
-        shared.sd_model.model.diffusion_model = compiled_unet
-        proc = process_images(p)
-        shared.sd_model.model.diffusion_model = original_diffusion_model
+        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx():
+            proc = process_images(p)
         return proc
