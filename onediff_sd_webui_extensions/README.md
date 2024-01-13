@@ -52,3 +52,22 @@ Type prompt in the text box, such as `a black dog`. Click the `Generate` button 
 To enable OneDiff extension acceleration, select `onediff_diffusion_model` in Script and click the `Generate` button.
 
 ![onediff_script](images/onediff_script.jpg)
+
+## LoRA
+
+OneDiff supports the complete functionality related to LoRA. You can use OneDiff-based LoRA just like the native LoRA in sd-webui.
+
+FAQ:
+
+
+1. Does OneDiff support model types other than LoRA, such as LyCORIS?
+
+    If your LoRA model only contains the weights of the Linear module, you can directly use OneDiff without any modifications. But if your LoRA model includes the weights of the Conv module (such as LyCORIS), you need to disable constant folding optimization by setting the env var `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0 (which may cause a performance drop of around 4.4%), otherwise the weights of the Conv module may not be loaded into the model.
+
+2. After switching LoRA, should I recompile the model?
+
+    OneDiff supports dynamically switching LoRA without  recompiling the model, because the model with LoRA and the one without LoRA share the same parameter pointer, which have already been captured by the static graph.
+
+3. What's the time cost of LoRA switching?
+
+    The time cost of fusing LoRA parameters is approximately 700 ms per LoRA.
