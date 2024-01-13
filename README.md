@@ -29,7 +29,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - [ControlNet](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_controlnet.py)
   - [LCM](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/examples/image_to_video.py)
-  - [DeepCache for ComfyUI](https://github.com/siliconflow/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L414)
+  - [DeepCache](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_deep_cache_sdxl.py)
 - Out-of-the-box acceleration
   - [ComfyUI Nodes](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
@@ -50,7 +50,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ## OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, please send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
-OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/product.html
+OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/onediff.html
 
 |                      | OneDiff Enterprise   | OneDiff Community |
 | -------------------- | ------------------- | ----------- |
@@ -62,10 +62,9 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | HF diffusers            | Yes                 | Yes         |
 | ComfyUI              | Yes           | Yes         |
 | Stable Diffusion web UI | Yes          | Yes         |
-| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(Cost a few seconds/minutes to compile for new input shape)           |
+| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(No time cost for most of the cases)           |
+| More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
 | Technical Support for deployment    | High priority support       | Community           |
-| More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 |
-| Support customized pipeline/workflow|           Yes              | |
 | Get the latest technology/feature | Yes | |
 
 ## Install from source or Using in Docker

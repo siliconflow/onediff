@@ -1,3 +1,4 @@
+import torch
 import comfy
 import oneflow as flow
 from comfy.controlnet import ControlLoraOps, ControlNet, ControlLora
@@ -23,7 +24,12 @@ def set_attr_of(obj, attr, value):
     if exist_oneflow_module:
         _set_attr_of(obj, attr, value)
     else:
-        comfy.utils.set_attr(obj, attr, value)
+        attrs = attr.split(".")
+        for name in attrs[:-1]:
+            obj = getattr(obj, name)
+        prev = getattr(obj, attrs[-1])
+        setattr(obj, attrs[-1], torch.nn.Parameter(value, requires_grad=False))
+        del prev
 
 
 class OneDiffControlNet(ControlNet):
@@ -32,10 +38,11 @@ class OneDiffControlNet(ControlNet):
         c = cls(
             controlnet.control_model,
             global_average_pooling=controlnet.global_average_pooling,
+            device=controlnet.device,
+            load_device=controlnet.load_device,
+            manual_cast_dtype=controlnet.manual_cast_dtype,
         )
-        c.cond_hint_original = controlnet.cond_hint_original
-        c.strength = controlnet.strength
-        c.timestep_percent_range = controlnet.timestep_percent_range
+        controlnet.copy_to(c)
         return c
 
     def pre_run(self, model, percent_to_timestep_function):
@@ -45,15 +52,19 @@ class OneDiffControlNet(ControlNet):
 
     def copy(self):
         c = OneDiffControlNet(
-            self.control_model, global_average_pooling=self.global_average_pooling
+            self.control_model,
+            global_average_pooling=self.global_average_pooling,
+            device=self.device,
+            load_device=self.load_device,
+            manual_cast_dtype=self.manual_cast_dtype,
         )
+
         self.copy_to(c)
         return c
 
 
 class OneDiffControlLora(ControlLora):
     oneflow_model = None
-
     @classmethod
     def from_controllora(cls, controlnet: ControlLora):
         c = cls(
@@ -61,15 +72,14 @@ class OneDiffControlLora(ControlLora):
             global_average_pooling=controlnet.global_average_pooling,
             device=controlnet.device,
         )
-        c.cond_hint_original = controlnet.cond_hint_original
-        c.strength = controlnet.strength
-        c.timestep_percent_range = controlnet.timestep_percent_range
+        controlnet.copy_to(c)
         return c
 
     def pre_run(self, model, percent_to_timestep_function):
         dtype = model.get_dtype()
         # super().pre_run(model, percent_to_timestep_function)
         ControlNet.pre_run(self, model, percent_to_timestep_function)
+        self.manual_cast_dtype = model.manual_cast_dtype
 
         if OneDiffControlLora.oneflow_model is None:
             controlnet_config = model.model_config.unet_config.copy()
@@ -77,9 +87,8 @@ class OneDiffControlLora(ControlLora):
             controlnet_config["hint_channels"] = self.control_weights[
                 "input_hint_block.0.weight"
             ].shape[1]
-
-            self.manual_cast_dtype = model.manual_cast_dtype
             dtype = model.get_dtype()
+
             if self.manual_cast_dtype is None:
 
                 class control_lora_ops(ControlLoraOps, comfy.ops.disable_weight_init):
@@ -98,6 +107,8 @@ class OneDiffControlLora(ControlLora):
             self.control_model.to(comfy.model_management.get_torch_device())
             OneDiffControlLora.oneflow_model = oneflow_compile(self.control_model)
 
+      
+
         self.control_model = OneDiffControlLora.oneflow_model
 
         diffusion_model = model.diffusion_model
@@ -109,7 +120,7 @@ class OneDiffControlLora(ControlLora):
             )
             try:
                 set_attr_of(self.control_model, k, weight)
-            except:
+            except Exception as e:
                 pass
 
         for k in self.control_weights:
@@ -128,7 +139,9 @@ class OneDiffControlLora(ControlLora):
 
     def copy(self):
         c = OneDiffControlLora(
-            self.control_weights, global_average_pooling=self.global_average_pooling
+            self.control_weights,
+            global_average_pooling=self.global_average_pooling,
+            device=self.device,
         )
         self.copy_to(c)
         return c
