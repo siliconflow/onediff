@@ -11,3 +11,8 @@ def parse_boolean_from_env(env_var, default_value):
 
 def set_boolean_env_var(env_var: str, val: bool):
     os.environ[env_var] = str(val)
+
+def set_env_var_if_none(env_var, default_value):
+    if env_var in os.environ:
+        return
+    os.environ[env_var] = default_value
