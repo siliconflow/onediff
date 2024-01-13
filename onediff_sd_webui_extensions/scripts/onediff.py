@@ -8,6 +8,7 @@ from modules.processing import process_images
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
+from onediff_lora import HijackLoraActivate
 
 from onediff.optimization.quant_optimizer import (
     quantize_model,
@@ -125,6 +126,6 @@ class Script(scripts.Script):
             )
             compiled_ckpt_name = ckpt_name
 
-        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx():
+        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         return proc
