@@ -29,6 +29,7 @@ from .utils import (
 )
 from .utils.model_patcher import state_dict_hook
 from .utils.loader_sample_tools import compoile_unet, quantize_unet
+from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
@@ -593,14 +594,6 @@ class ModuleDeepCacheSpeedup:
 
         oneflow_model.set_model_unet_function_wrapper(apply_model)
         return (oneflow_model,)
-
-
-def generate_graph_path(ckpt_name, model) -> Path:
-    input_dir = get_input_directory()
-    input_dir = Path(input_dir)
-    graph_dir = input_dir / "graphs" / ckpt_name
-    graph_file_path = graph_dir / (type(model).__name__ + ".graph")
-    return graph_file_path
 
 
 from nodes import CheckpointLoaderSimple
