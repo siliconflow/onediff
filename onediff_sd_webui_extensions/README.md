@@ -71,3 +71,7 @@ FAQ:
 3. What's the time cost of LoRA switching?
 
     The time cost of fusing LoRA parameters is approximately 700 ms per LoRA.
+
+4. Will LoRA fusing affect the inference efficiency of the model?
+
+    No, the model's inference efficiency remains the same after fusing LoRA as it was before fusing LoRA.
