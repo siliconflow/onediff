@@ -7,18 +7,19 @@
 ## Performance of Community Edition
 
 Updated on JAN 13, 2024. Device: RTX 3090. Resolution: 1024x1024
-|          | torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
-| -------- | --------------- | --------------- | ------------------ | ---------------------- |
-| w/o LoRA | 2.99it/s        | 6.40it/s        | 7.10it/s           | 237.46%                |
-|  w/ LoRA | 2.95it/s        | N/A             | 7.09it/s           | 240.34%                |
+|               | torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
+| ------------- | --------------- | --------------- | ------------------ | ---------------------- |
+| SDXL w/o LoRA | 2.99it/s        | 6.40it/s        | 7.10it/s           | 237.46%                |
+| SDXL w/  LoRA | 2.95it/s        | N/A             | 7.09it/s           | 240.34%                |
 
 End2end time(seconds) to generate a 1024x1024 image with SDXL (30 steps) on NVIDIA RTX 3090:
-|          | torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
-| -------- | --------------- | --------------- | ------------------ | ---------------------- |
-| w/o LoRA | 11.03           | 5.55            | 5.20               | 212.16%                |
-|  w/ LoRA | 11.20           | N/A             | 5.30               | 211.32%                |
+|               | torch(Baseline) | TensorRT-v9.0.1 | onediff(Optimized) | Percentage improvement |
+| ------------- | --------------- | --------------- | ------------------ | ---------------------- |
+| SDXL w/o LoRA | 11.03           | 5.55            | 5.20               | 212.16%                |
+| SDXL w/  LoRA | 11.20           | N/A             | 5.30               | 211.32%                |
 
-Note: The performence with LoRA doesn't include the time of LoRA fusing.
+Note: The performence with LoRA doesn't include the time of LoRA fusing. And the "slowing down" of the model inference speed with LoRA falls within the normal fluctuation range.
+
 
 ## Installation Guide
 
