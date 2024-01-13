@@ -13,8 +13,6 @@ from onediff.optimization.quant_optimizer import quantize_model
 from .model_patcher import state_dict_hook
 
 
-
-
 def compoile_unet(diffusion_model, graph_file):
     offload_device = model_management.unet_offload_device()
     load_device = model_management.get_torch_device()
@@ -27,24 +25,17 @@ def compoile_unet(diffusion_model, graph_file):
         "graph_file_device": load_device,
     }
 
-    if offload_device.type == "cuda" and graph_file.exists():
-        diffusion_model = oneflow_compile(
-            diffusion_model,
-            use_graph=use_graph,
-        )
-        diffusion_model.load_graph(graph_file, torch2oflow(offload_device))
-    else:
-        diffusion_model = oneflow_compile(
-            diffusion_model,
-            use_graph=use_graph,
-            options=compile_options,
-        )
+    diffusion_model = oneflow_compile(
+        diffusion_model,
+        use_graph=use_graph,
+        options=compile_options,
+    )
 
     return diffusion_model
 
 
 def quantize_unet(diffusion_model, calibrate_info, inplace=True):
     diffusion_model = quantize_model(
-            model=diffusion_model, inplace=inplace, calibrate_info=calibrate_info
+        model=diffusion_model, inplace=inplace, calibrate_info=calibrate_info
     )
     return diffusion_model
