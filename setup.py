@@ -2,7 +2,7 @@ from setuptools import find_packages, setup
 
 setup(
     name="onediff",
-    version="0.12.0.dev",
+    version="0.12.1.dev",
     description="an out-of-the-box acceleration library for diffusion models",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
