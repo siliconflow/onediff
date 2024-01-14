@@ -25,7 +25,6 @@ def oneflow_backend(gm, example_inputs, *args, **kwargs):
                 *args, **kwargs
             )
         else:
-            print('args is', args)
             output = transformed_fn(*args, **kwargs)
         if isinstance(output, tuple):
             return tuple(flow.utils.tensor.to_torch(i) for i in output)
