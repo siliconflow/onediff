@@ -2,10 +2,10 @@ import os
 import torch
 import oneflow as flow
 
-from .utils.args_tree_util import input_output_processor
 from .utils.patch_for_compiler import *  # TODO:
 from .transform.custom_transform import register
 from .with_oneflow_compile import oneflow_compile
+from oneflow.framework.args_tree import ArgsTree
 
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
@@ -18,8 +18,17 @@ def oneflow_backend(gm, example_inputs, *args, **kwargs):
     if not with_interp:
         transformed_fn = fx_node_tranform(gm)
 
-    @input_output_processor
     def wrapped_forward(*args, **kwargs):
+        
+        def input_fn(value):
+            if isinstance(value, torch.Tensor):
+                return flow.utils.tensor.from_torch(value.contiguous())
+            else:
+                return value
+
+        args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+        out = args_tree.map_leaf(input_fn)
+        args = out[0]
         if with_interp:
             output = OneFlowInterpreter(gm, garbage_collect_values=False).run(
                 *args, **kwargs
