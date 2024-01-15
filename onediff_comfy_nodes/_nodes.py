@@ -429,7 +429,6 @@ class ModuleDeepCacheSpeedup:
             "required": {
                 "model": ("MODEL",),
                 "static_mode": (["enable", "disable"],),
-                "compile": (["enable", "disable"],),
                 "cache_interval": (
                     "INT",
                     {
@@ -478,7 +477,6 @@ class ModuleDeepCacheSpeedup:
         self,
         model,
         static_mode,
-        compile,
         cache_interval,
         cache_layer_id,
         cache_block_id,
@@ -658,13 +656,15 @@ class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
         )
         ckpt_name = f"{ckpt_name}_quant"
         unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
-        unet_model = quantize_model(modelpatcher.model.diffusion_model, inplace=True)
+        load_device = model_management.get_torch_device()
+        diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
+        unet_model = quantize_model(diffusion_model, inplace=True)
         modelpatcher.model.diffusion_model = unet_model
 
         offload_device = model_management.unet_offload_device()
         modelpatcher = OneFlowSpeedUpModelPatcher(
             modelpatcher.model,
-            load_device=model_management.get_torch_device(),
+            load_device=load_device,
             offload_device=offload_device,
             use_graph=True,
             graph_path=unet_graph_file,
@@ -740,8 +740,11 @@ class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
         graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
 
         calibrate_info = torch.load(model_path)
+
+        load_device = model_management.get_torch_device()
+        diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
         quant_unet = quantize_unet(
-            diffusion_model=modelpatcher.model.diffusion_model,
+            diffusion_model=diffusion_model,
             inplace=True,
             calibrate_info=calibrate_info,
         )
@@ -840,6 +843,7 @@ if _USE_UNET_INT8:
             *args,
             **kwargs,
         ):
+            overwrite = overwrite == "enable"
             only_compute_density = conv_mse_threshold == 1 and linear_mse_threshold == 1
             models_dir = (
                 Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
