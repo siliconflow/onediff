@@ -2,8 +2,8 @@ import os
 from typing import Any, List, Optional, Union
 import torch
 from diffusers import StableDiffusionXLPipeline
-import diffusers_quant
-from diffusers_quant.utils import (
+import onediff_quant
+from onediff_quant.utils import (
     rewrite_sdxl_pipeline_attention,
     replace_sub_module_with_quantizable_module,
 )
@@ -29,7 +29,7 @@ def _use_graph():
     os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-    os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
+    # os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
     os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
     os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
     # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
@@ -62,7 +62,7 @@ class QuantDiffusionPipeline:
         graph=True,
         **kwargs
     ):
-        diffusers_quant.enable_load_quantized_model()
+        onediff_quant.enable_load_quantized_model()
 
         pipe = StableDiffusionXLPipeline.from_pretrained(
             pretrained_model_name_or_path,

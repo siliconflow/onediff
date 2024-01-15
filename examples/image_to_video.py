@@ -23,10 +23,12 @@ import inspect
 import argparse
 import time
 import json
-import torch
 from PIL import (Image, ImageDraw)
-from diffusers.utils import load_image, export_to_video
+
 import oneflow as flow
+import torch
+
+from diffusers.utils import load_image, export_to_video
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import set_boolean_env_var
 
