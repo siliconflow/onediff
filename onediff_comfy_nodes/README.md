@@ -1,21 +1,10 @@
 # OneDiff ComfyUI Nodes
 
-- [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
-  - [Performance of Community Edition](#performance-of-community-edition)
-  - [Installation Guide](#installation-guide)
-  - [Basical Nodes Usage](#basical-nodes-usage)
-    - [Model Acceleration](#model-acceleration)
-      - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
-    - [Quantization](#quantization)
-    - [Image Distinction Scanner](#image-distinction-scanner)
-  - [OneDiff Community Examples](#onediff-community-examples)
-    - [LoRA](#lora)
-    - [ControlNet](#controlnet)
-    - [SVD](#svd)
-    - [DeepCache](#deepcache)
+<p align="center">
+<img src="../imgs/onediff_logo.png" height="100">
+</p>
 
-
-## Performance of Community Edition
+Performance of Community Edition
 
 Updated on DEC 7, 2023. Device: RTX 3090
 
@@ -24,58 +13,76 @@ Updated on DEC 7, 2023. Device: RTX 3090
 | [Stable Diffusion workflow(UNet)](workflows/model-speedup.png) | 4.08it/s        | 6.70it/s           | 64.2 %                 |
 | [LoRA workflow](workflows/model-speedup-lora.png)              | 4.05it/s        | 6.69it/s           | 65.1 %                 |
 
+## <div align="center">Documentation</div>
 
-## Installation Guide
+### Installation Guide
+Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 
-1. Install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+<details close>
+<summary>Setup Community Edition</summary>
 
+1. Install OneFlow Community
+  * Install OneFlow Community(CUDA 11.x)
 
-2. Install PyTorch and OneFlow
+    ```bash
+    pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
+    ```
 
-Install PyTorch:
+  * Install OneFlow Community(CUDA 12.x)
 
-```bash
-pip install torch torchvision torchaudio
-```
+    ```bash
+    pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
+    ```
+2. Install OneDiff
+    ```bash
+    git clone https://github.com/siliconflow/onediff.git
+    cd onediff && pip install -e .
+    ```
 
-Install OneFlow Community(CUDA 11.x)
+3. Install onediff_comfy_nodes for ComfyUI
 
-```bash
-pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
-```
+    ```bash
+    cd onediff
+    cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    ```
 
-Install OneFlow Community(CUDA 12.x)
-
-```bash
-pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
-```
-
-3. Intall onediff
-
-```bash
-git clone https://github.com/siliconflow/onediff.git
-cd onediff && pip install -e .
-```
-
-5. Install onediff_comfy_nodes for ComfyUI
-
-```bash
-cd onediff
-cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-```
-
-6. (Optional) Enterprise Level Support
-
-If you need Enterprise Level Support for your system or business, please refer to [OneDiff Enterprise Edition](https://github.com/siliconflow/onediff/blob/main/README.md#onediff-enterprise-edition) .
+</details>
 
 
 
+<details close>
+<summary>Setup Enterprise Edition</summary>
 
-## Basical Nodes Usage
+1. Install OneFlow Enterprise
+    ```bash
+      python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121
+    ```
+  * set environment variables
+    ```bash
+    export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
+    ```
+  * get your license key from [here](https://www.siliconflow.com/onediff.html)
+
+2. Install OneDiff and OneDiff Quant
+    ```bash
+    python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant && \
+    git clone https://github.com/siliconflow/onediff.git  && \
+    cd onediff && pip install -e . && cd ..
+    ```
+3. Install onediff_comfy_nodes for ComfyUI
+    ```bash
+    cd onediff 
+    cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    ```
+
+</details>
+
+
+### Basical Nodes Usage
 
 **Note** All the images in this section can be loaded directly into ComfyUI. 
 
-### Model Acceleration
+You can Load these images in ComfyUI to get the full workflow.
 
 #### Load Checkpoint - OneDiff
 
@@ -93,9 +100,8 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 **Note: Quantization feature is only supported in OneDiff Enterprise.**
 
-The "UNet Loader Int8" node is used to load quantized models. Quantized models need to be used in conjunction with the "Model Speedup" node.
 
-![](workflows/int8-speedup.png)
+![](workflows/onediff_quant_base.png)
 
 The compilation result of the quantized model can also be saved as a graph and loaded when needed.
 
@@ -135,8 +141,11 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 [Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
 
-[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md)
+[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
 
+## <div align="center">Contact</div>
+
+For OneDiff bug reports and feature requests please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues), and join our [Discord](https://discord.gg/RKJTjZMcPQ) community for questions and discussions!
 
 
 
