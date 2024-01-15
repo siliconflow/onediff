@@ -58,6 +58,17 @@ To enable OneDiff extension acceleration, select `onediff_diffusion_model` in Sc
 
 ![onediff_script](images/onediff_script.jpg)
 
+
+## Enterprise Version
+
+If after selecting onediff_diffusion_model in sricpt, the prompt *Hints: Enterprise function is not supported on your system.* appears as the image below, it means that you are using OneDiff Community. If you would like to use the **OneDiff Enterprise**, please visit https://www.siliconflow.com/onediff.html to buy the license of OneDiff Enteprise or contact contact@siliconflow.com if you have any problems about the OneDiff Enterprise.
+
+![hint messages](images/hints_message.jpg)
+
+After purchasing OneDiff Enterprise, you can use the quantization feature by simply checking the *Model Quantization (int8) Speed Up* option which enables better inference performence as the image below.
+
+![Model Quantization](images/model_quant.jpg)
+
 ## LoRA
 
 OneDiff supports the complete functionality related to LoRA. You can use OneDiff-based LoRA just like the native LoRA in sd-webui.
