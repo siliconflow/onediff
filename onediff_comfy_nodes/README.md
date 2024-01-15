@@ -13,9 +13,10 @@ Updated on DEC 7, 2023. Device: RTX 3090
 | [Stable Diffusion workflow(UNet)](workflows/model-speedup.png) | 4.08it/s        | 6.70it/s           | 64.2 %                 |
 | [LoRA workflow](workflows/model-speedup-lora.png)              | 4.05it/s        | 6.69it/s           | 65.1 %                 |
 
-## <div align="center">Documentation</div>
+## Documentation
 
 ### Installation Guide
+
 Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 
 <details close>
@@ -57,11 +58,15 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
     ```bash
       python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121
     ```
-  * set environment variables
-    ```bash
-    export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
-    ```
-  * get your license key from [here](https://www.siliconflow.com/onediff.html)
+
+2. Get license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html)
+
+3. Set up the key
+
+  ```bash
+  export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
+  ```
+
 
 2. Install OneDiff and OneDiff Quant
     ```bash
