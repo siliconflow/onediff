@@ -18,8 +18,6 @@ import comfy
 import folder_paths
 from comfy import model_management
 from comfy.cli_args import args
-from folder_paths import get_input_directory
-
 from .utils import (
     OneFlowSpeedUpModelPatcher,
     OneFlowDeepCacheSpeedUpModelPatcher,
@@ -804,14 +802,36 @@ if _USE_UNET_INT8:
         CATEGORY = "OneDiff/Quant_Tools"
         FUNCTION = "onediff_quant_sample"
 
+        def _get_calibrate_info(
+            self, model_patcher, only_compute_density, bits, model_cls, *args, **kwargs
+        ):
+            model_name = model_patcher.model.__class__.__qualname__
+            cache_key = f"{model_name}_{only_compute_density}_{bits}_{model_cls}"
+            calibrate_cache = getattr(self, "_calibrate_cache", None)
+            if calibrate_cache is None:
+                self._calibrate_cache = {}
+
+            calibrate_info = self._calibrate_cache.get(cache_key, None)
+            if calibrate_info is None:
+                calibrate_info = self.generate_calibrate_info(
+                    model_patcher=model_patcher,
+                    only_compute_density=only_compute_density,
+                    bits=bits,
+                    model_cls=model_cls,
+                    *args,
+                    **kwargs,
+                )
+                self._calibrate_cache[cache_key] = calibrate_info
+
+            return self._calibrate_cache[cache_key]
+
         def onediff_quant_sample(
             self,
             onediff_quant,
-            process_cache_file_prefix,
             quantize_conv,
             quantize_linear,
-            conv_ssim_threshold,
-            linear_ssim_threshold,
+            conv_mse_threshold,
+            linear_mse_threshold,
             compute_density_threshold,
             save_filename_prefix,
             overwrite,
@@ -820,20 +840,20 @@ if _USE_UNET_INT8:
             *args,
             **kwargs,
         ):
-            only_compute_density = (
-                conv_ssim_threshold == 0 and linear_ssim_threshold == 0
-            )
+            only_compute_density = conv_mse_threshold == 1 and linear_mse_threshold == 1
             models_dir = (
                 Path(folder_paths.models_dir) / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
             )
             models_dir.mkdir(parents=True, exist_ok=True)
-            model_name = model.model.__class__.__qualname__
 
-            cached_process_output_path = (
-                models_dir
-                / f"{process_cache_file_prefix}_{model_name}_cache_info_{only_compute_density}.pt"
+            model_name = model.model.__class__.__qualname__
+            quantize_config_file = (
+                models_dir / f"{save_filename_prefix}_{model_name}_quantize_info.pt"
             )
-            print(f"cached_process_output_path: {cached_process_output_path}")
+            if quantize_config_file.exists() and not overwrite:
+                raise ValueError(
+                    f"quantize_config_file {quantize_config_file} exists, please set overwrite=True to overwrite it."
+                )
 
             model_cls = []
             if quantize_conv == "enable":
@@ -841,12 +861,10 @@ if _USE_UNET_INT8:
             if quantize_linear == "enable":
                 model_cls.append(nn.Linear)
 
-            calibrate_info = self.generate_calibrate_info(
+            calibrate_info = self._get_calibrate_info(
                 model_patcher=model,
                 only_compute_density=only_compute_density,
                 bits=bits,
-                resume=True,
-                cached_process_output_path=cached_process_output_path,
                 model_cls=model_cls,
                 *args,
                 **kwargs,
@@ -855,13 +873,9 @@ if _USE_UNET_INT8:
             new_calibrate_info = self.fine_tune_calibrate_info(
                 model,
                 calibrate_info,
-                conv_ssim_threshold,
-                linear_ssim_threshold,
+                conv_mse_threshold,
+                linear_mse_threshold,
                 compute_density_threshold,
-            )
-
-            quantize_config_file = (
-                models_dir / f"{save_filename_prefix}_{model_name}_quantize_info.pt"
             )
 
             self.save_quantized_calibrate_info(

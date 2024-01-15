@@ -111,10 +111,6 @@ class KSampleQuantumBase(KSampler):
         ret["required"].update(
             {"onediff_quant": ("STRING", {"default": "Quantization Settings"})}
         )
-
-        ret["required"].update(
-            {"process_cache_file_prefix": ("STRING", {"default": "unet"})}
-        )
         ret["required"].update({"bits": ("INT", {"default": 8, "min": 8, "max": 8})})
         ret["required"].update({"quantize_conv": (["enable", "disable"],)})
         ret["required"].update({"quantize_linear": (["enable", "disable"],)})
@@ -151,8 +147,6 @@ class KSampleQuantumBase(KSampler):
         only_compute_density: bool = False,
         bits=8,
         quantized_model_generator: callable = lambda x: x.model.diffusion_model,
-        resume: bool = True,
-        cached_process_output_path: str = None,
         model_cls=[nn.Linear, nn.Conv2d],
         *args,
         **kwargs,
@@ -160,10 +154,6 @@ class KSampleQuantumBase(KSampler):
         """return calibrate_info"""
 
         calibrate_info = {}
-        if resume and cached_process_output_path:
-            if os.path.exists(cached_process_output_path):
-                print(f"Resuming from {cached_process_output_path}")
-                calibrate_info = torch.load(cached_process_output_path)
 
         diffusion_model = quantized_model_generator(model_patcher)
 
@@ -189,7 +179,6 @@ class KSampleQuantumBase(KSampler):
                     "compute_density": compute_density,
                 }
 
-            torch.save(calibrate_info, cached_process_output_path)
             return calibrate_info
 
         length = len(quantizable_modules)
@@ -207,20 +196,13 @@ class KSampleQuantumBase(KSampler):
 
                 mse = torch.mean((org_latent_sample - cur_latent_sample) ** 2)
 
-                similarity_mse = 1 - mse
                 compute_density = quantize_costs.get_compute_density(sub_name)
-                print(
-                    f"similarity_mse: {similarity_mse:.4f}, compute_density: {compute_density:.4f}"
-                )
+                print(f"mse: {mse:.4f}, compute_density: {compute_density:.4f}")
 
                 calibrate_info[sub_name] = {
-                    "ssim": similarity_mse,
+                    "mse": mse,
                     "compute_density": compute_density,
                 }
-
-                # save
-                if index % 10 == 0 or index == length - 1:
-                    torch.save(calibrate_info, cached_process_output_path)
 
         return calibrate_info
 
@@ -230,20 +212,20 @@ class FineTuneCalibrateInfoMixin:
     def INPUT_TYPES(s):
         return {
             "required": {
-                "conv_ssim_threshold": (
+                "conv_mse_threshold": (
                     "FLOAT",
                     {
-                        "default": 0.9,
+                        "default": 0.1,
                         "min": 0,
                         "max": 1,
                         "step": 0.01,
                         "display": "number",
                     },
                 ),
-                "linear_ssim_threshold": (
+                "linear_mse_threshold": (
                     "FLOAT",
                     {
-                        "default": 0.9,
+                        "default": 0.1,
                         "min": 0,
                         "max": 1,
                         "step": 0.01,
@@ -267,8 +249,8 @@ class FineTuneCalibrateInfoMixin:
         self,
         model,
         calibrate_info,
-        conv_ssim_threshold,
-        linear_ssim_threshold,
+        conv_mse_threshold,
+        linear_mse_threshold,
         compute_density_threshold,
     ):
         new_calibrate_info = {}
@@ -278,12 +260,12 @@ class FineTuneCalibrateInfoMixin:
 
             sub_model = get_sub_module(model.model.diffusion_model, sub_name)
 
-            if isinstance(sub_model, nn.Conv2d) and "ssim" in sub_info:
-                if sub_info["ssim"] < conv_ssim_threshold:
+            if isinstance(sub_model, nn.Conv2d) and "mse" in sub_info:
+                if sub_info["mse"] > conv_mse_threshold:
                     continue
 
-            if isinstance(sub_model, nn.Linear) and "ssim" in sub_info:
-                if sub_info["ssim"] < linear_ssim_threshold:
+            if isinstance(sub_model, nn.Linear) and "mse" in sub_info:
+                if sub_info["mse"] > linear_mse_threshold:
                     continue
 
             new_calibrate_info[sub_name] = sub_info
@@ -297,7 +279,7 @@ class SaveQuantizedCalibrateInfoMixin:
         return {
             "required": {
                 "save_filename_prefix": ("STRING", {"default": "unet"}),
-                "overwrite": (["enable", "disable"],),
+                "overwrite": (["disable", "enable"],),
             },
         }
 
