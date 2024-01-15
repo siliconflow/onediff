@@ -59,6 +59,7 @@ jobs:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
 
+      - run: docker image prune -f
       - run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
           docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
@@ -66,7 +67,7 @@ jobs:
         run: |
           docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
           docker pull ${{ env.ACR_ORG }}/${{ env.SELENIUM_IMAGE }}
-
+      - run: docker image prune -f
       - name: Setup docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
