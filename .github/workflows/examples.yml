@@ -109,7 +109,8 @@ jobs:
         run: |
           docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
           sleep 30
-
+      # print to check if comfy is launched successfully
+      - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
         run: |
