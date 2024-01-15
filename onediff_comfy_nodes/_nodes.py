@@ -488,7 +488,6 @@ class ModuleDeepCacheSpeedup:
         end_step,
     ):
         use_graph = static_mode == "enable"
-        no_compile = (compile == "disable") or (not use_graph)
 
         offload_device = model_management.unet_offload_device()
         oneflow_model = OneFlowDeepCacheSpeedUpModelPatcher(
@@ -498,7 +497,6 @@ class ModuleDeepCacheSpeedup:
             cache_layer_id=cache_layer_id,
             cache_block_id=cache_block_id,
             use_graph=use_graph,
-            no_compile=no_compile,
         )
 
         current_t = -1
