@@ -350,10 +350,7 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
-        self.get_graph().warmup_with_load(file_path, device, run_warmup)
-
-    def warmup_with_load(self, file_path, device=None, run_warmup=True):
-        self.get_graph().warmup_with_load(file_path, device, run_warmup)
+        self.get_graph().load_graph(file_path, device, run_warmup)
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
@@ -395,7 +392,7 @@ class OneflowGraph(flow.nn.Graph):
         return self.model(*args, **kwargs)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def warmup_with_load(self, file_path, device=None, run_warmup=True):
+    def load_graph(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
