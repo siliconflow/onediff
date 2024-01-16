@@ -3,6 +3,9 @@
 - [Performance of Community Edition](#performance-of-community-edition)
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
+    - [LoRA](#lora)
+- [Quantization](#quantization)
+- [Contact](#contact)
 
 ## Performance of Community Edition
 
@@ -58,19 +61,7 @@ Select `onediff_diffusion_model` from the Script menu, enter a prompt in the tex
 ![onediff_script](images/onediff_script.jpg)
 
 
-## Enterprise Version
-
-If after selecting onediff_diffusion_model in sricpt, the prompt *Hints: Enterprise function is not supported on your system.* appears as the image below, it means that you are using OneDiff Community. If you would like to use the **OneDiff Enterprise**, please visit https://www.siliconflow.com/onediff.html to buy the license of OneDiff Enteprise or contact contact@siliconflow.com if you have any problems about the OneDiff Enterprise.
-
-![hint messages](images/hints_message.jpg)
-
-After purchasing OneDiff Enterprise, you can use the quantization feature by simply checking the *Model Quantization (int8) Speed Up* option which enables better inference performence as the image below.
-
-![Model Quantization](images/model_quant.jpg)
-
-Note: The quantified model doesn't currently support LoRA loading, and related features are under emergency development.
-
-## LoRA
+### LoRA
 
 OneDiff supports the complete functionality related to LoRA. You can use OneDiff-based LoRA just like the native LoRA in sd-webui.
 
@@ -92,3 +83,25 @@ FAQ:
 4. Will LoRA fusing affect the inference efficiency of the model?
 
     No, the model's inference efficiency remains the same after fusing LoRA as it was before fusing LoRA.
+
+## Quantization
+
+**Note**: Quantization feature is only supported by **OneDiff Enterprise**.
+
+OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
+
+You can use the quantization feature by simply checking the *Model Quantization (int8) Speed Up* option which enables better inference performence as the image below.
+
+![Model Quantization](images/model_quant.jpg)
+
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+
+Note: The quantified model doesn't currently support LoRA loading, and related features are under emergency development.
+
+## Contact
+
+For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
+
+For users of OneDiff Enterprise, you can contact contact@siliconflow.com for commercial support.
+
+Feel free to join our [Discord](https://discord.gg/RKJTjZMcPQ) community for discussions and to receive the latest updates.

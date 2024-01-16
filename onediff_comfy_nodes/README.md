@@ -120,6 +120,8 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+
 ![](workflows/onediff_quant_base.png)
 
 
