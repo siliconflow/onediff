@@ -362,12 +362,14 @@ class DeployableModule(torch.nn.Module):
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
     def __init__(self, model):
+        # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
+        os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
         super().__init__(enable_get_runtime_state_dict=True)
+
         self.model = model
         self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
-        os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
         os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
         os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
         os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
