@@ -15,6 +15,17 @@ Updated on DEC 7, 2023. Device: RTX 3090
 
 ## Documentation
 
+- [Installation Guide](#installation-guide)
+- [Basical Nodes Usage](#basical-nodes-usage)
+  - [OneDiff LoadCheckpoint ](#load-checkpoint---onediff)
+  - [Quantization](#quantization)
+- [OneDiff Community Examples](#onediff-community-examples)
+  - [LoRA](#lora)
+  - [ControlNet](#controlnet)
+  - [SVD](#svd)
+  - [DeepCache](#deepcache)
+
+
 ### Installation Guide
 
 Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
@@ -55,6 +66,12 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 <summary>Setup Enterprise Edition</summary>
 
 1. Install OneFlow Enterprise
+  * Install OneFlow Community(CUDA 11.x)
+    ```bash
+      python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu118
+    ```
+
+  * Install OneFlow Community(CUDA 12.x)
     ```bash
       python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121
     ```
@@ -62,19 +79,18 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 2. Get license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html)
 
 3. Set up the key
+    ```bash
+    export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
+    ```
 
-  ```bash
-  export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
-  ```
 
-
-2. Install OneDiff and OneDiff Quant
+4. Install OneDiff and OneDiff Quant
     ```bash
     python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant && \
     git clone https://github.com/siliconflow/onediff.git  && \
     cd onediff && pip install -e . && cd ..
     ```
-3. Install onediff_comfy_nodes for ComfyUI
+5. Install onediff_comfy_nodes for ComfyUI
     ```bash
     cd onediff 
     cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
@@ -85,15 +101,11 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
 
 ### Basical Nodes Usage
 
-**Note** All the images in this section can be loaded directly into ComfyUI. 
-
-You can Load these images in ComfyUI to get the full workflow.
+**Note** All the images in this section can be loaded directly into ComfyUI. You can load them in ComfyUI to get the full workflow.
 
 #### Load Checkpoint - OneDiff
 
-The "Load Checkpoint - OneDiff" node  is optimized for OneDiff. 
-
-It can be used to load checkpoints and accelerate the model.
+"Load Checkpoint - OneDiff" is the optimized version of "LoadCheckpoint", designed to accelerate the inference speed without any awareness required. It maintains the same input and output as the original node.
 
 ![](workflows/model-speedup.png)
 
@@ -103,42 +115,36 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 ### Quantization
 
-**Note: Quantization feature is only supported in OneDiff Enterprise.**
+**Note**: Quantization feature is only supported by **OneDiff Enterprise**.
 
+OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
 ![](workflows/onediff_quant_base.png)
 
-The compilation result of the quantized model can also be saved as a graph and loaded when needed.
-
-### Image Distinction Scanner
-
-The "Image Distinction Scanner" node is used to compare the differences between two images and visualize the resulting variances.
-
-![](workflows/image-distinction-scanner.png)
 
 ## OneDiff Community Examples 
 
 ### LoRA                  
 
-This example shows you how to use Loras. You can change the LoRA models or adjust their strength without needing to recompile.
+This example demonstrates how to utilize LoRAs. You have the flexibility to modify the LoRA models or adjust their strength without the need for recompilation.
 
 [Lora Speedup](workflows/model-speedup-lora.png)
 
 ### ControlNet
 
-There is an example demonstrating openpose controlnet while OneDiff seamlessly supports a wide range of controlnet types, including depth mapping, canny, and more.
+While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more.
 
 [ControlNet Speedup](workflows/model-speedup-controlnet.png)
 
 ### SVD
 
-This example demonstrates the utilization of OneDiff to enhance the performance of a video model (text to video by SVD)
+This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD.
 
 [SVD Speedup](workflows/text-to-video-speedup.png)
 
 ### DeepCache
 
-DeepCache is an innovative algorithm designed to significantly enhance the speed of diffusion models by approximately 2x. When combined with OneDiff, it further accelerates the Diffusion model by around 3x.
+DeepCache is an innovative algorithm that substantially boosts the speed of diffusion models, achieving an approximate 2x improvement. When used in conjunction with OneDiff, it further accelerates the diffusion model to approximately 3x.
 
 Here are the example of applying DeepCache to SD and SVD models.
 
@@ -148,10 +154,10 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 [Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
 
-## <div align="center">Contact</div>
+## Contact
 
-For OneDiff bug reports and feature requests please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues), and join our [Discord](https://discord.gg/RKJTjZMcPQ) community for questions and discussions!
+For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
 
+For users of OneDiff Enterprise, you can contact contact@siliconflow.com for commercial support.
 
-
-
+Feel free to join our [Discord](https://discord.gg/RKJTjZMcPQ) community for discussions and to receive the latest updates.
