@@ -14,6 +14,7 @@ from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
 from .utils.param_utils import parse_device, check_device
+from .utils.graph_management_utils import graph_file_management
 
 
 class DualModule(torch.nn.Module):
@@ -159,54 +160,6 @@ def get_mixed_dual_module(module_cls):
             DualModule.__init__(self, torch_module, oneflow_module)
 
     return MixedDualModule
-
-
-def graph_file_management(func):
-    @wraps(func)
-    def wrapper(self: "DeployableModule", *args, **kwargs):
-        graph_file = self._deployable_module_options.get("graph_file", None)
-
-        # Load graph file
-        if graph_file is not None:
-            try:
-                if not os.path.exists(graph_file):
-                    logger.warning(
-                        f"Graph file {graph_file} not exists!, will generate graph."
-                    )
-
-                else:
-                    graph_device = self._deployable_module_options.get(
-                        "graph_file_device", None
-                    )
-
-                    self.load_graph(graph_file, torch2oflow(graph_device))
-                    logger.info(f"Load graph file: {graph_file}")
-
-                    graph_file = None
-                    self._deployable_module_options["graph_file"] = None
-
-            except Exception as e:
-                logger.error(f"Load graph file: {graph_file} failed! {e=}")
-
-        ret = func(self, *args, **kwargs)
-
-        # Save graph file
-        if graph_file is not None:
-            try:
-                parent_dir = os.path.dirname(graph_file)
-                if parent_dir != "":
-                    os.makedirs(os.path.dirname(graph_file), exist_ok=True)
-
-                self.save_graph(graph_file)
-                logger.info(f"Save graph file: {graph_file} done!")
-            except Exception as e:
-                logger.error(f"Save graph file: {graph_file} failed! {e=}")
-            finally:
-                self._deployable_module_options["graph_file"] = None
-
-        return ret
-
-    return wrapper
 
 
 def handle_deployable_exception(func):
