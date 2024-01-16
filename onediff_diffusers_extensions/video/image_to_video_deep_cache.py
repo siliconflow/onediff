@@ -125,6 +125,7 @@ def compile_model(model, attention_fp16_score_accum_max_m=-1):
 
     model.image_encoder = oneflow_compile(model.image_encoder)
     model.unet = oneflow_compile(model.unet)
+    model.fast_unet = oneflow_compile(model.fast_unet)
     model.vae.decoder = oneflow_compile(model.vae.decoder)
     model.vae.encoder = oneflow_compile(model.vae.encoder)
     return model
