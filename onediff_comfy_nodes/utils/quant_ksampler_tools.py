@@ -1,3 +1,4 @@
+from contextlib import contextmanager
 import time
 from typing import Dict
 import os
@@ -11,6 +12,7 @@ from onediff.infer_compiler.utils.module_operations import (
     modify_sub_module,
     get_sub_module,
 )
+from onediff.infer_compiler import oneflow_compile
 
 
 # ComfyUI
@@ -25,6 +27,9 @@ from onediff_quant.utils import (
     metric_quantize_costs,
 )
 from onediff_quant import Quantizer
+
+# onediff_comfy_nodes
+from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
 
 
 def quantize_sub_module(model, sub_name, sub_module, bits):
@@ -66,30 +71,31 @@ def quantize_sub_module(model, sub_name, sub_module, bits):
 
 
 class quantized_model_patcher:
-    def __init__(self, model_patcher, layers, bits, verbose=False):
+    def __init__(self, model_patcher, layers, bits, verbose=False, use_graph=False):
         self.model_patcher = model_patcher
+        self.diffusion_model = model_patcher.model.diffusion_model
         self.layers = layers
         self.bits = bits
-        self.diffusion_model = model_patcher.model.diffusion_model
         self.handles = []
-
         self.verbose = verbose
         self.conv_count = 0
         self.linear_count = 0
 
     def __enter__(self):
         self.start_time = time.time()
+        diffusion_model = self.model_patcher.model.diffusion_model
         for sub_name in self.layers:
-            sub_module = get_sub_module(self.diffusion_model, sub_name)
+            sub_module = get_sub_module(diffusion_model, sub_name)
             if isinstance(sub_module, nn.Conv2d):
                 self.conv_count += 1
             elif isinstance(sub_module, nn.Linear):
                 self.linear_count += 1
 
             restore = quantize_sub_module(
-                self.diffusion_model, sub_name, sub_module, bits=self.bits
+                diffusion_model, sub_name, sub_module, bits=self.bits
             )
             self.handles.append(restore)
+
         return self.model_patcher
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -296,3 +302,32 @@ class SaveQuantizedCalibrateInfoMixin:
         print(f"Saved quantize config file to {quantize_config_file}")
 
         return quantize_config_file
+
+
+@contextmanager
+def compile_model_patcher_context(model_patcher):
+    if isinstance(model_patcher, OneFlowDeepCacheSpeedUpModelPatcher):
+        original_models = {
+            "deep_cache_unet": model_patcher.deep_cache_unet,
+            "fast_deep_cache_unet": model_patcher.fast_deep_cache_unet,
+        }
+
+        model_patcher.deep_cache_unet = oneflow_compile(
+            model_patcher.deep_cache_unet, use_graph=True
+        )
+        model_patcher.fast_deep_cache_unet = oneflow_compile(
+            model_patcher.fast_deep_cache_unet, use_graph=True
+        )
+    else:
+        original_diffusion_model = model_patcher.model.diffusion_model
+        model_patcher.model.diffusion_model = oneflow_compile(
+            model_patcher.model.diffusion_model, use_graph=True
+        )
+
+    yield model_patcher
+
+    if isinstance(model_patcher, OneFlowDeepCacheSpeedUpModelPatcher):
+        model_patcher.deep_cache_unet = original_models["deep_cache_unet"]
+        model_patcher.fast_deep_cache_unet = original_models["fast_deep_cache_unet"]
+    else:
+        model_patcher.model.diffusion_model = original_diffusion_model

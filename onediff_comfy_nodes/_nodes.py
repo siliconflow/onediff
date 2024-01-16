@@ -5,6 +5,7 @@ from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from onediff.infer_compiler.utils import set_boolean_env_var
 from onediff.optimization.quant_optimizer import quantize_model
 
+
 import os
 import re
 import time
@@ -787,6 +788,7 @@ if _USE_UNET_INT8:
         FineTuneCalibrateInfoMixin,
         SaveQuantizedCalibrateInfoMixin,
         quantized_model_patcher,
+        compile_model_patcher_context as _compile_context,
     )
 
     class QuantKSampler(
@@ -799,6 +801,8 @@ if _USE_UNET_INT8:
             ret["required"].update(
                 SaveQuantizedCalibrateInfoMixin.INPUT_TYPES()["required"]
             )
+            ret["required"].update({"static_mode": (["enable", "disable"],)})
+
             return ret
 
         RETURN_TYPES = ("LATENT",)
@@ -838,6 +842,7 @@ if _USE_UNET_INT8:
             compute_density_threshold,
             save_filename_prefix,
             overwrite,
+            static_mode,
             bits,
             model,
             *args,
@@ -892,9 +897,14 @@ if _USE_UNET_INT8:
                 bits=bits,
                 verbose=True,
             ) as qmpatcher:
-                qmpatcher.model.diffusion_model = oneflow_compile(
-                    qmpatcher.model.diffusion_model
-                )
-                latent_sample = self.generate_latent_sample(qmpatcher, *args, **kwargs)
+                if static_mode == "enable":
+                    with _compile_context(qmpatcher) as compiled_model:
+                        latent_sample = self.generate_latent_sample(
+                            compiled_model, *args, **kwargs
+                        )
+                else:
+                    latent_sample = self.generate_latent_sample(
+                        qmpatcher, *args, **kwargs
+                    )
 
             return (latent_sample,)
