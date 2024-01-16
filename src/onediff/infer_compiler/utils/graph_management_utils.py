@@ -36,7 +36,7 @@ def graph_file_management(func):
                 return
 
             if not os.path.exists(graph_file):
-                logger.warning(
+                logger.info(
                     f"Graph file {graph_file} does not exist! Generating graph."
                 )
             else:

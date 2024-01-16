@@ -85,11 +85,11 @@ class quantized_model_patcher:
                 self.conv_count += 1
             elif isinstance(sub_module, nn.Linear):
                 self.linear_count += 1
-            self.handles.append(
-                quantize_sub_module(
-                    self.diffusion_model, sub_name, sub_module, bits=self.bits
-                )
+
+            restore = quantize_sub_module(
+                self.diffusion_model, sub_name, sub_module, bits=self.bits
             )
+            self.handles.append(restore)
         return self.model_patcher
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -161,9 +161,6 @@ class KSampleQuantumBase(KSampler):
             diffusion_model, module_cls=model_cls
         )
 
-        if set(quantizable_modules.keys()) == set(calibrate_info.keys()):
-            return calibrate_info
-
         org_latent_sample = self.generate_latent_sample(model_patcher, *args, **kwargs)[
             "samples"
         ]
@@ -182,10 +179,9 @@ class KSampleQuantumBase(KSampler):
             return calibrate_info
 
         length = len(quantizable_modules)
+        start_time = time.time()
         for index, (sub_name, _) in enumerate(quantizable_modules.items()):
             print(f"Quantizing {index+1}/{length} {sub_name}...")
-            if sub_name in calibrate_info:
-                continue
 
             with quantized_model_patcher(
                 model_patcher=model_patcher, layers=[sub_name], bits=bits
@@ -203,6 +199,11 @@ class KSampleQuantumBase(KSampler):
                     "mse": mse,
                     "compute_density": compute_density,
                 }
+
+            estimated_remaining_time = (
+                (time.time() - start_time) / (index + 1) * (length - index - 1) / 60
+            )
+            print(f"Estimated remaining time: {estimated_remaining_time:.4f} minutes")
 
         return calibrate_info
 

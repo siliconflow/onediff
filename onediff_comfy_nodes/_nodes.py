@@ -892,6 +892,9 @@ if _USE_UNET_INT8:
                 bits=bits,
                 verbose=True,
             ) as qmpatcher:
+                qmpatcher.model.diffusion_model = oneflow_compile(
+                    qmpatcher.model.diffusion_model
+                )
                 latent_sample = self.generate_latent_sample(qmpatcher, *args, **kwargs)
 
             return (latent_sample,)
