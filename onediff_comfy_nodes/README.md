@@ -24,11 +24,12 @@ Updated on DEC 7, 2023. Device: RTX 3090
   - [ControlNet](#controlnet)
   - [SVD](#svd)
   - [DeepCache](#deepcache)
+- [Contact](#contact)
 
 
 ### Installation Guide
 
-Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
+Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) first, and then:
 
 <details close>
 <summary>Setup Community Edition</summary>
@@ -76,7 +77,7 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI)
       python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121
     ```
 
-2. Get license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html)
+2. Get license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.
 
 3. Set up the key
     ```bash
