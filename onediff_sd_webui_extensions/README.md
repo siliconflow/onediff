@@ -69,6 +69,8 @@ After purchasing OneDiff Enterprise, you can use the quantization feature by sim
 
 ![Model Quantization](images/model_quant.jpg)
 
+Note: The quantified model doesn't currently support LoRA loading, and related features are under emergency development.
+
 ## LoRA
 
 OneDiff supports the complete functionality related to LoRA. You can use OneDiff-based LoRA just like the native LoRA in sd-webui.
