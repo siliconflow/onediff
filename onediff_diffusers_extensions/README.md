@@ -6,6 +6,7 @@ OneDiff diffusers extensions include multiple popular accelerated versions of th
 - [DeepCache Speedup](#deepcache-speedup)
     - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediff-diffusers-extensions)
     - [Stable Diffuison 1.5](#run-stable-diffusion-15-with-onediff-diffusers-extensions)
+- [Contact](#contact)
 
 ## Install and setup
 
@@ -91,3 +92,19 @@ deepcache_output = pipe(
     output_type='pil'
 ).images[0]
 ```
+
+### Quantization
+
+**Note**: Quantization feature is only supported by **OneDiff Enterprise**.
+
+OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
+
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+
+## Contact
+
+For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
+
+For users of OneDiff Enterprise, you can contact contact@siliconflow.com for commercial support.
+
+Feel free to join our [Discord](https://discord.gg/RKJTjZMcPQ) community for discussions and to receive the latest updates.

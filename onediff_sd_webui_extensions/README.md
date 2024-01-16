@@ -1,4 +1,4 @@
-# Stable-Diffusion-WebUI-OneDiff
+# OneDiff Stable-Diffusion-WebUI Extensions
 
 - [Performance of Community Edition](#performance-of-community-edition)
 - [Installation Guide](#installation-guide)
@@ -25,6 +25,8 @@ Note: The performence with LoRA doesn't include the time of LoRA fusing. And the
 
 It is recommended to create a Python virtual environment in advance. For example `conda create -n sd-webui python=3.10`.
 
+Run the commands below to install Sable Diffusion WebUI and OneDiff extensions.
+
 ```bash
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 git clone https://github.com/siliconflow/onediff.git
@@ -50,11 +52,8 @@ Accessing http://server:8080/ from a web browser.
 
 ## Extensions Usage
 
-Type prompt in the text box, such as `a black dog`. Click the `Generate` button in the upper right corner to generate the image. As you can see in the image below:
-
-![raw_webui](images/raw_webui.jpg)
-
-To enable OneDiff extension acceleration, select `onediff_diffusion_model` in Script and click the `Generate` button.
+To activate OneDiff extension acceleration, follow these steps: 
+Select `onediff_diffusion_model` from the Script menu, enter a prompt in the text box (e.g., "a black dog"), and then click the "Generate" button.
 
 ![onediff_script](images/onediff_script.jpg)
 
