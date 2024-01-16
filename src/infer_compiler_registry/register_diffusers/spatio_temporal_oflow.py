@@ -147,16 +147,12 @@ class TemporalDecoder(nn.Module):
         batch_size = batch_frames // num_frames
         # sample = sample[None, :].reshape(batch_size, num_frames, channels, height, width).permute(0, 2, 1, 3, 4)
         # Dynamic shape for VAE divide chunks
-        sample = (
-            sample[None, :]
-            .reshape(batch_size, -1, channels, height, width)
-            .permute(0, 2, 1, 3, 4)
-        )
+        sample = sample.unflatten(0, shape=(batch_size, -1)).permute(0, 2, 1, 3, 4)
         sample = self.time_conv_out(sample)
 
         # sample = sample.permute(0, 2, 1, 3, 4).reshape(batch_frames, channels, height, width)
         # Dynamic shape for VAE divide chunks
-        sample = sample.permute(0, 2, 1, 3, 4).reshape(-1, channels, height, width)
+        sample = sample.permute(0, 2, 1, 3, 4).flatten(0, 1)
 
         return sample
 
@@ -233,19 +229,16 @@ class SpatioTemporalResBlock(nn.Module):
         # )
         #
         # Dynamic shape for VAE divide chunks
-        hidden_states_mix = (
-            hidden_states[None, :]
-            .reshape(batch_size, -1, channels, height, width)
-            .permute(0, 2, 1, 3, 4)
+        hidden_states_mix = hidden_states.unflatten(0, shape=(batch_size, -1)).permute(
+            0, 2, 1, 3, 4
         )
-        hidden_states = (
-            hidden_states[None, :]
-            .reshape(batch_size, -1, channels, height, width)
-            .permute(0, 2, 1, 3, 4)
+        hidden_states = hidden_states.unflatten(0, shape=(batch_size, -1)).permute(
+            0, 2, 1, 3, 4
         )
 
         if temb is not None:
-            temb = temb.reshape(batch_size, num_frames, -1)
+            # temb = temb.reshape(batch_size, num_frames, -1)
+            temb = temb.unflatten(0, shape=(batch_size, -1))
 
         hidden_states = self.temporal_res_block(hidden_states, temb)
         hidden_states = self.time_mixer(
@@ -256,7 +249,5 @@ class SpatioTemporalResBlock(nn.Module):
 
         # hidden_states = hidden_states.permute(0, 2, 1, 3, 4).reshape(batch_frames, channels, height, width)
         # Dynamic shape for VAE divide chunks
-        hidden_states = hidden_states.permute(0, 2, 1, 3, 4).reshape(
-            -1, channels, height, width
-        )
+        hidden_states = hidden_states.permute(0, 2, 1, 3, 4).flatten(0, 1)
         return hidden_states
