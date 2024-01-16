@@ -14,8 +14,6 @@ from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
 )
-from onediff import __version__ as onediff_version
-from oneflow import __version__ as oneflow_version
 
 """oneflow_compiled UNetModel"""
 compiled_unet = None
@@ -26,11 +24,7 @@ def generate_graph_path(ckpt_name: str, model_name: str) -> str:
     base_output_dir = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
     save_ckpt_graphs_path = os.path.join(base_output_dir, "graphs", ckpt_name)
     os.makedirs(save_ckpt_graphs_path, exist_ok=True)
-
-    file_name = f"{model_name}_graph_{onediff_version}_oneflow_{oneflow_version}"
-
-    graph_file_path = os.path.join(save_ckpt_graphs_path, file_name)
-
+    graph_file_path = os.path.join(save_ckpt_graphs_path, f"{model_name}.graph")
     return graph_file_path
 
 
@@ -41,11 +35,7 @@ def is_compiled(ckpt_name):
 
 
 def compile_unet(
-    unet_model,
-    quantization=False,
-    *,
-    use_graph=True,
-    options={},
+    unet_model, quantization=False, *, use_graph=True, options={},
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
@@ -131,19 +121,8 @@ class Script(scripts.Script):
         )
 
         if not is_compiled(ckpt_name):
-            graph_file = generate_graph_path(
-                ckpt_name, original_diffusion_model.__class__.__name__
-            )
-            graph_file_device = shared.device
-            compile_options = {
-                "graph_file_device": graph_file_device,
-                "graph_file": graph_file,
-            }
-
             compiled_unet = compile_unet(
-                original_diffusion_model,
-                quantization=quantization,
-                options=compile_options,
+                original_diffusion_model, quantization=quantization,
             )
             compiled_ckpt_name = ckpt_name
 
