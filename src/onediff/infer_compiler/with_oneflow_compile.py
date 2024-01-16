@@ -270,6 +270,9 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module, size, all_dynamic
         )
+        # Enabel debug mode
+        if transform_mgr.debug_mode:
+            self._deployable_module_dpl_graph.debug(0)
         if "debug" in self._deployable_module_options:
             self._deployable_module_dpl_graph.debug(
                 self._deployable_module_options["debug"]
