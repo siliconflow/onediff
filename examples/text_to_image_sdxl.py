@@ -26,7 +26,6 @@ parser.add_argument("--height", type=int, default=1024)
 parser.add_argument("--width", type=int, default=1024)
 parser.add_argument("--n_steps", type=int, default=30)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
-parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
     "--compile_unet",
@@ -39,9 +38,9 @@ parser.add_argument(
     default=True,
 )
 parser.add_argument(
-    "--use_multiple_resolutions",
+    "--run_multiple_resolutions",
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=False,
+    default=True,
 )
 args = parser.parse_args()
 
@@ -69,25 +68,20 @@ if args.compile_vae:
     print("Compiling vae with oneflow.")
     base.vae = oneflow_compile(base.vae)
 
-# Define multiple resolutions for warmup
-resolutions = (
-    [(512, 512), (256, 256), ]
-    if args.use_multiple_resolutions
-    else [(args.height, args.width)]
-)
-
-# Warmup with chosen resolutions
-for resolution in resolutions:
-    for i in range(args.warmup):
-        image = base(
-            prompt=args.prompt,
-            height=resolution[0],
-            width=resolution[1],
-            num_inference_steps=args.n_steps,
-            output_type=OUTPUT_TYPE,
-        ).images
+# Warmup with run
+# Will do compilatioin in the first run
+print("Warmup with running graphs...")
+torch.manual_seed(args.seed)
+image = base(
+    prompt=args.prompt,
+    height=args.height,
+    width=args.width,
+    num_inference_steps=args.n_steps,
+    output_type=OUTPUT_TYPE,
+).images
 
 # Normal SDXL run
+print("Normal SDXL run...")
 torch.manual_seed(args.seed)
 image = base(
     prompt=args.prompt,
@@ -97,3 +91,30 @@ image = base(
     output_type=OUTPUT_TYPE,
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
+
+# Define multiple resolutions for warmup
+print("Warmup run with multiple resolutions...")
+if args.run_multiple_resolutions:
+    sizes = [896, 768]
+    for h in sizes:
+        for w in sizes:
+            image = base(
+                prompt=args.prompt,
+                height=h,
+                width=w,
+                num_inference_steps=args.n_steps,
+                output_type=OUTPUT_TYPE,
+            ).images
+
+print("Test run with multiple resolutions...")
+if args.run_multiple_resolutions:
+    sizes = [896, 768]
+    for h in sizes:
+        for w in sizes:
+            image = base(
+                prompt=args.prompt,
+                height=h,
+                width=w,
+                num_inference_steps=args.n_steps,
+                output_type=OUTPUT_TYPE,
+            ).images

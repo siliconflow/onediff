@@ -223,6 +223,9 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module, size, all_dynamic
         )
+        # Enabel debug mode
+        if transform_mgr.debug_mode:
+            self._deployable_module_dpl_graph.debug(0)
         if "debug" in self._deployable_module_options:
             self._deployable_module_dpl_graph.debug(
                 self._deployable_module_options["debug"]
@@ -303,10 +306,7 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
-        self.get_graph().warmup_with_load(file_path, device, run_warmup)
-
-    def warmup_with_load(self, file_path, device=None, run_warmup=True):
-        self.get_graph().warmup_with_load(file_path, device, run_warmup)
+        self.get_graph().load_graph(file_path, device, run_warmup)
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
@@ -315,11 +315,7 @@ class DeployableModule(torch.nn.Module):
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
     def __init__(self, model):
-        super().__init__(enable_get_runtime_state_dict=True)
-        self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
+        # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
         os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
         os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
         os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
@@ -344,11 +340,16 @@ class OneflowGraph(flow.nn.Graph):
         # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")
         # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
 
+        super().__init__(enable_get_runtime_state_dict=True)
+        self.model = model
+        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.config.allow_fuse_add_to_output(True)
+
     def build(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def warmup_with_load(self, file_path, device=None, run_warmup=True):
+    def load_graph(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
