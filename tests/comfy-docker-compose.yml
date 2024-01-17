@@ -23,6 +23,7 @@ services:
     security_opt:
       - seccomp=unconfined
     environment:
+      ONEFLOW_RUN_GRAPH_BY_VM: "0"
       HF_HUB_OFFLINE: "1"
       CI: "1"
       SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
