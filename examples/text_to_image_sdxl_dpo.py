@@ -14,7 +14,7 @@ pipe.to("cuda")
 
 from onediff.infer_compiler import oneflow_compile
 
-pipe.unet = oneflow_compile(pipe.unet)
+pipe.unet = oneflow_compile(pipe.unet, options={"all_dynamic": True})
 pipe.vae.encoder = oneflow_compile(pipe.vae.encoder)
 pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
 
