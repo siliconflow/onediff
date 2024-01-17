@@ -90,7 +90,7 @@ jobs:
         if: github.repository == 'siliconflow/onediff'
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.oss_dst }} .
-          unzip -f onediff-src.zip
+          unzip -o onediff-src.zip
       - name: Checkout
         if: github.repository != 'siliconflow/onediff'
         uses: actions/checkout@v4
