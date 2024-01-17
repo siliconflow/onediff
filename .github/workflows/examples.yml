@@ -42,7 +42,7 @@ jobs:
         with:
           path: onediff
       - name: Checkout ComfyUI
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
@@ -115,7 +115,7 @@ jobs:
         uses: actions/checkout@v4
       - name: Checkout ComfyUI
         if: matrix.test-suite == 'comfy' && github.repository != 'siliconflow/onediff'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
