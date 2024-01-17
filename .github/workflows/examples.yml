@@ -32,13 +32,14 @@ jobs:
     steps:
       - name: Setup ossutil
         run: |
-          if [ ! -f "$HOME/ossutil64" ]; then
-            curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
-          fi
-          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+          curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o ossutil64
+          ./ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          path: onediff
       - name: Pack src
+        working-directory: onediff
         run: |
           git reset --hard
           git clean -f
@@ -47,7 +48,7 @@ jobs:
         id: upload_to_oss
         run: |
           OSS_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
-          $HOME/ossutil64 cp --disable-ignore-error --update onediff-src.zip ${OSS_DST}
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${OSS_DST}
           echo "oss_dst=${OSS_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
