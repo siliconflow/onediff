@@ -1,1 +1,1 @@
-from .lora import load_lora_weights
+from .lora import load_and_fuse_lora
