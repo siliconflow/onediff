@@ -25,9 +25,38 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  upload_src:
+    runs-on: [ubuntu-latest]
+    outputs:
+      oss_dst: ${{ steps.upload_to_oss.outputs.oss_dst }}
+    steps:
+      - name: Setup ossutil
+        run: |
+          if [ -z "$OSS_ACCESS_KEY_ID" ]
+          then
+            exit 0
+          fi
+          if [ ! -f "$HOME/ossutil64" ]; then
+            curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
+          fi
+          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Pack src
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --prefix onediff/ --format zip HEAD > onediff-src.zip
+      - name: Upload src
+        id: upload_to_oss
+        run: |
+          OSS_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
+          $HOME/ossutil64 cp --disable-ignore-error --update onediff-src.zip ${OSS_DST}
+          echo "oss_dst=${OSS_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
+    needs: [upload_src]
     strategy:
       fail-fast: false
       max-parallel: 5
