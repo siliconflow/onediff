@@ -29,7 +29,8 @@ jobs:
     if: github.repository == 'siliconflow/onediff'
     runs-on: [ubuntu-latest]
     outputs:
-      oss_dst: ${{ steps.upload_to_oss.outputs.oss_dst }}
+      onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
+      comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
     steps:
       - name: Setup ossutil
         run: |
@@ -51,13 +52,21 @@ jobs:
           git reset --hard
           git clean -f
           git archive --format zip HEAD > onediff-src.zip
+      - name: Pack comfy
+        working-directory: ${{ env.COMFYUI_SRC_DIR }}
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --prefix ${{ env.COMFYUI_SRC_DIR }}/ --format zip HEAD > comfyui-src.zip
       - name: Upload src
         id: upload_to_oss
         run: |
           OSS_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
+          COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfy-src.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${OSS_DST}
-          echo "oss_dst=${OSS_DST}" >> $GITHUB_OUTPUT
-          echo "oss_dst=${OSS_DST}" >> $GITHUB_OUTPUT
+          ./ossutil64 cp --disable-ignore-error --update ${{ env.COMFYUI_SRC_DIR }}/comfy-src.zip ${COMFY_DST}
+          echo "onediff_src_url=${OSS_DST}" >> $GITHUB_OUTPUT
+          echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
@@ -94,8 +103,13 @@ jobs:
       - name: Checkout vis OSS
         if: github.repository == 'siliconflow/onediff'
         run: |
-          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.oss_dst }} .
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.onediff_src_url }} .
           unzip -o onediff-src.zip
+      - name: Checkout Comfy vis OSS
+        if: matrix.test-suite == 'comfy' && github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.comfy_src_url }} .
+          unzip -o comfy-src.zip
       - name: Checkout
         if: github.repository != 'siliconflow/onediff'
         uses: actions/checkout@v4
