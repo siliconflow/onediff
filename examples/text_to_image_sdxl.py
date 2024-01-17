@@ -35,7 +35,7 @@ parser.add_argument(
 parser.add_argument(
     "--compile_vae",
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=False,
+    default=True,
 )
 parser.add_argument(
     "--run_multiple_resolutions",
