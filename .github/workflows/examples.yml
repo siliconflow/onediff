@@ -45,7 +45,7 @@ jobs:
         uses: actions/checkout@v2
         with:
           repository: comfyanonymous/ComfyUI
-          path: ${{ env.COMFYUI_SRC_DIR }}
+          path: ComfyUI
       - name: Pack src
         working-directory: onediff
         run: |
@@ -53,7 +53,7 @@ jobs:
           git clean -f
           git archive --format zip HEAD > onediff-src.zip
       - name: Pack comfy
-        working-directory: ${{ env.COMFYUI_SRC_DIR }}
+        working-directory: ComfyUI
         run: |
           git reset --hard
           git clean -f
@@ -64,7 +64,7 @@ jobs:
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfy-src.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
-          ./ossutil64 cp --disable-ignore-error --update ${{ env.COMFYUI_SRC_DIR }}/comfy-src.zip ${COMFY_DST}
+          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfy-src.zip ${COMFY_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
   run-examples:
