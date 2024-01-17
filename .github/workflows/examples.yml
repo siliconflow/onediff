@@ -61,11 +61,11 @@ jobs:
       - name: Upload src
         id: upload_to_oss
         run: |
-          OSS_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
+          ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfy-src.zip"
-          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${OSS_DST}
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
           ./ossutil64 cp --disable-ignore-error --update ${{ env.COMFYUI_SRC_DIR }}/comfy-src.zip ${COMFY_DST}
-          echo "onediff_src_url=${OSS_DST}" >> $GITHUB_OUTPUT
+          echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
