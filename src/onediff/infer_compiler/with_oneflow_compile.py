@@ -316,8 +316,7 @@ class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
     def __init__(self, model):
         # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
-        if "CI" not in os.environ:
-            os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
+        os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
         os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
         os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
         os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
