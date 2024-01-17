@@ -53,7 +53,7 @@ if args.compile:
     print("unet is compiled to oneflow.")
     base.unet = oneflow_compile(base.unet)
     print("vae is compiled to oneflow.")
-    base.vae = oneflow_compile(base.vae)
+    base.vae.decoder = oneflow_compile(base.vae.decoder)
 
 # Warmup
 for i in range(args.warmup):
