@@ -26,6 +26,7 @@ concurrency:
 
 jobs:
   upload_src:
+    if: github.repository == 'siliconflow/onediff'
     runs-on: [ubuntu-latest]
     outputs:
       oss_dst: ${{ steps.upload_to_oss.outputs.oss_dst }}
@@ -44,12 +45,13 @@ jobs:
         run: |
           git reset --hard
           git clean -f
-          git archive --prefix onediff/ --format zip HEAD > onediff-src.zip
+          git archive --format zip HEAD > onediff-src.zip
       - name: Upload src
         id: upload_to_oss
         run: |
           OSS_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${OSS_DST}
+          echo "oss_dst=${OSS_DST}" >> $GITHUB_OUTPUT
           echo "oss_dst=${OSS_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
@@ -76,8 +78,20 @@ jobs:
         run: |
           set -x
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
-
+      - name: Setup ossutil
+        run: |
+          if [ ! -f "$HOME/ossutil64" ]; then
+            curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
+            chmod +x $HOME/ossutil64
+          fi
+          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+      - name: Checkout vis OSS
+        if: github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.oss_dst }} .
+          unzip onediff-src.zip
       - name: Checkout
+        if: github.repository != 'siliconflow/onediff'
         uses: actions/checkout@v4
       - name: Checkout ComfyUI
         if: matrix.test-suite == 'comfy'
