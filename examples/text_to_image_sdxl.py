@@ -66,7 +66,7 @@ if args.compile_unet:
 # Compile vae with oneflow
 if args.compile_vae:
     print("Compiling vae with oneflow.")
-    base.vae = oneflow_compile(base.vae)
+    base.vae.decoder = oneflow_compile(base.vae.decoder)
 
 # Warmup with run
 # Will do compilatioin in the first run

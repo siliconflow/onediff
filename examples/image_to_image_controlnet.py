@@ -73,7 +73,6 @@ if args.compile_unet:
 
 if args.compile_vae:
     from onediff.infer_compiler import oneflow_compile
-    #pipe.vae = oneflow_compile(pipe.vae)
     # ImageToImage has an encoder and decoder, so we need to compile them separately.
     pipe.vae.encoder = oneflow_compile(pipe.vae.encoder)
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
