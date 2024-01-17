@@ -33,6 +33,7 @@ jobs:
       - name: Setup ossutil
         run: |
           curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o ossutil64
+          sudo chmod +x ossutil64
           ./ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
       - name: Checkout
         uses: actions/checkout@v4
