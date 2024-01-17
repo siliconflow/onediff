@@ -71,6 +71,7 @@ jobs:
       - name: Setup docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
+          docker compose -f tests/diffusers-docker-compose.yml down --remove-orphans
           docker compose -f tests/comfy-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
@@ -86,6 +87,7 @@ jobs:
       - name: Setup docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'
         run: |
+          docker compose -f tests/diffusers-docker-compose.yml down --remove-orphans
           docker compose -f tests/diffusers-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}

@@ -14,6 +14,7 @@ export CONTAINER_NAME=onediff-test
 export SDXL_BASE=/share_nfs/hf_models/sd_xl_base_1.0.safetensors
 export UNET_INT8=/share_nfs/hf_models/unet_int8
 export CONTROL_LORA_OPENPOSEXL2_RANK256=/share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
+export SILICON_ONEDIFF_LICENSE_KEY=your_license_key
 
 And then:
 
@@ -36,7 +37,7 @@ python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/wo
 
 If you need to shutdown the test containers, run:
 
-docker compose -f tests/comfy-docker-compose.yml down
+docker compose -f tests/comfy-docker-compose.yml down --remove-orphans
 """
 import argparse
 import os
