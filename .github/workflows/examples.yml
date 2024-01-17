@@ -103,7 +103,9 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
-
+      - name: Print pip package versions
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip list
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
