@@ -79,6 +79,7 @@ jobs:
           set -x
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
       - name: Setup ossutil
+        if: github.repository == 'siliconflow/onediff'
         run: |
           if [ ! -f "$HOME/ossutil64" ]; then
             curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
