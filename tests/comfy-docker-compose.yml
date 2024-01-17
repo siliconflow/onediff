@@ -24,6 +24,7 @@ services:
       - seccomp=unconfined
     environment:
       HF_HUB_OFFLINE: "1"
+      CI: "1"
       SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
     volumes:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
