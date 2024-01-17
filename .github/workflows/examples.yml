@@ -143,7 +143,7 @@ jobs:
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - name: Setup docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'
@@ -155,7 +155,7 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - run: nvidia-smi
       - run: nvidia-smi -L
@@ -207,7 +207,7 @@ jobs:
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - name: Shutdown docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'
@@ -219,4 +219,4 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
