@@ -317,12 +317,6 @@ class OneflowGraph(flow.nn.Graph):
     def __init__(self, model):
         # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
         os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
-        super().__init__(enable_get_runtime_state_dict=True)
-
-        self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
-        self.config.allow_fuse_add_to_output(True)
-
         os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
         os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
         os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
@@ -345,6 +339,11 @@ class OneflowGraph(flow.nn.Graph):
         # TODO: enable this will cause the failure of multi resolution warmup
         # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")
         # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
+
+        super().__init__(enable_get_runtime_state_dict=True)
+        self.model = model
+        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        self.config.allow_fuse_add_to_output(True)
 
     def build(self, *args, **kwargs):
         return self.model(*args, **kwargs)
