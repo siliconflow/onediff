@@ -25,9 +25,52 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  upload_src:
+    if: github.repository == 'siliconflow/onediff'
+    runs-on: [ubuntu-latest]
+    outputs:
+      onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
+      comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
+    steps:
+      - name: Setup ossutil
+        run: |
+          curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o ossutil64
+          sudo chmod +x ossutil64
+          ./ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: onediff
+      - name: Checkout ComfyUI
+        uses: actions/checkout@v4
+        with:
+          repository: comfyanonymous/ComfyUI
+          path: ComfyUI
+      - name: Pack src
+        working-directory: onediff
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --format zip HEAD > onediff-src.zip
+      - name: Pack comfy
+        working-directory: ComfyUI
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --prefix ${{ env.COMFYUI_SRC_DIR }}/ --format zip HEAD > comfyui-src.zip
+      - name: Upload src
+        id: upload_to_oss
+        run: |
+          ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
+          COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
+          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
+          echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
+          echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
+    needs: [upload_src]
     strategy:
       fail-fast: false
       max-parallel: 5
@@ -49,23 +92,42 @@ jobs:
         run: |
           set -x
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
-
+      - name: Setup ossutil
+        if: github.repository == 'siliconflow/onediff'
+        run: |
+          if [ ! -f "$HOME/ossutil64" ]; then
+            curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
+            chmod +x $HOME/ossutil64
+          fi
+          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+      - name: Checkout vis OSS
+        if: github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.onediff_src_url }} .
+          unzip -o $(basename ${{ needs.upload_src.outputs.onediff_src_url }})
+      - name: Checkout Comfy vis OSS
+        if: matrix.test-suite == 'comfy' && github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.comfy_src_url }} .
+          unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
       - name: Checkout
+        if: github.repository != 'siliconflow/onediff'
         uses: actions/checkout@v4
       - name: Checkout ComfyUI
-        if: matrix.test-suite == 'comfy'
-        uses: actions/checkout@v2
+        if: matrix.test-suite == 'comfy' && github.repository != 'siliconflow/onediff'
+        uses: actions/checkout@v4
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
-
+      - name: Clean docker containers
+        run: |
+          docker rm -f ${{ env.CONTAINER_NAME }} || true
+          docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
       - run: docker image prune -f
       - run: |
-          docker rm -f ${{ env.CONTAINER_NAME }} || true
           docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
       - if: matrix.test-suite == 'comfy'
         run: |
-          docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
           docker pull ${{ env.ACR_ORG }}/${{ env.SELENIUM_IMAGE }}
       - run: docker image prune -f
       - name: Setup docker for ComfyUI Test
@@ -103,13 +165,16 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
-
+      - name: Print pip package versions
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip list
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
           sleep 30
-
+      # print to check if comfy is launched successfully
+      - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
         run: |
