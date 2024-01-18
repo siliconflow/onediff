@@ -18,6 +18,7 @@ INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/
 EXTRA_CALL_KWARGS = None
 ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 
+import os
 import importlib
 import inspect
 import argparse
@@ -90,6 +91,11 @@ def load_pipe(
         controlnet = ControlNetModel.from_pretrained(controlnet,
                                                      torch_dtype=torch.float16)
         extra_kwargs["controlnet"] = controlnet
+    is_quantized_model = False
+    if os.path.exists(os.path.join(model_name, 'calibrate_info.txt')):
+        is_quantized_model = True
+        from onediff.quantization import setup_onediff_quant
+        setup_onediff_quant()
     pipe = pipeline_cls.from_pretrained(model_name,
                                         torch_dtype=torch.float16,
                                         **extra_kwargs)
@@ -102,6 +108,11 @@ def load_pipe(
         pipe.fuse_lora()
     pipe.safety_checker = None
     pipe.to(torch.device("cuda"))
+
+    # Replace quantizable modules by QuantModule.
+    if is_quantized_model:
+        from onediff.quantization import load_calibration_and_quantize_pipeline
+        load_calibration_and_quantize_pipeline(os.path.join(model_name, 'calibrate_info.txt'), pipe)
     return pipe
 
 
@@ -114,14 +125,6 @@ def compile_pipe(pipe, attention_fp16_score_accum_max_m=-1):
     # especially for 40xx series cards.
     # So here by partially disabling the half accumulation in MHA partially,
     # we can get a good balance.
-    #
-    # On RTX 4090:
-    # | ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION | MAX_M | Output | Duration |
-    # | --------------------------------------------------- | ------| ------ | -------- |
-    # | False                                               | -1    | OK     | 32.251s  |
-    # | True                                                | -1    | NaN    | 29.089s  |
-    # | True                                                | 0     | OK     | 30.947s  |
-    # | True                                                | 2304  | OK     | 30.820s  |
     set_boolean_env_var(
         "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M",
         attention_fp16_score_accum_max_m,

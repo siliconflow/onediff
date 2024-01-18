@@ -68,7 +68,7 @@ benchmark_sd_model_with_one_resolution() {
   height=$5
   width=$6
   echo "Run ${model_path} ${height}x${width}..."
-  script_output=$(python3 ${SCRIPT_DIR}/unified_text_to_image.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} | tee /dev/tty)
+  script_output=$(python3 ${SCRIPT_DIR}/text_to_image.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} | tee /dev/tty)
 
   # Pattern to match:
   # Inference time: 0.560s
@@ -100,7 +100,10 @@ benchmark_sd_model sd21 ${SD21_MODEL_PATH}
 benchmark_sd_model sdxl ${SDXL_MODEL_PATH}
 
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
-  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH}
+  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 1024 1024
+  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 720 1280
+  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 768 768
+  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 512 512
 fi
 
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}
