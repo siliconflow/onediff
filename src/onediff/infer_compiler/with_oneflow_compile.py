@@ -424,7 +424,21 @@ def get_mixed_deployable_module(module_cls):
 
 def oneflow_compile(
     torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, options={},
-):
+) -> DeployableModule:
+    """
+    Transform a torch nn.Module to oneflow.nn.Module, then optimize it with oneflow.nn.Graph.
+    Args:
+       model (torch.nn.Module): Module to optimize
+       use_graph (bool): Whether to optimize with oneflow.nn.Graph
+       dynamic (bool): When this is True, we will generate one graph and reuse it to avoid recompilations when
+        input shape change.  This may not always work as some operations/optimizations break the contition of
+        reusing.  When this is False, we will generate a graph for each new input shape, and will always specialize.
+        By default (True).
+       options (dict): A dictionary of options to pass to the compiler:
+        - 'debug' which config the nn.Graph debug level, default -1(no debug info), max 3(max debug info);
+        - 'size' which config the cache size when cache is enabled. Note that after onediff v0.12, cache is default disabled.
+    """
+
     set_default_registry()
 
     def wrap_module(module):
