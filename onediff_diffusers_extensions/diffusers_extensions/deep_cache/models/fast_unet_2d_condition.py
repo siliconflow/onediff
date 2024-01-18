@@ -61,7 +61,7 @@ class FastUNet2DConditionModel(nn.Module):
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        default_overall_up_factor = 2 ** self.unet_module.num_upsamplers
+        default_overall_up_factor = 2**self.unet_module.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         forward_upsample_size = False

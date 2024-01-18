@@ -34,7 +34,8 @@ def _use_graph():
     os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
     # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
     # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
-    
+
+
 class QuantDiffusionPipeline:
     def __init__(
         self,
@@ -60,7 +61,7 @@ class QuantDiffusionPipeline:
         static=False,
         bits=8,
         graph=True,
-        **kwargs
+        **kwargs,
     ):
         onediff_quant.enable_load_quantized_model()
 
@@ -68,7 +69,7 @@ class QuantDiffusionPipeline:
             pretrained_model_name_or_path,
             torch_dtype=torch.float16,
             use_safetensors=True,
-            **kwargs
+            **kwargs,
         )
         if graph:
             _use_graph()
@@ -132,7 +133,7 @@ class QuantDiffusionPipeline:
         height: Optional[int] = None,
         width: Optional[int] = None,
         num_inference_steps: int = 50,
-        **kwargs
+        **kwargs,
     ):
         return self._pipe(
             prompt, prompt_2, height, width, num_inference_steps, **kwargs

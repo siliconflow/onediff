@@ -14,12 +14,15 @@ from .with_fx_graph import fx_node_tranform
 def oneflow_backend(gm, example_inputs, *args, **kwargs):
     with_interp = os.getenv(
         "ONEDIFF_INFER_COMPILER_USE_INTERPRETER", "False"
-    ).lower() in ("true", "1", "t",)
+    ).lower() in (
+        "true",
+        "1",
+        "t",
+    )
     if not with_interp:
         transformed_fn = fx_node_tranform(gm)
 
     def wrapped_forward(*args, **kwargs):
-        
         def input_fn(value):
             if isinstance(value, torch.Tensor):
                 return flow.utils.tensor.from_torch(value.contiguous())

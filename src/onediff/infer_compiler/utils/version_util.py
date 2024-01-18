@@ -1,6 +1,7 @@
 from importlib_metadata import version
 from .log_utils import logger
 
+
 def get_support_message():
     recipient_email = "caishenghang@oneflow.org"
 

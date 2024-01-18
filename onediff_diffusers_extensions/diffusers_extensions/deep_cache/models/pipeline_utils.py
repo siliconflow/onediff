@@ -4,7 +4,13 @@ import os
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
-from huggingface_hub import ModelCard, create_repo, hf_hub_download, model_info, snapshot_download
+from huggingface_hub import (
+    ModelCard,
+    create_repo,
+    hf_hub_download,
+    model_info,
+    snapshot_download,
+)
 from packaging import version
 from tqdm.auto import tqdm
 
@@ -33,6 +39,7 @@ from diffusers.utils import (
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 if diffusers_version < version.parse("0.25.0"):
     from diffusers.utils import DIFFUSERS_CACHE, HF_HUB_OFFLINE
+
     token_arg_name = "use_auth_token"
 else:
     DIFFUSERS_CACHE = None
@@ -51,7 +58,12 @@ if is_transformers_available():
     from transformers.utils import SAFE_WEIGHTS_NAME as TRANSFORMERS_SAFE_WEIGHTS_NAME
     from transformers.utils import WEIGHTS_NAME as TRANSFORMERS_WEIGHTS_NAME
 
-from diffusers.utils import FLAX_WEIGHTS_NAME, ONNX_EXTERNAL_WEIGHTS_NAME, ONNX_WEIGHTS_NAME, PushToHubMixin
+from diffusers.utils import (
+    FLAX_WEIGHTS_NAME,
+    ONNX_EXTERNAL_WEIGHTS_NAME,
+    ONNX_WEIGHTS_NAME,
+    PushToHubMixin,
+)
 
 
 if is_accelerate_available():
@@ -92,7 +104,10 @@ ALL_IMPORTABLE_CLASSES = {}
 for library in LOADABLE_CLASSES:
     ALL_IMPORTABLE_CLASSES.update(LOADABLE_CLASSES[library])
 
-def get_class_obj_and_candidates(library_name, class_name, importable_classes, pipelines, is_pipeline_module):
+
+def get_class_obj_and_candidates(
+    library_name, class_name, importable_classes, pipelines, is_pipeline_module
+):
     """Simple helper method to retrieve class object of module as well as potential parent class objects"""
     if is_pipeline_module:
         pipeline_module = getattr(pipelines, library_name)
@@ -100,19 +115,26 @@ def get_class_obj_and_candidates(library_name, class_name, importable_classes, p
         class_obj = getattr(pipeline_module, class_name)
         class_candidates = {c: class_obj for c in importable_classes.keys()}
     else:
-        # else we just import it from the library. 
-        if class_name == 'UNet2DConditionModel':
+        # else we just import it from the library.
+        if class_name == "UNet2DConditionModel":
             library_name = "diffusers_extensions.deep_cache.models.unet_2d_condition"
-        
+
         library = importlib.import_module(library_name)
         class_obj = getattr(library, class_name)
-        class_candidates = {c: getattr(library, c, None) for c in importable_classes.keys()}
+        class_candidates = {
+            c: getattr(library, c, None) for c in importable_classes.keys()
+        }
 
     return class_obj, class_candidates
 
 
 def _get_pipeline_class(
-    class_obj, config, load_connected_pipeline=False, custom_pipeline=None, cache_dir=None, revision=None
+    class_obj,
+    config,
+    load_connected_pipeline=False,
+    custom_pipeline=None,
+    cache_dir=None,
+    revision=None,
 ):
     if custom_pipeline is not None:
         if custom_pipeline.endswith(".py"):
@@ -124,7 +146,10 @@ def _get_pipeline_class(
             file_name = CUSTOM_PIPELINE_FILE_NAME
 
         return get_class_from_dynamic_module(
-            custom_pipeline, module_file=file_name, cache_dir=cache_dir, revision=revision
+            custom_pipeline,
+            module_file=file_name,
+            cache_dir=cache_dir,
+            revision=revision,
         )
 
     if class_obj != DiffusionPipeline:
@@ -147,7 +172,9 @@ def _get_pipeline_class(
                 f"Loading connected pipeline {connected_pipeline_cls.__name__} instead of {pipeline_cls.__name__} as specified via `load_connected_pipeline=True`"
             )
         else:
-            logger.info(f"{pipeline_cls.__name__} has no connected pipeline class. Loading {pipeline_cls.__name__}.")
+            logger.info(
+                f"{pipeline_cls.__name__} has no connected pipeline class. Loading {pipeline_cls.__name__}."
+            )
 
         pipeline_cls = connected_pipeline_cls or pipeline_cls
 
@@ -190,9 +217,9 @@ def load_sub_model(
     # if load method name is None, then we have a dummy module -> raise Error
     if load_method_name is None:
         none_module = class_obj.__module__
-        is_dummy_path = none_module.startswith(DUMMY_MODULES_FOLDER) or none_module.startswith(
-            TRANSFORMERS_DUMMY_MODULES_FOLDER
-        )
+        is_dummy_path = none_module.startswith(
+            DUMMY_MODULES_FOLDER
+        ) or none_module.startswith(TRANSFORMERS_DUMMY_MODULES_FOLDER)
         if is_dummy_path and "dummy" in none_module:
             # call class_obj for nice error message of missing requirements
             class_obj()
@@ -215,7 +242,9 @@ def load_sub_model(
     is_diffusers_model = issubclass(class_obj, diffusers.ModelMixin)
 
     if is_transformers_available():
-        transformers_version = version.parse(version.parse(transformers.__version__).base_version)
+        transformers_version = version.parse(
+            version.parse(transformers.__version__).base_version
+        )
     else:
         transformers_version = "N/A"
 
@@ -258,7 +287,9 @@ def load_sub_model(
 
     # check if the module is in a subdirectory
     if os.path.isdir(os.path.join(cached_folder, name)):
-        loaded_sub_model = load_method(os.path.join(cached_folder, name), **loading_kwargs)
+        loaded_sub_model = load_method(
+            os.path.join(cached_folder, name), **loading_kwargs
+        )
     else:
         # else load from the root directory
         loaded_sub_model = load_method(cached_folder, **loading_kwargs)
@@ -266,7 +297,9 @@ def load_sub_model(
     return loaded_sub_model
 
 
-def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **kwargs):
+def from_pretrained(
+    cls, pretrained_model_name_or_path: Optional[Union[str, os.PathLike]], **kwargs
+):
     r"""
     Instantiate a PyTorch diffusion pipeline from pretrained pipeline weights.
 
@@ -495,7 +528,10 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
     if pipeline_class.__name__ == "StableDiffusionInpaintPipeline" and version.parse(
         version.parse(config_dict["_diffusers_version"]).base_version
     ) <= version.parse("0.5.1"):
-        from diffusers import StableDiffusionInpaintPipeline, StableDiffusionInpaintPipelineLegacy
+        from diffusers import (
+            StableDiffusionInpaintPipeline,
+            StableDiffusionInpaintPipelineLegacy,
+        )
 
         pipeline_class = StableDiffusionInpaintPipelineLegacy
 
@@ -508,7 +544,12 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
             " https://huggingface.co/runwayml/stable-diffusion-inpainting. Note that we do not actively maintain"
             " the {StableDiffusionInpaintPipelineLegacy} class and will likely remove it in version 1.0.0."
         )
-        deprecate("StableDiffusionInpaintPipelineLegacy", "1.0.0", deprecation_message, standard_warn=False)
+        deprecate(
+            "StableDiffusionInpaintPipelineLegacy",
+            "1.0.0",
+            deprecation_message,
+            standard_warn=False,
+        )
 
     # 4. Define expected modules given pipeline signature
     # and define non-None initialized modules (=`init_kwargs`)
@@ -520,7 +561,9 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
     passed_class_obj = {k: kwargs.pop(k) for k in expected_modules if k in kwargs}
     passed_pipe_kwargs = {k: kwargs.pop(k) for k in optional_kwargs if k in kwargs}
 
-    init_dict, unused_kwargs, _ = pipeline_class.extract_init_dict(config_dict, **kwargs)
+    init_dict, unused_kwargs, _ = pipeline_class.extract_init_dict(
+        config_dict, **kwargs
+    )
 
     # define init kwargs and make sure that optional component modules are filtered out
     init_kwargs = {
@@ -541,7 +584,11 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
     init_dict = {k: v for k, v in init_dict.items() if load_module(k, v)}
 
     # Special case: safety_checker must be loaded separately when using `from_flax`
-    if from_flax and "safety_checker" in init_dict and "safety_checker" not in passed_class_obj:
+    if (
+        from_flax
+        and "safety_checker" in init_dict
+        and "safety_checker" not in passed_class_obj
+    ):
         raise NotImplementedError(
             "The safety checker cannot be automatically loaded when loading weights `from_flax`."
             " Please, pass `safety_checker=None` to `from_pretrained`, and load the safety checker"
@@ -585,7 +632,9 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
     from diffusers import pipelines
 
     # 6. Load each module in the pipeline
-    for name, (library_name, class_name) in tqdm(init_dict.items(), desc="Loading pipeline components..."):
+    for name, (library_name, class_name) in tqdm(
+        init_dict.items(), desc="Loading pipeline components..."
+    ):
         # 6.1 - now that JAX/Flax is an official framework of the library, we might load from Flax names
         if class_name.startswith("Flax"):
             class_name = class_name[4:]
@@ -600,7 +649,13 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
             # if the model is in a pipeline module, then we load it from the pipeline
             # check that passed_class_obj has correct parent class
             maybe_raise_or_warn(
-                library_name, library, class_name, importable_classes, passed_class_obj, name, is_pipeline_module
+                library_name,
+                library,
+                class_name,
+                importable_classes,
+                passed_class_obj,
+                name,
+                is_pipeline_module,
             )
 
             loaded_sub_model = passed_class_obj[name]
@@ -627,15 +682,20 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
                 low_cpu_mem_usage=low_cpu_mem_usage,
                 cached_folder=cached_folder,
             )
-            #logger.info(
+            # logger.info(
             #    f"Loaded {name} as {class_name} from `{name}` subfolder of {pretrained_model_name_or_path}."
-            #)
+            # )
 
         init_kwargs[name] = loaded_sub_model  # UNet(...), # DiffusionSchedule(...)
 
-    if pipeline_class._load_connected_pipes and os.path.isfile(os.path.join(cached_folder, "README.md")):
+    if pipeline_class._load_connected_pipes and os.path.isfile(
+        os.path.join(cached_folder, "README.md")
+    ):
         modelcard = ModelCard.load(os.path.join(cached_folder, "README.md"))
-        connected_pipes = {prefix: getattr(modelcard.data, prefix, [None])[0] for prefix in CONNECTED_PIPES_KEYS}
+        connected_pipes = {
+            prefix: getattr(modelcard.data, prefix, [None])[0]
+            for prefix in CONNECTED_PIPES_KEYS
+        }
         load_kwargs = {
             "cache_dir": cache_dir,
             "resume_download": resume_download,
@@ -660,13 +720,20 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
 
         def get_connected_passed_kwargs(prefix):
             connected_passed_class_obj = {
-                k.replace(f"{prefix}_", ""): w for k, w in passed_class_obj.items() if k.split("_")[0] == prefix
+                k.replace(f"{prefix}_", ""): w
+                for k, w in passed_class_obj.items()
+                if k.split("_")[0] == prefix
             }
             connected_passed_pipe_kwargs = {
-                k.replace(f"{prefix}_", ""): w for k, w in passed_pipe_kwargs.items() if k.split("_")[0] == prefix
+                k.replace(f"{prefix}_", ""): w
+                for k, w in passed_pipe_kwargs.items()
+                if k.split("_")[0] == prefix
             }
 
-            connected_passed_kwargs = {**connected_passed_class_obj, **connected_passed_pipe_kwargs}
+            connected_passed_kwargs = {
+                **connected_passed_class_obj,
+                **connected_passed_pipe_kwargs,
+            }
             return connected_passed_kwargs
 
         connected_pipes = {
@@ -680,18 +747,26 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
         for prefix, connected_pipe in connected_pipes.items():
             # add connected pipes to `init_kwargs` with <prefix>_<component_name>, e.g. "prior_text_encoder"
             init_kwargs.update(
-                {"_".join([prefix, name]): component for name, component in connected_pipe.components.items()}
+                {
+                    "_".join([prefix, name]): component
+                    for name, component in connected_pipe.components.items()
+                }
             )
 
     # 7. Potentially add passed objects if expected
     missing_modules = set(expected_modules) - set(init_kwargs.keys())
     passed_modules = list(passed_class_obj.keys())
     optional_modules = pipeline_class._optional_components
-    if len(missing_modules) > 0 and missing_modules <= set(passed_modules + optional_modules):
+    if len(missing_modules) > 0 and missing_modules <= set(
+        passed_modules + optional_modules
+    ):
         for module in missing_modules:
             init_kwargs[module] = passed_class_obj.get(module, None)
     elif len(missing_modules) > 0:
-        passed_modules = set(list(init_kwargs.keys()) + list(passed_class_obj.keys())) - optional_kwargs
+        passed_modules = (
+            set(list(init_kwargs.keys()) + list(passed_class_obj.keys()))
+            - optional_kwargs
+        )
         raise ValueError(
             f"Pipeline {pipeline_class} expected {expected_modules}, but only {passed_modules} were passed."
         )
@@ -718,7 +793,6 @@ def disable_deep_cache_pipeline():
     if ORIGIN_DIFFUDION_PIPELINE is None:
         return
     diffusers.DiffusionPipeline.from_pretrained = ORIGIN_DIFFUDION_PIPELINE
-    
 
 
 __all__ = [

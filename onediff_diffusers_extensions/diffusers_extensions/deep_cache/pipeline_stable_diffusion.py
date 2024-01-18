@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import time 
+import time
 import inspect
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -22,7 +22,11 @@ from transformers import CLIPImageProcessor, CLIPTextModel, CLIPTokenizer
 
 from diffusers.configuration_utils import FrozenDict
 from diffusers.image_processor import VaeImageProcessor
-from diffusers.loaders import FromSingleFileMixin, LoraLoaderMixin, TextualInversionLoaderMixin
+from diffusers.loaders import (
+    FromSingleFileMixin,
+    LoraLoaderMixin,
+    TextualInversionLoaderMixin,
+)
 from diffusers.models import AutoencoderKL
 from diffusers.models.lora import adjust_lora_scale_text_encoder
 from diffusers.schedulers import KarrasDiffusionSchedulers
@@ -34,7 +38,9 @@ from diffusers.utils import (
 from diffusers.utils.torch_utils import randn_tensor
 
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
-from diffusers.pipelines.stable_diffusion.safety_checker import StableDiffusionSafetyChecker
+from diffusers.pipelines.stable_diffusion.safety_checker import (
+    StableDiffusionSafetyChecker,
+)
 
 from diffusers import StableDiffusionPipeline as OrgStableDiffusionPipeline
 
@@ -63,43 +69,56 @@ EXAMPLE_DOC_STRING = """
         ```
 """
 
+
 def sample_from_quad(total_numbers, n_samples, pow=1.2):
     while pow > 1:
         # Generate linearly spaced values between 0 and a max value
-        x_values = np.linspace(0, total_numbers**(1/pow), n_samples+1)
+        x_values = np.linspace(0, total_numbers ** (1 / pow), n_samples + 1)
 
         # Raise these values to the power of 1.5 to get a non-linear distribution
         indices = np.unique(np.int32(x_values**pow))[:-1]
         if len(indices) == n_samples:
             break
-        pow -=0.02
+        pow -= 0.02
     if pow <= 1:
-        raise ValueError("Cannot find suitable pow. Please adjust n_samples or decrease center.")
+        raise ValueError(
+            "Cannot find suitable pow. Please adjust n_samples or decrease center."
+        )
     return indices, pow
+
 
 def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
     while pow > 1:
         # Generate linearly spaced values between 0 and a max value
-        x_values = np.linspace((-center)**(1/pow), (total_numbers-center)**(1/pow), n_samples+1)
-        indices = [0] + [x+center for x in np.unique(np.int32(x_values**pow))[1:-1]]
+        x_values = np.linspace(
+            (-center) ** (1 / pow), (total_numbers - center) ** (1 / pow), n_samples + 1
+        )
+        indices = [0] + [x + center for x in np.unique(np.int32(x_values**pow))[1:-1]]
         if len(indices) == n_samples:
             break
-        pow -=0.02
+        pow -= 0.02
     if pow <= 1:
-        raise ValueError("Cannot find suitable pow. Please adjust n_samples or decrease center.")
+        raise ValueError(
+            "Cannot find suitable pow. Please adjust n_samples or decrease center."
+        )
     return indices, pow
+
 
 def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
     """
     Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
     Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
     """
-    std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
+    std_text = noise_pred_text.std(
+        dim=list(range(1, noise_pred_text.ndim)), keepdim=True
+    )
     std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)
     # rescale the results from guidance (fixes overexposure)
     noise_pred_rescaled = noise_cfg * (std_text / std_cfg)
     # mix with the original results from guidance by factor guidance_rescale to avoid "plain looking" images
-    noise_cfg = guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
+    noise_cfg = (
+        guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
+    )
     return noise_cfg
 
 
@@ -150,7 +169,10 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
         feature_extractor: CLIPImageProcessor,
         requires_safety_checker: bool = True,
     ):
-        if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
+        if (
+            hasattr(scheduler.config, "steps_offset")
+            and scheduler.config.steps_offset != 1
+        ):
             deprecation_message = (
                 f"The configuration file of this scheduler: {scheduler} is outdated. `steps_offset`"
                 f" should be set to 1 instead of {scheduler.config.steps_offset}. Please make sure "
@@ -159,12 +181,17 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
                 " it would be very nice if you could open a Pull request for the `scheduler/scheduler_config.json`"
                 " file"
             )
-            deprecate("steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False)
+            deprecate(
+                "steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False
+            )
             new_config = dict(scheduler.config)
             new_config["steps_offset"] = 1
             scheduler._internal_dict = FrozenDict(new_config)
 
-        if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is True:
+        if (
+            hasattr(scheduler.config, "clip_sample")
+            and scheduler.config.clip_sample is True
+        ):
             deprecation_message = (
                 f"The configuration file of this scheduler: {scheduler} has not set the configuration `clip_sample`."
                 " `clip_sample` should be set to False in the configuration file. Please make sure to update the"
@@ -172,7 +199,9 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
                 " future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it would be very"
                 " nice if you could open a Pull request for the `scheduler/scheduler_config.json` file"
             )
-            deprecate("clip_sample not set", "1.0.0", deprecation_message, standard_warn=False)
+            deprecate(
+                "clip_sample not set", "1.0.0", deprecation_message, standard_warn=False
+            )
             new_config = dict(scheduler.config)
             new_config["clip_sample"] = False
             scheduler._internal_dict = FrozenDict(new_config)
@@ -193,10 +222,16 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
                 " checker. If you do not want to use the safety checker, you can pass `'safety_checker=None'` instead."
             )
 
-        is_unet_version_less_0_9_0 = hasattr(unet.config, "_diffusers_version") and version.parse(
+        is_unet_version_less_0_9_0 = hasattr(
+            unet.config, "_diffusers_version"
+        ) and version.parse(
             version.parse(unet.config._diffusers_version).base_version
-        ) < version.parse("0.9.0.dev0")
-        is_unet_sample_size_less_64 = hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+        ) < version.parse(
+            "0.9.0.dev0"
+        )
+        is_unet_sample_size_less_64 = (
+            hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+        )
         if is_unet_version_less_0_9_0 and is_unet_sample_size_less_64:
             deprecation_message = (
                 "The configuration file of the unet has set the default `sample_size` to smaller than"
@@ -209,7 +244,9 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
                 " checkpoint from the Hugging Face Hub, it would be very nice if you could open a Pull request for"
                 " the `unet/config.json` file"
             )
-            deprecate("sample_size<64", "1.0.0", deprecation_message, standard_warn=False)
+            deprecate(
+                "sample_size<64", "1.0.0", deprecation_message, standard_warn=False
+            )
             new_config = dict(unet.config)
             new_config["sample_size"] = 64
             unet._internal_dict = FrozenDict(new_config)
@@ -226,7 +263,7 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
         self.register_to_config(requires_safety_checker=requires_safety_checker)
-        self.fast_unet=FastUNet2DConditionModel(self.unet)
+        self.fast_unet = FastUNet2DConditionModel(self.unet)
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
@@ -329,7 +366,13 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
 
         # 1. Check inputs. Raise error if not correct
         self.check_inputs(
-            prompt, height, width, callback_steps, negative_prompt, prompt_embeds, negative_prompt_embeds
+            prompt,
+            height,
+            width,
+            callback_steps,
+            negative_prompt,
+            prompt_embeds,
+            negative_prompt_embeds,
         )
 
         # 2. Define call parameters
@@ -348,7 +391,9 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
 
         # 3. Encode input prompt
         text_encoder_lora_scale = (
-            cross_attention_kwargs.get("scale", None) if cross_attention_kwargs is not None else None
+            cross_attention_kwargs.get("scale", None)
+            if cross_attention_kwargs is not None
+            else None
         )
         prompt_embeds, negative_prompt_embeds = self.encode_prompt(
             prompt,
@@ -398,26 +443,32 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
             if uniform:
                 interval_seq = list(range(0, num_inference_steps, cache_interval))
             else:
-                num_slow_step = num_inference_steps//cache_interval
-                if num_inference_steps%cache_interval != 0:
+                num_slow_step = num_inference_steps // cache_interval
+                if num_inference_steps % cache_interval != 0:
                     num_slow_step += 1
-                
-                interval_seq, pow = sample_from_quad_center(num_inference_steps, num_slow_step, center=center, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
-                #interval_seq, pow = sample_from_quad(num_inference_steps, num_inference_steps//cache_interval, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
-        
+
+                interval_seq, pow = sample_from_quad_center(
+                    num_inference_steps, num_slow_step, center=center, pow=pow
+                )  # [0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
+                # interval_seq, pow = sample_from_quad(num_inference_steps, num_inference_steps//cache_interval, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
+
         interval_seq = sorted(interval_seq)
-        #print(interval_seq, len(interval_seq), pow)
+        # print(interval_seq, len(interval_seq), pow)
 
         with self.progress_bar(total=num_inference_steps) as progress_bar:
-            #print("[INFO] Update Feature Interval = {}, Update Layer Number = {}, Update Block Number = {}".format(cache_interval, cache_layer_id, cache_block_id))
+            # print("[INFO] Update Feature Interval = {}, Update Layer Number = {}, Update Block Number = {}".format(cache_interval, cache_layer_id, cache_block_id))
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                latent_model_input = (
+                    torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                )
+                latent_model_input = self.scheduler.scale_model_input(
+                    latent_model_input, t
+                )
 
                 if i in interval_seq or cache_interval == 1:
                     prv_features = None
-                    #print(t, prv_features is None)
+                    # print(t, prv_features is None)
                     # predict the noise residual
 
                     noise_pred, prv_features = self.unet(
@@ -445,29 +496,44 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
                 # perform guidance
                 if do_classifier_free_guidance:
                     noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                    noise_pred = noise_pred_uncond + guidance_scale * (
+                        noise_pred_text - noise_pred_uncond
+                    )
 
                 if do_classifier_free_guidance and guidance_rescale > 0.0:
                     # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                    noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=guidance_rescale)
+                    noise_pred = rescale_noise_cfg(
+                        noise_pred, noise_pred_text, guidance_rescale=guidance_rescale
+                    )
 
                 # compute the previous noisy sample x_t -> x_t-1
-                latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
+                latents = self.scheduler.step(
+                    noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                )[0]
                 latents_list.append(latents)
 
                 # call the callback, if provided
-                if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                if i == len(timesteps) - 1 or (
+                    (i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0
+                ):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
 
         if not output_type == "latent":
             if output_all_sequence:
-                image = [self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0] for latents in latents_list]
-                has_nsfw_concept = None #self.run_safety_checker(images[0], device, prompt_embeds.dtype)
+                image = [
+                    self.vae.decode(
+                        latents / self.vae.config.scaling_factor, return_dict=False
+                    )[0]
+                    for latents in latents_list
+                ]
+                has_nsfw_concept = None  # self.run_safety_checker(images[0], device, prompt_embeds.dtype)
                 num_img = len(image)
             else:
-                image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
+                image = self.vae.decode(
+                    latents / self.vae.config.scaling_factor, return_dict=False
+                )[0]
                 has_nsfw_concept = None
                 num_img = image.shape[0]
         else:
@@ -480,13 +546,25 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
             do_denormalize = [not has_nsfw for has_nsfw in has_nsfw_concept]
 
         if output_all_sequence:
-            image = [self.image_processor.postprocess(img, output_type=output_type, do_denormalize=do_denormalize) for img in image]
+            image = [
+                self.image_processor.postprocess(
+                    img, output_type=output_type, do_denormalize=do_denormalize
+                )
+                for img in image
+            ]
         else:
-            image = self.image_processor.postprocess(image, output_type=output_type, do_denormalize=do_denormalize)
+            image = self.image_processor.postprocess(
+                image, output_type=output_type, do_denormalize=do_denormalize
+            )
 
         # Offload all models
         self.maybe_free_model_hooks()
         if not return_dict:
-            return (image, has_nsfw_concept,)
+            return (
+                image,
+                has_nsfw_concept,
+            )
 
-        return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+        return StableDiffusionPipelineOutput(
+            images=image, nsfw_content_detected=has_nsfw_concept
+        )

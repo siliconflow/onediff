@@ -5,6 +5,7 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 _nested_counter = defaultdict(lambda: 0)
 
+
 class TensorInplaceAssign:
     r"""
     This class is used as a context manager, instantiated with either a `torch.nn.Module` or
@@ -37,7 +38,10 @@ class TensorInplaceAssign:
         >>> eager.linear1.weight.data.data_ptr() == dptr1, eager.linear2.weight.data.data_ptr() == dptr2
         (True, False)
     """
-    def __init__(self, *modules: List[Union[torch.nn.Module, DeployableModule]]) -> None:
+
+    def __init__(
+        self, *modules: List[Union[torch.nn.Module, DeployableModule]]
+    ) -> None:
         self.modules = set()
         for module in modules:
             if isinstance(module, torch.nn.Module):
@@ -45,8 +49,10 @@ class TensorInplaceAssign:
             elif isinstance(module, DeployableModule):
                 self.modules.add(module._deployable_module_model._torch_module)
             else:
-                raise TypeError("TensorInplaceAssign can only accept torch.nn.Module or DeployableModule")
-    
+                raise TypeError(
+                    "TensorInplaceAssign can only accept torch.nn.Module or DeployableModule"
+                )
+
     def __enter__(self):
         global _nested_counter
         for module in self.modules:
@@ -72,8 +78,11 @@ class AutoInplaceCopyTensor(torch.Tensor):
     @data.setter
     def data(self, new_tensor):
         if not isinstance(new_tensor, torch.Tensor):
-            raise TypeError(f"Cannot assign type {type(new_tensor)} to AutoInplaceCopyTensor")
+            raise TypeError(
+                f"Cannot assign type {type(new_tensor)} to AutoInplaceCopyTensor"
+            )
         self.copy_(new_tensor.detach())
+
 
 class AutoInplaceCopyParameter(torch.nn.Parameter):
     @property
@@ -83,7 +92,9 @@ class AutoInplaceCopyParameter(torch.nn.Parameter):
     @data.setter
     def data(self, new_tensor):
         if not isinstance(new_tensor, torch.Tensor):
-            raise TypeError(f"Cannot assign type {type(new_tensor)} to AutoInplaceCopyParameter")
+            raise TypeError(
+                f"Cannot assign type {type(new_tensor)} to AutoInplaceCopyParameter"
+            )
         self.data.copy_(new_tensor.detach())
 
 
@@ -118,6 +129,7 @@ def module_unconvert_parameter(module: torch.nn.Module) -> torch.nn.Module:
 
 
 if __name__ == "__main__":
+
     class EagerModule(torch.nn.Module):
         def __init__(self):
             super().__init__()

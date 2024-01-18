@@ -45,7 +45,7 @@ class UNetModel(proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.UNetM
         y=None,
         control=None,
         transformer_options={},
-        **kwargs
+        **kwargs,
     ):
         timestep_embedding = (
             onediff_comfy.ldm.modules.diffusionmodules.util.timestep_embedding

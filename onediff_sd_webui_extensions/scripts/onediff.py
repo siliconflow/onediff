@@ -35,7 +35,11 @@ def is_compiled(ckpt_name):
 
 
 def compile_unet(
-    unet_model, quantization=False, *, use_graph=True, options={},
+    unet_model,
+    quantization=False,
+    *,
+    use_graph=True,
+    options={},
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
@@ -122,7 +126,8 @@ class Script(scripts.Script):
 
         if not is_compiled(ckpt_name):
             compiled_unet = compile_unet(
-                original_diffusion_model, quantization=quantization,
+                original_diffusion_model,
+                quantization=quantization,
             )
             compiled_ckpt_name = ckpt_name
 

@@ -569,9 +569,11 @@ class AttnProcessor:
         hidden_states = attn.to_out[1](hidden_states)
 
         if input_ndim == 4:
-            hidden_states = hidden_states.transpose(-1, -2).reshape(
-                batch_size, channel, -1
-            ).reshape_as(residual)
+            hidden_states = (
+                hidden_states.transpose(-1, -2)
+                .reshape(batch_size, channel, -1)
+                .reshape_as(residual)
+            )
 
         if attn.residual_connection:
             hidden_states = hidden_states + residual

@@ -9,11 +9,14 @@ diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 from diffusers.models.attention_processor import Attention, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 from diffusers.models.transformer_2d import Transformer2DModel
+
 if diffusers_version >= version.parse("0.24.00"):
     from diffusers.models.resnet import SpatioTemporalResBlock
-    
+
     if diffusers_version >= version.parse("0.25.00"):
-        from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import TemporalDecoder
+        from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import (
+            TemporalDecoder,
+        )
     else:
         from diffusers.models.autoencoder_kl_temporal_decoder import TemporalDecoder
 

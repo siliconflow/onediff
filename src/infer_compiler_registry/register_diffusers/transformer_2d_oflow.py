@@ -7,6 +7,7 @@ import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
 from onediff.infer_compiler.transform import transform_mgr
+
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 
 diffusers_0220_v = version.parse("0.22.0")
@@ -27,11 +28,9 @@ if diffusers_version < diffusers_0220_v:
     LoRACompatibleLinear = transformed_diffusers.models.lora.LoRACompatibleLinear
     ModelMixin = transformed_diffusers.models.modeling_utils.ModelMixin
 
-
     @dataclass
     class Transformer2DModelOutput(BaseOutput):
         sample: torch.FloatTensor
-
 
     class Transformer2DModel(ModelMixin, ConfigMixin):
         @register_to_config
@@ -65,7 +64,9 @@ if diffusers_version < diffusers_0220_v:
 
             # 1. Transformer2DModel can process both standard continuous images of shape `(batch_size, num_channels, width, height)` as well as quantized image embeddings of shape `(batch_size, num_image_vectors)`
             # Define whether input is continuous or discrete depending on configuration
-            self.is_input_continuous = (in_channels is not None) and (patch_size is None)
+            self.is_input_continuous = (in_channels is not None) and (
+                patch_size is None
+            )
             self.is_input_vectorized = num_vector_embeds is not None
             self.is_input_patches = in_channels is not None and patch_size is not None
 
@@ -192,7 +193,9 @@ if diffusers_version < diffusers_0220_v:
                 self.norm_out = nn.LayerNorm(inner_dim)
                 self.out = nn.Linear(inner_dim, self.num_vector_embeds - 1)
             elif self.is_input_patches:
-                self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
+                self.norm_out = nn.LayerNorm(
+                    inner_dim, elementwise_affine=False, eps=1e-6
+                )
                 self.proj_out_1 = nn.Linear(inner_dim, 2 * inner_dim)
                 self.proj_out_2 = nn.Linear(
                     inner_dim, patch_size * patch_size * self.out_channels
@@ -367,6 +370,7 @@ if diffusers_version < diffusers_0220_v:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
+
 elif diffusers_version < diffusers_02499_v:
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -396,7 +400,6 @@ elif diffusers_version < diffusers_02499_v:
         """
 
         sample: torch.FloatTensor
-
 
     class Transformer2DModel(ModelMixin, ConfigMixin):
         """
@@ -464,7 +467,9 @@ elif diffusers_version < diffusers_02499_v:
 
             # 1. Transformer2DModel can process both standard continuous images of shape `(batch_size, num_channels, width, height)` as well as quantized image embeddings of shape `(batch_size, num_image_vectors)`
             # Define whether input is continuous or discrete depending on configuration
-            self.is_input_continuous = (in_channels is not None) and (patch_size is None)
+            self.is_input_continuous = (in_channels is not None) and (
+                patch_size is None
+            )
             self.is_input_vectorized = num_vector_embeds is not None
             self.is_input_patches = in_channels is not None and patch_size is not None
 
@@ -476,7 +481,12 @@ elif diffusers_version < diffusers_02499_v:
                     " results in future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it"
                     " would be very nice if you could open a Pull request for the `transformer/config.json` file"
                 )
-                deprecate("norm_type!=num_embeds_ada_norm", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "norm_type!=num_embeds_ada_norm",
+                    "1.0.0",
+                    deprecation_message,
+                    standard_warn=False,
+                )
                 norm_type = "ada_norm"
 
             if self.is_input_continuous and self.is_input_vectorized:
@@ -489,7 +499,11 @@ elif diffusers_version < diffusers_02499_v:
                     f"Cannot define both `num_vector_embeds`: {num_vector_embeds} and `patch_size`: {patch_size}. Make"
                     " sure that either `num_vector_embeds` or `num_patches` is None."
                 )
-            elif not self.is_input_continuous and not self.is_input_vectorized and not self.is_input_patches:
+            elif (
+                not self.is_input_continuous
+                and not self.is_input_vectorized
+                and not self.is_input_patches
+            ):
                 raise ValueError(
                     f"Has to define `in_channels`: {in_channels}, `num_vector_embeds`: {num_vector_embeds}, or patch_size:"
                     f" {patch_size}. Make sure that `in_channels`, `num_vector_embeds` or `num_patches` is not None."
@@ -499,14 +513,25 @@ elif diffusers_version < diffusers_02499_v:
             if self.is_input_continuous:
                 self.in_channels = in_channels
 
-                self.norm = torch.nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
+                self.norm = torch.nn.GroupNorm(
+                    num_groups=norm_num_groups,
+                    num_channels=in_channels,
+                    eps=1e-6,
+                    affine=True,
+                )
                 if use_linear_projection:
                     self.proj_in = linear_cls(in_channels, inner_dim)
                 else:
-                    self.proj_in = conv_cls(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)
+                    self.proj_in = conv_cls(
+                        in_channels, inner_dim, kernel_size=1, stride=1, padding=0
+                    )
             elif self.is_input_vectorized:
-                assert sample_size is not None, "Transformer2DModel over discrete input must provide sample_size"
-                assert num_vector_embeds is not None, "Transformer2DModel over discrete input must provide num_embed"
+                assert (
+                    sample_size is not None
+                ), "Transformer2DModel over discrete input must provide sample_size"
+                assert (
+                    num_vector_embeds is not None
+                ), "Transformer2DModel over discrete input must provide num_embed"
 
                 self.height = sample_size
                 self.width = sample_size
@@ -514,16 +539,23 @@ elif diffusers_version < diffusers_02499_v:
                 self.num_latent_pixels = self.height * self.width
 
                 self.latent_image_embedding = ImagePositionalEmbeddings(
-                    num_embed=num_vector_embeds, embed_dim=inner_dim, height=self.height, width=self.width
+                    num_embed=num_vector_embeds,
+                    embed_dim=inner_dim,
+                    height=self.height,
+                    width=self.width,
                 )
             elif self.is_input_patches:
-                assert sample_size is not None, "Transformer2DModel over patched input must provide sample_size"
+                assert (
+                    sample_size is not None
+                ), "Transformer2DModel over patched input must provide sample_size"
 
                 self.height = sample_size
                 self.width = sample_size
 
                 self.patch_size = patch_size
-                interpolation_scale = self.config.sample_size // 64  # => 64 (= 512 pixart) has interpolation scale 1
+                interpolation_scale = (
+                    self.config.sample_size // 64
+                )  # => 64 (= 512 pixart) has interpolation scale 1
                 interpolation_scale = max(interpolation_scale, 1)
                 self.pos_embed = PatchEmbed(
                     height=sample_size,
@@ -565,18 +597,30 @@ elif diffusers_version < diffusers_02499_v:
                 if use_linear_projection:
                     self.proj_out = linear_cls(inner_dim, in_channels)
                 else:
-                    self.proj_out = conv_cls(inner_dim, in_channels, kernel_size=1, stride=1, padding=0)
+                    self.proj_out = conv_cls(
+                        inner_dim, in_channels, kernel_size=1, stride=1, padding=0
+                    )
             elif self.is_input_vectorized:
                 self.norm_out = nn.LayerNorm(inner_dim)
                 self.out = nn.Linear(inner_dim, self.num_vector_embeds - 1)
             elif self.is_input_patches and norm_type != "ada_norm_single":
-                self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
+                self.norm_out = nn.LayerNorm(
+                    inner_dim, elementwise_affine=False, eps=1e-6
+                )
                 self.proj_out_1 = nn.Linear(inner_dim, 2 * inner_dim)
-                self.proj_out_2 = nn.Linear(inner_dim, patch_size * patch_size * self.out_channels)
+                self.proj_out_2 = nn.Linear(
+                    inner_dim, patch_size * patch_size * self.out_channels
+                )
             elif self.is_input_patches and norm_type == "ada_norm_single":
-                self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
-                self.scale_shift_table = nn.Parameter(torch.randn(2, inner_dim) / inner_dim**0.5)
-                self.proj_out = nn.Linear(inner_dim, patch_size * patch_size * self.out_channels)
+                self.norm_out = nn.LayerNorm(
+                    inner_dim, elementwise_affine=False, eps=1e-6
+                )
+                self.scale_shift_table = nn.Parameter(
+                    torch.randn(2, inner_dim) / inner_dim**0.5
+                )
+                self.proj_out = nn.Linear(
+                    inner_dim, patch_size * patch_size * self.out_channels
+                )
 
             # 5. PixArt-Alpha blocks.
             self.adaln_single = None
@@ -585,11 +629,15 @@ elif diffusers_version < diffusers_02499_v:
                 self.use_additional_conditions = self.config.sample_size == 128
                 # TODO(Sayak, PVP) clean this, for now we use sample size to determine whether to use
                 # additional conditions until we find better name
-                self.adaln_single = AdaLayerNormSingle(inner_dim, use_additional_conditions=self.use_additional_conditions)
+                self.adaln_single = AdaLayerNormSingle(
+                    inner_dim, use_additional_conditions=self.use_additional_conditions
+                )
 
             self.caption_projection = None
             if caption_channels is not None:
-                self.caption_projection = CaptionProjection(in_features=caption_channels, hidden_size=inner_dim)
+                self.caption_projection = CaptionProjection(
+                    in_features=caption_channels, hidden_size=inner_dim
+                )
 
             self.gradient_checkpointing = False
 
@@ -663,11 +711,17 @@ elif diffusers_version < diffusers_02499_v:
 
             # convert encoder_attention_mask to a bias the same way we do for attention_mask
             if encoder_attention_mask is not None and encoder_attention_mask.ndim == 2:
-                encoder_attention_mask = (1 - encoder_attention_mask.to(hidden_states.dtype)) * -10000.0
+                encoder_attention_mask = (
+                    1 - encoder_attention_mask.to(hidden_states.dtype)
+                ) * -10000.0
                 encoder_attention_mask = encoder_attention_mask.unsqueeze(1)
 
             # Retrieve lora scale.
-            lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
+            lora_scale = (
+                cross_attention_kwargs.get("scale", 1.0)
+                if cross_attention_kwargs is not None
+                else 1.0
+            )
 
             hidden_states_in = hidden_states
             # 1. Input
@@ -683,13 +737,13 @@ elif diffusers_version < diffusers_02499_v:
                         else self.proj_in(hidden_states)
                     )
                     inner_dim = hidden_states.shape[1]
-                    #hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
+                    # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
                     hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
                         batch, -1, inner_dim
                     )
                 else:
                     inner_dim = hidden_states.shape[1]
-                    #hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
+                    # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
                     hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
                         batch, -1, inner_dim
                     )
@@ -711,14 +765,19 @@ elif diffusers_version < diffusers_02499_v:
                         )
                     batch_size = hidden_states.shape[0]
                     timestep, embedded_timestep = self.adaln_single(
-                        timestep, added_cond_kwargs, batch_size=batch_size, hidden_dtype=hidden_states.dtype
+                        timestep,
+                        added_cond_kwargs,
+                        batch_size=batch_size,
+                        hidden_dtype=hidden_states.dtype,
                     )
 
             # 2. Blocks
             if self.caption_projection is not None:
                 batch_size = hidden_states.shape[0]
                 encoder_hidden_states = self.caption_projection(encoder_hidden_states)
-                encoder_hidden_states = encoder_hidden_states.view(batch_size, -1, hidden_states.shape[-1])
+                encoder_hidden_states = encoder_hidden_states.view(
+                    batch_size, -1, hidden_states.shape[-1]
+                )
 
             for block in self.transformer_blocks:
                 if self.training and self.gradient_checkpointing:
@@ -764,7 +823,7 @@ elif diffusers_version < diffusers_02499_v:
                         if not USE_PEFT_BACKEND
                         else self.proj_out(hidden_states)
                     )
-                    #hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
+                    # hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
                     hidden_states = (
                         hidden_states.permute(0, 2, 1)
                         .reshape_as(hidden_states_in)
@@ -787,10 +846,15 @@ elif diffusers_version < diffusers_02499_v:
                         timestep, class_labels, hidden_dtype=hidden_states.dtype
                     )
                     shift, scale = self.proj_out_1(F.silu(conditioning)).chunk(2, dim=1)
-                    hidden_states = self.norm_out(hidden_states) * (1 + scale[:, None]) + shift[:, None]
+                    hidden_states = (
+                        self.norm_out(hidden_states) * (1 + scale[:, None])
+                        + shift[:, None]
+                    )
                     hidden_states = self.proj_out_2(hidden_states)
                 elif self.config.norm_type == "ada_norm_single":
-                    shift, scale = (self.scale_shift_table[None] + embedded_timestep[:, None]).chunk(2, dim=1)
+                    shift, scale = (
+                        self.scale_shift_table[None] + embedded_timestep[:, None]
+                    ).chunk(2, dim=1)
                     hidden_states = self.norm_out(hidden_states)
                     # Modulation
                     hidden_states = hidden_states * (1 + scale) + shift
@@ -800,37 +864,56 @@ elif diffusers_version < diffusers_02499_v:
                 # unpatchify
                 height = width = int(hidden_states.shape[1] ** 0.5)
                 hidden_states = hidden_states.reshape(
-                    shape=(-1, height, width, self.patch_size, self.patch_size, self.out_channels)
+                    shape=(
+                        -1,
+                        height,
+                        width,
+                        self.patch_size,
+                        self.patch_size,
+                        self.out_channels,
+                    )
                 )
                 hidden_states = torch.einsum("nhwpqc->nchpwq", hidden_states)
                 output = hidden_states.reshape(
-                    shape=(-1, self.out_channels, height * self.patch_size, width * self.patch_size)
+                    shape=(
+                        -1,
+                        self.out_channels,
+                        height * self.patch_size,
+                        width * self.patch_size,
+                    )
                 )
 
             if not return_dict:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
+
 else:
     transformed_diffusers = transform_mgr.transform_package("diffusers")
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
-    ImagePositionalEmbeddings = transformed_diffusers.models.embeddings.ImagePositionalEmbeddings
+    ImagePositionalEmbeddings = (
+        transformed_diffusers.models.embeddings.ImagePositionalEmbeddings
+    )
     USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
     BaseOutput = transformed_diffusers.utils.BaseOutput
     deprecate = transformed_diffusers.utils.deprecate
     is_torch_version = transformed_diffusers.utils.is_torch_version
     BasicTransformerBlock = transformed_diffusers.models.attention.BasicTransformerBlock
     PatchEmbed = transformed_diffusers.models.embeddings.PatchEmbed
-    PixArtAlphaTextProjection = transformed_diffusers.models.embeddings.PixArtAlphaTextProjection
+    PixArtAlphaTextProjection = (
+        transformed_diffusers.models.embeddings.PixArtAlphaTextProjection
+    )
     LoRACompatibleConv = transformed_diffusers.models.lora.LoRACompatibleConv
     LoRACompatibleLinear = transformed_diffusers.models.lora.LoRACompatibleLinear
     ModelMixin = transformed_diffusers.models.modeling_utils.ModelMixin
     AdaLayerNormSingle = transformed_diffusers.models.normalization.AdaLayerNormSingle
-    Transformer2DModelOutput = transformed_diffusers.models.transformer_2d.Transformer2DModelOutput
-    proxy_Transformer2DModel = transformed_diffusers.models.transformer_2d.Transformer2DModel
-
-
+    Transformer2DModelOutput = (
+        transformed_diffusers.models.transformer_2d.Transformer2DModelOutput
+    )
+    proxy_Transformer2DModel = (
+        transformed_diffusers.models.transformer_2d.Transformer2DModel
+    )
 
     class Transformer2DModel(proxy_Transformer2DModel):
         """
@@ -900,7 +983,9 @@ else:
 
             # 1. Transformer2DModel can process both standard continuous images of shape `(batch_size, num_channels, width, height)` as well as quantized image embeddings of shape `(batch_size, num_image_vectors)`
             # Define whether input is continuous or discrete depending on configuration
-            self.is_input_continuous = (in_channels is not None) and (patch_size is None)
+            self.is_input_continuous = (in_channels is not None) and (
+                patch_size is None
+            )
             self.is_input_vectorized = num_vector_embeds is not None
             self.is_input_patches = in_channels is not None and patch_size is not None
 
@@ -912,7 +997,12 @@ else:
                     " results in future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it"
                     " would be very nice if you could open a Pull request for the `transformer/config.json` file"
                 )
-                deprecate("norm_type!=num_embeds_ada_norm", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "norm_type!=num_embeds_ada_norm",
+                    "1.0.0",
+                    deprecation_message,
+                    standard_warn=False,
+                )
                 norm_type = "ada_norm"
 
             if self.is_input_continuous and self.is_input_vectorized:
@@ -925,7 +1015,11 @@ else:
                     f"Cannot define both `num_vector_embeds`: {num_vector_embeds} and `patch_size`: {patch_size}. Make"
                     " sure that either `num_vector_embeds` or `num_patches` is None."
                 )
-            elif not self.is_input_continuous and not self.is_input_vectorized and not self.is_input_patches:
+            elif (
+                not self.is_input_continuous
+                and not self.is_input_vectorized
+                and not self.is_input_patches
+            ):
                 raise ValueError(
                     f"Has to define `in_channels`: {in_channels}, `num_vector_embeds`: {num_vector_embeds}, or patch_size:"
                     f" {patch_size}. Make sure that `in_channels`, `num_vector_embeds` or `num_patches` is not None."
@@ -935,14 +1029,25 @@ else:
             if self.is_input_continuous:
                 self.in_channels = in_channels
 
-                self.norm = torch.nn.GroupNorm(num_groups=norm_num_groups, num_channels=in_channels, eps=1e-6, affine=True)
+                self.norm = torch.nn.GroupNorm(
+                    num_groups=norm_num_groups,
+                    num_channels=in_channels,
+                    eps=1e-6,
+                    affine=True,
+                )
                 if use_linear_projection:
                     self.proj_in = linear_cls(in_channels, inner_dim)
                 else:
-                    self.proj_in = conv_cls(in_channels, inner_dim, kernel_size=1, stride=1, padding=0)
+                    self.proj_in = conv_cls(
+                        in_channels, inner_dim, kernel_size=1, stride=1, padding=0
+                    )
             elif self.is_input_vectorized:
-                assert sample_size is not None, "Transformer2DModel over discrete input must provide sample_size"
-                assert num_vector_embeds is not None, "Transformer2DModel over discrete input must provide num_embed"
+                assert (
+                    sample_size is not None
+                ), "Transformer2DModel over discrete input must provide sample_size"
+                assert (
+                    num_vector_embeds is not None
+                ), "Transformer2DModel over discrete input must provide num_embed"
 
                 self.height = sample_size
                 self.width = sample_size
@@ -950,16 +1055,23 @@ else:
                 self.num_latent_pixels = self.height * self.width
 
                 self.latent_image_embedding = ImagePositionalEmbeddings(
-                    num_embed=num_vector_embeds, embed_dim=inner_dim, height=self.height, width=self.width
+                    num_embed=num_vector_embeds,
+                    embed_dim=inner_dim,
+                    height=self.height,
+                    width=self.width,
                 )
             elif self.is_input_patches:
-                assert sample_size is not None, "Transformer2DModel over patched input must provide sample_size"
+                assert (
+                    sample_size is not None
+                ), "Transformer2DModel over patched input must provide sample_size"
 
                 self.height = sample_size
                 self.width = sample_size
 
                 self.patch_size = patch_size
-                interpolation_scale = self.config.sample_size // 64  # => 64 (= 512 pixart) has interpolation scale 1
+                interpolation_scale = (
+                    self.config.sample_size // 64
+                )  # => 64 (= 512 pixart) has interpolation scale 1
                 interpolation_scale = max(interpolation_scale, 1)
                 self.pos_embed = PatchEmbed(
                     height=sample_size,
@@ -1001,18 +1113,30 @@ else:
                 if use_linear_projection:
                     self.proj_out = linear_cls(inner_dim, in_channels)
                 else:
-                    self.proj_out = conv_cls(inner_dim, in_channels, kernel_size=1, stride=1, padding=0)
+                    self.proj_out = conv_cls(
+                        inner_dim, in_channels, kernel_size=1, stride=1, padding=0
+                    )
             elif self.is_input_vectorized:
                 self.norm_out = nn.LayerNorm(inner_dim)
                 self.out = nn.Linear(inner_dim, self.num_vector_embeds - 1)
             elif self.is_input_patches and norm_type != "ada_norm_single":
-                self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
+                self.norm_out = nn.LayerNorm(
+                    inner_dim, elementwise_affine=False, eps=1e-6
+                )
                 self.proj_out_1 = nn.Linear(inner_dim, 2 * inner_dim)
-                self.proj_out_2 = nn.Linear(inner_dim, patch_size * patch_size * self.out_channels)
+                self.proj_out_2 = nn.Linear(
+                    inner_dim, patch_size * patch_size * self.out_channels
+                )
             elif self.is_input_patches and norm_type == "ada_norm_single":
-                self.norm_out = nn.LayerNorm(inner_dim, elementwise_affine=False, eps=1e-6)
-                self.scale_shift_table = nn.Parameter(torch.randn(2, inner_dim) / inner_dim**0.5)
-                self.proj_out = nn.Linear(inner_dim, patch_size * patch_size * self.out_channels)
+                self.norm_out = nn.LayerNorm(
+                    inner_dim, elementwise_affine=False, eps=1e-6
+                )
+                self.scale_shift_table = nn.Parameter(
+                    torch.randn(2, inner_dim) / inner_dim**0.5
+                )
+                self.proj_out = nn.Linear(
+                    inner_dim, patch_size * patch_size * self.out_channels
+                )
 
             # 5. PixArt-Alpha blocks.
             self.adaln_single = None
@@ -1021,11 +1145,15 @@ else:
                 self.use_additional_conditions = self.config.sample_size == 128
                 # TODO(Sayak, PVP) clean this, for now we use sample size to determine whether to use
                 # additional conditions until we find better name
-                self.adaln_single = AdaLayerNormSingle(inner_dim, use_additional_conditions=self.use_additional_conditions)
+                self.adaln_single = AdaLayerNormSingle(
+                    inner_dim, use_additional_conditions=self.use_additional_conditions
+                )
 
             self.caption_projection = None
             if caption_channels is not None:
-                self.caption_projection = PixArtAlphaTextProjection(in_features=caption_channels, hidden_size=inner_dim)
+                self.caption_projection = PixArtAlphaTextProjection(
+                    in_features=caption_channels, hidden_size=inner_dim
+                )
 
             self.gradient_checkpointing = False
 
@@ -1103,11 +1231,17 @@ else:
 
             # convert encoder_attention_mask to a bias the same way we do for attention_mask
             if encoder_attention_mask is not None and encoder_attention_mask.ndim == 2:
-                encoder_attention_mask = (1 - encoder_attention_mask.to(hidden_states.dtype)) * -10000.0
+                encoder_attention_mask = (
+                    1 - encoder_attention_mask.to(hidden_states.dtype)
+                ) * -10000.0
                 encoder_attention_mask = encoder_attention_mask.unsqueeze(1)
 
             # Retrieve lora scale.
-            lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
+            lora_scale = (
+                cross_attention_kwargs.get("scale", 1.0)
+                if cross_attention_kwargs is not None
+                else 1.0
+            )
 
             hidden_states_in = hidden_states
             # 1. Input
@@ -1125,13 +1259,13 @@ else:
                     inner_dim = hidden_states.shape[1]
                     # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
                     hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                            batch, -1, inner_dim
+                        batch, -1, inner_dim
                     )
                 else:
                     inner_dim = hidden_states.shape[1]
                     # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
                     hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                            batch, -1, inner_dim
+                        batch, -1, inner_dim
                     )
                     hidden_states = (
                         self.proj_in(hidden_states, scale=lora_scale)
@@ -1142,7 +1276,10 @@ else:
             elif self.is_input_vectorized:
                 hidden_states = self.latent_image_embedding(hidden_states)
             elif self.is_input_patches:
-                height, width = hidden_states.shape[-2] // self.patch_size, hidden_states.shape[-1] // self.patch_size
+                height, width = (
+                    hidden_states.shape[-2] // self.patch_size,
+                    hidden_states.shape[-1] // self.patch_size,
+                )
                 hidden_states = self.pos_embed(hidden_states)
 
                 if self.adaln_single is not None:
@@ -1152,14 +1289,19 @@ else:
                         )
                     batch_size = hidden_states.shape[0]
                     timestep, embedded_timestep = self.adaln_single(
-                        timestep, added_cond_kwargs, batch_size=batch_size, hidden_dtype=hidden_states.dtype
+                        timestep,
+                        added_cond_kwargs,
+                        batch_size=batch_size,
+                        hidden_dtype=hidden_states.dtype,
                     )
 
             # 2. Blocks
             if self.caption_projection is not None:
                 batch_size = hidden_states.shape[0]
                 encoder_hidden_states = self.caption_projection(encoder_hidden_states)
-                encoder_hidden_states = encoder_hidden_states.view(batch_size, -1, hidden_states.shape[-1])
+                encoder_hidden_states = encoder_hidden_states.view(
+                    batch_size, -1, hidden_states.shape[-1]
+                )
 
             for block in self.transformer_blocks:
                 if self.training and self.gradient_checkpointing:
@@ -1173,7 +1315,11 @@ else:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                    ckpt_kwargs: Dict[str, Any] = (
+                        {"use_reentrant": False}
+                        if is_torch_version(">=", "1.11.0")
+                        else {}
+                    )
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(block),
                         hidden_states,
@@ -1201,9 +1347,9 @@ else:
                 if not self.use_linear_projection:
                     # hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
                     hidden_states = (
-                            hidden_states.permute(0, 2, 1)
-                            .reshape_as(hidden_states_in)
-                            .contiguous()
+                        hidden_states.permute(0, 2, 1)
+                        .reshape_as(hidden_states_in)
+                        .contiguous()
                     )
                     hidden_states = (
                         self.proj_out(hidden_states, scale=lora_scale)
@@ -1218,9 +1364,9 @@ else:
                     )
                     # hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
                     hidden_states = (
-                            hidden_states.permute(0, 2, 1)
-                            .reshape_as(hidden_states_in)
-                            .contiguous()
+                        hidden_states.permute(0, 2, 1)
+                        .reshape_as(hidden_states_in)
+                        .contiguous()
                     )
 
                 output = hidden_states + residual
@@ -1239,10 +1385,15 @@ else:
                         timestep, class_labels, hidden_dtype=hidden_states.dtype
                     )
                     shift, scale = self.proj_out_1(F.silu(conditioning)).chunk(2, dim=1)
-                    hidden_states = self.norm_out(hidden_states) * (1 + scale[:, None]) + shift[:, None]
+                    hidden_states = (
+                        self.norm_out(hidden_states) * (1 + scale[:, None])
+                        + shift[:, None]
+                    )
                     hidden_states = self.proj_out_2(hidden_states)
                 elif self.config.norm_type == "ada_norm_single":
-                    shift, scale = (self.scale_shift_table[None] + embedded_timestep[:, None]).chunk(2, dim=1)
+                    shift, scale = (
+                        self.scale_shift_table[None] + embedded_timestep[:, None]
+                    ).chunk(2, dim=1)
                     hidden_states = self.norm_out(hidden_states)
                     # Modulation
                     hidden_states = hidden_states * (1 + scale) + shift
@@ -1253,11 +1404,23 @@ else:
                 if self.adaln_single is None:
                     height = width = int(hidden_states.shape[1] ** 0.5)
                 hidden_states = hidden_states.reshape(
-                    shape=(-1, height, width, self.patch_size, self.patch_size, self.out_channels)
+                    shape=(
+                        -1,
+                        height,
+                        width,
+                        self.patch_size,
+                        self.patch_size,
+                        self.out_channels,
+                    )
                 )
                 hidden_states = torch.einsum("nhwpqc->nchpwq", hidden_states)
                 output = hidden_states.reshape(
-                    shape=(-1, self.out_channels, height * self.patch_size, width * self.patch_size)
+                    shape=(
+                        -1,
+                        self.out_channels,
+                        height * self.patch_size,
+                        width * self.patch_size,
+                    )
                 )
 
             if not return_dict:

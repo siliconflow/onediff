@@ -21,7 +21,7 @@ def fx_node_tranform(gm):
         oneflow_fn = of_gm.forward
     else:
         # Align this with env setting in `with_oneflow_compile`.
-        # Otherwise, infererence using PyTorch with OneFlow backend on 
+        # Otherwise, infererence using PyTorch with OneFlow backend on
         # multiple input shapes may crash
         os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
         os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
@@ -34,8 +34,12 @@ def fx_node_tranform(gm):
         os.environ.setdefault("ONEFLOW_MLIR_PREFER_NHWC", "1")
         os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS", "1")
         os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
+        os.environ.setdefault(
+            "ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1"
+        )
+        os.environ.setdefault(
+            "ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1"
+        )
         os.environ.setdefault("ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL", "1")
         os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
         os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")

@@ -70,8 +70,8 @@ def get_arg_meta_of_sizes(
     resolution_scales,
     num_channels,
     cross_attention_dim,
-    start = 768,
-    stride = 128,
+    start=768,
+    stride=128,
 ):
     return [
         TensorInput(

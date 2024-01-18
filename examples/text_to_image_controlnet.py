@@ -21,7 +21,9 @@ parser.add_argument(
     default="https://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png",
 )
 parser.add_argument(
-    "--prompt", type=str, default="chinese painting style women",
+    "--prompt",
+    type=str,
+    default="chinese painting style women",
 )
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)

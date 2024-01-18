@@ -120,14 +120,18 @@ class TemporalDecoder(nn.Module):
             else:
                 # middle
                 sample = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(self.mid_block), sample, image_only_indicator,
+                    create_custom_forward(self.mid_block),
+                    sample,
+                    image_only_indicator,
                 )
                 sample = sample.to(upscale_dtype)
 
                 # up
                 for up_block in self.up_blocks:
                     sample = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(up_block), sample, image_only_indicator,
+                        create_custom_forward(up_block),
+                        sample,
+                        image_only_indicator,
                     )
         else:
             # middle

@@ -3,7 +3,11 @@ import oneflow as flow
 from onediff.infer_compiler import oneflow_compile, register
 from onediff.infer_compiler.transform import proxy_class
 
-from ldm.modules.attention import BasicTransformerBlock, CrossAttention, SpatialTransformer
+from ldm.modules.attention import (
+    BasicTransformerBlock,
+    CrossAttention,
+    SpatialTransformer,
+)
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 from modules import shared

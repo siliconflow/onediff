@@ -8,7 +8,10 @@ from .onediff_quant_utils import (
     _use_graph,
     quantize_and_save_model,
 )
-from .model_patcher import OneFlowSpeedUpModelPatcher, OneFlowDeepCacheSpeedUpModelPatcher
+from .model_patcher import (
+    OneFlowSpeedUpModelPatcher,
+    OneFlowDeepCacheSpeedUpModelPatcher,
+)
 
 OUTPUT_FOLDER = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "..", "graphs"

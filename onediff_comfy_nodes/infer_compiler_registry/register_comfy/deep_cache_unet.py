@@ -26,7 +26,7 @@ class DeepCacheUNet(Module):
         y=None,
         control=None,
         transformer_options={},
-        **kwargs
+        **kwargs,
     ):
         """
         Apply the model to an input batch.
@@ -157,7 +157,7 @@ class FastDeepCacheUNet(Module):
         y=None,
         control=None,
         transformer_options={},
-        **kwargs
+        **kwargs,
     ):
         """
         Apply the model to an input batch.

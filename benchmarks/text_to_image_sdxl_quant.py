@@ -43,7 +43,9 @@ parser.add_argument(
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
 )
 parser.add_argument(
-    "--graph", default=True, type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    "--graph",
+    default=True,
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
 )
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)

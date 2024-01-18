@@ -65,6 +65,7 @@ class OneDiffControlNet(ControlNet):
 
 class OneDiffControlLora(ControlLora):
     oneflow_model = None
+
     @classmethod
     def from_controllora(cls, controlnet: ControlLora):
         c = cls(
@@ -106,8 +107,6 @@ class OneDiffControlLora(ControlLora):
             self.control_model.to(dtype)
             self.control_model.to(comfy.model_management.get_torch_device())
             OneDiffControlLora.oneflow_model = oneflow_compile(self.control_model)
-
-      
 
         self.control_model = OneDiffControlLora.oneflow_model
 
