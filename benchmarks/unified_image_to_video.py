@@ -278,7 +278,7 @@ def main():
     if args.output_video is not None:
         export_to_video(output_frames[0], args.output_video, fps=args.fps)
     else:
-        print("Please set `--output-video` to save the output-video")
+        print("Please set `--output-video` to save the output video")
 
 
 if __name__ == "__main__":

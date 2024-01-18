@@ -251,7 +251,7 @@ def main():
     if args.output_image is not None:
         output_images[0].save(args.output_image)
     else:
-        print("Please set `--output-image` to save the output-video")
+        print("Please set `--output-image` to save the output video")
 
 
 if __name__ == '__main__':
