@@ -32,10 +32,11 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - [LCM](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/examples/image_to_video.py)
   - [DeepCache](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_deep_cache_sdxl.py)
-- Support Multi-resolution input
-- Compile and save the compiled result offline, then load it online for serving
-  - [Save and Load](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
-  - [Change device to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
+- Ready for production
+  - [Support Multi-resolution input](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
+  - Compile and save the compiled result offline, then load it online for serving
+    - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
+    - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
 ## State-of-the-art performance
 
