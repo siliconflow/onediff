@@ -209,8 +209,8 @@ def main():
             num_frames=args.frames,
             fps=args.fps,
             decode_chunk_size=args.decode_chunk_size,
-            generator=None if args.seed is None else torch.Generator(
-                device='cuda').manual_seed(args.seed),
+            generator=None
+            if args.seed is None else torch.Generator().manual_seed(args.seed),
             **(dict() if args.extra_call_kwargs is None else json.loads(
                 args.extra_call_kwargs)),
         )
