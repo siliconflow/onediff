@@ -3,5 +3,5 @@
 # pip install black==23.1.0
 # black --config pyproject.toml file
 [tool.black]
-line-length = 120
+line-length = 88
 target-version = ["py38", "py39", "py310", "py311"]
