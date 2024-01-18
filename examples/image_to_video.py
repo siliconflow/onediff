@@ -13,7 +13,7 @@ BATCH = 1
 HEIGHT = 576
 WIDTH = 1024
 FPS = 7
-DECODE_CHUNK_SIZE = 4
+DECODE_CHUNK_SIZE = 5
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
 EXTRA_CALL_KWARGS = None
 ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
@@ -24,11 +24,9 @@ import argparse
 import time
 import json
 from PIL import Image, ImageDraw
-
-import oneflow as flow
 import torch
-
 from diffusers.utils import load_image, export_to_video
+import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import set_boolean_env_var
 
@@ -248,8 +246,10 @@ def main():
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
-    peak_mem = torch.cuda.max_memory_allocated()
-    print(f"Peak memory: {peak_mem / 1024**3:.3f}GiB")
+    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
+    print(f'CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB')
+    print(f'Host Mem after: {host_mem_after_used / 1024:.3f}GiB')
 
     if args.output_video is not None:
         export_to_video(output_frames[0], args.output_video, fps=args.fps)
