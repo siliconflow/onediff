@@ -7,7 +7,7 @@ WARMUPS=3
 COMPILER=oneflow
 OUTPUT_FILE=/dev/stdout
 
-while getopts 'abc:h' opt; do
+while getopts 'mwco:h' opt; do
   case "$opt" in
     m)
       MODEL_DIR=$OPTARG
