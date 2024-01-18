@@ -95,9 +95,9 @@ benchmark_sd_model() {
   benchmark_sd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 512 512
 }
 
-# benchmark_sd_model sd15 ${SD15_MODEL_PATH}
-# benchmark_sd_model sd21 ${SD21_MODEL_PATH}
-# benchmark_sd_model sdxl ${SDXL_MODEL_PATH}
+benchmark_sd_model sd15 ${SD15_MODEL_PATH}
+benchmark_sd_model sd21 ${SD21_MODEL_PATH}
+benchmark_sd_model sdxl ${SDXL_MODEL_PATH}
 
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then 
   if [ x"${COMPILER}" == x"oneflow" ]; then
