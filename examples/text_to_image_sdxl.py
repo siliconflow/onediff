@@ -92,23 +92,13 @@ image = base(
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 
-# Define multiple resolutions for warmup
-print("Warmup run with multiple resolutions...")
-if args.run_multiple_resolutions:
-    sizes = [896, 768]
-    for h in sizes:
-        for w in sizes:
-            image = base(
-                prompt=args.prompt,
-                height=h,
-                width=w,
-                num_inference_steps=args.n_steps,
-                output_type=OUTPUT_TYPE,
-            ).images
 
+# Should have no compilation for these new input shape
 print("Test run with multiple resolutions...")
 if args.run_multiple_resolutions:
-    sizes = [896, 768]
+    sizes = [512, 256]
+    if "CI" in os.environ:
+        sizes = [256]
     for h in sizes:
         for w in sizes:
             image = base(

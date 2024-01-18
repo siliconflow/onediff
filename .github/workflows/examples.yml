@@ -133,6 +133,7 @@ jobs:
       - name: Setup docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
+          env
           docker compose -f tests/comfy-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
@@ -143,11 +144,12 @@ jobs:
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - name: Setup docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'
         run: |
+          env
           docker compose -f tests/diffusers-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
@@ -155,7 +157,7 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - run: nvidia-smi
       - run: nvidia-smi -L
@@ -188,7 +190,7 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile_vae False --height 512 --width 512
       - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile_unet False --height 512 --width 512 --use_multiple_resolutions True
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile_unet False --height 512 --width 512 --run_multiple_resolutions True
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_controlnet.py --base=/share_nfs/hf_models/stable-diffusion-v1-5 --controlnet=/share_nfs/hf_models/sd-controlnet-canny --input_image=/share_nfs/hf_models/input_image_vermeer.png
       - if: matrix.test-suite == 'diffusers_examples'
@@ -207,7 +209,7 @@ jobs:
           UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - name: Shutdown docker for diffusers examples
         if: matrix.test-suite == 'diffusers_examples'
@@ -219,4 +221,4 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
-          SILICON_ONEDIFF_LICENSE_KEY: ${ secrets.SILICON_ONEDIFF_LICENSE_KEY }
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
