@@ -21,7 +21,6 @@ env:
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
   SELENIUM_CONTAINER_NAME: selenium-test
   SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
-  COMFYUI_LOG_FILE: /app/ComfyUI/onediff_comfyui_8188.log
 concurrency:
   group: sd-examples-${{ github.ref }}
   cancel-in-progress: true
@@ -193,8 +192,8 @@ jobs:
       - name: View ComfyUI Logs
         if: matrix.test-suite == 'comfy'
         run: |
-          docker cp ${{ env.CONTAINER_NAME }}:${{ env.COMFYUI_LOG_FILE }} .
-          cat ./${{ env.COMFYUI_LOG_FILE }}
+          docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/onediff_comfyui_8188.log .
+          cat ./onediff_comfyui_8188.log
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
