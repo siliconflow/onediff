@@ -88,7 +88,11 @@ FROM {base_image}
 
     dockerfile_oneflow = f"""
 #==== Install the OneFlow ====
-RUN pip install --pre oneflow -f {oneflow_pip_index}
+RUN pip install --pre oneflow -f {oneflow_pip_index} --no-cache-dir
+#RUN pip install torch==2.1.2
+RUN pip install accelerator --no-cache-dir
+RUN pip install --extra-index-url https://pypi.nvidia.com tensorrt==9.2.0.post12.dev5 --no-cache-dir
+#RUN pip install git+https://github.com/NVIDIA/TransformerEngine.git@stable --no-cache-dir
 """
 
     repos_cmds = []

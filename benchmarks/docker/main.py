@@ -78,7 +78,7 @@ if __name__ == "__main__":
     image_name = f"{args.image}:{args.tag}-{version}"
     if not args.quiet:
         build_cmd = (
-            f"docker build -f {docker_file} -t {args.image}:{args.tag} {args.context}"
+            f"docker build --no-cache -f {docker_file} -t {args.image}:{args.tag} {args.context}"
         )
         print("Ready to build image by:")
         r = input("    " + build_cmd + " [y]/n ")

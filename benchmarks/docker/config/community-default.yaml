@@ -1,10 +1,10 @@
 base_image: nvcr.io/nvidia/pytorch:23.08-py3
 set_pip_mirror: "pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple"
-oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu122"
+oneflow_pip_index: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121"
 repos:
   - onediff:
       repo_url: https://github.com/siliconflow/onediff.git
-      branch: dev_bench_onediff_pro
+      branch: main
       cmds:
         - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.19.3"
         - "python3 -m pip install -e ."
