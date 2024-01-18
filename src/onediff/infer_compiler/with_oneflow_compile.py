@@ -58,7 +58,10 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [torch_module.named_parameters(), torch_module.named_buffers(),]
+                [
+                    torch_module.named_parameters(),
+                    torch_module.named_buffers(),
+                ]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -423,7 +426,11 @@ def get_mixed_deployable_module(module_cls):
 
 
 def oneflow_compile(
-    torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, options={},
+    torch_module: torch.nn.Module,
+    *,
+    use_graph=True,
+    dynamic=True,
+    options={},
 ) -> DeployableModule:
     """
     Transform a torch nn.Module to oneflow.nn.Module, then optimize it with oneflow.nn.Graph.
