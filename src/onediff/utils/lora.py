@@ -4,9 +4,9 @@ from collections import OrderedDict, defaultdict
 from contextlib import nullcontext
 
 import torch
-import safetensors.torch
 
 from onediff.infer_compiler.utils.log_utils import logger
+from .profiler import with_cProfile
 
 from diffusers.loaders.lora import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
@@ -21,6 +21,7 @@ if is_accelerate_available():
     from accelerate import init_empty_weights
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
 
+
 USE_PEFT_BACKEND = False
 
 
@@ -32,35 +33,46 @@ def linear_fuse_lora(
     rank: float = None,
 ):
     assert isinstance(self, torch.nn.Linear)
-    w_down = state_dict["lora.down.weight"].float()
-    w_up = state_dict["lora.up.weight"].float()
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
-    w_orig = self.weight.data.float().clone()
+    self._lora_up = state_dict["lora.up.weight"]
+    self._lora_down = state_dict["lora.down.weight"]
+    self._lora_scale = lora_scale
+    self._lora_rank = rank
+    self._lora_alpha = alpha
+
+    w_down = state_dict["lora.down.weight"].float().to(device)
+    w_up = state_dict["lora.up.weight"].float().to(device)
+
     if alpha is not None:
         w_up = w_up * alpha / rank
 
     lora_weight = lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
     self.weight.data += lora_weight.to(device=device, dtype=dtype)
-    self.orig_weight = w_orig.cpu()
 
 
 def conv_fuse_lora(self, state_dict, lora_scale, alpha, rank):
     assert isinstance(self, torch.nn.Conv2d)
-    w_down = state_dict["lora.down.weight"].float()
-    w_up = state_dict["lora.up.weight"].float()
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
-    w_orig = self.weight.data.float().clone()
+    self._lora_up = state_dict["lora.up.weight"]
+    self._lora_down = state_dict["lora.down.weight"]
+    self._lora_scale = lora_scale
+    self._lora_rank = rank
+    self._lora_alpha = alpha
+
+    w_down = state_dict["lora.down.weight"].float().to(device)
+    w_up = state_dict["lora.up.weight"].float().to(device)
+
     if alpha is not None:
         w_up = w_up * alpha / rank
 
     lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-    lora_weight = lora_weight.reshape((w_orig.shape)) * lora_scale
+    lora_weight = lora_weight.reshape((self.weight.shape)) * lora_scale
     self.weight.data += lora_weight.to(device=device, dtype=dtype)
-    self.orig_weight = w_orig.cpu()
 
 
+@with_cProfile()
 def load_and_fuse_lora(
     self: LoraLoaderMixin,
     lora: Union[str, Path, Dict[str, torch.Tensor]],
@@ -68,17 +80,8 @@ def load_and_fuse_lora(
     adapter_name: Optional[str] = None,
     **kwargs,
 ) -> None:
-    r"""
-    1. cache lora
-    2. unet fuse lora, skip create
-    """
     state_dict, network_alphas = load_state_dict_cached(lora, **kwargs)
 
-    # state_dict, network_alphas = self.lora_state_dict(
-    #     pretrained_model_name_or_path_or_dict,
-    #     unet_config=self.unet.config,
-    #     **kwargs,
-    # )
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:
         raise ValueError("Invalid LoRA checkpoint.")
@@ -307,9 +310,6 @@ class LRUCacheDict(OrderedDict):
 def load_state_dict_cached(
     lora: Union[str, Path, Dict[str, torch.Tensor]], **kwargs,
 ) -> Tuple[Dict, Dict]:
-    import ipdb
-
-    ipdb.set_trace()
     assert isinstance(lora, (str, Path, dict))
     if isinstance(lora, dict):
         state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(lora, **kwargs)
