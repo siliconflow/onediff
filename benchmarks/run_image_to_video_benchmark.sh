@@ -92,8 +92,6 @@ benchmark_svd_model svd_xt ${SVD_XT_MODEL_PATH}
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
   if [ x"${COMPILER}" == x"oneflow" ]; then
     benchmark_svd_model svd_xt_quant ${SVD_XT_QUANT_MODEL_PATH} ${warmups} ${compiler} 576 1024
-  else
-    exit 0
   fi
 fi
 

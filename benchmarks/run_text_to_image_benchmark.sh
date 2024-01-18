@@ -105,8 +105,6 @@ if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
     benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 720 1280
     benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 768 768
     benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 512 512
-  else
-    exit 0
   fi
 fi
 
