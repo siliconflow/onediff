@@ -47,6 +47,12 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
+      - name: Checkout ComfyUI-Manager
+        if: matrix.test-suite == 'comfy'
+        uses: actions/checkout@v2
+        with:
+          repository: ltdrdata/ComfyUI-Manager
+          path: ${{ env.COMFYUI_MANAGER_SRC_DIR }}
       - name: Pack src
         working-directory: onediff
         run: |
@@ -120,13 +126,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
-      - name: Checkout ComfyUI-Manager
-        if: matrix.test-suite == 'comfy'
-        uses: actions/checkout@v2
-        with:
-          repository: ltdrdata/ComfyUI-Manager
-          path: ${{ env.COMFYUI_MANAGER_SRC_DIR }}      
-
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
