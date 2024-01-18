@@ -11,10 +11,11 @@ OneDiff is **an out-of-the-box acceleration library for diffusion models**  (esp
 
 OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
-## Need help or talk
+## Need help or communicate
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for business inquiry: contact@siliconflow.com
+- [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
 
 ## Easy to use
 - Out-of-the-box acceleration for popular UIs/libs
