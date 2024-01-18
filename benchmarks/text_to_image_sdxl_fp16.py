@@ -47,7 +47,7 @@ pipe.to("cuda")
 if args.graph:
     rewrite_self_attention(pipe.unet)
 pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
-pipe.vae = oneflow_compile(pipe.vae, use_graph=args.graph)
+pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
 
 for _ in range(args.warmup):
     image = pipe(
