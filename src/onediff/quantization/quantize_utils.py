@@ -26,6 +26,7 @@ def load_calibration_and_quantize_pipeline(calibration_path, pipe):
             sub_calibrate_info,
             fake_quant=False,
             static=False,
-            bits=8,
+            nbits=8,
             convert_quant_module_fn=maybe_allow_in_graph,
+            original_module_name=None
         )
