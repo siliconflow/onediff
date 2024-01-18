@@ -58,10 +58,7 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [
-                    torch_module.named_parameters(),
-                    torch_module.named_buffers(),
-                ]
+                [torch_module.named_parameters(), torch_module.named_buffers(),]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -186,6 +183,7 @@ class DeployableModule(torch.nn.Module):
         torch_module,
         oneflow_module,
         use_graph=True,
+        dynamic=True,
         options={},
         graph_path=None,
         graph_device=None,
@@ -195,15 +193,16 @@ class DeployableModule(torch.nn.Module):
             torch_module, oneflow_module
         )
         self._deployable_module_use_graph = use_graph
+        self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
 
     @classmethod
-    def from_existing(cls, existing_module, use_graph=None, options=None):
+    def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
         torch_module = existing_module._deployable_module_model._torch_module
         oneflow_module = existing_module._deployable_module_model._oneflow_module
-        instance = cls(torch_module, oneflow_module, use_graph, options)
+        instance = cls(torch_module, oneflow_module, use_graph, dynamic, options)
         instance._deployable_module_dpl_graph = (
             existing_module._deployable_module_dpl_graph if use_graph else None
         )
@@ -216,12 +215,10 @@ class DeployableModule(torch.nn.Module):
             size = self._deployable_module_options["size"]
         else:
             size = 9
-        if "all_dynamic" in self._deployable_module_options:
-            all_dynamic = self._deployable_module_options["all_dynamic"]
-        else:
-            all_dynamic = False
         self._deployable_module_dpl_graph = get_oneflow_graph(
-            self._deployable_module_model.oneflow_module, size, all_dynamic
+            self._deployable_module_model.oneflow_module,
+            size,
+            self._deployable_module_enable_dynamic,
         )
         # Enabel debug mode
         if transform_mgr.debug_mode:
@@ -327,8 +324,12 @@ class OneflowGraph(flow.nn.Graph):
         os.environ.setdefault("ONEFLOW_MLIR_PREFER_NHWC", "1")
         os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS", "1")
         os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
+        os.environ.setdefault(
+            "ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1"
+        )
+        os.environ.setdefault(
+            "ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1"
+        )
         os.environ.setdefault("ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL", "1")
         os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
         os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
@@ -361,10 +362,10 @@ class OneflowGraph(flow.nn.Graph):
         flow.save(state_dict, file_path)
 
 
-def get_oneflow_graph(model, size=9, all_dynamic=False):
+def get_oneflow_graph(model, size=9, dynamic_graph=True):
     g = OneflowGraph(model)
     g._dynamic_input_graph_cache.set_cache_size(size)
-    g._dynamic_input_graph_cache.enable_shared(not all_dynamic)
+    g._dynamic_input_graph_cache.enable_shared(dynamic_graph)
     return g
 
 
@@ -389,6 +390,7 @@ def get_mixed_deployable_module(module_cls):
             torch_module,
             oneflow_module,
             use_graph=True,
+            dynamic=True,
             options={},
             graph_path=None,
             graph_device=None,
@@ -398,6 +400,7 @@ def get_mixed_deployable_module(module_cls):
                 torch_module,
                 oneflow_module,
                 use_graph,
+                dynamic,
                 options,
                 graph_path,
                 graph_device,
@@ -405,10 +408,12 @@ def get_mixed_deployable_module(module_cls):
             self._is_raw_deployable_module = False
 
         @classmethod
-        def from_existing(cls, existing_module, use_graph=None, options=None):
+        def from_existing(
+            cls, existing_module, use_graph=None, dynamic=True, options=None
+        ):
             torch_module = existing_module._deployable_module_model._torch_module
             oneflow_module = existing_module._deployable_module_model._oneflow_module
-            instance = cls(torch_module, oneflow_module, use_graph, options)
+            instance = cls(torch_module, oneflow_module, use_graph, dynamic, options)
             instance._deployable_module_dpl_graph = (
                 existing_module._deployable_module_dpl_graph if use_graph else None
             )
@@ -418,20 +423,17 @@ def get_mixed_deployable_module(module_cls):
 
 
 def oneflow_compile(
-    torch_module: torch.nn.Module,
-    *,
-    use_graph=True,
-    options={},
+    torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, options={},
 ):
     set_default_registry()
 
     def wrap_module(module):
         if isinstance(module, DeployableModule):
             assert not module._is_raw_deployable_module
-            return module.__class__.from_existing(module, use_graph, options)
+            return module.__class__.from_existing(module, use_graph, dynamic, options)
         else:
             return get_mixed_deployable_module(module.__class__)(
-                module, None, use_graph, options
+                module, None, use_graph, dynamic, options
             )
 
     model = wrap_module(torch_module)
