@@ -33,13 +33,12 @@ def linear_fuse_lora(
     rank: float = None,
 ):
     assert isinstance(self, torch.nn.Linear)
+    linear_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
     self._lora_up = state_dict["lora.up.weight"]
     self._lora_down = state_dict["lora.down.weight"]
     self._lora_scale = lora_scale
-    self._lora_rank = rank
-    self._lora_alpha = alpha
 
     w_down = state_dict["lora.down.weight"].float().to(device)
     w_up = state_dict["lora.up.weight"].float().to(device)
@@ -48,18 +47,46 @@ def linear_fuse_lora(
         w_up = w_up * alpha / rank
 
     lora_weight = lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
-    self.weight.data += lora_weight.to(device=device, dtype=dtype)
+    fused_weight = self.weight.data.float() + lora_weight
+    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+    print(w_up.shape)
 
 
-def conv_fuse_lora(self, state_dict, lora_scale, alpha, rank):
+def linear_unfuse_lora(self: torch.nn.Linear):
+    assert isinstance(self, torch.nn.Linear)
+    if not hasattr(self, "_lora_up") or self._lora_up is None:
+        return
+
+    fused_weight = self.weight.data
+    dtype, device = fused_weight.dtype, fused_weight.device
+
+    w_up = self._lora_up.to(device=device).float()
+    w_down = self._lora_down.to(device).float()
+
+    unfused_weight = self.weight.data.float() - (
+        self._lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
+    )
+    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
+
+    self._lora_up = None
+    self._lora_down = None
+    self._lora_scale = None
+
+
+def conv_fuse_lora(
+    self: torch.nn.Conv2d,
+    state_dict: Dict[str, torch.Tensor],
+    lora_scale: float = 1.0,
+    alpha: float = None,
+    rank: float = None,
+) -> None:
     assert isinstance(self, torch.nn.Conv2d)
+    conv_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
     self._lora_up = state_dict["lora.up.weight"]
     self._lora_down = state_dict["lora.down.weight"]
     self._lora_scale = lora_scale
-    self._lora_rank = rank
-    self._lora_alpha = alpha
 
     w_down = state_dict["lora.down.weight"].float().to(device)
     w_up = state_dict["lora.up.weight"].float().to(device)
@@ -69,10 +96,33 @@ def conv_fuse_lora(self, state_dict, lora_scale, alpha, rank):
 
     lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
     lora_weight = lora_weight.reshape((self.weight.shape)) * lora_scale
-    self.weight.data += lora_weight.to(device=device, dtype=dtype)
+
+    fused_weight = self.weight.data.float() + lora_weight
+    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
-@with_cProfile()
+def conv_unfuse_lora(self: torch.nn.Conv2d):
+    assert isinstance(self, torch.nn.Conv2d)
+    if not hasattr(self, "_lora_up") or self._lora_up is None:
+        return
+
+    fused_weight = self.weight.data
+    dtype, device = fused_weight.data.dtype, fused_weight.data.device
+
+    w_up = self._lora_up.to(device=device).float()
+    w_down = self._lora_down.to(device).float()
+
+    fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+    fusion = fusion.reshape((fused_weight.shape))
+    unfused_weight = fused_weight.float() - (self._lora_scale * fusion)
+    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
+
+    self._lora_up = None
+    self._lora_down = None
+    self._lora_scale = None
+
+
+# @with_cProfile()
 def load_and_fuse_lora(
     self: LoraLoaderMixin,
     lora: Union[str, Path, Dict[str, torch.Tensor]],
@@ -80,7 +130,7 @@ def load_and_fuse_lora(
     adapter_name: Optional[str] = None,
     **kwargs,
 ) -> None:
-    state_dict, network_alphas = load_state_dict_cached(lora, **kwargs)
+    state_dict, network_alphas = load_state_dict_cached(lora, unet_config=self.unet.config, **kwargs)
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:
@@ -329,4 +379,4 @@ def load_state_dict_cached(
     return state_dict, network_alphas
 
 
-CachedLoRAs = LRUCacheDict(10)
+CachedLoRAs = LRUCacheDict(100)
