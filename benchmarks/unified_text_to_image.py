@@ -90,6 +90,7 @@ def load_pipe(pipeline_cls,
 
 
 def compile_pipe(pipe):
+    # Compiling text_encoder could make SD21 output out of range values.
     parts = [
         # 'text_encoder',
         # 'text_encoder_2',
