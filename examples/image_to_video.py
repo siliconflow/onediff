@@ -240,8 +240,6 @@ def main():
     if "callback_on_step_end" in inspect.signature(model).parameters:
         iter_profiler = IterationProfiler()
         kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
-    if args.seed is not None:
-        torch.manual_seed(args.seed)
     begin = time.time()
     output_frames = model(**kwarg_inputs).frames
     end = time.time()
