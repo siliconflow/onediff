@@ -54,7 +54,7 @@ def parse_args():
 
 
 def load_pipe(pipeline_cls,
-              model,
+              model_name,
               variant=None,
               custom_pipeline=None,
               scheduler=None,
@@ -70,7 +70,7 @@ def load_pipe(pipeline_cls,
         controlnet = ControlNetModel.from_pretrained(controlnet,
                                                      torch_dtype=torch.float16)
         extra_kwargs['controlnet'] = controlnet
-    pipe = pipeline_cls.from_pretrained(model,
+    pipe = pipeline_cls.from_pretrained(model_name,
                                         torch_dtype=torch.float16,
                                         **extra_kwargs)
     if scheduler is not None:
