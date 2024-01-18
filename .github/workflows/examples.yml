@@ -180,7 +180,7 @@ jobs:
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
-          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8188
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8188 > onediff_comfyui_8188.log 2>&1
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
@@ -192,8 +192,8 @@ jobs:
       - name: View ComfyUI Logs
         if: matrix.test-suite == 'comfy'
         run: |
-          docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/comfyui_8188.log .
-          cat ./comfyui_8188.log
+          docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/onediff_comfyui_8188.log .
+          cat ./onediff_comfyui_8188.log
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
