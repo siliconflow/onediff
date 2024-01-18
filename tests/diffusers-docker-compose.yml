@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   onediff-test:
@@ -14,7 +14,10 @@ services:
     security_opt:
       - seccomp=unconfined
     environment:
-      HF_HUB_OFFLINE: '1'
+      HF_HUB_OFFLINE: "1"
+      ONEFLOW_RUN_GRAPH_BY_VM: "0"
+      CI: "1"
+      SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
     volumes:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
@@ -23,4 +26,4 @@ services:
       - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
       - $PWD:/src/onediff
     working_dir: /src/onediff
-    restart: 'no'
+    restart: "no"

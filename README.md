@@ -17,10 +17,11 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 - Email for business inquiry: contact@siliconflow.com
 
 ## Easy to use
-- Acceleration for popular UIs/libs
+- Out-of-the-box acceleration for popular UIs/libs
   - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/examples)
   - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
+  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
 - Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
   - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_turbo.py)
@@ -30,10 +31,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - [LCM](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/examples/image_to_video.py)
   - [DeepCache](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_deep_cache_sdxl.py)
-- Out-of-the-box acceleration
-  - [ComfyUI Nodes](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
-  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
-- Multi-resolution input
+- Support Multi-resolution input
 - Compile and save the compiled result offline, then load it online for serving
   - [Save and Load](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
   - [Change device to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
