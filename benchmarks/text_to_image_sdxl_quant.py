@@ -14,13 +14,13 @@ from onediff.optimization import rewrite_self_attention
 from diffusers import StableDiffusionXLPipeline
 
 try:
-    import diffusers_quant
+    import onediff_quant
 except:
-    print("Skip quantized SDXL since diffusers_quant is not installed.")
+    print("Skip quantized SDXL since onediff_quant is not installed.")
     exit()
-from diffusers_quant.utils import replace_sub_module_with_quantizable_module
+from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
-diffusers_quant.enable_load_quantized_model()
+onediff_quant.enable_load_quantized_model()
 
 
 parser = argparse.ArgumentParser()
@@ -84,7 +84,7 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
 if args.graph:
     rewrite_self_attention(pipe.unet)
 pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
-pipe.vae = oneflow_compile(pipe.vae, use_graph=args.graph)
+pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
 
 for _ in range(args.warmup):
     image = pipe(

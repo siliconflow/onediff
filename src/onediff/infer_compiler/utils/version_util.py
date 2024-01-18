@@ -19,10 +19,10 @@ def is_quantization_enabled():
         )
         return False
     try:
-        import diffusers_quant
+        import onediff_quant
     except ImportError as e:
         logger.warning(
-            f"Failed to import diffusers_quant, Error message: {e}, {get_support_message()}"
+            f"Failed to import onediff_quant, Error message: {e}, {get_support_message()}"
         )
         return False
     return hasattr(oneflow._C, "dynamic_quantization")

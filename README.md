@@ -7,18 +7,21 @@
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
-OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI).
+OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for ComfyUI, HF diffusers, and Stable Diffusion web UI). 
+
+OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
 ## Need help or talk
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
-- Chat in Discord [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
-- [Email for business inquiry](#onediff-enterprise-edition)
+- Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
+- Email for business inquiry: contact@siliconflow.com
 
 ## Easy to use
-- Acceleration for popular UIs/libs
+- Out-of-the-box acceleration for popular UIs/libs
   - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/examples)
   - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
+  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
 - Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
   - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_turbo.py)
@@ -27,11 +30,8 @@ OneDiff is **an out-of-the-box acceleration library for diffusion models**  (esp
   - [ControlNet](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_controlnet.py)
   - [LCM](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/examples/image_to_video.py)
-  - [DeepCache for ComfyUI](https://github.com/siliconflow/onediff/blob/8a35a9e7df45bbfa5bb05011b8357480acb5836e/onediff_comfy_nodes/_nodes.py#L414)
-- Out-of-the-box acceleration
-  - [ComfyUI Nodes](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
-  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/a38c5ea475c07b4527981ec5723ccac083ed0a9c/examples/text_to_image_sdxl.py#L53)
-- Multi-resolution input
+  - [DeepCache](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_deep_cache_sdxl.py)
+- Support Multi-resolution input
 - Compile and save the compiled result offline, then load it online for serving
   - [Save and Load](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
   - [Change device to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
@@ -46,9 +46,9 @@ OneDiff is **an out-of-the-box acceleration library for diffusion models**  (esp
 - NVIDIA GPUs
 
 ## OneDiff Enterprise Edition
-If you need **Enterprise Level Support** for your system or business, please send an email to business@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+If you need **Enterprise-level Support** for your system or business, please send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
-OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/product.html
+OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/onediff.html
 
 |                      | OneDiff Enterprise   | OneDiff Community |
 | -------------------- | ------------------- | ----------- |
@@ -60,10 +60,9 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | HF diffusers            | Yes                 | Yes         |
 | ComfyUI              | Yes           | Yes         |
 | Stable Diffusion web UI | Yes          | Yes         |
-| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(Cost a few seconds/minutes to compile for new input shape)           |
+| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(No time cost for most of the cases)           |
+| More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
 | Technical Support for deployment    | High priority support       | Community           |
-| More Extreme and Dedicated optimization(usually another 20~50% performance gain)         |   Yes         |                 |
-| Support customized pipeline/workflow|           Yes              | |
 | Get the latest technology/feature | Yes | |
 
 ## Install from source or Using in Docker
