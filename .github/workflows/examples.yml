@@ -120,7 +120,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
-<<<<<<< HEAD
       - name: Checkout ComfyUI-Manager
         if: matrix.test-suite == 'comfy'
         uses: actions/checkout@v2
@@ -128,12 +127,10 @@ jobs:
           repository: ltdrdata/ComfyUI-Manager
           path: ${{ env.COMFYUI_MANAGER_SRC_DIR }}      
 
-=======
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
           docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
->>>>>>> c151a2213ee6cf0c027fca0d03c0f062e7e7885e
       - run: docker image prune -f
       - run: |
           docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
