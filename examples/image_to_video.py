@@ -1,1 +1,1 @@
-../benchmarks/unified_image_to_video.py
+../benchmarks/image_to_video.py

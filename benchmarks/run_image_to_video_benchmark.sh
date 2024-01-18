@@ -58,7 +58,7 @@ benchmark_svd_model_with_one_resolution() {
   height=$5
   width=$6
   echo "Run ${model_path} ${height}x${width}..."
-  script_output=$(python3 ${SCRIPT_DIR}/unified_image_to_video.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png | tee /dev/tty)
+  script_output=$(python3 ${SCRIPT_DIR}/image_to_video.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png | tee /dev/tty)
 
   # Pattern to match:
   # Inference time: 0.560s
