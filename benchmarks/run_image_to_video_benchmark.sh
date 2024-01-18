@@ -41,10 +41,15 @@ SCRIPT_DIR=$(realpath $(dirname $0))
 if [ -z "${MODEL_DIR}" ]; then
   echo "model_dir unspecified, use HF models"
   SVD_XT_MODEL_PATH=stabilityai/stable-video-diffusion-img2vid-xt
+
+  BENCHMARK_QUANT_MODEL=0
 else
   echo "model_dir specified, use local models"
   MODEL_DIR=$(realpath ${MODEL_DIR})
   SVD_XT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt
+  SVD_XT_QUANT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt-int8
+
+  BENCHMARK_QUANT_MODEL=1
 fi
 
 BENCHMARK_RESULT_TEXT="| Model | HxW | Inference Time (s) | Iterations per second | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
@@ -82,6 +87,12 @@ benchmark_svd_model() {
   benchmark_svd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 576 1024
 }
 
-benchmark_svd_model svd-xt ${SVD_XT_MODEL_PATH}
+benchmark_svd_model svd_xt ${SVD_XT_MODEL_PATH}
+
+if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
+  if [ x"${COMPILER}" == x"oneflow" ]; then
+    benchmark_svd_model svd_xt_quant ${SVD_XT_QUANT_MODEL_PATH} ${warmups} ${compiler} 576 1024
+  fi
+fi
 
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}

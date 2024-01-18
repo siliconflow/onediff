@@ -99,11 +99,13 @@ benchmark_sd_model sd15 ${SD15_MODEL_PATH}
 benchmark_sd_model sd21 ${SD21_MODEL_PATH}
 benchmark_sd_model sdxl ${SDXL_MODEL_PATH}
 
-if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
-  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 1024 1024
-  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 720 1280
-  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 768 768
-  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 512 512
+if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then 
+  if [ x"${COMPILER}" == x"oneflow" ]; then
+    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 1024 1024
+    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 720 1280
+    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 768 768
+    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 512 512
+  fi
 fi
 
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}
