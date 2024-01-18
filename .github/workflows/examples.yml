@@ -193,7 +193,7 @@ jobs:
       - name: View ComfyUI Logs
         if: matrix.test-suite == 'comfy'
         run: |
-        docker exec -w /app/ComfyUI -it ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/comfyui_8188.log
+          docker exec -w /app/ComfyUI -it ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/comfyui_8188.log
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
