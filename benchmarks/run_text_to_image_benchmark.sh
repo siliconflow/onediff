@@ -57,7 +57,7 @@ else
   SDXL_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-int8
 fi
 
-BENCHMARK_RESULT_TEXT="| Model | Resolution | Inference Time (s) | Iterations per second | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
+BENCHMARK_RESULT_TEXT="| Model | HxW | Inference Time (s) | Iterations per second | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
 
 
 benchmark_sd_model_with_one_resolution() {

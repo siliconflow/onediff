@@ -47,7 +47,7 @@ else
   SVD_XT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt
 fi
 
-BENCHMARK_RESULT_TEXT="| Model | Resolution | Inference Time (s) | Iterations per second | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
+BENCHMARK_RESULT_TEXT="| Model | HxW | Inference Time (s) | Iterations per second | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
 
 
 benchmark_svd_model_with_one_resolution() {
