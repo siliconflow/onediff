@@ -179,8 +179,7 @@ def main():
         input_image = None
     else:
         input_image = Image.open(args.input_image).convert('RGB')
-        input_image = input_image.resize((width, height),
-                                         Image.LANCZOS)
+        input_image = input_image.resize((width, height), Image.LANCZOS)
 
     if args.control_image is None:
         if args.controlnet is None:
@@ -188,14 +187,13 @@ def main():
         else:
             control_image = Image.new('RGB', (width, height))
             draw = ImageDraw.Draw(control_image)
-            draw.ellipse((args.width // 4, height // 4,
-                          args.width // 4 * 3, height // 4 * 3),
+            draw.ellipse((args.width // 4, height // 4, args.width // 4 * 3,
+                          height // 4 * 3),
                          fill=(255, 255, 255))
             del draw
     else:
         control_image = Image.open(args.control_image).convert('RGB')
-        control_image = control_image.resize((width, height),
-                                             Image.LANCZOS)
+        control_image = control_image.resize((width, height), Image.LANCZOS)
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(

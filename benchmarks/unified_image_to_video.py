@@ -47,8 +47,12 @@ def parse_args():
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
     parser.add_argument("--fps", type=int, default=FPS)
-    parser.add_argument("--decode-chunk-size", type=int, default=DECODE_CHUNK_SIZE)
-    parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
+    parser.add_argument("--decode-chunk-size",
+                        type=int,
+                        default=DECODE_CHUNK_SIZE)
+    parser.add_argument("--extra-call-kwargs",
+                        type=str,
+                        default=EXTRA_CALL_KWARGS)
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=None)
     parser.add_argument("--output-video", type=str, default=None)
@@ -83,15 +87,15 @@ def load_pipe(
     if controlnet is not None:
         from diffusers import ControlNetModel
 
-        controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16
-        )
+        controlnet = ControlNetModel.from_pretrained(controlnet,
+                                                     torch_dtype=torch.float16)
         extra_kwargs["controlnet"] = controlnet
-    pipe = pipeline_cls.from_pretrained(
-        model_name, torch_dtype=torch.float16, **extra_kwargs
-    )
+    pipe = pipeline_cls.from_pretrained(model_name,
+                                        torch_dtype=torch.float16,
+                                        **extra_kwargs)
     if scheduler is not None:
-        scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
+        scheduler_cls = getattr(importlib.import_module("diffusers"),
+                                scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
@@ -123,14 +127,28 @@ def compile_pipe(pipe, attention_fp16_score_accum_max_m=-1):
         attention_fp16_score_accum_max_m,
     )
 
-    pipe.image_encoder = oneflow_compile(pipe.image_encoder)
-    pipe.unet = oneflow_compile(pipe.unet)
-    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
-    pipe.vae.encoder = oneflow_compile(pipe.vae.encoder)
+    parts = [
+        'image_encoder',
+        'unet',
+        'controlnet',
+    ]
+    for part in parts:
+        if getattr(pipe, part, None) is not None:
+            print(f'Compiling {part}')
+            setattr(pipe, part, oneflow_compile(getattr(pipe, part)))
+    vae_parts = [
+        'decoder',
+        'encoder',
+    ]
+    for part in vae_parts:
+        if getattr(pipe.vae, part, None) is not None:
+            print(f'Compiling vae.{part}')
+            setattr(pipe.vae, part, oneflow_compile(getattr(pipe.vae, part)))
     return pipe
 
 
 class IterationProfiler:
+
     def __init__(self):
         self.begin = None
         self.end = None
@@ -178,7 +196,8 @@ def main():
     elif args.compiler == "oneflow":
         pipe = compile_pipe(
             pipe,
-            attention_fp16_score_accum_max_m=args.attention_fp16_score_accum_max_m,
+            attention_fp16_score_accum_max_m=args.
+            attention_fp16_score_accum_max_m,
         )
     elif args.compiler == "compile":
         pipe.unet = torch.compile(pipe.unet)
@@ -209,7 +228,8 @@ def main():
             del draw
     else:
         control_image = Image.open(args.control_image).convert("RGB")
-        control_image = control_image.resize((args.width, height), Image.LANCZOS)
+        control_image = control_image.resize((args.width, height),
+                                             Image.LANCZOS)
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(
@@ -240,7 +260,8 @@ def main():
     iter_profiler = None
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
         iter_profiler = IterationProfiler()
-        kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
+        kwarg_inputs[
+            "callback_on_step_end"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_frames = pipe(**kwarg_inputs).frames
     end = time.time()
