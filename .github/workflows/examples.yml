@@ -15,6 +15,7 @@ env:
   REGION_ID: cn-beijing
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
+  COMFYUI_MANAGER_SRC_DIR: ComfyUI/custom_nodes/ComfyUI-Manager
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
@@ -58,6 +59,12 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
+      - name: Checkout ComfyUI-Manager
+        if: matrix.test-suite == 'comfy'
+        uses: actions/checkout@v2
+        with:
+          repository: ltdrdata/ComfyUI-Manager
+          path: ${{ env.COMFYUI_MANAGER_SRC_DIR }}      
 
       - run: docker image prune -f
       - run: |
@@ -107,7 +114,7 @@ jobs:
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
-          docker exec -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} python3 /app/ComfyUI/main.py --port 8188
           sleep 30
 
       - name: Test ComfyUI
@@ -115,7 +122,10 @@ jobs:
         run: |
           docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-unet-speedup-graph-saver.json
           docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-control-lora-speedup.json --timeout 300
-
+      - name: View ComfyUI Logs
+        if: matrix.test-suite == 'comfy'
+        run: |
+        docker exec -w /app/ComfyUI -it ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/comfyui_8188.log
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
