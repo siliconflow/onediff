@@ -156,6 +156,11 @@ def main():
         controlnet=args.controlnet,
     )
 
+    height = args.height
+    width = args.width
+    height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
+    width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
+
     if args.compiler == 'none':
         pass
     elif args.compiler == 'oneflow':
@@ -173,30 +178,25 @@ def main():
         input_image = None
     else:
         input_image = Image.open(args.input_image).convert('RGB')
-        input_image = input_image.resize((args.width, args.height),
+        input_image = input_image.resize((width, height),
                                          Image.LANCZOS)
 
     if args.control_image is None:
         if args.controlnet is None:
             control_image = None
         else:
-            control_image = Image.new('RGB', (args.width, args.height))
+            control_image = Image.new('RGB', (width, height))
             draw = ImageDraw.Draw(control_image)
-            draw.ellipse((args.width // 4, args.height // 4,
-                          args.width // 4 * 3, args.height // 4 * 3),
+            draw.ellipse((args.width // 4, height // 4,
+                          args.width // 4 * 3, height // 4 * 3),
                          fill=(255, 255, 255))
             del draw
     else:
         control_image = Image.open(args.control_image).convert('RGB')
-        control_image = control_image.resize((args.width, args.height),
+        control_image = control_image.resize((width, height),
                                              Image.LANCZOS)
 
     def get_kwarg_inputs():
-        height = args.height
-        width = args.width
-        height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
-        width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
-
         kwarg_inputs = dict(
             prompt=args.prompt,
             height=height,
