@@ -91,14 +91,15 @@ def load_pipe(pipeline_cls,
 
 def compile_pipe(pipe):
     parts = [
-        'text_encoder',
-        'text_encoder_2',
-        'image_encoder',
+        # 'text_encoder',
+        # 'text_encoder_2',
+        # 'image_encoder',
         'unet',
         'controlnet',
     ]
     for part in parts:
         if getattr(pipe, part, None) is not None:
+            print(f'Compiling {part}')
             setattr(pipe, part, oneflow_compile(getattr(pipe, part)))
     vae_parts = [
         'decoder',
@@ -106,6 +107,7 @@ def compile_pipe(pipe):
     ]
     for part in vae_parts:
         if getattr(pipe.vae, part, None) is not None:
+            print(f'Compiling vae.{part}')
             setattr(pipe.vae, part, oneflow_compile(getattr(pipe.vae, part)))
     return pipe
 
