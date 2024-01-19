@@ -2,7 +2,7 @@
 # set -x
 set -e
 
-MODEL_DIR=
+MODEL_DIR=/tmp/models
 OUTPUT_FILE=/dev/stdout
 WORK_DIR=/tmp
 
