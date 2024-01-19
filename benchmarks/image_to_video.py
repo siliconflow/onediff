@@ -112,7 +112,8 @@ def load_pipe(
     # Replace quantizable modules by QuantModule.
     if is_quantized_model:
         from onediff.quantization import load_calibration_and_quantize_pipeline
-        load_calibration_and_quantize_pipeline(os.path.join(model_name, "calibrate_info.txt"), pipe)
+        load_calibration_and_quantize_pipeline(
+            os.path.join(model_name, "calibrate_info.txt"), pipe)
     return pipe
 
 
