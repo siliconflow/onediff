@@ -38,19 +38,19 @@ done
 
 SCRIPT_DIR=$(realpath $(dirname $0))
 
+SD15_MODEL_PATH=runwayml/stable-diffusion-v1-5
+SD21_MODEL_PATH=stabilityai/stable-diffusion-2-1
+SDXL_MODEL_PATH=stabilityai/stable-diffusion-xl-base-1.0
+
 if [ -z "${MODEL_DIR}" ]; then
   echo "model_dir unspecified, use HF models"
-  SD15_MODEL_PATH=runwayml/stable-diffusion-v1-5
-  SD21_MODEL_PATH=stabilityai/stable-diffusion-2-1
-  SDXL_MODEL_PATH=stabilityai/stable-diffusion-xl-base-1.0
-
   BENCHMARK_QUANT_MODEL=0
 else
   echo "model_dir specified, use local models"
   MODEL_DIR=$(realpath ${MODEL_DIR})
-  SD15_MODEL_PATH=${MODEL_DIR}/stable-diffusion-v1-5
-  SD21_MODEL_PATH=${MODEL_DIR}/stable-diffusion-2-1
-  SDXL_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0
+  [ -d ${MODEL_DIR}/stable-diffusion-v1-5 ] && SD15_MODEL_PATH=${MODEL_DIR}/stable-diffusion-v1-5
+  [ -d ${MODEL_DIR}/stable-diffusion-2-1 ] && SD21_MODEL_PATH=${MODEL_DIR}/stable-diffusion-2-1
+  [ -d ${MODEL_DIR}/stable-diffusion-xl-base-1.0 ] && SDXL_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0
 
   BENCHMARK_QUANT_MODEL=1
 
