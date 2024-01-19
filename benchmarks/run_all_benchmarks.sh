@@ -2,9 +2,9 @@
 # set -x
 set -e
 
-MODEL_DIR=/tmp/models
+MODEL_DIR=./models
 OUTPUT_FILE=/dev/stdout
-WORK_DIR=/tmp
+WORK_DIR=./
 
 while getopts 'm:o:d:h' opt; do
   case ${opt} in
@@ -22,8 +22,6 @@ done
 WORK_DIR=$(realpath ${WORK_DIR})
 
 SCRIPT_DIR=$(realpath $(dirname $0))
-
-${SCRIPT_DIR}/download_models.sh -d ${MODEL_DIR}
 
 BENCHMARK_RESULT_TEXT="# Benchmark report\n\n"
 
