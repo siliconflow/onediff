@@ -64,14 +64,16 @@ TRT_VERSION_MINOR=$(echo ${TRT_VERSION} | cut -d'.' -f2)
 TRT_VERSION_NEXT=${TRT_VERSION_MAJOR}.$((${TRT_VERSION_MINOR}+1))
 
 PYVENV_DIR=${WORK_DIR}/pyvenv
-if [ ! -d ${PYVENV_DIR} ]; then
-  python3 -m venv ${PYVENV_DIR}
+mkdir -p ${PYVENV_DIR}
+TRT_PYVENV_DIR=${PYVENV_DIR}/trt_${TRT_VERSION}
+if [ ! -d ${TRT_PYVENV_DIR} ]; then
+  python3 -m venv ${TRT_PYVENV_DIR} --system-site-packages
 fi
-source ${PYVENV_DIR}/bin/activate
+. ${TRT_PYVENV_DIR}/bin/activate
 
 TRT_REPO_DIR=${WORK_DIR}/TensorRT
 if [ ! -d ${TRT_REPO_DIR} ]; then
-  git clone git@github.com:NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
+  git clone https://github.com/NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
 else
   cd ${TRT_REPO_DIR}
   git remote set-branches --add origin release/${TRT_VERSION}
@@ -79,7 +81,7 @@ else
   git pull
 fi
 
-pip3 install --pre --extra-index-url https://pypi.nvidia.com "tensorrt>=${TRT_VERSION}.0,<${TRT_VERSION_NEXT}.0"
+python3 -m pip install --pre --extra-index-url https://pypi.nvidia.com "tensorrt>=${TRT_VERSION}.0,<${TRT_VERSION_NEXT}.0"
 
 CUDA_VERSION=$(pip3 list | grep -oP '(?<=nvidia-cuda-runtime-cu)[0-9]+')
 case ${CUDA_VERSION} in
@@ -95,10 +97,10 @@ case ${CUDA_VERSION} in
     ;;
 esac
 
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${TORCH_CUDA_TAG}
+python3 -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu${TORCH_CUDA_TAG}
 
 cd $TRT_REPO_DIR/demo/Diffusion
-pip3 install -r requirements.txt 
+python3 -m pip install -r requirements.txt 
 
 if [ ! -z "${MODEL_DIR}" ]; then
   echo "model_dir specified, use local models"
