@@ -71,7 +71,7 @@ PYTHON=${PYVENV_DIR}/bin/python3
 
 TRT_REPO_DIR=${WORK_DIR}/TensorRT
 if [ ! -d ${TRT_REPO_DIR} ]; then
-  git clone git@github.com:NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
+  git clone https://github.com/NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
 else
   cd ${TRT_REPO_DIR}
   git remote set-branches --add origin release/${TRT_VERSION}
