@@ -54,6 +54,7 @@ else
   BENCHMARK_QUANT_MODEL=1
 
   SVD_XT_QUANT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt-int8
+  SVD_XT_DEEP_CACHE_QUANT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt-deepcache-int8
 fi
 
 BENCHMARK_RESULT_TEXT="| Model | HxW | it/s | E2E Time (s) | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
@@ -67,7 +68,11 @@ benchmark_svd_model_with_one_resolution() {
   height=$5
   width=$6
   echo "Run ${model_path} ${height}x${width}..."
-  script_output=$(python3 ${SCRIPT_DIR}/image_to_video.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png | tee /dev/tty)
+  if [[ ${model_name} =~ deepcache ]] ; then
+    script_output=$(python3 ${SCRIPT_DIR}/image_to_video.py --model ${model_path} --variant fp16 --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png --deepcache | tee /dev/tty)
+  else
+    script_output=$(python3 ${SCRIPT_DIR}/image_to_video.py --model ${model_path} --variant fp16 --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png | tee /dev/tty)
+  fi
 
   # Pattern to match:
   # Inference time: 0.560s
@@ -101,6 +106,7 @@ benchmark_svd_model svd_xt ${SVD_XT_MODEL_PATH} 576x1024
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
   if [ x"${COMPILER}" == x"oneflow" ]; then
     benchmark_svd_model svd_xt_quant ${SVD_XT_QUANT_MODEL_PATH} 576x1024
+    benchmark_svd_model svd_xt_deepcache_quant ${SVD_XT_DEEP_CACHE_QUANT_MODEL_PATH} 576x1024
   fi
 fi
 
