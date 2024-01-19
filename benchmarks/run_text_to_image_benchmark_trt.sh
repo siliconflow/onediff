@@ -74,7 +74,7 @@ if [ ! -d ${TRT_REPO_DIR} ]; then
   git clone https://github.com/NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
 else
   cd ${TRT_REPO_DIR}
-  git remote set-branches --add origin release/${TRT_VERSION} || git config --global --add safe.directory "*" && git remote set-branches --add origin release/${TRT_VERSION}
+  git remote set-branches --add origin release/${TRT_VERSION}
   git checkout release/${TRT_VERSION}
   git pull
 fi
