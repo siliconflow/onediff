@@ -1,7 +1,7 @@
 # OneDiff Enterprise
 
 <p align="center">
-<img src="../imgs/onediff_logo.png" height="100">
+<img src="imgs/onediff_logo.png" height="100">
 </p>
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
@@ -26,6 +26,23 @@ Alternatively, you can [contact](#contact) us to inquire about purchasing the On
 
 ## Install OneDiff Enterprise
 
+**CUDA 11.8**
+
+```bash
+python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/cu118
+```
+
+**CUDA 12.1**
+
+```bash
+python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/cu121
+```
+
+**CUDA 12.2**
+
+```bash
+python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/cu122
+```
 
 ## ComfyUI with OneDiff Enterprise
 
