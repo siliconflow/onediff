@@ -9,7 +9,7 @@ WORK_DIR=
 TRT_VERSION=9.2
 PROMPT="a beautiful photograph of Mt. Fuji during cherry blossom"
 
-while getopts 'm:w:o:d:v:p:h' opt; do
+while getopts 'm:w:p:o:d:v:p:h' opt; do
   case "$opt" in
     m)
       MODEL_DIR=$OPTARG
