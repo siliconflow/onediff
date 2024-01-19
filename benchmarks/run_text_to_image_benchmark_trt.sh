@@ -68,7 +68,7 @@ TRT_PYVENV_DIR=${PYVENV_DIR}/trt_${TRT_VERSION}
 if [ ! -d ${TRT_PYVENV_DIR} ]; then
   python3 -m venv ${TRT_PYVENV_DIR} --system-site-packages
 fi
-. TRT_PYVENV_DIR/bin/activate
+. ${TRT_PYVENV_DIR}/bin/activate
 
 TRT_REPO_DIR=${WORK_DIR}/TensorRT
 if [ ! -d ${TRT_REPO_DIR} ]; then
