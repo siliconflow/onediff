@@ -15,7 +15,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [Workflow](#workflow)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [Accessing Diffusers Models](#accessing-diffusers-models)
-    - [Run](#run)
+    - [Scripts](#scripts)
 
 
 ## Get the license key
@@ -52,14 +52,13 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 
 To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main) and the [siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/tree/main) on HuggingFace.
 
-Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
+**NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
 
 ### Workflow
 
-#### SDXL
-
-#### SDXL + DeepCache
-
+- [SD-1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
+- [SD-XL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
+- [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
 
 ## Diffusers with OneDiff Enterprise
 
@@ -67,7 +66,7 @@ Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/model
 
 To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-onediff-enterprise-v2](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-enterprise-v2/tree/main) on HuggingFace.
 
-### Run
+### Scripts
 
 #### SDXL
 
