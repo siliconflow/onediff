@@ -16,7 +16,7 @@ OneDiff diffusers extensions include multiple popular accelerated versions of th
 
     ```
     git clone https://github.com/siliconflow/onediff.git
-    cd diffusers_extensions && python3 -m pip install -e .
+    cd onediff_diffusers_extensions && python3 -m pip install -e .
     ```
 
 ## DeepCache speedup

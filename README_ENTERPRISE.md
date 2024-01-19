@@ -55,7 +55,27 @@ python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyu
 
 ### Accessing Diffusers Models
 
+To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-onediff-enterprise-v2](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-enterprise-v2/tree/main) on HuggingFace.
+
 ### Run
+
+#### SDXL
+
+Run [text_to_image_sdxl_enterprise.py](examples/text_to_image_sdxl_enterprise.py) by command:
+
+```bash
+python text_to_image_sdxl_enterprise.py --model $model_path --saved_image output_sdxl.png
+```
+
+Type `python3 text_to_image_sdxl_enterprise.py -h` for more options.
+
+#### SDXL + DeepCache
+
+Ensure that you have installed [OneDiff Diffusers Extensions](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sdxl_enterprise.py](examples/text_to_image_deep_cache_sdxl_enterprise.py) by command:
+
+```bash
+python text_to_image_deep_cache_sdxl_enterprise.py --model $model_path --saved_image output_deepcache.png
+```
 
 
 ## Contact
