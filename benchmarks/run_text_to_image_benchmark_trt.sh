@@ -110,7 +110,7 @@ if [ ! -z "${MODEL_DIR}" ]; then
   [ -d ${MODEL_DIR}/stable-diffusion-xl-base-1.0 ] && mkdir -p pytorch_model/${SDXL_MODEL_VERSION} && ln -sf ${MODEL_DIR}/stable-diffusion-xl-base-1.0 pytorch_model/${SDXL_MODEL_VERSION}/TXT2IMG
 fi
 
-BENCHMARK_RESULT_TEXT="| Model | HxW | it/s | E2E Time (ms) | CLIP Time (ms) | UNet Time (ms) | VAE-Dec Time (ms) |\n| --- | --- | --- | --- | --- | --- | --- |\n"
+BENCHMARK_RESULT_TEXT="| Model | HxW | it/s | E2E Time (s) | CLIP Time (s) | UNet Time (s) | VAE-Dec Time (s) |\n| --- | --- | --- | --- | --- | --- | --- |\n"
 
 benchmark_sd_model_with_one_resolution() {
   model_name=$1
@@ -141,12 +141,12 @@ benchmark_sd_model_with_one_resolution() {
   # |-----------------|--------------|
 
   # grep: lookbehind assertion is not fixed length
-  inference_time=$(echo "${script_output}" | grep 'Pipeline' | awk '{print $4}')
-  clip_time=$(echo "${script_output}" | grep 'CLIP' | awk '{print $4}')
-  unet_time=$(echo "${script_output}" | grep 'UNet' | awk '{print $6}')
-  vae_dec_time=$(echo "${script_output}" | grep 'VAE-Dec' | awk '{print $4}')
+  inference_time=$(echo "${script_output}" | grep 'Pipeline' | awk '{print $4}') && iteration_time=$(python3 -c "print('{:.3f}'.format(${inference_time} / 1000))")
+  clip_time=$(echo "${script_output}" | grep 'CLIP' | awk '{print $4}') && clip_time=$(python3 -c "print('{:.3f}'.format(${clip_time} / 1000))")
+  unet_time=$(echo "${script_output}" | grep 'UNet' | awk '{print $6}') && unet_time=$(python3 -c "print('{:.3f}'.format(${unet_time} / 1000))")
+  vae_dec_time=$(echo "${script_output}" | grep 'VAE-Dec' | awk '{print $4}') && vae_dec_time=$(python3 -c "print('{:.3f}'.format(${vae_dec_time} / 1000))")
   unet_steps=$(echo "${script_output}" | grep 'UNet' | awk '{print $4}')
-  iterations_per_second=$(python3 -c "print('{:.3f}'.format(1000 * ${unet_steps} / ${unet_time}))")
+  iterations_per_second=$(python3 -c "print('{:.3f}'.format(${unet_steps} / ${unet_time}))")
   BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}| ${model_name} | ${height}x${width} | ${iterations_per_second} | ${inference_time} | ${clip_time} | ${unet_time} | ${vae_dec_time} |\n"
 }
 
