@@ -97,7 +97,7 @@ def load_pipe(
                                                      torch_dtype=torch.float16)
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
-    if os.path.exists(os.path.join(model_name, 'calibrate_info.txt')):
+    if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         is_quantized_model = True
         from onediff.quantization import setup_onediff_quant
         setup_onediff_quant()
@@ -117,7 +117,7 @@ def load_pipe(
     # Replace quantizable modules by QuantModule.
     if is_quantized_model:
         from onediff.quantization import load_calibration_and_quantize_pipeline
-        load_calibration_and_quantize_pipeline(os.path.join(model_name, 'calibrate_info.txt'), pipe)
+        load_calibration_and_quantize_pipeline(os.path.join(model_name, "calibrate_info.txt"), pipe)
     return pipe
 
 
@@ -136,21 +136,21 @@ def compile_pipe(pipe, attention_fp16_score_accum_max_m=-1):
     )
 
     parts = [
-        'image_encoder',
-        'unet',
-        'controlnet',
+        "image_encoder",
+        "unet",
+        "controlnet",
     ]
     for part in parts:
         if getattr(pipe, part, None) is not None:
-            print(f'Compiling {part}')
+            print(f"Compiling {part}")
             setattr(pipe, part, oneflow_compile(getattr(pipe, part)))
     vae_parts = [
-        'decoder',
-        'encoder',
+        "decoder",
+        "encoder",
     ]
     for part in vae_parts:
         if getattr(pipe.vae, part, None) is not None:
-            print(f'Compiling vae.{part}')
+            print(f"Compiling vae.{part}")
             setattr(pipe.vae, part, oneflow_compile(getattr(pipe.vae, part)))
     return pipe
 
@@ -286,8 +286,8 @@ def main():
         print(f"Iterations per second: {iter_per_sec:.3f}")
     cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
     host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-    print(f'CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB')
-    print(f'Host Mem after: {host_mem_after_used / 1024:.3f}GiB')
+    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
+    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
 
     if args.output_video is not None:
         export_to_video(output_frames[0], args.output_video, fps=args.fps)
