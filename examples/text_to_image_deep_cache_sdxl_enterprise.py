@@ -1,4 +1,3 @@
-# text-to-image-deep-cache-sdxl-hpc.py
 import argparse
 import os
 import time
