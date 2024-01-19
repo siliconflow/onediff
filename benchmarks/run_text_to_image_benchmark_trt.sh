@@ -163,7 +163,6 @@ benchmark_sd_model() {
   done
 }
 
-# TRT does not support 720x1280
 benchmark_sd_model sd15 ${SD15_MODEL_VERSION} 512x512,768x768,1024x1024
 benchmark_sd_model sd21 ${SD21_MODEL_VERSION} 512x512,768x768,1024x1024
 benchmark_sd_model sdxl ${SDXL_MODEL_VERSION} 512x512,768x768,1024x1024
