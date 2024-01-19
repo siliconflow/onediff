@@ -44,9 +44,10 @@ SD15_MODEL_PATH=runwayml/stable-diffusion-v1-5
 SD21_MODEL_PATH=stabilityai/stable-diffusion-2-1
 SDXL_MODEL_PATH=stabilityai/stable-diffusion-xl-base-1.0
 
+BENCHMARK_QUANT_MODEL=0
+
 if [ -z "${MODEL_DIR}" ]; then
   echo "model_dir unspecified, use HF models"
-  BENCHMARK_QUANT_MODEL=0
 else
   echo "model_dir specified, use local models"
   MODEL_DIR=$(realpath ${MODEL_DIR})
@@ -54,7 +55,7 @@ else
   [ -d ${MODEL_DIR}/stable-diffusion-2-1 ] && SD21_MODEL_PATH=${MODEL_DIR}/stable-diffusion-2-1
   [ -d ${MODEL_DIR}/stable-diffusion-xl-base-1.0 ] && SDXL_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0
 
-  BENCHMARK_QUANT_MODEL=1
+  python3 -c "import onediff_quant" && echo "enable quant model" && BENCHMARK_QUANT_MODEL=1
 
   SDXL_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-int8
   SDXL_DEEP_CACHE_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-deepcache-int8
