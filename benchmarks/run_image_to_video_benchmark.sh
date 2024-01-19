@@ -28,9 +28,9 @@ while getopts 'm:w:c:o:h' opt; do
     ?|h)
       echo "Usage: $(basename $0) [-m model_dir] [-w warmups] [-c compiler] [-o output_file]"
       echo "  -m model_dir: the directory of the models, if not set, use HF models"
-      echo "  -w warmups: the number of warmups, default is ${WARMUPS}"
-      echo "  -c compiler: the compiler, default is ${COMPILER}"
-      echo "  -o output_file: the output file, default is ${OUTPUT_FILE}"
+      echo "  -w warmups: the number of warmups, default is `${WARMUPS}`"
+      echo "  -c compiler: the compiler, default is `${COMPILER}`"
+      echo "  -o output_file: the output file, default is `${OUTPUT_FILE}`"
       exit 1
       ;;
   esac
@@ -54,7 +54,7 @@ else
   SVD_XT_QUANT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt-int8
 fi
 
-BENCHMARK_RESULT_TEXT="| Model | HxW | Inference Time (s) | Iterations per second | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
+BENCHMARK_RESULT_TEXT="| Model | HxW | it/s | E2E Time (s) | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
 
 
 benchmark_svd_model_with_one_resolution() {
@@ -78,7 +78,7 @@ benchmark_svd_model_with_one_resolution() {
   cuda_mem_after=$(echo "${script_output}" | grep -oP '(?<=CUDA Mem after: )\d+\.\d+')
   host_mem_after=$(echo "${script_output}" | grep -oP '(?<=Host Mem after: )\d+\.\d+')
 
-  BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}| ${model_name} | ${height}x${width} | ${inference_time} | ${iterations_per_second} | ${cuda_mem_after} | ${host_mem_after} |\n"
+  BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}| ${model_name} | ${height}x${width} | ${iterations_per_second} | ${inference_time} | ${cuda_mem_after} | ${host_mem_after} |\n"
 }
 
 benchmark_svd_model() {
