@@ -69,16 +69,16 @@ TRT_PYVENV_DIR=${PYVENV_DIR}/trt_${TRT_VERSION}
 if [ ! -d ${TRT_PYVENV_DIR} ]; then
   python3 -m venv ${TRT_PYVENV_DIR} --system-site-packages
 fi
-. ${TRT_PYVENV_DIR}/bin/activate
+# . ${TRT_PYVENV_DIR}/bin/activate
 
 TRT_REPO_DIR=${WORK_DIR}/TensorRT
 if [ ! -d ${TRT_REPO_DIR} ]; then
   git clone https://github.com/NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
 else
   cd ${TRT_REPO_DIR}
-  git remote set-branches --add origin release/${TRT_VERSION}
-  git checkout release/${TRT_VERSION}
-  git pull
+#  git remote set-branches --add origin release/${TRT_VERSION}
+#  git checkout release/${TRT_VERSION}
+#  git pull
 fi
 
 python3 -m pip install --pre --extra-index-url https://pypi.nvidia.com "tensorrt>=${TRT_VERSION}.0,<${TRT_VERSION_NEXT}.0"

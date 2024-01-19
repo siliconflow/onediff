@@ -35,8 +35,8 @@ TMP_OUTPUT_FILE=$(mktemp)
 
 ${SCRIPT_DIR}/run_text_to_image_benchmark.sh -m ${MODEL_DIR} -c none -o ${TMP_OUTPUT_FILE} && BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}\n\n### Text to Image (Vanilla PyTorch)\n\n$(cat ${TMP_OUTPUT_FILE})\n\n"
 ${SCRIPT_DIR}/run_text_to_image_benchmark.sh -m ${MODEL_DIR} -o ${TMP_OUTPUT_FILE} && BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}\n\n### Text to Image (OneFlow)\n\n$(cat ${TMP_OUTPUT_FILE})\n\n"
-${SCRIPT_DIR}/run_text_to_image_benchmark_trt.sh -m ${MODEL_DIR} -o ${TMP_OUTPUT_FILE} -d ${WORK_DIR} && BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}\n\n### Text to Image (TensorRT)\n\n$(cat ${TMP_OUTPUT_FILE})\n\n"
 ${SCRIPT_DIR}/run_image_to_video_benchmark.sh -m ${MODEL_DIR} -c none -o ${TMP_OUTPUT_FILE} && BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}\n\n### Image to Video (Vanilla PyTorch)\n\n$(cat ${TMP_OUTPUT_FILE})\n\n"
 ${SCRIPT_DIR}/run_image_to_video_benchmark.sh -m ${MODEL_DIR} -o ${TMP_OUTPUT_FILE} && BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}\n\n### Image to Video (OneFlow)\n\n$(cat ${TMP_OUTPUT_FILE})\n\n"
+${SCRIPT_DIR}/run_text_to_image_benchmark_trt.sh -m ${MODEL_DIR} -o ${TMP_OUTPUT_FILE} -d ${WORK_DIR} && BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}\n\n### Text to Image (TensorRT)\n\n$(cat ${TMP_OUTPUT_FILE})\n\n"
 
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}
