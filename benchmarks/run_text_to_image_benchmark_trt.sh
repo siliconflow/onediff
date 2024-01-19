@@ -141,7 +141,7 @@ benchmark_sd_model_with_one_resolution() {
   # |-----------------|--------------|
 
   # grep: lookbehind assertion is not fixed length
-  inference_time=$(echo "${script_output}" | grep 'Pipeline' | awk '{print $4}') && iteration_time=$(python3 -c "print('{:.3f}'.format(${inference_time} / 1000))")
+  inference_time=$(echo "${script_output}" | grep 'Pipeline' | awk '{print $4}') && inference_time=$(python3 -c "print('{:.3f}'.format(${inference_time} / 1000))")
   clip_time=$(echo "${script_output}" | grep 'CLIP' | awk '{print $4}') && clip_time=$(python3 -c "print('{:.3f}'.format(${clip_time} / 1000))")
   unet_time=$(echo "${script_output}" | grep 'UNet' | awk '{print $6}') && unet_time=$(python3 -c "print('{:.3f}'.format(${unet_time} / 1000))")
   vae_dec_time=$(echo "${script_output}" | grep 'VAE-Dec' | awk '{print $4}') && vae_dec_time=$(python3 -c "print('{:.3f}'.format(${vae_dec_time} / 1000))")
