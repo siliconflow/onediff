@@ -40,10 +40,14 @@ def linear_fuse_lora(
     linear_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
+    w_down = state_dict["lora.down.weight"].float().to(device)
+    w_up = state_dict["lora.up.weight"].float().to(device)
+
+    if alpha is not None:
+        w_up = w_up * alpha / rank
+
     if offload_weight == "lora":
-        self.register_buffer(
-            "_lora_up", state_dict["lora.up.weight"].to(offload_device)
-        )
+        self.register_buffer("_lora_up", w_up.to(offload_device))
         self.register_buffer(
             "_lora_down", state_dict["lora.down.weight"].to(offload_device)
         )
@@ -51,14 +55,11 @@ def linear_fuse_lora(
 
     elif offload_weight == "weight":
         self.register_buffer(
-            "_lora_orig_weight", self.weight.data.to(offload_device).clone()
+            "_lora_orig_weight", self.weight.data.clone().to(offload_device)
         )
 
-    w_down = state_dict["lora.down.weight"].float().to(device)
-    w_up = state_dict["lora.up.weight"].float().to(device)
-
-    if alpha is not None:
-        w_up = w_up * alpha / rank
+    else:
+        raise ValueError(f"Invalid offload weight: {offload_weight}")
 
     lora_weight = lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
     fused_weight = self.weight.data.float() + lora_weight
@@ -78,9 +79,9 @@ def linear_unfuse_lora(self: torch.nn.Linear):
         unfused_weight = self._lora_orig_weight
         self._lora_orig_weight = None
 
-    if "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self._lora_up.to(device=device).float()
-        w_down = self._lora_down.to(device).float()
+    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
+        w_up = self.get_buffer("_lora_up").to(device=device).float()
+        w_down = self.get_buffer("_lora_down").to(device).float()
 
         unfused_weight = self.weight.data.float() - (
             self._lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
@@ -111,24 +112,24 @@ def conv_fuse_lora(
     conv_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
+    w_down = state_dict["lora.down.weight"].float().to(device)
+    w_up = state_dict["lora.up.weight"].float().to(device)
+
+    if alpha is not None:
+        w_up = w_up * alpha / rank
+
     if offload_weight == "lora":
-        self.register_buffer(
-            "_lora_up", state_dict["lora.up.weight"].to(offload_device)
-        )
+        self.register_buffer("_lora_up", w_up.to(offload_device))
         self.register_buffer(
             "_lora_down", state_dict["lora.down.weight"].to(offload_device)
         )
         self._lora_scale = lora_scale
     elif offload_weight == "weight":
         self.register_buffer(
-            "_lora_orig_weight", self.weight.data.to(offload_device).clone()
+            "_lora_orig_weight", self.weight.data.clone().to(offload_device)
         )
-
-    w_down = state_dict["lora.down.weight"].float().to(device)
-    w_up = state_dict["lora.up.weight"].float().to(device)
-
-    if alpha is not None:
-        w_up = w_up * alpha / rank
+    else:
+        raise ValueError(f"Invalid offload weight: {offload_weight}")
 
     lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
     lora_weight = lora_weight.reshape((self.weight.shape)) * lora_scale
@@ -150,7 +151,7 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
         unfused_weight = self._lora_orig_weight
         self._lora_orig_weight = None
 
-    if "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
+    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
         w_up = self._lora_up.to(device=device).float()
         w_down = self._lora_down.to(device).float()
 
@@ -347,7 +348,7 @@ def load_and_fuse_lora(
                         component, recurse=is_sequential_cpu_offload
                     )
 
-        self.to(dtype=self.dtype, device=self.device)
+        # self.to(dtype=self.dtype, device=self.device)
 
         # Offload back.
         if is_model_cpu_offload:
