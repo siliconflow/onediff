@@ -55,6 +55,7 @@ else
   BENCHMARK_QUANT_MODEL=1
 
   SDXL_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-int8
+  SDXL_DEEP_CACHE_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-deepcache-int8
 fi
 
 BENCHMARK_RESULT_TEXT="| Model | HxW | it/s | E2E Time (s) | CUDA Mem after (GiB) | Host Mem after (GiB) |\n| --- | --- | --- | --- | --- | --- |\n"
@@ -68,7 +69,11 @@ benchmark_sd_model_with_one_resolution() {
   height=$5
   width=$6
   echo "Run ${model_path} ${height}x${width}..."
-  script_output=$(python3 ${SCRIPT_DIR}/text_to_image.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} | tee /dev/tty)
+  if [ x"${model_name}" == x"sdxl_deepcache_quant" ]; then
+    script_output=$(python3 ${SCRIPT_DIR}/text_to_image.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --deepcache | tee /dev/tty)
+  else
+    script_output=$(python3 ${SCRIPT_DIR}/text_to_image.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} | tee /dev/tty)
+  fi
 
   # Pattern to match:
   # Inference time: 0.560s
@@ -104,6 +109,7 @@ benchmark_sd_model sdxl ${SDXL_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then 
   if [ x"${COMPILER}" == x"oneflow" ]; then
     benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
+    benchmark_sd_model sdxl_deepcache_quant ${SDXL_DEEP_CACHE_QUANT_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
   fi
 fi
 

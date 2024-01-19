@@ -17,6 +17,8 @@ DECODE_CHUNK_SIZE = 5
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
 EXTRA_CALL_KWARGS = None
 ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
+CACHE_INTERVAL = 3
+CACHE_BRANCH = 0
 
 import os
 import importlib
@@ -51,9 +53,16 @@ def parse_args():
     parser.add_argument("--decode-chunk-size",
                         type=int,
                         default=DECODE_CHUNK_SIZE)
+    parser.add_argument('--cache_interval', type=int, default=CACHE_INTERVAL)
+    parser.add_argument('--cache_branch', type=int, default=CACHE_BRANCH)
     parser.add_argument("--extra-call-kwargs",
                         type=str,
                         default=EXTRA_CALL_KWARGS)
+    parser.add_argument(
+        "--deepcache",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=False,
+    )
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=None)
     parser.add_argument("--output-video", type=str, default=None)
@@ -179,7 +188,11 @@ class IterationProfiler:
 
 def main():
     args = parse_args()
-    from diffusers import StableVideoDiffusionPipeline
+    if args.deepcache:
+        assert "deepcache" in args.model
+        from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
+    else:
+        from diffusers import StableVideoDiffusionPipeline
 
     pipe = load_pipe(
         StableVideoDiffusionPipeline,
@@ -249,6 +262,9 @@ def main():
             **(dict() if args.extra_call_kwargs is None else json.loads(
                 args.extra_call_kwargs)),
         )
+        if args.deepcache:
+            kwarg_inputs["cache_interval"] = args.cache_interval
+            kwarg_inputs["cache_branch"] = args.cache_branch
         if control_image is not None:
             kwarg_inputs["control_image"] = control_image
         return kwarg_inputs
