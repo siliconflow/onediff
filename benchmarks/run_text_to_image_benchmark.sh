@@ -87,24 +87,23 @@ benchmark_sd_model_with_one_resolution() {
 benchmark_sd_model() {
   model_name=$1
   model_path=$2
+  resolutions=$3
   warmups=${WARMUPS}
   compiler=${COMPILER}
-  benchmark_sd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 1024 1024
-  benchmark_sd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 720 1280
-  benchmark_sd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 768 768
-  benchmark_sd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 512 512
+  for resolution in $(echo ${resolutions} | tr ',' ' '); do
+    height=$(echo ${resolution} | cut -d'x' -f1)
+    width=$(echo ${resolution} | cut -d'x' -f2)
+    benchmark_sd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} ${height} ${width}
+  done
 }
 
-benchmark_sd_model sd15 ${SD15_MODEL_PATH}
-benchmark_sd_model sd21 ${SD21_MODEL_PATH}
-benchmark_sd_model sdxl ${SDXL_MODEL_PATH}
+benchmark_sd_model sd15 ${SD15_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
+benchmark_sd_model sd21 ${SD21_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
+benchmark_sd_model sdxl ${SDXL_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then 
   if [ x"${COMPILER}" == x"oneflow" ]; then
-    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 1024 1024
-    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 720 1280
-    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 768 768
-    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} ${warmups} ${compiler} 512 512
+    benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
   fi
 fi
 

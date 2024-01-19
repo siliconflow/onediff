@@ -84,16 +84,21 @@ benchmark_svd_model_with_one_resolution() {
 benchmark_svd_model() {
   model_name=$1
   model_path=$2
+  resolutions=$3
   warmups=${WARMUPS}
   compiler=${COMPILER}
-  benchmark_svd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} 576 1024
+  for resolution in $(echo ${resolutions} | tr ',' ' '); do
+    height=$(echo ${resolution} | cut -d'x' -f1)
+    width=$(echo ${resolution} | cut -d'x' -f2)
+    benchmark_svd_model_with_one_resolution ${model_name} ${model_path} ${warmups} ${compiler} ${height} ${width}
+  done
 }
 
-benchmark_svd_model svd_xt ${SVD_XT_MODEL_PATH}
+benchmark_svd_model svd_xt ${SVD_XT_MODEL_PATH} 576x1024
 
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ]; then
   if [ x"${COMPILER}" == x"oneflow" ]; then
-    benchmark_svd_model svd_xt_quant ${SVD_XT_QUANT_MODEL_PATH} ${warmups} ${compiler} 576 1024
+    benchmark_svd_model svd_xt_quant ${SVD_XT_QUANT_MODEL_PATH} 576x1024
   fi
 fi
 
