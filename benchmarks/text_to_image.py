@@ -12,6 +12,9 @@ BATCH = 1
 HEIGHT = None
 WIDTH = None
 EXTRA_CALL_KWARGS = None
+CACHE_INTERVAL = 3
+CACHE_LAYER_ID = 0
+CACHE_BLOCK_ID = 0
 
 import os
 import importlib
@@ -40,12 +43,16 @@ def parse_args():
     parser.add_argument("--batch", type=int, default=BATCH)
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
+    parser.add_argument('--cache_interval', type=int, default=CACHE_INTERVAL)
+    parser.add_argument('--cache_layer_id', type=int, default=CACHE_LAYER_ID)
+    parser.add_argument('--cache_block_id', type=int, default=CACHE_BLOCK_ID)
     parser.add_argument("--extra-call-kwargs",
                         type=str,
                         default=EXTRA_CALL_KWARGS)
     parser.add_argument("--input-image", type=str, default=None)
     parser.add_argument("--control-image", type=str, default=None)
     parser.add_argument("--output-image", type=str, default=None)
+    parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
         "--compiler",
         type=str,
@@ -159,7 +166,10 @@ class IterationProfiler:
 def main():
     args = parse_args()
     if args.input_image is None:
-        from diffusers import AutoPipelineForText2Image as pipeline_cls
+        if argparse.deepcache:
+            from diffusers_extensions.deep_cache import StableDiffusionXLPipeline as pipeline_cls
+        else:
+            from diffusers import AutoPipelineForText2Image as pipeline_cls
     else:
         from diffusers import AutoPipelineForImage2Image as pipeline_cls
 
@@ -223,6 +233,10 @@ def main():
             **(dict() if args.extra_call_kwargs is None else json.loads(
                 args.extra_call_kwargs)),
         )
+        if args.deepcache:
+            kwarg_inputs["cache_interval"] = args.cache_interval
+            kwarg_inputs["cache_layer_id"] = args.cache_layer_id
+            kwarg_inputs["cache_block_id"] = args.cache_block_id
         if input_image is not None:
             kwarg_inputs["image"] = input_image
         if control_image is not None:
