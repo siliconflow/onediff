@@ -25,7 +25,7 @@ download() {
   DOWNLOAD_PATH=$1
   model=$2
   if [ ! -d "${DOWNLOAD_PATH}/${model}" ]; then
-    wget http://oneflow-pro.oss-cn-beijing.aliyuncs.com/models/${model}.zip && unzip ${model}.zip -d ${DOWNLOAD_PATH}
+    ( cd /tmp && wget -c http://oneflow-pro.oss-cn-beijing.aliyuncs.com/models/${model}.zip -O ${model}.zip && unzip ${model}.zip -d ${DOWNLOAD_PATH} && rm ${model}.zip )
     if [ $? != 0 ]; then
       die "failed to download model ${model}."
     fi
