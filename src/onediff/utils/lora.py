@@ -5,14 +5,14 @@ from contextlib import nullcontext
 
 import torch
 
+from oneflow.utils.tensor import to_torch
 from onediff.infer_compiler.utils.log_utils import logger
+from onediff.infer_compiler.with_oneflow_compile import DualModule, DeployableModule
 from .profiler import with_cProfile
 
 from diffusers.loaders.lora import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
-from diffusers.models.modeling_utils import (
-    _LOW_CPU_MEM_USAGE_DEFAULT,
-)
+from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT
 from diffusers.utils import is_accelerate_available
 
 if is_accelerate_available():
@@ -30,19 +30,29 @@ def linear_fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
-    offload_device = "cpu",
-    offload_weight = "lora",
+    offload_device="cpu",
+    offload_weight="lora",
 ):
     assert isinstance(self, torch.nn.Linear)
+    if isinstance(self, DualModule):
+        self = self._torch_module
+
     linear_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
     if offload_weight == "lora":
-        self._lora_up = state_dict["lora.up.weight"].to(offload_device)
-        self._lora_down = state_dict["lora.down.weight"].to(offload_device)
+        self.register_buffer(
+            "_lora_up", state_dict["lora.up.weight"].to(offload_device)
+        )
+        self.register_buffer(
+            "_lora_down", state_dict["lora.down.weight"].to(offload_device)
+        )
         self._lora_scale = lora_scale
+
     elif offload_weight == "weight":
-        self._lora_orig_weight = self.weight.data.to(offload_device).clone()
+        self.register_buffer(
+            "_lora_orig_weight", self.weight.data.to(offload_device).clone()
+        )
 
     w_down = state_dict["lora.down.weight"].float().to(device)
     w_up = state_dict["lora.up.weight"].float().to(device)
@@ -61,11 +71,14 @@ def linear_unfuse_lora(self: torch.nn.Linear):
     fused_weight = self.weight.data
     dtype, device = fused_weight.dtype, fused_weight.device
 
-    if hasattr(self, "_lora_orig_weight") and self._lora_orig_weight is not None:
+    if (
+        "_lora_orig_weight" in self._buffers
+        and self.get_buffer("_lora_orig_weight") is not None
+    ):
         unfused_weight = self._lora_orig_weight
         self._lora_orig_weight = None
-    
-    elif hasattr(self, "_lora_up") and self._lora_up is not None:
+
+    if "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
         w_up = self._lora_up.to(device=device).float()
         w_down = self._lora_down.to(device).float()
 
@@ -75,12 +88,11 @@ def linear_unfuse_lora(self: torch.nn.Linear):
         self._lora_up = None
         self._lora_down = None
         self._lora_scale = None
-    
+
     else:
         return
 
     self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
-
 
 
 def conv_fuse_lora(
@@ -90,19 +102,27 @@ def conv_fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
-    offload_device = "cpu",
-    offload_weight = "lora",
+    offload_device="cpu",
+    offload_weight="lora",
 ) -> None:
     assert isinstance(self, torch.nn.Conv2d)
+    if isinstance(self, DualModule):
+        self = self._torch_module
     conv_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
     if offload_weight == "lora":
-        self._lora_up = state_dict["lora.up.weight"].to(offload_device)
-        self._lora_down = state_dict["lora.down.weight"].to(offload_device)
+        self.register_buffer(
+            "_lora_up", state_dict["lora.up.weight"].to(offload_device)
+        )
+        self.register_buffer(
+            "_lora_down", state_dict["lora.down.weight"].to(offload_device)
+        )
         self._lora_scale = lora_scale
     elif offload_weight == "weight":
-        self._lora_orig_weight = self.weight.data.to(offload_device).clone()
+        self.register_buffer(
+            "_lora_orig_weight", self.weight.data.to(offload_device).clone()
+        )
 
     w_down = state_dict["lora.down.weight"].float().to(device)
     w_up = state_dict["lora.up.weight"].float().to(device)
@@ -123,11 +143,14 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
     fused_weight = self.weight.data
     dtype, device = fused_weight.dtype, fused_weight.device
 
-    if hasattr(self, "_lora_orig_weight") and self._lora_orig_weight is not None:
+    if (
+        "_lora_orig_weight" in self._buffers
+        and self.get_buffer("_lora_orig_weight") is not None
+    ):
         unfused_weight = self._lora_orig_weight
         self._lora_orig_weight = None
-    
-    elif hasattr(self, "_lora_up") and self._lora_up is not None:
+
+    if "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
         w_up = self._lora_up.to(device=device).float()
         w_down = self._lora_down.to(device).float()
 
@@ -138,7 +161,7 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
         self._lora_up = None
         self._lora_down = None
         self._lora_scale = None
-    
+
     else:
         return
 
@@ -158,7 +181,9 @@ def load_and_fuse_lora(
 ) -> None:
     assert adapter_name is None
 
-    state_dict, network_alphas = load_state_dict_cached(lora, unet_config=self.unet.config, **kwargs)
+    state_dict, network_alphas = load_state_dict_cached(
+        lora, unet_config=self.unet.config, **kwargs
+    )
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:
@@ -322,7 +347,6 @@ def load_and_fuse_lora(
                         component, recurse=is_sequential_cpu_offload
                     )
 
-
         self.to(dtype=self.dtype, device=self.device)
 
         # Offload back.
@@ -368,7 +392,7 @@ def unfuse_lora(self: torch.nn.Module):
             linear_unfuse_lora(m)
         elif isinstance(m, torch.nn.Conv2d):
             conv_unfuse_lora(m)
-    
+
     self.apply(_unfuse_lora)
 
 
