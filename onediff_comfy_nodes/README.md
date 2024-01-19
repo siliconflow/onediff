@@ -65,8 +65,6 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 #### Setup Enterprise Edition
 
-<summary>Setup Enterprise Edition</summary>
-
 1. [Install OneDiff Enterprise](../README_ENTERPRISE.md#install-onediff-enterprise)
 
 2. Install onediff_comfy_nodes for ComfyUI
