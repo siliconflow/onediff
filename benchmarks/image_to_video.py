@@ -126,7 +126,7 @@ def load_pipe(
     return pipe
 
 
-def compile_pipe(pipe, attention_fp16_score_accum_max_m=-1):
+def compile_pipe(pipe, deepcache=False, attention_fp16_score_accum_max_m=-1):
     # set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION',
     #                     False)
     # The absolute element values of K in the attention layer of SVD is too large.
@@ -145,6 +145,8 @@ def compile_pipe(pipe, attention_fp16_score_accum_max_m=-1):
         "unet",
         "controlnet",
     ]
+    if deepcache:
+        parts.append("fast_unet")
     for part in parts:
         if getattr(pipe, part, None) is not None:
             print(f"Compiling {part}")
@@ -174,7 +176,7 @@ class IterationProfiler:
         dur = self.begin.elapsed_time(self.end)
         return self.num_iterations / dur * 1000.0
 
-    def callback_on_step_end(self, pipe, i, t, callback_kwargs):
+    def callback_on_step_end(self, pipe, i, t, callback_kwargs={}):
         if self.begin is None:
             event = torch.cuda.Event(enable_timing=True)
             event.record()
@@ -212,6 +214,7 @@ def main():
     elif args.compiler == "oneflow":
         pipe = compile_pipe(
             pipe,
+            args.deepcache,
             attention_fp16_score_accum_max_m=args.
             attention_fp16_score_accum_max_m,
         )
@@ -281,6 +284,10 @@ def main():
         iter_profiler = IterationProfiler()
         kwarg_inputs[
             "callback_on_step_end"] = iter_profiler.callback_on_step_end
+    elif "callback" in inspect.signature(pipe).parameters:
+        iter_profiler = IterationProfiler()
+        kwarg_inputs[
+            "callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_frames = pipe(**kwarg_inputs).frames
     end = time.time()
