@@ -16,6 +16,8 @@ Updated on DEC 7, 2023. Device: RTX 3090
 ## Documentation
 
 - [Installation Guide](#installation-guide)
+  - [Setup Community Edition](#setup-community-edition)
+  - [Setup Enterprise Edition](#setup-enterprise-edition)
 - [Basical Nodes Usage](#basical-nodes-usage)
   - [OneDiff LoadCheckpoint ](#load-checkpoint---onediff)
   - [Quantization](#quantization)
