@@ -1,10 +1,11 @@
 import torch
 import torch.nn as nn
 from typing import Union, Optional, Tuple
+from diffusers.utils import BaseOutput, logging
 
 from .unet_spatio_temporal_condition import UNetSpatioTemporalConditionOutput
 
-
+logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 class FastUNetSpatioTemporalConditionModel(nn.Module):
     def __init__(self, unet_module):

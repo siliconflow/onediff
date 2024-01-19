@@ -112,7 +112,7 @@ def load_pipe(pipeline_cls,
     return pipe
 
 
-def compile_pipe(pipe):
+def compile_pipe(pipe, deepcache=False):
     # Compiling SD21 could make it output out of range values in the first run.
     parts = [
         "text_encoder",
@@ -121,6 +121,8 @@ def compile_pipe(pipe):
         "unet",
         "controlnet",
     ]
+    if deepcache:
+        parts.append("fast_unet")
     for part in parts:
         if getattr(pipe, part, None) is not None:
             print(f"Compiling {part}")
@@ -150,7 +152,7 @@ class IterationProfiler:
         dur = self.begin.elapsed_time(self.end)
         return self.num_iterations / dur * 1000.0
 
-    def callback_on_step_end(self, pipe, i, t, callback_kwargs):
+    def callback_on_step_end(self, pipe, i, t, callback_kwargs={}):
         if self.begin is None:
             event = torch.cuda.Event(enable_timing=True)
             event.record()
@@ -191,7 +193,7 @@ def main():
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
-        pipe = compile_pipe(pipe)
+        pipe = compile_pipe(pipe, args.deepcache)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         pipe.unet = torch.compile(pipe.unet, mode=mode)
@@ -263,6 +265,10 @@ def main():
         iter_profiler = IterationProfiler()
         kwarg_inputs[
             "callback_on_step_end"] = iter_profiler.callback_on_step_end
+    elif "callback" in inspect.signature(pipe).parameters:
+        iter_profiler = IterationProfiler()
+        kwarg_inputs[
+            "callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_images = pipe(**kwarg_inputs).images
     end = time.time()
