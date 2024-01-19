@@ -117,7 +117,7 @@ benchmark_sd_model_with_one_resolution() {
   prompt=$6
   onnx_dir="onnx_${model_version}"
   engine_dir="engine_${model_version}"
-  if [ ${model_name} == *xl* ]; then
+  if [[ ${model_name} =~ xl ]]; then
     script="demo_txt2img_xl.py"
   else
     script="demo_txt2img.py"
@@ -142,7 +142,7 @@ benchmark_sd_model_with_one_resolution() {
   unet_time=$(echo "${script_output}" | grep 'UNet' | awk '{print $6}')
   vae_dec_time=$(echo "${script_output}" | grep 'VAE-Dec' | awk '{print $4}')
   unet_steps=$(echo "${script_output}" | grep 'UNet' | awk '{print $4}')
-  iterations_per_second=$((1000*${unet_steps}/${inference_time}))
+  iterations_per_second=$(python3 -c "print(1000 * ${unet_steps} / ${unet_time})")
   BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}| ${model_name} | ${height}x${width} | ${iterations_per_second} | ${inference_time} | ${clip_time} | ${unet_time} | ${vae_dec_time} |\n"
 }
 
