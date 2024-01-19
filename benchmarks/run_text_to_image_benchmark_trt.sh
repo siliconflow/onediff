@@ -65,9 +65,9 @@ TRT_VERSION_NEXT=${TRT_VERSION_MAJOR}.$((${TRT_VERSION_MINOR}+1))
 
 PYVENV_DIR=${WORK_DIR}/pyvenv
 if [ ! -d ${PYVENV_DIR} ]; then
-  python3 -m venv ${PYVENV_DIR}
+  python3 -m venv ${PYVENV_DIR} --system-site-packages
 fi
-source ${PYVENV_DIR}/bin/activate
+PYTHON=${PYVENV_DIR}/bin/python3
 
 TRT_REPO_DIR=${WORK_DIR}/TensorRT
 if [ ! -d ${TRT_REPO_DIR} ]; then
@@ -79,7 +79,7 @@ else
   git pull
 fi
 
-pip3 install --pre --extra-index-url https://pypi.nvidia.com "tensorrt>=${TRT_VERSION}.0,<${TRT_VERSION_NEXT}.0"
+${PYTHON} -m pip install --pre --extra-index-url https://pypi.nvidia.com "tensorrt>=${TRT_VERSION}.0,<${TRT_VERSION_NEXT}.0"
 
 CUDA_VERSION=$(pip3 list | grep -oP '(?<=nvidia-cuda-runtime-cu)[0-9]+')
 case ${CUDA_VERSION} in
@@ -95,10 +95,10 @@ case ${CUDA_VERSION} in
     ;;
 esac
 
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${TORCH_CUDA_TAG}
+${PYTHON} -m pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu${TORCH_CUDA_TAG}
 
 cd $TRT_REPO_DIR/demo/Diffusion
-pip3 install -r requirements.txt 
+${PYTHON} -m pip install -r requirements.txt 
 
 if [ ! -z "${MODEL_DIR}" ]; then
   echo "model_dir specified, use local models"
@@ -125,7 +125,7 @@ benchmark_sd_model_with_one_resolution() {
     script="demo_txt2img.py"
   fi
   echo "Run ${model_name} ${height}x${width}..."
-  script_output=$(python3 ${script} "${prompt}" --build-dynamic-shape --onnx-dir ${onnx_dir} --engine-dir ${engine_dir} --version ${model_version} --num-warmup-runs ${warmups} --height ${height} --width ${width} | tee /dev/tty)
+  script_output=$(${PYTHON} ${script} "${prompt}" --build-dynamic-shape --onnx-dir ${onnx_dir} --engine-dir ${engine_dir} --version ${model_version} --num-warmup-runs ${warmups} --height ${height} --width ${width} | tee /dev/tty)
 
   # Pattern to match:
   # |-----------------|--------------|
