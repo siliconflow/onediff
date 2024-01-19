@@ -105,9 +105,9 @@ python3 -m pip install -r requirements.txt
 if [ ! -z "${MODEL_DIR}" ]; then
   echo "model_dir specified, use local models"
   MODEL_DIR=$(realpath ${MODEL_DIR})
-  [ -d ${MODEL_DIR}/stable-diffusion-v1-5 ] && mkdir -p pytorch_model/${SD15_MODEL_VERSION} && ln -sf ${MODEL_DIR}/stable-diffusion-v1-5 pytorch_model/${SD15_MODEL_VERSION}/TXT2IMG
-  [ -d ${MODEL_DIR}/stable-diffusion-2-1 ] && mkdir -p pytorch_model/${SD21_MODEL_VERSION} && ln -sf ${MODEL_DIR}/stable-diffusion-2-1 pytorch_model/${SD21_MODEL_VERSION}/TXT2IMG
-  [ -d ${MODEL_DIR}/stable-diffusion-xl-base-1.0 ] && mkdir -p pytorch_model/${SDXL_MODEL_VERSION} && ln -sf ${MODEL_DIR}/stable-diffusion-xl-base-1.0 pytorch_model/${SDXL_MODEL_VERSION}/TXT2IMG
+  [ -d ${MODEL_DIR}/stable-diffusion-v1-5 ] && [ ! -d pytorch_model/${SD15_MODEL_VERSION}/TXT2IMG ] && mkdir -p pytorch_model/${SD15_MODEL_VERSION} && ln -s ${MODEL_DIR}/stable-diffusion-v1-5 pytorch_model/${SD15_MODEL_VERSION}/TXT2IMG
+  [ -d ${MODEL_DIR}/stable-diffusion-2-1 ] && [ ! -d pytorch_model/${SD21_MODEL_VERSION}/TXT2IMG ] && mkdir -p pytorch_model/${SD21_MODEL_VERSION} && ln -s ${MODEL_DIR}/stable-diffusion-2-1 pytorch_model/${SD21_MODEL_VERSION}/TXT2IMG
+  [ -d ${MODEL_DIR}/stable-diffusion-xl-base-1.0 ] && [ ! -d pytorch_model/${SDXL_MODEL_VERSION}/TXT2IMG ] && mkdir -p pytorch_model/${SDXL_MODEL_VERSION} && ln -s ${MODEL_DIR}/stable-diffusion-xl-base-1.0 pytorch_model/${SDXL_MODEL_VERSION}/TXT2IMG
 fi
 
 BENCHMARK_RESULT_TEXT="| Model | HxW | it/s | E2E Time (s) | CLIP Time (s) | UNet Time (s) | VAE-Dec Time (s) |\n| --- | --- | --- | --- | --- | --- | --- |\n"
