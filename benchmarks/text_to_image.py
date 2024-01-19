@@ -40,7 +40,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
 pipe = pipe.to("cuda")
 
 pipe.unet = oneflow_compile(pipe.unet)
-pipe.vae = oneflow_compile(pipe.vae)
+pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
 
 with flow.autocast("cuda"):
     for _ in range(args.warmup):

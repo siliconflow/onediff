@@ -137,7 +137,7 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
     # load graph from filepath
     if load:
         print("loading graphs...")
-        unet_graph.warmup_with_load(file)
+        unet_graph.load_graph(file)
     else:
         print("warmup with arguments...")
         warmup_with_arg(unet_graph, warmup_meta_of_sizes, added_cond_kwargs)

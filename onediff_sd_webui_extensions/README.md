@@ -1,8 +1,11 @@
-# Stable-Diffusion-WebUI-OneDiff
+# OneDiff Stable-Diffusion-WebUI Extensions
 
 - [Performance of Community Edition](#performance-of-community-edition)
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
+    - [LoRA](#lora)
+- [Quantization](#quantization)
+- [Contact](#contact)
 
 ## Performance of Community Edition
 
@@ -24,6 +27,8 @@ Note: The performence with LoRA doesn't include the time of LoRA fusing. And the
 ## Installation Guide
 
 It is recommended to create a Python virtual environment in advance. For example `conda create -n sd-webui python=3.10`.
+
+Run the commands below to install Sable Diffusion WebUI and OneDiff extensions.
 
 ```bash
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
@@ -50,15 +55,13 @@ Accessing http://server:8080/ from a web browser.
 
 ## Extensions Usage
 
-Type prompt in the text box, such as `a black dog`. Click the `Generate` button in the upper right corner to generate the image. As you can see in the image below:
-
-![raw_webui](images/raw_webui.jpg)
-
-To enable OneDiff extension acceleration, select `onediff_diffusion_model` in Script and click the `Generate` button.
+To activate OneDiff extension acceleration, follow these steps: 
+Select `onediff_diffusion_model` from the Script menu, enter a prompt in the text box (e.g., "a black dog"), and then click the "Generate" button.
 
 ![onediff_script](images/onediff_script.jpg)
 
-## LoRA
+
+### LoRA
 
 OneDiff supports the complete functionality related to LoRA. You can use OneDiff-based LoRA just like the native LoRA in sd-webui.
 
@@ -80,3 +83,25 @@ FAQ:
 4. Will LoRA fusing affect the inference efficiency of the model?
 
     No, the model's inference efficiency remains the same after fusing LoRA as it was before fusing LoRA.
+
+## Quantization
+
+**Note**: Quantization feature is only supported by **OneDiff Enterprise**.
+
+OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
+
+You can use the quantization feature by simply checking the *Model Quantization (int8) Speed Up* option which enables better inference performence as the image below.
+
+![Model Quantization](images/model_quant.jpg)
+
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+
+Note: The quantified model doesn't currently support LoRA loading, and related features are under emergency development.
+
+## Contact
+
+For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
+
+For users of OneDiff Enterprise, you can contact contact@siliconflow.com for commercial support.
+
+Feel free to join our [Discord](https://discord.gg/RKJTjZMcPQ) community for discussions and to receive the latest updates.
