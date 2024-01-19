@@ -56,6 +56,8 @@ To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-on
 
 ### Workflow
 
+Click the links below to view the workflow images, or load them directly into ComfyUI.
+
 - [SD-1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
 - [SD-XL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
 - [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
