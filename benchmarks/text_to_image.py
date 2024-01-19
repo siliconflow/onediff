@@ -166,7 +166,7 @@ class IterationProfiler:
 def main():
     args = parse_args()
     if args.input_image is None:
-        if argparse.deepcache:
+        if args.deepcache:
             from diffusers_extensions.deep_cache import StableDiffusionXLPipeline as pipeline_cls
         else:
             from diffusers import AutoPipelineForText2Image as pipeline_cls
