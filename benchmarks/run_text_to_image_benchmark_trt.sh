@@ -64,6 +64,7 @@ TRT_VERSION_MINOR=$(echo ${TRT_VERSION} | cut -d'.' -f2)
 TRT_VERSION_NEXT=${TRT_VERSION_MAJOR}.$((${TRT_VERSION_MINOR}+1))
 
 PYVENV_DIR=${WORK_DIR}/pyvenv
+mkdir -p ${PYVENV_DIR}
 TRT_PYVENV_DIR=${PYVENV_DIR}/trt_${TRT_VERSION}
 if [ ! -d ${TRT_PYVENV_DIR} ]; then
   python3 -m venv ${TRT_PYVENV_DIR} --system-site-packages
