@@ -116,7 +116,7 @@ benchmark_sd_model_with_one_resolution() {
   width=$5
   prompt=$6
   onnx_dir="onnx_${model_version}"
-  engine_dir="engine_${TRT_VERSION}_${model_version}"
+  engine_dir="engine_${model_version}"
   if [[ ${model_name} =~ xl ]]; then
     script="demo_txt2img_xl.py"
   else
