@@ -45,6 +45,8 @@ while getopts 'm:w:p:o:d:v:p:h' opt; do
       echo "  -v trt_version: the version of TensorRT, default is `${TRT_VERSION}`"
       exit 1
       ;;
+    *) echo "Unknown option ${opt}!" >&2
+       exit 1 ;;
   esac
 done
 

@@ -88,8 +88,11 @@ def load_pipe(
     if controlnet is not None:
         from diffusers import ControlNetModel
 
-        controlnet = ControlNetModel.from_pretrained(controlnet,
-                                                     torch_dtype=torch.float16)
+        controlnet = ControlNetModel.from_pretrained(
+            controlnet,
+            torch_dtype=torch.float16,
+            use_safetensors=True,
+        )
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
@@ -98,6 +101,7 @@ def load_pipe(
         setup_onediff_quant()
     pipe = pipeline_cls.from_pretrained(model_name,
                                         torch_dtype=torch.float16,
+                                        use_safetensors=True,
                                         **extra_kwargs)
     if scheduler is not None:
         scheduler_cls = getattr(importlib.import_module("diffusers"),

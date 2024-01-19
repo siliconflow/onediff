@@ -33,6 +33,8 @@ while getopts 'm:w:c:o:h' opt; do
       echo "  -o output_file: the output file, default is `${OUTPUT_FILE}`"
       exit 1
       ;;
+    *) echo "Unknown option ${opt}!" >&2
+       exit 1 ;;
   esac
 done
 

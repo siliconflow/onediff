@@ -2,15 +2,30 @@
 # set -x
 set -e
 
-download_path=./models
+DOWNLOAD_PATH=./models
+
+while getopts 'd:h' opt; do
+  case ${opt} in
+    d) DOWNLOAD_PATH=${OPTARG} ;;
+    h) echo "Usage: $0 [-d download_path]" >&2
+       exit 1 ;;
+    *) echo "Unknown option ${opt}!" >&2
+       exit 1 ;;
+  esac
+done
+
+[ -z "${DOWNLOAD_PATH}" ] && echo "download_path unspecified" && exit 1
+
+DOWNLOAD_PATH=$(realpath ${DOWNLOAD_PATH})
+mkdir -p ${DOWNLOAD_PATH} || die "cannot create download directory: ${DOWNLOAD_PATH}."
 
 die() { echo $1 && exit 1; }
 
 download() {
-  download_path=$1
+  DOWNLOAD_PATH=$1
   model=$2
-  if [ ! -d "${download_path}/${model}" ]; then
-    wget http://oneflow-pro.oss-cn-beijing.aliyuncs.com/models/${model}.zip && unzip ${model}.zip -d ${download_path}
+  if [ ! -d "${DOWNLOAD_PATH}/${model}" ]; then
+    wget http://oneflow-pro.oss-cn-beijing.aliyuncs.com/models/${model}.zip && unzip ${model}.zip -d ${DOWNLOAD_PATH}
     if [ $? != 0 ]; then
       die "failed to download model ${model}."
     fi
@@ -19,21 +34,13 @@ download() {
   fi
 }
 
-if [ "$#" -ge 1 ]; then
-  download_path=$1
-fi
-
-if [ ! -d "${download_path}" ]; then
-  mkdir -p ${download_path} || die "cannot create download directory: ${download_path}."
-fi
-
-download ${download_path} stable-diffusion-v1-5
-download ${download_path} stable-diffusion-2-1
-download ${download_path} stable-diffusion-xl-base-1.0
-download ${download_path} stable-diffusion-xl-base-1.0-int8
-download ${download_path} stable-diffusion-xl-base-1.0-deepcache-int8
-download ${download_path} stable-video-diffusion-img2vid-xt
-download ${download_path} stable-video-diffusion-img2vid-xt-int8
-download ${download_path} stable-video-diffusion-img2vid-xt-deepcache-int8
+download ${DOWNLOAD_PATH} stable-diffusion-v1-5
+download ${DOWNLOAD_PATH} stable-diffusion-2-1
+download ${DOWNLOAD_PATH} stable-diffusion-xl-base-1.0
+download ${DOWNLOAD_PATH} stable-diffusion-xl-base-1.0-int8
+download ${DOWNLOAD_PATH} stable-diffusion-xl-base-1.0-deepcache-int8
+download ${DOWNLOAD_PATH} stable-video-diffusion-img2vid-xt
+download ${DOWNLOAD_PATH} stable-video-diffusion-img2vid-xt-int8
+download ${DOWNLOAD_PATH} stable-video-diffusion-img2vid-xt-deepcache-int8
 
 echo "all models are downloaded successfully!"
