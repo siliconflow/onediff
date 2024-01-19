@@ -184,9 +184,7 @@ jobs:
           run_comfy_test() {
             local workflow_name="$1"
             docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow "$workflow_name" || {
-              docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/onediff_comfyui.log .
-              cat ./onediff_comfyui.log
-              rm ./onediff_comfyui.log
+              docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
               false
             }
           }
@@ -196,8 +194,7 @@ jobs:
       - name: Show ComfyUI Log
         if: matrix.test-suite == 'comfy'
         run: |
-          docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/onediff_comfyui.log .
-          cat ./onediff_comfyui.log && rm ./onediff_comfyui.log
+          docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log .
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
