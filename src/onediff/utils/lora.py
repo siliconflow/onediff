@@ -10,10 +10,8 @@ from .profiler import with_cProfile
 
 from diffusers.loaders.lora import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
-from diffusers.utils import DIFFUSERS_CACHE, HF_HUB_OFFLINE
 from diffusers.models.modeling_utils import (
     _LOW_CPU_MEM_USAGE_DEFAULT,
-    load_model_dict_into_meta,
 )
 from diffusers.utils import is_accelerate_available
 
@@ -31,14 +29,20 @@ def linear_fuse_lora(
     lora_scale: float = 1.0,
     alpha: float = None,
     rank: float = None,
+    *,
+    offload_device = "cpu",
+    offload_weight = "lora",
 ):
     assert isinstance(self, torch.nn.Linear)
     linear_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
-    self._lora_up = state_dict["lora.up.weight"]
-    self._lora_down = state_dict["lora.down.weight"]
-    self._lora_scale = lora_scale
+    if offload_weight == "lora":
+        self._lora_up = state_dict["lora.up.weight"].to(offload_device)
+        self._lora_down = state_dict["lora.down.weight"].to(offload_device)
+        self._lora_scale = lora_scale
+    elif offload_weight == "weight":
+        self._lora_orig_weight = self.weight.data.to(offload_device).clone()
 
     w_down = state_dict["lora.down.weight"].float().to(device)
     w_up = state_dict["lora.up.weight"].float().to(device)
@@ -49,28 +53,34 @@ def linear_fuse_lora(
     lora_weight = lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
     fused_weight = self.weight.data.float() + lora_weight
     self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
-    print(w_up.shape)
 
 
 def linear_unfuse_lora(self: torch.nn.Linear):
     assert isinstance(self, torch.nn.Linear)
-    if not hasattr(self, "_lora_up") or self._lora_up is None:
-        return
 
     fused_weight = self.weight.data
     dtype, device = fused_weight.dtype, fused_weight.device
 
-    w_up = self._lora_up.to(device=device).float()
-    w_down = self._lora_down.to(device).float()
+    if hasattr(self, "_lora_orig_weight") and self._lora_orig_weight is not None:
+        unfused_weight = self._lora_orig_weight
+        self._lora_orig_weight = None
+    
+    elif hasattr(self, "_lora_up") and self._lora_up is not None:
+        w_up = self._lora_up.to(device=device).float()
+        w_down = self._lora_down.to(device).float()
 
-    unfused_weight = self.weight.data.float() - (
-        self._lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
-    )
+        unfused_weight = self.weight.data.float() - (
+            self._lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
+        )
+        self._lora_up = None
+        self._lora_down = None
+        self._lora_scale = None
+    
+    else:
+        return
+
     self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
 
-    self._lora_up = None
-    self._lora_down = None
-    self._lora_scale = None
 
 
 def conv_fuse_lora(
@@ -79,14 +89,20 @@ def conv_fuse_lora(
     lora_scale: float = 1.0,
     alpha: float = None,
     rank: float = None,
+    *,
+    offload_device = "cpu",
+    offload_weight = "lora",
 ) -> None:
     assert isinstance(self, torch.nn.Conv2d)
     conv_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
-    self._lora_up = state_dict["lora.up.weight"]
-    self._lora_down = state_dict["lora.down.weight"]
-    self._lora_scale = lora_scale
+    if offload_weight == "lora":
+        self._lora_up = state_dict["lora.up.weight"].to(offload_device)
+        self._lora_down = state_dict["lora.down.weight"].to(offload_device)
+        self._lora_scale = lora_scale
+    elif offload_weight == "weight":
+        self._lora_orig_weight = self.weight.data.to(offload_device).clone()
 
     w_down = state_dict["lora.down.weight"].float().to(device)
     w_up = state_dict["lora.up.weight"].float().to(device)
@@ -103,23 +119,30 @@ def conv_fuse_lora(
 
 def conv_unfuse_lora(self: torch.nn.Conv2d):
     assert isinstance(self, torch.nn.Conv2d)
-    if not hasattr(self, "_lora_up") or self._lora_up is None:
-        return
 
     fused_weight = self.weight.data
-    dtype, device = fused_weight.data.dtype, fused_weight.data.device
+    dtype, device = fused_weight.dtype, fused_weight.device
 
-    w_up = self._lora_up.to(device=device).float()
-    w_down = self._lora_down.to(device).float()
+    if hasattr(self, "_lora_orig_weight") and self._lora_orig_weight is not None:
+        unfused_weight = self._lora_orig_weight
+        self._lora_orig_weight = None
+    
+    elif hasattr(self, "_lora_up") and self._lora_up is not None:
+        w_up = self._lora_up.to(device=device).float()
+        w_down = self._lora_down.to(device).float()
 
-    fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-    fusion = fusion.reshape((fused_weight.shape))
-    unfused_weight = fused_weight.float() - (self._lora_scale * fusion)
+        fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+        fusion = fusion.reshape((fused_weight.shape))
+        unfused_weight = fused_weight.float() - (self._lora_scale * fusion)
+
+        self._lora_up = None
+        self._lora_down = None
+        self._lora_scale = None
+    
+    else:
+        return
+
     self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
-
-    self._lora_up = None
-    self._lora_down = None
-    self._lora_scale = None
 
 
 # @with_cProfile()
@@ -128,8 +151,13 @@ def load_and_fuse_lora(
     lora: Union[str, Path, Dict[str, torch.Tensor]],
     lora_scale: float = 1.0,
     adapter_name: Optional[str] = None,
+    *,
+    offload_device="cpu",
+    offload_weight="lora",
     **kwargs,
 ) -> None:
+    assert adapter_name is None
+
     state_dict, network_alphas = load_state_dict_cached(lora, unet_config=self.unet.config, **kwargs)
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
@@ -183,6 +211,10 @@ def load_and_fuse_lora(
         all(("lora" in k or k.endswith(".alpha")) for k in state_dict.keys())
         and not USE_PEFT_BACKEND
     )
+    is_custom_diffusion = any("custom_diffusion" in k for k in state_dict.keys())
+    if is_custom_diffusion:
+        raise RuntimeError("custom diffusion is not supported now.")
+
     if is_lora:
         # correct keys
         state_dict, network_alphas = self.unet.convert_state_dict_legacy_attn_format(
@@ -243,6 +275,8 @@ def load_and_fuse_lora(
                         lora_scale,
                         mapped_network_alphas.get(key),
                         rank,
+                        offload_device=offload_device,
+                        offload_weight=offload_weight,
                     )
             elif isinstance(attn_processor, LoRACompatibleLinear):
                 ctx = init_empty_weights if low_cpu_mem_usage else nullcontext
@@ -253,22 +287,17 @@ def load_and_fuse_lora(
                         lora_scale,
                         mapped_network_alphas.get(key),
                         rank,
+                        offload_device=offload_device,
+                        offload_weight=offload_weight,
                     )
             else:
                 raise ValueError(
                     f"Module {key} is not a LoRACompatibleConv or LoRACompatibleLinear module."
                 )
     else:
-        raise
-        # value_dict = {k.replace("lora.", ""): v for k, v in value_dict.items()}
-        # lora_layers_list.append((attn_processor, lora))
-
-        # if low_cpu_mem_usage:
-        #     device = next(iter(value_dict.values())).device
-        #     dtype = next(iter(value_dict.values())).dtype
-        #     load_model_dict_into_meta(lora, value_dict, device=device, dtype=dtype)
-        # else:
-        #     lora.load_state_dict(value_dict)
+        raise ValueError(
+            f"{lora} does not seem to be in the correct format expected by LoRA training."
+        )
 
     is_model_cpu_offload = False
     is_sequential_cpu_offload = False
@@ -293,13 +322,6 @@ def load_and_fuse_lora(
                         component, recurse=is_sequential_cpu_offload
                     )
 
-        # only custom diffusion needs to set attn processors
-        # if is_custom_diffusion:
-        #     self.set_attn_processor(attn_processors)
-
-        # set lora layers
-        # for target_module, lora_layer in lora_layers_list:
-        #     target_module.set_lora_layer(lora_layer)
 
         self.to(dtype=self.dtype, device=self.device)
 
@@ -338,6 +360,16 @@ def load_and_fuse_lora(
             adapter_name=adapter_name,
             _pipeline=self,
         )
+
+
+def unfuse_lora(self: torch.nn.Module):
+    def _unfuse_lora(m: torch.nn.Module):
+        if isinstance(m, torch.nn.Linear):
+            linear_unfuse_lora(m)
+        elif isinstance(m, torch.nn.Conv2d):
+            conv_unfuse_lora(m)
+    
+    self.apply(_unfuse_lora)
 
 
 class LRUCacheDict(OrderedDict):

@@ -1,3 +1,4 @@
+import warnings
 from typing import Union, List
 from collections import defaultdict
 import torch
@@ -38,6 +39,8 @@ class TensorInplaceAssign:
         (True, False)
     """
     def __init__(self, *modules: List[Union[torch.nn.Module, DeployableModule]]) -> None:
+        warnings.warn("The class TensorInplaceAssign is deprecated and will be removed soon. \
+                      If you are using _fuse_lora in TensorInplaceAssign, please check `onediff.utils.load_and_fuse_lora`")
         self.modules = set()
         for module in modules:
             if isinstance(module, torch.nn.Module):
