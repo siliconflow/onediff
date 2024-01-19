@@ -166,7 +166,6 @@ def main():
     args = parse_args()
     if args.input_image is None:
         if argparse.deepcache:
-            assert "sdxl" in args.model and "deepcache" in args.model and "int8" in args.model 
             from diffusers_extensions.deep_cache import StableDiffusionXLPipeline as pipeline_cls
         else:
             from diffusers import AutoPipelineForText2Image as pipeline_cls
