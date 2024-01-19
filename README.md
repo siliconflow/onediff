@@ -73,42 +73,50 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 #### 1. Install OneFlow
 > **_NOTE:_** We have updated OneFlow a lot for OneDiff, so please install OneFlow by the links below.
 
-For CUDA 11.8
-```bash
-# For CN users
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
-```
+- **CUDA 11.8**
 
-```bash
-# For NA/EU users
-python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu118
-```
+  ```bash
+  # For NA/EU users
+  python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu118
+  ```
+
+
+  ```bash
+  # For CN users
+  python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
+  ```
+
 
 <details>
 <summary> Click to get OneFlow packages for other CUDA versions. </summary>
-CUDA 12.1
 
-```bash
-# For CN users
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
-```
+- **CUDA 12.1**
 
-```bash
-# For NA/EU users
-python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu121
-```
+  ```bash
+  # For NA/EU users
+  python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu121
+  ```
 
-CUDA 12.2
 
-```bash
-# For CN users
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
-```
+  ```bash
+  # For CN users
+  python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
+  ```
 
-```bash
-# For NA/EU users
-python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu122
-```
+
+- **CUDA 12.2**
+
+  ```bash
+  # For NA/EU users
+  python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu122
+  ```
+
+  ```bash
+  # For CN users
+  python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
+  ```
+
+
 
 </details>
 
