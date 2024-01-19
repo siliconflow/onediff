@@ -52,11 +52,7 @@ def parse_args():
     parser.add_argument('--input-image', type=str, default=None)
     parser.add_argument('--control-image', type=str, default=None)
     parser.add_argument('--output-image', type=str, default=None)
-    parser.add_argument(
-        "--deepcache",
-        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-        default=False,
-    )
+    parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
         '--compiler',
         type=str,

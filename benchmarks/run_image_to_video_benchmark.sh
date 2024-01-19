@@ -66,7 +66,7 @@ benchmark_svd_model_with_one_resolution() {
   height=$5
   width=$6
   echo "Run ${model_path} ${height}x${width}..."
-  if [ x"${model_name}" == x"svd_xt_deepcache_quant" ]; then
+  if [[ ${model_name} =~ deepcache ]] ; then
     script_output=$(python3 ${SCRIPT_DIR}/image_to_video.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png --deepcache | tee /dev/tty)
   else
     script_output=$(python3 ${SCRIPT_DIR}/image_to_video.py --model ${model_path} --warmups ${warmups} --compiler ${compiler} --height ${height} --width ${width} --input-image ${SCRIPT_DIR}/resources/rocket.png | tee /dev/tty)

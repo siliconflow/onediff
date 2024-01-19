@@ -58,11 +58,7 @@ def parse_args():
     parser.add_argument("--extra-call-kwargs",
                         type=str,
                         default=EXTRA_CALL_KWARGS)
-    parser.add_argument(
-        "--deepcache",
-        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-        default=False,
-    )
+    parser.add_argument("--deepcache", action="store_true")
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=None)
     parser.add_argument("--output-video", type=str, default=None)
