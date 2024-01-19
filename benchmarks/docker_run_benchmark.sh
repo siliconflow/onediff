@@ -15,4 +15,4 @@ fi
 docker run -it --rm --gpus all --shm-size 12g --ipc=host --security-opt seccomp=unconfined --privileged=true \
   -v `pwd`:/benchmark \
   oneflowinc/onediff-benchmark-pro-default:2024.01.18-cu121 \
-  sh -c "sh run_all_benchmarks.sh -m models -o benchmark.md"
+  sh -c "cd /benchmark && sh run_all_benchmarks.sh -m models -o benchmark.md"
