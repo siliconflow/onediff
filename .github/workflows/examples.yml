@@ -194,6 +194,7 @@ jobs:
           run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json"
           run_comfy_test "workflows/sdxl-control-lora-speedup.json"
       - name: Show ComfyUI Log
+        if: matrix.test-suite == 'comfy'
         run: |
           docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/onediff_comfyui.log .
           cat ./onediff_comfyui.log && rm ./onediff_comfyui.log
