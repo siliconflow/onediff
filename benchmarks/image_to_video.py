@@ -185,7 +185,6 @@ class IterationProfiler:
 def main():
     args = parse_args()
     if args.deepcache:
-        assert "deepcache" in args.model
         from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
     else:
         from diffusers import StableVideoDiffusionPipeline
