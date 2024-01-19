@@ -118,7 +118,7 @@ benchmark_sd_model_with_one_resolution() {
   warmups=$3
   height=$4
   width=$5
-  prompt=$6
+  prompt="$6"
   onnx_dir="onnx_${model_version}"
   engine_dir="engine_${model_version}"
   if [[ ${model_name} =~ xl ]]; then
@@ -155,7 +155,7 @@ benchmark_sd_model() {
   model_version=$2
   resolutions=$3
   warmups=${WARMUPS}
-  prompt=${PROMPT}
+  prompt="${PROMPT}"
   for resolution in $(echo ${resolutions} | tr ',' ' '); do
     height=$(echo ${resolution} | cut -d'x' -f1)
     width=$(echo ${resolution} | cut -d'x' -f2)
