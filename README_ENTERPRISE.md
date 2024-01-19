@@ -46,9 +46,19 @@ python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyu
 
 ## ComfyUI with OneDiff Enterprise
 
+Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
+
 ### Accessing ComfyUI Models
 
+To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main) and the [siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/tree/main) on HuggingFace.
+
+Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
+
 ### Workflow
+
+#### SDXL
+
+#### SDXL + DeepCache
 
 
 ## Diffusers with OneDiff Enterprise
