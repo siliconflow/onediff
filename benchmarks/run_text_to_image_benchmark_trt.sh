@@ -76,9 +76,11 @@ if [ ! -d ${TRT_REPO_DIR} ]; then
   git clone https://github.com/NVIDIA/TensorRT.git -b release/${TRT_VERSION} --single-branch ${TRT_REPO_DIR}
 else
   cd ${TRT_REPO_DIR}
-  git remote set-branches --add origin release/${TRT_VERSION}
-  git checkout release/${TRT_VERSION}
-  git pull
+  if [ $(git branch --show-current) != release/${TRT_VERSION} ]; then
+    git remote set-branches --add origin release/${TRT_VERSION}
+    git checkout release/${TRT_VERSION}
+    git pull
+  fi
 fi
 
 python3 -m pip install --pre --extra-index-url https://pypi.nvidia.com "tensorrt>=${TRT_VERSION}.0,<${TRT_VERSION_NEXT}.0"
