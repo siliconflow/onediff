@@ -107,16 +107,16 @@ benchmark_sd_model() {
   done
 }
 
-benchmark_sd_model sd15 ${SD15_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
-benchmark_sd_model sd21 ${SD21_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
-benchmark_sd_model sdxl ${SDXL_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
+benchmark_sd_model sd15 ${SD15_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
+benchmark_sd_model sd21 ${SD21_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
+benchmark_sd_model sdxl ${SDXL_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ] && [ x"${COMPILER}" == x"oneflow" ]; then
-  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
+  benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 fi
 
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ] && [ ${BENCHMARK_DEEP_CACHE_MODEL} != 0 ] && [ x"${COMPILER}" == x"oneflow" ]; then
-  benchmark_sd_model sdxl_deepcache_quant ${SDXL_DEEP_CACHE_QUANT_MODEL_PATH} 512x512,768x768,720x1280,1024x1024
+  benchmark_sd_model sdxl_deepcache_quant ${SDXL_DEEP_CACHE_QUANT_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 fi
 
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}

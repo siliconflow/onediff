@@ -165,8 +165,8 @@ benchmark_sd_model() {
   done
 }
 
-benchmark_sd_model sd15 ${SD15_MODEL_VERSION} 512x512,768x768,1024x1024
-benchmark_sd_model sd21 ${SD21_MODEL_VERSION} 512x512,768x768,1024x1024
-benchmark_sd_model sdxl ${SDXL_MODEL_VERSION} 512x512,768x768,1024x1024
+benchmark_sd_model sd15 ${SD15_MODEL_VERSION} 1024x1024,768x768,512x512
+benchmark_sd_model sd21 ${SD21_MODEL_VERSION} 1024x1024,768x768,512x512
+benchmark_sd_model sdxl ${SDXL_MODEL_VERSION} 1024x1024,768x768,512x512
 
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}
