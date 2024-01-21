@@ -16,6 +16,8 @@ Updated on DEC 7, 2023. Device: RTX 3090
 ## Documentation
 
 - [Installation Guide](#installation-guide)
+  - [Setup Community Edition](#setup-community-edition)
+  - [Setup Enterprise Edition](#setup-enterprise-edition)
 - [Basical Nodes Usage](#basical-nodes-usage)
   - [OneDiff LoadCheckpoint ](#load-checkpoint---onediff)
   - [Quantization](#quantization)
@@ -30,6 +32,8 @@ Updated on DEC 7, 2023. Device: RTX 3090
 ### Installation Guide
 
 Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) first, and then:
+
+#### Setup Community Edition
 
 <details close>
 <summary>Setup Community Edition</summary>
@@ -61,38 +65,13 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 </details>
 
+#### Setup Enterprise Edition
 
+1. [Install OneDiff Enterprise](../README_ENTERPRISE.md#install-onediff-enterprise)
 
-<details close>
-<summary>Setup Enterprise Edition</summary>
-
-1. Install OneFlow Enterprise
-  * Install OneFlow Community(CUDA 11.x)
+2. Install onediff_comfy_nodes for ComfyUI
     ```bash
-      python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu118
-    ```
-
-  * Install OneFlow Community(CUDA 12.x)
-    ```bash
-      python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121
-    ```
-
-2. Get license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.
-
-3. Set up the key
-    ```bash
-    export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
-    ```
-
-
-4. Install OneDiff and OneDiff Quant
-    ```bash
-    python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant && \
-    git clone https://github.com/siliconflow/onediff.git  && \
-    cd onediff && pip install -e . && cd ..
-    ```
-5. Install onediff_comfy_nodes for ComfyUI
-    ```bash
+    git clone https://github.com/siliconflow/onediff.git
     cd onediff 
     cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
     ```
