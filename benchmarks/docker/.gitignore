@@ -3,4 +3,4 @@ Dockerfile-*
 docker-compose.*
 onediff/
 ComfyUI/
-diffusers_quant/
+onediff_quant/

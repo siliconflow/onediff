@@ -85,11 +85,11 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
     def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
         from comfy.ldm.modules.attention import CrossAttention
 
-        is_diffusers_quant_available = False
+        is_onediff_quant_available = False
         try:
-            import diffusers_quant
+            import onediff_quant
 
-            is_diffusers_quant_available = True
+            is_onediff_quant_available = True
         except:
             pass
 
@@ -125,10 +125,10 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 patch_value = tuple(tmp_list + [module])
                 patches[to_qkv_w_name] = (patch_type, patch_value)
 
-            if is_diffusers_quant_available:
+            if is_onediff_quant_available:
                 if isinstance(
-                    module, diffusers_quant.DynamicQuantLinearModule
-                ) or isinstance(module, diffusers_quant.DynamicQuantConvModule):
+                    module, onediff_quant.DynamicQuantLinearModule
+                ) or isinstance(module, onediff_quant.DynamicQuantConvModule):
                     w_name = f"diffusion_model.{name}.weight"
                     if w_name in patches:
                         patch_type = "onediff_int8"
@@ -151,11 +151,11 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         return list(p)
 
     def calculate_weight(self, patches, weight, key):
-        is_diffusers_quant_available = False
+        is_onediff_quant_available = False
         try:
-            import diffusers_quant
+            import onediff_quant
 
-            is_diffusers_quant_available = True
+            is_onediff_quant_available = True
         except:
             pass
         for p in patches:
@@ -384,11 +384,11 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 is_rewrite_qkv = True if "to_qkv" in key else False
                 is_quant = False
                 if (
-                    is_diffusers_quant_available
+                    is_onediff_quant_available
                     and len(v) == 5
                     and (
-                        isinstance(v[4], diffusers_quant.DynamicQuantLinearModule)
-                        or isinstance(v[4], diffusers_quant.DynamicQuantConvModule)
+                        isinstance(v[4], onediff_quant.DynamicQuantLinearModule)
+                        or isinstance(v[4], onediff_quant.DynamicQuantConvModule)
                     )
                 ):
                     is_quant = True
@@ -506,17 +506,26 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.size = size
         self.model = copy.copy(model)
         self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
-        self.deep_cache_unet = oneflow_compile(
-            DeepCacheUNet(self.model.diffusion_model, cache_layer_id, cache_block_id),
-            use_graph=use_graph,
+
+        self.deep_cache_unet = DeepCacheUNet(
+            self.model.diffusion_model, cache_layer_id, cache_block_id
         )
-        self.fast_deep_cache_unet = oneflow_compile(
-            FastDeepCacheUNet(
-                self.model.diffusion_model, cache_layer_id, cache_block_id
-            ),
-            use_graph=use_graph,
+
+        self.fast_deep_cache_unet = FastDeepCacheUNet(
+            self.model.diffusion_model, cache_layer_id, cache_block_id
         )
-        self.model._register_state_dict_hook(state_dict_hook)
+
+        if use_graph:
+            self.deep_cache_unet = oneflow_compile(
+                self.deep_cache_unet,
+                use_graph=use_graph,
+            )
+            self.fast_deep_cache_unet = oneflow_compile(
+                self.fast_deep_cache_unet,
+                use_graph=use_graph,
+            )
+            self.model._register_state_dict_hook(state_dict_hook)
+
         self.patches = {}
         self.backup = {}
         self.model_options = {"transformer_options": {}}

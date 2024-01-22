@@ -49,7 +49,7 @@ def run_sd(cmd_args, device):
     # Load compiled unet with oneflow
     if cmd_args.load:
         print("loading graphs...")
-        base.unet.warmup_with_load("base_" + cmd_args.file, device)
+        base.unet.load_graph("base_" + cmd_args.file, device)
 
     # Normal SDXL run
     # sizes = [1024, 896, 768]

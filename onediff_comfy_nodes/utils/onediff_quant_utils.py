@@ -35,7 +35,7 @@ def _use_graph():
     os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-    os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
+    # os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
     os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
     os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
     # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
@@ -154,7 +154,7 @@ def _can_use_flash_attn(attn):
 
 
 def _rewrite_attention(attn):
-    from diffusers_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
+    from onediff_quant.models import StaticQuantLinearModule, DynamicQuantLinearModule
 
     dim_head = attn.to_q.out_features // attn.heads
     has_bias = attn.to_q.bias is not None
@@ -219,7 +219,7 @@ def _rewrite_attention(attn):
 def replace_module_with_quantizable_module(
     diffusion_model, calibrate_info_path, use_rewrite_attn=True
 ):
-    from diffusers_quant.utils import get_quantize_module
+    from onediff_quant.utils import get_quantize_module
 
     _use_graph()
 
@@ -228,12 +228,12 @@ def replace_module_with_quantizable_module(
         sub_mod = get_sub_module(diffusion_model, sub_module_name)
 
         if isinstance(sub_mod, comfy_ops_Linear):
-            # fix diffusers_quant use isinstance(sub_mod, torch.nn.Linear)
+            # fix onediff_quant use isinstance(sub_mod, torch.nn.Linear)
             sub_mod.__class__ = torch.nn.Linear
 
         sub_mod.weight.requires_grad = False
         sub_mod.weight.data = sub_mod.weight.to(torch.int8)
-        sub_mod.cuda()  # TODO: remove this line , because we diffusers_quant pkg weight_scale
+        sub_mod.cuda()  # TODO: remove this line , because we onediff_quant pkg weight_scale
         sub_mod = get_quantize_module(
             sub_mod,
             sub_module_name,
@@ -298,8 +298,8 @@ def quantize_and_save_model(
 ):
     import time
     from safetensors.torch import save_model
-    from diffusers_quant import Quantizer
-    from diffusers_quant.utils import symm_quantize_sub_module
+    from onediff_quant import Quantizer
+    from onediff_quant.utils import symm_quantize_sub_module
 
     print(
         f"quantize and save_model, conv={quantize_conv}, linear={quantize_linear}, verbose={verbose}, output={output_dir}"

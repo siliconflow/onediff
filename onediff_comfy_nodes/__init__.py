@@ -1,4 +1,4 @@
-"""OneFlow ComfyUI Speedup Module"""
+"""OneDiff ComfyUI Speedup Module"""
 from ._config import _USE_UNET_INT8
 from ._nodes import (
     ModelSpeedup,
@@ -51,15 +51,31 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
+
 if _USE_UNET_INT8:
     from ._nodes import UNETLoaderInt8, Quant8Model
+    from ._nodes import (
+        QuantKSampler,
+        OneDiffQuantCheckpointLoaderSimple,
+        OneDiffQuantCheckpointLoaderSimpleAdvanced,
+    )
 
     NODE_CLASS_MAPPINGS.update(
-        {"UNETLoaderInt8": UNETLoaderInt8, "Quant8Model": Quant8Model}
+        {
+            "UNETLoaderInt8": UNETLoaderInt8,
+            "Quant8Model": Quant8Model,
+            "OneDiffQuantCheckpointLoaderSimple": OneDiffQuantCheckpointLoaderSimple,
+            "OneDiffQuantCheckpointLoaderSimpleAdvanced": OneDiffQuantCheckpointLoaderSimpleAdvanced,
+            "QuantKSampler": QuantKSampler,
+        }
     )
+
     NODE_DISPLAY_NAME_MAPPINGS.update(
         {
             "UNETLoaderInt8": "UNET Loader Int8",
             "Quant8Model": "Model Quantization(int8)",
+            "OneDiffQuantCheckpointLoaderSimple": "Load Checkpoint - OneDiff Quant",
+            "OneDiffQuantCheckpointLoaderSimpleAdvanced": "Load Checkpoint - OneDiff Quant Advanced",
+            "QuantKSampler": "Quant K Sampler",
         }
     )
