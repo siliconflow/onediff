@@ -5,11 +5,11 @@ from onediff.infer_compiler.transform import transform_mgr
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 UNet2DConditionOutput = transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
 
-if hasattr(transformed_diffusers.utils, "USE_PEFT_BACKEND"):
+try:
     USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
     scale_lora_layers = transformed_diffusers.utils.scale_lora_layers
     unscale_lora_layers = transformed_diffusers.utils.unscale_lora_layers
-else:
+except Exception as e:
     USE_PEFT_BACKEND = False
 
 
