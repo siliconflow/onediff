@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   selenium:
@@ -8,7 +8,7 @@ services:
     shm_size: 2g
     command: sleep 5400
     entrypoint: /opt/bin/entry_point.sh
-    restart: 'no'
+    restart: "no"
 
   onediff-test:
     container_name: ${CONTAINER_NAME}
@@ -23,7 +23,10 @@ services:
     security_opt:
       - seccomp=unconfined
     environment:
-      HF_HUB_OFFLINE: '1'
+      ONEFLOW_RUN_GRAPH_BY_VM: "0"
+      HF_HUB_OFFLINE: "1"
+      CI: "1"
+      SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
     volumes:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
@@ -36,6 +39,6 @@ services:
       - $PWD/tests/comfyui/workflows/input/control:/app/ComfyUI/input/control:ro
       - $PWD:/src/onediff
     working_dir: /src/onediff
-    restart: 'no'
+    restart: "no"
     depends_on:
       - selenium

@@ -70,7 +70,7 @@ if args.compile:
     from onediff.infer_compiler import oneflow_compile
 
     pipe.unet = oneflow_compile(pipe.unet)
-    pipe.vae = oneflow_compile(pipe.vae)
+    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
 if args.compile_ctrlnet:
     from onediff.infer_compiler import oneflow_compile
 

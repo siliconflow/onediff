@@ -1,13 +1,15 @@
-name: Build OneFlow Stable Diffusion
+name: Build OneDiff
 
 on:
   push:
     branches:
       - main
-      - use-community-whl-in-tests
-
+      - enable-docker-hub-cache
+  schedule:
+    # every 6 hours
+    - cron: "0 */6 * * *"
   workflow_dispatch:
-# Environment variables available to all jobs and steps in this workflow.
+
 env:
   REGION_ID: cn-beijing
   REGISTRY: registry.cn-beijing.aliyuncs.com
@@ -96,8 +98,8 @@ jobs:
           tags: |
             ${{ env.DOCKERHUB_TAG }}
             ${{ env.ACR_TAG }}
-          # cache-from: type=registry,ref=${{ env.DOCKERHUB_TAG }}
-          # cache-to: type=inline
+          cache-from: type=registry,ref=${{ env.DOCKERHUB_TAG }}
+          cache-to: type=inline
           target: ${{ matrix.build-target }}
           build-args: |
             BASE_IMAGE=${{matrix.image.BASE_IMAGE}}

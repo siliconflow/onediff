@@ -15,20 +15,14 @@ from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
 from .utils.param_utils import parse_device, check_device
+from .utils.graph_management_utils import graph_file_management
 
 
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         torch.nn.Module.__init__(self)
-        # # avoid to set key '_torch_module' in self._modules
-        object.__setattr__(self, '_torch_module', torch_module)
-        object.__setattr__(self, '_oneflow_module', oneflow_module)
-        object.__setattr__(self, '_dual_modules', OrderedDict())
-        self._modules.update(**torch_module._modules)
-        self._parameters.update(**torch_module._parameters)
-        self._buffers.update(**torch_module._buffers)
-        # self._torch_module = torch_module
-        # self._oneflow_module = oneflow_module
+        self._torch_module = torch_module
+        self._oneflow_module = oneflow_module
 
     @property
     def oneflow_module(self):
@@ -51,9 +45,9 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             if self._oneflow_module is not None:
-                args = [torch2oflow(v) for v in args]
-                kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
-                self._oneflow_module.to(*args, **kwargs)
+                of_args = [torch2oflow(v) for v in args]
+                of_kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
+                self._oneflow_module.to(*of_args, **of_kwargs)
                 self._torch_module_to_with_check(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
@@ -65,7 +59,10 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [torch_module.named_parameters(), torch_module.named_buffers(),]
+                [
+                    torch_module.named_parameters(),
+                    torch_module.named_buffers(),
+                ]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -175,52 +172,6 @@ def get_mixed_dual_module(module_cls):
     return MixedDualModule
 
 
-def graph_file_management(func):
-    @wraps(func)
-    def wrapper(self: "DeployableModule", *args, **kwargs):
-        graph_file = self._deployable_module_options.get("graph_file", None)
-
-        # Load graph file
-        if graph_file is not None:
-            try:
-                if not os.path.exists(graph_file):
-                    logger.warning(
-                        f"Graph file {graph_file} not exists!, will generate graph."
-                    )
-
-                else:
-                    graph_device = self._deployable_module_options.get(
-                        "graph_file_device", None
-                    )
-
-                    self.load_graph(graph_file, torch2oflow(graph_device))
-                    logger.info(f"Load graph file: {graph_file}")
-
-                    graph_file = None
-                    self._deployable_module_options["graph_file"] = None
-
-            except Exception as e:
-                logger.error(f"Load graph file: {graph_file} failed! {e=}")
-
-        ret = func(self, *args, **kwargs)
-
-        # Save graph file
-        if graph_file is not None:
-            try:
-                if graph_file is not None:
-                    os.makedirs(os.path.dirname(graph_file), exist_ok=True)
-                    self.save_graph(graph_file)
-                    logger.info(f"Save graph file: {graph_file} done!")
-            except Exception as e:
-                logger.error(f"Save graph file: {graph_file} failed! {e=}")
-            finally:
-                self._deployable_module_options["graph_file"] = None
-
-        return ret
-
-    return wrapper
-
-
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
@@ -285,6 +236,9 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module, size, all_dynamic
         )
+        # Enabel debug mode
+        if transform_mgr.debug_mode:
+            self._deployable_module_dpl_graph.debug(0)
         if "debug" in self._deployable_module_options:
             self._deployable_module_dpl_graph.debug(
                 self._deployable_module_options["debug"]
@@ -368,10 +322,7 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
-        self.get_graph().warmup_with_load(file_path, device, run_warmup)
-
-    def warmup_with_load(self, file_path, device=None, run_warmup=True):
-        self.get_graph().warmup_with_load(file_path, device, run_warmup)
+        self.get_graph().load_graph(file_path, device, run_warmup)
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
@@ -380,39 +331,41 @@ class DeployableModule(torch.nn.Module):
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
     def __init__(self, model):
+        # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
+        os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
+        os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_ENABLE_ROUND_TRIP", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_FUSE_FORWARD_OPS", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL", "1")
+        os.environ.setdefault("ONEFLOW_MLIR_PREFER_NHWC", "1")
+        os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS", "1")
+        os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR", "1")
+        os.environ.setdefault("ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
+        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
+        os.environ.setdefault("ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL", "1")
+        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
+        os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
+        os.environ.setdefault("ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
+        os.environ.setdefault("ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT", "1")
+        # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL", "0")
+        os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
+        # TODO: enable this will cause the failure of multi resolution warmup
+        # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")
+        # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
+
         super().__init__(enable_get_runtime_state_dict=True)
         self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        # self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
-
-        os.environ["ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION"] = "1"
-        os.environ["ONEFLOW_MLIR_CSE"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
-        os.environ["ONEFLOW_MLIR_ENABLE_ROUND_TRIP"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_FORWARD_OPS"] = "1"
-        os.environ["ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL"] = "1"
-        os.environ["ONEFLOW_MLIR_GROUP_MATMUL"] = "1"
-        os.environ["ONEFLOW_MLIR_PREFER_NHWC"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS"] = "1"
-        os.environ["ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP"] = "1"
-        os.environ["ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL"] = "1"
-        os.environ["ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL"] = "1"
-        os.environ["ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
-        os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
-        os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
-        os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
-        # TODO: enable this will cause the failure of multi resolution warmup
-        # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
-        # os.environ["ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH"] = "1"
 
     def build(self, *args, **kwargs):
         return self.model(*args, **kwargs)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def warmup_with_load(self, file_path, device=None, run_warmup=True):
+    def load_graph(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
@@ -429,6 +382,19 @@ def get_oneflow_graph(model, size=9, all_dynamic=False):
     g._dynamic_input_graph_cache.set_cache_size(size)
     g._dynamic_input_graph_cache.enable_shared(not all_dynamic)
     return g
+
+
+def state_dict_hook(module, state_dict, prefix, local_metadata):
+    pytorch_key_prefix = "_deployable_module_model._torch_module."
+    new_state_dict = type(state_dict)()
+    for k, v in state_dict.items():
+        # _deployable_module_model._torch_module.out.2.weight => out.2.weight
+        if k.startswith(pytorch_key_prefix):
+            new_k = k[len(pytorch_key_prefix) :]
+            new_state_dict[new_k] = v
+        else:
+            new_state_dict[k] = v
+    return new_state_dict
 
 
 # Return a DeployableModule that using module_cls as it's parent class.
@@ -487,5 +453,6 @@ def oneflow_compile(
     model = wrap_module(torch_module)
     assert isinstance(model, DeployableModule)
     assert isinstance(model, torch_module.__class__)
+    model._register_state_dict_hook(state_dict_hook)
 
     return model

@@ -12,6 +12,9 @@ from .linear import Linear as Linear1f
 from .deep_cache_unet import DeepCacheUNet
 from .deep_cache_unet import FastDeepCacheUNet
 
+from comfy.ldm.modules.diffusionmodules.model import AttnBlock
+from .vae_patch import AttnBlock as AttnBlock1f
+
 if hasattr(comfy.ops, "disable_weight_init"):
     comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
 else:
@@ -24,6 +27,7 @@ torch2of_class_map = {
     comfy.ldm.modules.attention.CrossAttention: CrossAttention1f,
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
     comfy_ops_Linear: Linear1f,
+    AttnBlock: AttnBlock1f,
 }
 
 if not is_community_version():

@@ -1,4 +1,5 @@
 import importlib
+import importlib.metadata
 import os
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -16,8 +17,6 @@ from diffusers.schedulers.scheduling_utils import SCHEDULER_CONFIG_NAME
 from diffusers.utils import (
     CONFIG_NAME,
     DEPRECATED_REVISION_ARGS,
-    DIFFUSERS_CACHE,
-    HF_HUB_OFFLINE,
     SAFETENSORS_WEIGHTS_NAME,
     WEIGHTS_NAME,
     BaseOutput,
@@ -30,6 +29,16 @@ from diffusers.utils import (
     logging,
     numpy_to_pil,
 )
+
+diffusers_version = version.parse(importlib.metadata.version("diffusers"))
+if diffusers_version < version.parse("0.25.0"):
+    from diffusers.utils import DIFFUSERS_CACHE, HF_HUB_OFFLINE
+    token_arg_name = "use_auth_token"
+else:
+    DIFFUSERS_CACHE = None
+    HF_HUB_OFFLINE = None
+    token_arg_name = "token"
+
 from diffusers.utils.torch_utils import is_compiled_module
 
 from diffusers.pipelines.pipeline_utils import DiffusionPipeline, maybe_raise_or_warn
@@ -94,6 +103,10 @@ def get_class_obj_and_candidates(library_name, class_name, importable_classes, p
         # else we just import it from the library. 
         if class_name == 'UNet2DConditionModel':
             library_name = "diffusers_extensions.deep_cache.models.unet_2d_condition"
+        
+        if class_name == 'UNetSpatioTemporalConditionModel':
+            assert diffusers_version >= version.parse("0.24.0"), "SVD not support in diffusers-" + diffusers_version
+            library_name = "diffusers_extensions.deep_cache.models.unet_spatio_temporal_condition"
         
         library = importlib.import_module(library_name)
         class_obj = getattr(library, class_name)
@@ -409,7 +422,7 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
     force_download = kwargs.pop("force_download", False)
     proxies = kwargs.pop("proxies", None)
     local_files_only = kwargs.pop("local_files_only", HF_HUB_OFFLINE)
-    use_auth_token = kwargs.pop("use_auth_token", None)
+    use_auth_token = kwargs.pop(token_arg_name, None)
     revision = kwargs.pop("revision", None)
     from_flax = kwargs.pop("from_flax", False)
     torch_dtype = kwargs.pop("torch_dtype", None)
@@ -633,7 +646,7 @@ def from_pretrained(cls, pretrained_model_name_or_path: Optional[Union[str, os.P
             "force_download": force_download,
             "proxies": proxies,
             "local_files_only": local_files_only,
-            "use_auth_token": use_auth_token,
+            token_arg_name: use_auth_token,
             "revision": revision,
             "torch_dtype": torch_dtype,
             "custom_pipeline": custom_pipeline,
