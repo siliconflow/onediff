@@ -8,7 +8,9 @@ diffusers_0210_v = version.parse("0.21.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
-UNet2DConditionOutput = transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
+UNet2DConditionOutput = (
+    transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
+)
 
 try:
     USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
@@ -18,7 +20,9 @@ except Exception as e:
     USE_PEFT_BACKEND = False
 
 
-class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel):
+class UNet2DConditionModel(
+    transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+):
     def forward(
         self,
         sample: torch.FloatTensor,
@@ -93,7 +97,7 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        default_overall_up_factor = 2**self.num_upsamplers
+        default_overall_up_factor = 2 ** self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         forward_upsample_size = False
@@ -123,7 +127,9 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
 
         # convert encoder_attention_mask to a bias the same way we do for attention_mask
         if encoder_attention_mask is not None:
-            encoder_attention_mask = (1 - encoder_attention_mask.to(sample.dtype)) * -10000.0
+            encoder_attention_mask = (
+                1 - encoder_attention_mask.to(sample.dtype)
+            ) * -10000.0
             encoder_attention_mask = encoder_attention_mask.unsqueeze(1)
 
         # 0. center input if necessary
@@ -160,7 +166,9 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
 
         if self.class_embedding is not None:
             if class_labels is None:
-                raise ValueError("class_labels should be provided when num_class_embeds > 0")
+                raise ValueError(
+                    "class_labels should be provided when num_class_embeds > 0"
+                )
 
             if self.config.class_embed_type == "timestep":
                 class_labels = self.time_proj(class_labels)
@@ -201,8 +209,10 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
                 )
             time_ids = added_cond_kwargs.get("time_ids")
             time_embeds = self.add_time_proj(time_ids.flatten())
-            #time_embeds = time_embeds.reshape((text_embeds.shape[0], -1))
-            time_embeds = time_embeds.unflatten(dim=0, shape=(-1, time_ids.shape[1])).flatten(1, 2)
+            # time_embeds = time_embeds.reshape((text_embeds.shape[0], -1))
+            time_embeds = time_embeds.unflatten(
+                dim=0, shape=(-1, time_ids.shape[1])
+            ).flatten(1, 2)
             add_embeds = torch.concat([text_embeds, time_embeds], dim=-1)
             add_embeds = add_embeds.to(emb.dtype)
             aug_emb = self.add_embedding(add_embeds)
@@ -216,7 +226,10 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
             aug_emb = self.add_embedding(image_embs)
         elif self.config.addition_embed_type == "image_hint":
             # Kandinsky 2.2 - style
-            if "image_embeds" not in added_cond_kwargs or "hint" not in added_cond_kwargs:
+            if (
+                "image_embeds" not in added_cond_kwargs
+                or "hint" not in added_cond_kwargs
+            ):
                 raise ValueError(
                     f"{self.__class__} has the config param `addition_embed_type` set to 'image_hint' which requires the keyword arguments `image_embeds` and `hint` to be passed in `added_cond_kwargs`"
                 )
@@ -230,9 +243,15 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
         if self.time_embed_act is not None:
             emb = self.time_embed_act(emb)
 
-        if self.encoder_hid_proj is not None and self.config.encoder_hid_dim_type == "text_proj":
+        if (
+            self.encoder_hid_proj is not None
+            and self.config.encoder_hid_dim_type == "text_proj"
+        ):
             encoder_hidden_states = self.encoder_hid_proj(encoder_hidden_states)
-        elif self.encoder_hid_proj is not None and self.config.encoder_hid_dim_type == "text_image_proj":
+        elif (
+            self.encoder_hid_proj is not None
+            and self.config.encoder_hid_dim_type == "text_image_proj"
+        ):
             # Kadinsky 2.1 - style
             if "image_embeds" not in added_cond_kwargs:
                 raise ValueError(
@@ -240,8 +259,13 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
                 )
 
             image_embeds = added_cond_kwargs.get("image_embeds")
-            encoder_hidden_states = self.encoder_hid_proj(encoder_hidden_states, image_embeds)
-        elif self.encoder_hid_proj is not None and self.config.encoder_hid_dim_type == "image_proj":
+            encoder_hidden_states = self.encoder_hid_proj(
+                encoder_hidden_states, image_embeds
+            )
+        elif (
+            self.encoder_hid_proj is not None
+            and self.config.encoder_hid_dim_type == "image_proj"
+        ):
             # Kandinsky 2.2 - style
             if "image_embeds" not in added_cond_kwargs:
                 raise ValueError(
@@ -249,37 +273,60 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
                 )
             image_embeds = added_cond_kwargs.get("image_embeds")
             encoder_hidden_states = self.encoder_hid_proj(image_embeds)
-        elif self.encoder_hid_proj is not None and self.config.encoder_hid_dim_type == "ip_image_proj":
+        elif (
+            self.encoder_hid_proj is not None
+            and self.config.encoder_hid_dim_type == "ip_image_proj"
+        ):
             if "image_embeds" not in added_cond_kwargs:
                 raise ValueError(
                     f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'ip_image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
                 )
             image_embeds = added_cond_kwargs.get("image_embeds")
-            image_embeds = self.encoder_hid_proj(image_embeds).to(encoder_hidden_states.dtype)
-            encoder_hidden_states = torch.cat([encoder_hidden_states, image_embeds], dim=1)
+            image_embeds = self.encoder_hid_proj(image_embeds).to(
+                encoder_hidden_states.dtype
+            )
+            encoder_hidden_states = torch.cat(
+                [encoder_hidden_states, image_embeds], dim=1
+            )
 
         # 2. pre-process
         sample = self.conv_in(sample)
 
         # 2.5 GLIGEN position net
-        if cross_attention_kwargs is not None and cross_attention_kwargs.get("gligen", None) is not None:
+        if (
+            cross_attention_kwargs is not None
+            and cross_attention_kwargs.get("gligen", None) is not None
+        ):
             cross_attention_kwargs = cross_attention_kwargs.copy()
             gligen_args = cross_attention_kwargs.pop("gligen")
-            cross_attention_kwargs["gligen"] = {"objs": self.position_net(**gligen_args)}
+            cross_attention_kwargs["gligen"] = {
+                "objs": self.position_net(**gligen_args)
+            }
 
         # 3. down
-        lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
+        lora_scale = (
+            cross_attention_kwargs.get("scale", 1.0)
+            if cross_attention_kwargs is not None
+            else 1.0
+        )
         if USE_PEFT_BACKEND:
             # weight the lora layers by setting `lora_scale` for each PEFT layer
             scale_lora_layers(self, lora_scale)
 
-        is_controlnet = mid_block_additional_residual is not None and down_block_additional_residuals is not None
+        is_controlnet = (
+            mid_block_additional_residual is not None
+            and down_block_additional_residuals is not None
+        )
         # using new arg down_intrablock_additional_residuals for T2I-Adapters, to distinguish from controlnets
         is_adapter = down_intrablock_additional_residuals is not None
         # maintain backward compatibility for legacy usage, where
         #       T2I-Adapter and ControlNet both use down_block_additional_residuals arg
         #       but can only use one or the other
-        if not is_adapter and mid_block_additional_residual is None and down_block_additional_residuals is not None:
+        if (
+            not is_adapter
+            and mid_block_additional_residual is None
+            and down_block_additional_residuals is not None
+        ):
             deprecate(
                 "T2I should not use down_block_additional_residuals",
                 "1.3.0",
@@ -293,11 +340,16 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
 
         down_block_res_samples = (sample,)
         for downsample_block in self.down_blocks:
-            if hasattr(downsample_block, "has_cross_attention") and downsample_block.has_cross_attention:
+            if (
+                hasattr(downsample_block, "has_cross_attention")
+                and downsample_block.has_cross_attention
+            ):
                 # For t2i-adapter CrossAttnDownBlock2D
                 additional_residuals = {}
                 if is_adapter and len(down_intrablock_additional_residuals) > 0:
-                    additional_residuals["additional_residuals"] = down_intrablock_additional_residuals.pop(0)
+                    additional_residuals[
+                        "additional_residuals"
+                    ] = down_intrablock_additional_residuals.pop(0)
 
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
@@ -310,9 +362,13 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
                 )
             else:
                 if diffusers_version < diffusers_0210_v:
-                    sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
+                    sample, res_samples = downsample_block(
+                        hidden_states=sample, temb=emb
+                    )
                 else:
-                    sample, res_samples = downsample_block(hidden_states=sample, temb=emb, scale=lora_scale)
+                    sample, res_samples = downsample_block(
+                        hidden_states=sample, temb=emb, scale=lora_scale
+                    )
                 if is_adapter and len(down_intrablock_additional_residuals) > 0:
                     sample += down_intrablock_additional_residuals.pop(0)
 
@@ -324,14 +380,21 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
             for down_block_res_sample, down_block_additional_residual in zip(
                 down_block_res_samples, down_block_additional_residuals
             ):
-                down_block_res_sample = down_block_res_sample + down_block_additional_residual
-                new_down_block_res_samples = new_down_block_res_samples + (down_block_res_sample,)
+                down_block_res_sample = (
+                    down_block_res_sample + down_block_additional_residual
+                )
+                new_down_block_res_samples = new_down_block_res_samples + (
+                    down_block_res_sample,
+                )
 
             down_block_res_samples = new_down_block_res_samples
 
         # 4. mid
         if self.mid_block is not None:
-            if hasattr(self.mid_block, "has_cross_attention") and self.mid_block.has_cross_attention:
+            if (
+                hasattr(self.mid_block, "has_cross_attention")
+                and self.mid_block.has_cross_attention
+            ):
                 sample = self.mid_block(
                     sample,
                     emb,
@@ -359,14 +422,19 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
             is_final_block = i == len(self.up_blocks) - 1
 
             res_samples = down_block_res_samples[-len(upsample_block.resnets) :]
-            down_block_res_samples = down_block_res_samples[: -len(upsample_block.resnets)]
+            down_block_res_samples = down_block_res_samples[
+                : -len(upsample_block.resnets)
+            ]
 
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
                 upsample_size = down_block_res_samples[-1].shape[2:]
 
-            if hasattr(upsample_block, "has_cross_attention") and upsample_block.has_cross_attention:
+            if (
+                hasattr(upsample_block, "has_cross_attention")
+                and upsample_block.has_cross_attention
+            ):
                 sample = upsample_block(
                     hidden_states=sample,
                     temb=emb,
@@ -408,4 +476,3 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
             return (sample,)
 
         return UNet2DConditionOutput(sample=sample)
-
