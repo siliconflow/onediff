@@ -342,7 +342,7 @@ class OneflowGraph(flow.nn.Graph):
 
         super().__init__(enable_get_runtime_state_dict=True)
         self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        # self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
     def build(self, *args, **kwargs):
