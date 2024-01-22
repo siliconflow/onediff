@@ -1,6 +1,11 @@
 from typing import Any, Dict, List, Optional, Tuple, Union
+from packaging import version
+import importlib.metadata
 import oneflow as torch
 from onediff.infer_compiler.transform import transform_mgr
+
+diffusers_0210_v = version.parse("0.21.0")
+diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 UNet2DConditionOutput = transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
@@ -304,7 +309,10 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
                     **additional_residuals,
                 )
             else:
-                sample, res_samples = downsample_block(hidden_states=sample, temb=emb, scale=lora_scale)
+                if diffusers_version < diffusers_0210_v:
+                    sample, res_samples = downsample_block(hidden_states=sample, temb=emb)
+                else:
+                    sample, res_samples = downsample_block(hidden_states=sample, temb=emb, scale=lora_scale)
                 if is_adapter and len(down_intrablock_additional_residuals) > 0:
                     sample += down_intrablock_additional_residuals.pop(0)
 
@@ -370,13 +378,21 @@ class UNet2DConditionModel(transformed_diffusers.models.unet_2d_condition.UNet2D
                     encoder_attention_mask=encoder_attention_mask,
                 )
             else:
-                sample = upsample_block(
-                    hidden_states=sample,
-                    temb=emb,
-                    res_hidden_states_tuple=res_samples,
-                    upsample_size=upsample_size,
-                    scale=lora_scale,
-                )
+                if diffusers_version < diffusers_0210_v:
+                    sample = upsample_block(
+                        hidden_states=sample,
+                        temb=emb,
+                        res_hidden_states_tuple=res_samples,
+                        upsample_size=upsample_size,
+                    )
+                else:
+                    sample = upsample_block(
+                        hidden_states=sample,
+                        temb=emb,
+                        res_hidden_states_tuple=res_samples,
+                        upsample_size=upsample_size,
+                        scale=lora_scale,
+                    )
 
         # 6. post-process
         if self.conv_norm_out:
