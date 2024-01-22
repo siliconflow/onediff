@@ -44,9 +44,9 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             if self._oneflow_module is not None:
-                args = [torch2oflow(v) for v in args]
-                kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
-                self._oneflow_module.to(*args, **kwargs)
+                of_args = [torch2oflow(v) for v in args]
+                of_kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
+                self._oneflow_module.to(*of_args, **of_kwargs)
                 self._torch_module_to_with_check(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
