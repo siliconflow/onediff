@@ -275,15 +275,11 @@ if diffusers_version < diffusers_0220_v:
                     hidden_states = self.proj_in(hidden_states)
                     inner_dim = hidden_states.shape[1]
                     # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
-                    hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                        batch, -1, inner_dim
-                    )
+                    hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
                 else:
                     inner_dim = hidden_states.shape[1]
                     # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
-                    hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                        batch, -1, inner_dim
-                    )
+                    hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
                     hidden_states = self.proj_in(hidden_states)
             elif self.is_input_vectorized:
                 hidden_states = self.latent_image_embedding(hidden_states)
@@ -684,15 +680,11 @@ elif diffusers_version < diffusers_02499_v:
                     )
                     inner_dim = hidden_states.shape[1]
                     #hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
-                    hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                        batch, -1, inner_dim
-                    )
+                    hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
                 else:
                     inner_dim = hidden_states.shape[1]
                     #hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
-                    hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                        batch, -1, inner_dim
-                    )
+                    hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
                     hidden_states = (
                         self.proj_in(hidden_states, scale=lora_scale)
                         if not USE_PEFT_BACKEND
@@ -1124,15 +1116,11 @@ else:
                     )
                     inner_dim = hidden_states.shape[1]
                     # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
-                    hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                            batch, -1, inner_dim
-                    )
+                    hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
                 else:
                     inner_dim = hidden_states.shape[1]
                     # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch, height * width, inner_dim)
-                    hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(
-                            batch, -1, inner_dim
-                    )
+                    hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
                     hidden_states = (
                         self.proj_in(hidden_states, scale=lora_scale)
                         if not USE_PEFT_BACKEND
