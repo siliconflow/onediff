@@ -1,14 +1,12 @@
 from pathlib import Path
-from typing import Optional, Union, Dict, Any, Tuple
+from typing import Optional, Union, Dict, Tuple
 from collections import OrderedDict, defaultdict
 from contextlib import nullcontext
 
 import torch
 
-from oneflow.utils.tensor import to_torch
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.infer_compiler.with_oneflow_compile import DualModule, DeployableModule
-from .profiler import with_cProfile
+from onediff.infer_compiler.with_oneflow_compile import DualModule
 
 from diffusers.loaders.lora import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
@@ -169,9 +167,8 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
     self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
 
 
-# @with_cProfile()
 def load_and_fuse_lora(
-    self: LoraLoaderMixin,
+    pipeline: LoraLoaderMixin,
     lora: Union[str, Path, Dict[str, torch.Tensor]],
     lora_scale: float = 1.0,
     adapter_name: Optional[str] = None,
@@ -180,7 +177,9 @@ def load_and_fuse_lora(
     offload_weight="lora",
     **kwargs,
 ) -> None:
-    assert adapter_name is None
+    self = pipeline
+    if adapter_name is not None:
+        raise ValueError(f"load_and_fuse_lora is not supported for adapter_name")
 
     state_dict, network_alphas = load_state_dict_cached(
         lora, unet_config=self.unet.config, **kwargs
