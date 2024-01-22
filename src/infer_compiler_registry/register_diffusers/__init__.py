@@ -6,7 +6,7 @@ import importlib.metadata
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 # register(package_names=["diffusers"])
-from diffusers.models.attention_processor import Attention, AttnProcessor2_0
+from diffusers.models.attention_processor import Attention, AttnProcessor, AttnProcessor2_0
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 from diffusers.models.transformer_2d import Transformer2DModel
 if diffusers_version >= version.parse("0.24.00"):
@@ -30,6 +30,7 @@ from .spatio_temporal_oflow import TemporalDecoder as TemporalDecoderOflow
 if diffusers_version >= version.parse("0.24.00"):
     torch2oflow_class_map = {
         Attention: AttentionOflow,
+        AttnProcessor: AttnProcessorOflow,
         AttnProcessor2_0: AttnProcessorOflow,
         LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
         SpatioTemporalResBlock: SpatioTemporalResBlockOflow,
@@ -38,6 +39,7 @@ if diffusers_version >= version.parse("0.24.00"):
 else:
     torch2oflow_class_map = {
         Attention: AttentionOflow,
+        AttnProcessor: AttnProcessorOflow,
         AttnProcessor2_0: AttnProcessorOflow,
         LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
     }

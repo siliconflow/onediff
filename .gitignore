@@ -169,7 +169,7 @@ tags
 
 op_prof.csv
 *.lock
-*.png
+*out.png
 log
 unet_graphs
 *.json

@@ -1,11 +1,13 @@
 import torch
 import torch.nn as nn
 from typing import Union, Optional, Dict, Any, Tuple, List
-
+from diffusers.utils import BaseOutput, logging
 
 from .unet_2d_condition import UNet2DConditionModel
 from .unet_2d_condition import UNet2DConditionOutput
 
+
+logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 class FastUNet2DConditionModel(nn.Module):
     def __init__(self, unet_module):

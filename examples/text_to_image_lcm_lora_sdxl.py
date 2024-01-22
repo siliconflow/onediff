@@ -5,21 +5,6 @@ from packaging import version
 import importlib.metadata
 
 
-def check_diffusers_version():
-    required_version = version.parse("0.22.0")
-    package_name = "diffusers"
-
-    try:
-        installed_version = version.parse(importlib.metadata.version(package_name))
-        if installed_version < required_version:
-            raise ValueError(
-                f"Installed {package_name} version ({installed_version}) is lower than required ({required_version})"
-            )
-
-    except importlib.metadata.PackageNotFoundError:
-        print(f"{package_name} is not installed")
-
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of LCM image generation.")
     parser.add_argument(
@@ -66,7 +51,6 @@ def parse_args():
     return args
 
 
-check_diffusers_version()
 from diffusers import LCMScheduler, AutoPipelineForText2Image
 
 args = parse_args()
@@ -89,6 +73,13 @@ if not args.mlir_enable_inference_optimization:
     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "0"
 else:
     os.environ["ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION"] = "1"
+
+pipe.load_lora_weights(args.adapter_id)
+if hasattr(pipe, "fuse_lora"):
+    pipe.fuse_lora()
+else:
+    print(f"pipe.fuse_lora doesn't exist, exit")
+    exit(1)
 
 for _ in range(args.warmup):
     images = pipe(
