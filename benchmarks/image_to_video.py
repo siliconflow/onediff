@@ -1,20 +1,24 @@
-MODEL = "runwayml/stable-diffusion-v1-5"
+# Run with ONEFLOW_RUN_GRAPH_BY_VM=1 to get faster
+MODEL = "stabilityai/stable-video-diffusion-img2vid-xt"
 VARIANT = None
 CUSTOM_PIPELINE = None
-SCHEDULER = "EulerDiscreteScheduler"
+SCHEDULER = None
 LORA = None
 CONTROLNET = None
-STEPS = 30
-PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
+STEPS = 25
 SEED = None
-WARMUPS = 3
+WARMUPS = 1
+FRAMES = None
 BATCH = 1
 HEIGHT = None
 WIDTH = None
+FPS = 7
+DECODE_CHUNK_SIZE = 5
+INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
 EXTRA_CALL_KWARGS = None
+ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 CACHE_INTERVAL = 3
-CACHE_LAYER_ID = 0
-CACHE_BLOCK_ID = 0
+CACHE_BRANCH = 0
 
 import os
 import importlib
@@ -22,10 +26,12 @@ import inspect
 import argparse
 import time
 import json
+from PIL import Image, ImageDraw
 import torch
-from PIL import (Image, ImageDraw)
+from diffusers.utils import load_image, export_to_video
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.utils import set_boolean_env_var
 
 
 def parse_args():
@@ -37,37 +43,48 @@ def parse_args():
     parser.add_argument("--lora", type=str, default=LORA)
     parser.add_argument("--controlnet", type=str, default=None)
     parser.add_argument("--steps", type=int, default=STEPS)
-    parser.add_argument("--prompt", type=str, default=PROMPT)
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--warmups", type=int, default=WARMUPS)
+    parser.add_argument("--frames", type=int, default=FRAMES)
     parser.add_argument("--batch", type=int, default=BATCH)
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
+    parser.add_argument("--fps", type=int, default=FPS)
+    parser.add_argument("--decode-chunk-size",
+                        type=int,
+                        default=DECODE_CHUNK_SIZE)
     parser.add_argument('--cache_interval', type=int, default=CACHE_INTERVAL)
-    parser.add_argument('--cache_layer_id', type=int, default=CACHE_LAYER_ID)
-    parser.add_argument('--cache_block_id', type=int, default=CACHE_BLOCK_ID)
+    parser.add_argument('--cache_branch', type=int, default=CACHE_BRANCH)
     parser.add_argument("--extra-call-kwargs",
                         type=str,
                         default=EXTRA_CALL_KWARGS)
-    parser.add_argument("--input-image", type=str, default=None)
-    parser.add_argument("--control-image", type=str, default=None)
-    parser.add_argument("--output-image", type=str, default=None)
     parser.add_argument("--deepcache", action="store_true")
+    parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
+    parser.add_argument("--control-image", type=str, default=None)
+    parser.add_argument("--output-video", type=str, default=None)
     parser.add_argument(
         "--compiler",
         type=str,
         default="oneflow",
-        choices=["none", "oneflow", "compile", "compile-max-autotune"])
+        choices=["none", "oneflow", "compile"],
+    )
+    parser.add_argument(
+        "--attention-fp16-score-accum-max-m",
+        type=int,
+        default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
+    )
     return parser.parse_args()
 
 
-def load_pipe(pipeline_cls,
-              model_name,
-              variant=None,
-              custom_pipeline=None,
-              scheduler=None,
-              lora=None,
-              controlnet=None):
+def load_pipe(
+    pipeline_cls,
+    model_name,
+    variant=None,
+    custom_pipeline=None,
+    scheduler=None,
+    lora=None,
+    controlnet=None,
+):
     extra_kwargs = {}
     if custom_pipeline is not None:
         extra_kwargs["custom_pipeline"] = custom_pipeline
@@ -75,6 +92,7 @@ def load_pipe(pipeline_cls,
         extra_kwargs["variant"] = variant
     if controlnet is not None:
         from diffusers import ControlNetModel
+
         controlnet = ControlNetModel.from_pretrained(
             controlnet,
             torch_dtype=torch.float16,
@@ -91,12 +109,8 @@ def load_pipe(pipeline_cls,
                                         use_safetensors=True,
                                         **extra_kwargs)
     if scheduler is not None:
-        scheduler_cls = getattr(importlib.import_module("onediff.schedulers"),
-                                scheduler, None)
-        if scheduler_cls is None:
-            print("No optimized scheduler found, use the plain one.")
-            scheduler_cls = getattr(importlib.import_module("diffusers"),
-                                    scheduler)
+        scheduler_cls = getattr(importlib.import_module("diffusers"),
+                                scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
@@ -112,11 +126,21 @@ def load_pipe(pipeline_cls,
     return pipe
 
 
-def compile_pipe(pipe, deepcache=False):
-    # Compiling SD21 could make it output out of range values in the first run.
+def compile_pipe(pipe, deepcache=False, attention_fp16_score_accum_max_m=-1):
+    # set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION',
+    #                     False)
+    # The absolute element values of K in the attention layer of SVD is too large.
+    # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
+    # But disabling all half accumulations in MHA would slow down the inference,
+    # especially for 40xx series cards.
+    # So here by partially disabling the half accumulation in MHA partially,
+    # we can get a good balance.
+    set_boolean_env_var(
+        "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M",
+        attention_fp16_score_accum_max_m,
+    )
+
     parts = [
-        "text_encoder",
-        "text_encoder_2",
         "image_encoder",
         "unet",
         "controlnet",
@@ -167,16 +191,13 @@ class IterationProfiler:
 
 def main():
     args = parse_args()
-    if args.input_image is None:
-        if args.deepcache:
-            from diffusers_extensions.deep_cache import StableDiffusionXLPipeline as pipeline_cls
-        else:
-            from diffusers import AutoPipelineForText2Image as pipeline_cls
+    if args.deepcache:
+        from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
     else:
-        from diffusers import AutoPipelineForImage2Image as pipeline_cls
+        from diffusers import StableVideoDiffusionPipeline
 
     pipe = load_pipe(
-        pipeline_cls,
+        StableVideoDiffusionPipeline,
         args.model,
         variant=args.variant,
         custom_pipeline=args.custom_pipeline,
@@ -185,29 +206,28 @@ def main():
         controlnet=args.controlnet,
     )
 
-    height = args.height
-    width = args.width
     height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
     width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
 
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
-        pipe = compile_pipe(pipe, args.deepcache)
-    elif args.compiler in ("compile", "compile-max-autotune"):
-        mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
-        pipe.unet = torch.compile(pipe.unet, mode=mode)
+        pipe = compile_pipe(
+            pipe,
+            args.deepcache,
+            attention_fp16_score_accum_max_m=args.
+            attention_fp16_score_accum_max_m,
+        )
+    elif args.compiler == "compile":
+        pipe.unet = torch.compile(pipe.unet)
         if hasattr(pipe, "controlnet"):
-            pipe.controlnet = torch.compile(pipe.controlnet, mode=mode)
-        pipe.vae = torch.compile(pipe.vae, mode=mode)
+            pipe.controlnet = torch.compile(pipe.controlnet)
+        # model.vae = torch.compile(model.vae)
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
-    if args.input_image is None:
-        input_image = None
-    else:
-        input_image = Image.open(args.input_image).convert("RGB")
-        input_image = input_image.resize((width, height), Image.LANCZOS)
+    input_image = load_image(args.input_image)
+    input_image.resize((width, height), Image.LANCZOS)
 
     if args.control_image is None:
         if args.controlnet is None:
@@ -215,50 +235,49 @@ def main():
         else:
             control_image = Image.new("RGB", (width, height))
             draw = ImageDraw.Draw(control_image)
-            draw.ellipse((args.width // 4, height // 4, args.width // 4 * 3,
-                          height // 4 * 3),
-                         fill=(255, 255, 255))
+            draw.ellipse(
+                (
+                    width // 4,
+                    height // 4,
+                    width // 4 * 3,
+                    height // 4 * 3,
+                ),
+                fill=(255, 255, 255),
+            )
             del draw
     else:
         control_image = Image.open(args.control_image).convert("RGB")
-        control_image = control_image.resize((width, height), Image.LANCZOS)
+        control_image = control_image.resize((args.width, height),
+                                             Image.LANCZOS)
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(
-            prompt=args.prompt,
+            image=input_image,
             height=height,
-            width=width,
+            width=args.width,
             num_inference_steps=args.steps,
-            num_images_per_prompt=args.batch,
-            generator=None if args.seed is None else torch.Generator(
-                device="cuda").manual_seed(args.seed),
+            num_videos_per_prompt=args.batch,
+            num_frames=args.frames,
+            fps=args.fps,
+            decode_chunk_size=args.decode_chunk_size,
+            generator=None
+            if args.seed is None else torch.Generator().manual_seed(args.seed),
             **(dict() if args.extra_call_kwargs is None else json.loads(
                 args.extra_call_kwargs)),
         )
         if args.deepcache:
             kwarg_inputs["cache_interval"] = args.cache_interval
-            kwarg_inputs["cache_layer_id"] = args.cache_layer_id
-            kwarg_inputs["cache_block_id"] = args.cache_block_id
-        if input_image is not None:
-            kwarg_inputs["image"] = input_image
+            kwarg_inputs["cache_branch"] = args.cache_branch
         if control_image is not None:
-            if input_image is None:
-                kwarg_inputs["image"] = control_image
-            else:
-                kwarg_inputs["control_image"] = control_image
+            kwarg_inputs["control_image"] = control_image
         return kwarg_inputs
 
-    # NOTE: Warm it up.
-    # The initial calls will trigger compilation and might be very slow.
-    # After that, it should be very fast.
     if args.warmups > 0:
         print("Begin warmup")
         for _ in range(args.warmups):
             pipe(**get_kwarg_inputs())
         print("End warmup")
 
-    # Let"s see it!
-    # Note: Progress bar might work incorrectly due to the async nature of CUDA.
     kwarg_inputs = get_kwarg_inputs()
     iter_profiler = None
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
@@ -270,10 +289,9 @@ def main():
         kwarg_inputs[
             "callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
-    output_images = pipe(**kwarg_inputs).images
+    output_frames = pipe(**kwarg_inputs).frames
     end = time.time()
 
-    print("=======================================")
     print(f"Inference time: {end - begin:.3f}s")
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
@@ -282,12 +300,11 @@ def main():
     host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
     print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
     print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
-    print("=======================================")
 
-    if args.output_image is not None:
-        output_images[0].save(args.output_image)
+    if args.output_video is not None:
+        export_to_video(output_frames[0], args.output_video, fps=args.fps)
     else:
-        print("Please set `--output-image` to save the output image")
+        print("Please set `--output-video` to save the output video")
 
 
 if __name__ == "__main__":
