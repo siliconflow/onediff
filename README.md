@@ -166,7 +166,7 @@ docker pull oneflowinc/onediff:20231106
   src/onediff/__init__.py
   ```
 
-- install build package (optional)
+- install build package
   ```bash
   python3 -m pip install build
   ```
