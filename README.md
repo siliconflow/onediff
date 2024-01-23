@@ -130,6 +130,12 @@ python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 ```
 
 #### 3. Install OneDiff
+
+- From PyPI
+```
+python3 -m pip install --pre onediff
+```
+- From source
 ```
 git clone https://github.com/siliconflow/onediff.git
 cd onediff && python3 -m pip install -e .
@@ -154,15 +160,20 @@ python3 -m pip install huggingface_hub
 - bump version in these files:
 
   ```
-  setup.py
+  .github/workflows/pub.yml
   src/onediff/__init__.py
+  ```
+
+- install build package
+  ```bash
+  python3 -m pip install build
   ```
 
 - build wheel
 
-  ```
+  ```bash
   rm -rf dist
-  python3 setup.py bdist_wheel
+  python3 -m build
   ```
 
 - upload to pypi
