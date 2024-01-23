@@ -7,7 +7,6 @@ from onediff_quant.utils import (
     rewrite_sdxl_pipeline_attention,
     replace_sub_module_with_quantizable_module,
 )
-from torch._dynamo import allow_in_graph as maybe_allow_in_graph
 
 
 def _use_graph():
@@ -108,7 +107,6 @@ class QuantDiffusionPipeline:
                 self._fake_quant,
                 self._static,
                 self._bits,
-                maybe_allow_in_graph,
             )
         rewrite_sdxl_pipeline_attention(self._pipe)
 
