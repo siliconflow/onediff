@@ -142,11 +142,6 @@ python3 -m pip install huggingface_hub
  ~/.local/bin/huggingface-cli login
 ```
 
-### Docker
-```bash
-docker pull oneflowinc/onediff:20231106
-```
-
 ## Release
 
 - run examples to check it works
