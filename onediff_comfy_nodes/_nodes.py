@@ -544,13 +544,27 @@ class OneDiffControlNetLoader(ControlNetLoader):
 
     def onediff_load_controlnet(self, control_net_name):
         controlnet = super().load_controlnet(control_net_name)[0]
+        load_device = model_management.get_torch_device()
+
+        def gen_compile_options(model):
+            graph_file = generate_graph_path(control_net_name, model)
+            return {
+                "graph_file": graph_file,
+                "graph_file_device": load_device,
+            }
+
         if isinstance(controlnet, ControlLora):
-            controlnet = OneDiffControlLora.from_controllora(controlnet)
+            controlnet = OneDiffControlLora.from_controllora(
+                controlnet, gen_compile_options=gen_compile_options
+            )
             return (controlnet,)
         elif isinstance(controlnet, ControlNet):
             control_model = controlnet.control_model
-            control_model = control_model.to(model_management.get_torch_device())
-            controlnet.control_model = oneflow_compile(control_model)
+            compile_options = gen_compile_options(control_model)
+            control_model = control_model.to(load_device)
+            controlnet.control_model = oneflow_compile(
+                control_model, options=compile_options
+            )
             return (controlnet,)
         else:
             print(f"Warning: {type(controlnet)=} is not ControlLora or ControlNet")
