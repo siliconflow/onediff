@@ -70,7 +70,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Technical Support for deployment    | High priority support       | Community           |
 | Get the latest technology/feature | Yes | |
 
-## Install from source or Using in Docker
+## OneDiff Installation
 ### Install from source
 
 #### 1. Install OneFlow
@@ -146,11 +146,6 @@ cd onediff && python3 -m pip install -e .
 ```
 python3 -m pip install huggingface_hub
  ~/.local/bin/huggingface-cli login
-```
-
-### Docker
-```bash
-docker pull oneflowinc/onediff:20231106
 ```
 
 ## Release
