@@ -30,8 +30,10 @@ from .utils.model_patcher import state_dict_hook
 from .utils.loader_sample_tools import compoile_unet, quantize_unet
 from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
+from .modules.hijack_nodes import nodes_hijacker
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
+nodes_hijacker.hijack()
 
 
 __all__ = [
