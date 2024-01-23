@@ -23,7 +23,14 @@ Updated on January 23, 2024. Device: RTX 3090
 <details>
 <summary> Figure Notes </summary>
 
-- TODO: add workflow link
+- Workflow Download Links
+- [SDXL 1.0 (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/basic_base.png)
+- [SDXL 1.0 (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/basic_onediff.png)
+- [LoRA (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/lora_base.png)
+- [LoRA (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/lora_onediff.png)
+- [ControlNet (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/controlnet_base.png)
+- [ControlNet (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/controlnet_onediff.png)
+
 
 </details>
 
