@@ -374,17 +374,20 @@ class TransformerSpatioTemporalModel(nn.Module):
         # time_context_first_timestep = time_context[None, :].reshape(
         #     batch_size, num_frames, -1, time_context.shape[-1]
         # )[:, 0]
+        # Rewrite for onediff SVD dynamic shape
         time_context_first_timestep = time_context.unflatten(0, shape=(batch_size, -1))[
             :, 0
         ]
         # time_context = time_context_first_timestep[None, :].broadcast_to(
         #     height * width, batch_size, 1, time_context.shape[-1]
         # )
+        # Rewrite for onediff SVD dynamic shape
         broadcast_tensor = hidden_states.flatten(2, 3).permute(2, 0, 1)
         time_context = torch._C.broadcast_dim_like(
             time_context_first_timestep[None, :], broadcast_tensor, dim=0
         )
         # time_context = time_context.reshape(height * width * batch_size, 1, time_context.shape[-1])
+        # Rewrite for onediff SVD dynamic shape
         time_context = time_context.flatten(0, 1)
 
         residual = hidden_states
@@ -392,6 +395,7 @@ class TransformerSpatioTemporalModel(nn.Module):
         hidden_states = self.norm(hidden_states)
         inner_dim = hidden_states.shape[1]
         # hidden_states = hidden_states.permute(0, 2, 3, 1).reshape(batch_frames, height * width, inner_dim)
+        # Rewrite for onediff SVD dynamic shape
         hidden_states = hidden_states.permute(0, 2, 3, 1).flatten(1, 2)
 
         hidden_states = self.proj_in(hidden_states)
@@ -444,6 +448,7 @@ class TransformerSpatioTemporalModel(nn.Module):
         # 3. Output
         hidden_states = self.proj_out(hidden_states)
         # hidden_states = hidden_states.reshape(batch_frames, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
+        # Rewrite for onediff SVD dynamic shape
         hidden_states = (
             hidden_states.permute(0, 2, 1).reshape_as(hidden_states_in).contiguous()
         )
@@ -540,9 +545,11 @@ class TemporalBasicTransformerBlock(nn.Module):
         batch_size = batch_frames // num_frames
 
         # hidden_states = hidden_states[None, :].reshape(batch_size, num_frames, seq_length, channels)
+        # Rewrite for onediff SVD dynamic shape
         hidden_states = hidden_states.unflatten(0, shape=(batch_size, -1))
         hidden_states = hidden_states.permute(0, 2, 1, 3)
         # hidden_states = hidden_states.reshape(batch_size * seq_length, num_frames, channels)
+        # Rewrite for onediff SVD dynamic shape
         hidden_states = hidden_states.flatten(0, 1)
 
         residual = hidden_states
@@ -586,9 +593,11 @@ class TemporalBasicTransformerBlock(nn.Module):
             hidden_states = ff_output
 
         # hidden_states = hidden_states[None, :].reshape(batch_size, seq_length, num_frames, channels)
+        # Rewrite for onediff SVD dynamic shape
         hidden_states = hidden_states.unflatten(0, shape=(batch_size, -1))
         hidden_states = hidden_states.permute(0, 2, 1, 3)
         # hidden_states = hidden_states.reshape(batch_size * num_frames, seq_length, channels)
+        # Rewrite for onediff SVD dynamic shape
         hidden_states = hidden_states.flatten(0, 1)
 
         return hidden_states
@@ -1081,6 +1090,7 @@ class UNetSpatioTemporalConditionModel(nn.Module):
 
         # 7. Reshape back to original shape
         # sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
+        # Rewrite for onediff SVD dynamic shape
         sample = sample.unflatten(0, shape=(batch_size, -1))
 
         if not return_dict:
