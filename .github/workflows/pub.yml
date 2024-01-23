@@ -1,0 +1,17 @@
+name: Publish
+
+on:
+  push:
+    branches:
+      - "pub/*"
+  schedule:
+    # every 3 hours
+    - cron: "0 */3 * * *"
+
+jobs:
+  publish:
+    if: github.repository == 'siliconflow/onediff'
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
