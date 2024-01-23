@@ -130,7 +130,7 @@ python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 
 - From PyPI
 ```
-pip install --pre onediff
+python3 -m pip install --pre onediff
 ```
 - From source
 ```
