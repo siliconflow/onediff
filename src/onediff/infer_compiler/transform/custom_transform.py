@@ -36,27 +36,30 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=False):
 
 def set_default_registry():
     mocked_packages = transform_mgr.get_mocked_packages()
-    if len(mocked_packages) > 0:
-        return  # already set
+
+    def import_module_safely(module_path, module_name):
+        nonlocal mocked_packages
+
+        if module_name in mocked_packages:
+            return
+        try:
+            import_module_from_path(module_path)
+        except Exception as e:
+            logger.warning(f"Failed to import {module_name} from {module_path}. {e=}")
 
     # compiler_registry_path
     registry_path = Path(__file__).parents[3] / "infer_compiler_registry"
 
-    try:
-        import_module_from_path(registry_path / "register_diffusers")
-    except Exception as e:
-        logger.error(f"Failed to register_diffusers {e=}")
-        raise
+    import_module_safely(registry_path / "register_diffusers", "register_diffusers")
 
-    try:
-        import_module_from_path(registry_path / "register_onediff_quant")
-    except Exception as e:
-        logger.info(f"Failed to register_onediff_quant {e=}")
+    import_module_safely(
+        registry_path / "register_onediff_quant", "register_onediff_quant"
+    )
 
-    try:
-        import_module_from_path(registry_path / "register_diffusers_enterprise_lite")
-    except Exception as e:
-        logger.info(f"Failed to register_diffusers_enterprise_lite {e=}")
+    import_module_safely(
+        registry_path / "register_diffusers_enterprise_lite",
+        "register_diffusers_enterprise_lite",
+    )
 
 
 def ensure_list(obj):
