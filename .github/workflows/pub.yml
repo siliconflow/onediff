@@ -20,6 +20,7 @@ jobs:
           sed -i '' '1d' "src/onediff/__init__.py"
           formatted_date=$(date +'%Y%m%d%H%M')
           echo "__version__ = \"0.12.1.dev${formatted_date}\"" >> src/onediff/__init__.py
+          cat src/onediff/__init__.py
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
