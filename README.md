@@ -127,6 +127,12 @@ python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 ```
 
 #### 3. Install OneDiff
+
+- From PyPI
+```
+pip install --pre onediff
+```
+- From source
 ```
 git clone https://github.com/siliconflow/onediff.git
 cd onediff && python3 -m pip install -e .
