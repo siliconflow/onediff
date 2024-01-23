@@ -47,6 +47,9 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - If you want to use OneDiff on Windows, please use it under WSL.
 - NVIDIA GPUs
 
+## OneDiff Online Playground
+[Online Playground](https://github.com/siliconflow/onediff/wiki/OneDiff-Online-Playground)
+
 ## OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, please send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
