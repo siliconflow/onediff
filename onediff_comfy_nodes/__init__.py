@@ -8,11 +8,10 @@ from ._nodes import (
     VaeGraphLoader,
     VaeGraphSaver,
     ControlNetSpeedup,
-    ControlNetGraphLoader,
-    ControlNetGraphSaver,
     SVDSpeedup,
     ModuleDeepCacheSpeedup,
     OneDiffCheckpointLoaderSimple,
+    OneDiffControlNetLoader,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -27,11 +26,10 @@ NODE_CLASS_MAPPINGS = {
     "VaeGraphSaver": VaeGraphSaver,
     "VaeGraphLoader": VaeGraphLoader,
     "ControlNetSpeedup": ControlNetSpeedup,
-    "ControlNetGraphLoader": ControlNetGraphLoader,
-    "ControlNetGraphSaver": ControlNetGraphSaver,
     "SVDSpeedup": SVDSpeedup,
     "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
+    "OneDiffControlNetLoader": OneDiffControlNetLoader,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -44,11 +42,10 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "VaeGraphLoader": "VAE Graph Loader",
     "VaeGraphSaver": "VAE Graph Saver",
     "ControlNetSpeedup": "ControlNet Speedup",
-    "ControlNetGraphLoader": "ControlNet Graph Loader",
-    "ControlNetGraphSaver": "ControlNet Graph Saver",
     "SVDSpeedup": "SVD Speedup",
     "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
+    "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
 }
 
 
