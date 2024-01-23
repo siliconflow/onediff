@@ -195,8 +195,11 @@ jobs:
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
-      - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install e .
+      - name: Setup OneDiff diffusers extension
+        if: matrix.test-suite == 'diffusers_examples'
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/cu121/
+          docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install e .
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --saved_image output_enterprise_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples'
