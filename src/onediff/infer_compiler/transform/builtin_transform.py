@@ -218,8 +218,8 @@ def _(mod: torch.nn.Module, verbose=False):
     of_mod_cls = type(
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
+    print(f"###yaochi {type(new_md_cls)}, {type(mod)}")
     of_mod = of_mod_cls()
-    print(f"###yaochi {type(new_md_cls)}, {type(mod)}")    
     if of_mod.training:
         of_mod.training = False
         if verbose:
