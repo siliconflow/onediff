@@ -159,11 +159,15 @@ docker pull oneflowinc/onediff:20231106
   src/onediff/__init__.py
   ```
 
+- install build package (optional)
+  ```bash
+  python3 -m pip install build
+  ```
 - build wheel
 
-  ```
+  ```bash
   rm -rf dist
-  python3 setup.py bdist_wheel
+  python3 -m build
   ```
 
 - upload to pypi
