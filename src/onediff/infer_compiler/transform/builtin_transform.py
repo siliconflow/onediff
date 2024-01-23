@@ -174,6 +174,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
     new_md_cls = proxy_class(type(mod))
+    print(f"convert {type(mod)} to {new_md_cls}")
     
     def init(self):
         nonlocal proxy_md
