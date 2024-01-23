@@ -100,11 +100,23 @@ Note: The quantified model doesn't currently support LoRA loading, and related f
 
 ## API
 
-To use the OneDiff-based sd-webui API, you only need to add a "script": "onediff_diffusion_model" field to the request to speed up model inference.
+To use the OneDiff-based sd-webui API, you only need to add a `"script": "onediff_diffusion_model"` field to the request to speed up model inference.
 
-For OneDiff Enterprise, add "script_args" : [{"0": True}] to use the quantization feature.
+For OneDiff Enterprise, add `"script_args" : [{"0": True}]` to use the quantization feature.
 
-Check file `onediff_sd_webui_extensions/api.py` for more details.
+Check file `extensions/onediff_sd_webui_extensions/api.py` for more details.
+
+Run the commands below to use Sable Diffusion WebUI with OneDiff extensions.
+
+```
+# start sd-webui client
+python3 webui.py --api
+
+# send request
+python3 extensions/onediff_sd_webui_extensions/api.py
+```
+
+Then you can get the images returned by sd-webui client at `api_out/txt2img/`.
 
 Note: OneDiff sd-webui only supports txt2img now, img2img and ControlNet is under urgent development.
 
