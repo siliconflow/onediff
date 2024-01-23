@@ -1,8 +1,18 @@
 from setuptools import find_packages, setup
 
+
+def get_version():
+    variables = {}
+    with open("src/onediff/__init__.py", "r") as f:
+        for line in f:
+            if line.startswith("__version__"):
+                exec(line, variables)
+    return variables["__version__"]
+
+
 setup(
     name="onediff",
-    version="0.12.1.dev",
+    version=get_version(),
     description="an out-of-the-box acceleration library for diffusion models",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
@@ -30,4 +40,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
 )
