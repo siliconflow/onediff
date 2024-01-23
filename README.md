@@ -156,7 +156,6 @@ docker pull oneflowinc/onediff:20231106
 - bump version in these files:
 
   ```
-  setup.py
   src/onediff/__init__.py
   ```
 
