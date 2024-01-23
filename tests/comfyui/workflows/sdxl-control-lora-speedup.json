@@ -1,39 +1,7 @@
 {
-  "last_node_id": 46,
-  "last_link_id": 96,
+  "last_node_id": 47,
+  "last_link_id": 97,
   "nodes": [
-    {
-      "id": 25,
-      "type": "ControlNetLoader",
-      "pos": [
-        228,
-        -592
-      ],
-      "size": {
-        "0": 315,
-        "1": 58
-      },
-      "flags": {},
-      "order": 0,
-      "mode": 0,
-      "outputs": [
-        {
-          "name": "CONTROL_NET",
-          "type": "CONTROL_NET",
-          "links": [
-            67
-          ],
-          "shape": 3,
-          "slot_index": 0
-        }
-      ],
-      "properties": {
-        "Node name for S&R": "ControlNetLoader"
-      },
-      "widgets_values": [
-        "control-lora-openposeXL2-rank256.safetensors"
-      ]
-    },
     {
       "id": 4,
       "type": "CLIPTextEncode",
@@ -48,7 +16,7 @@
       "flags": {
         "pinned": false
       },
-      "order": 5,
+      "order": 4,
       "mode": 0,
       "inputs": [
         {
@@ -91,7 +59,7 @@
       "flags": {
         "pinned": false
       },
-      "order": 6,
+      "order": 5,
       "mode": 0,
       "inputs": [
         {
@@ -132,7 +100,7 @@
         "1": 314
       },
       "flags": {},
-      "order": 1,
+      "order": 0,
       "mode": 0,
       "outputs": [
         {
@@ -173,7 +141,7 @@
       "flags": {
         "pinned": false
       },
-      "order": 2,
+      "order": 1,
       "mode": 0,
       "outputs": [
         {
@@ -225,7 +193,7 @@
       "flags": {
         "pinned": false
       },
-      "order": 8,
+      "order": 7,
       "mode": 0,
       "inputs": [
         {
@@ -291,7 +259,7 @@
       "flags": {
         "pinned": false
       },
-      "order": 10,
+      "order": 9,
       "mode": 0,
       "inputs": [
         {
@@ -322,7 +290,7 @@
         "pinned": false,
         "collapsed": true
       },
-      "order": 9,
+      "order": 8,
       "mode": 0,
       "inputs": [
         {
@@ -364,7 +332,7 @@
         "1": 106
       },
       "flags": {},
-      "order": 3,
+      "order": 2,
       "mode": 0,
       "outputs": [
         {
@@ -399,7 +367,7 @@
       "flags": {
         "pinned": false
       },
-      "order": 7,
+      "order": 6,
       "mode": 0,
       "inputs": [
         {
@@ -415,7 +383,7 @@
         {
           "name": "control_net",
           "type": "CONTROL_NET",
-          "link": 78
+          "link": 97
         },
         {
           "name": "image",
@@ -456,42 +424,35 @@
       "bgcolor": "#335"
     },
     {
-      "id": 31,
-      "type": "ControlNetSpeedup",
+      "id": 47,
+      "type": "OneDiffControlNetLoader",
       "pos": [
-        783,
-        -589
+        265.469832611084,
+        -471.98175048828125
       ],
       "size": {
         "0": 315,
         "1": 58
       },
       "flags": {},
-      "order": 4,
+      "order": 3,
       "mode": 0,
-      "inputs": [
-        {
-          "name": "control_net",
-          "type": "CONTROL_NET",
-          "link": 67
-        }
-      ],
       "outputs": [
         {
-          "name": "control_net",
+          "name": "CONTROL_NET",
           "type": "CONTROL_NET",
           "links": [
-            78
+            97
           ],
           "shape": 3,
           "slot_index": 0
         }
       ],
       "properties": {
-        "Node name for S&R": "ControlNetSpeedup"
+        "Node name for S&R": "OneDiffControlNetLoader"
       },
       "widgets_values": [
-        "enable"
+        "control-lora-openposeXL2-rank256.safetensors"
       ]
     }
   ],
@@ -553,22 +514,6 @@
       "IMAGE"
     ],
     [
-      67,
-      25,
-      0,
-      31,
-      0,
-      "CONTROL_NET"
-    ],
-    [
-      78,
-      31,
-      0,
-      10,
-      2,
-      "CONTROL_NET"
-    ],
-    [
       87,
       10,
       1,
@@ -607,6 +552,14 @@
       1,
       0,
       "MODEL"
+    ],
+    [
+      97,
+      47,
+      0,
+      10,
+      2,
+      "CONTROL_NET"
     ]
   ],
   "groups": [],
