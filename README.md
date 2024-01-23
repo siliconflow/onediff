@@ -51,9 +51,11 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 [Online Playground](https://github.com/siliconflow/onediff/wiki/OneDiff-Online-Playground)
 
 ## OneDiff Enterprise Edition
-If you need **Enterprise-level Support** for your system or business, please send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+If you need **Enterprise-level Support** for your system or business, you can 
+- subscript Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
+- or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
-OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/onediff.html
+OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
 
 |                      | OneDiff Enterprise   | OneDiff Community |
 | -------------------- | ------------------- | ----------- |
