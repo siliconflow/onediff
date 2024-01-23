@@ -125,7 +125,7 @@ if args.compile:
     if pipe.text_encoder_2 is not None:
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
     pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
-    #pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
+    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
 
 if args.load_graph:
     print("Loading graphs to avoid compilation...")
