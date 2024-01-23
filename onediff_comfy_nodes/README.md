@@ -10,10 +10,13 @@ Performance of Community Edition
 
 Updated on January 23, 2024. Device: RTX 3090
 
-**SDXL End2End Time , Image Size 1024x1024, Batch Size 1 , steps 20**
+**SDXL End2End Time** , Image Size 1024x1024, Batch Size 1 , steps 20
 
+<div align="center">
+  <a href="https://ultralytics.com/yolov8" target="_blank">
+  <img width="100%" src="../imgs/comfy_community_version_speed.png"></a>
+</div>
 
-<img src="../imgs/comfy_community_version_speed.png">
 
 <details>
 <summary> Figure Notes </summary>
