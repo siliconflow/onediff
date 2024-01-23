@@ -201,9 +201,9 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/cu121/
           docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install e .
       - if: matrix.test-suite == 'diffusers_examples' && matrix.image == 'onediff-pro:cu121'
-        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --saved_image output_enterprise_sdxl.png
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --width 512 --height 512 --saved_image output_enterprise_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples' && matrix.image == 'onediff-pro:cu121'
-        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --saved_image output_enterprise_deepcache_sdxl.png
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --width 512 --height 512 --saved_image output_enterprise_deepcache_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
