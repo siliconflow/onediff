@@ -31,7 +31,7 @@ from .utils.loader_sample_tools import compoile_unet, quantize_unet
 from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
 from .modules.hijack_nodes import nodes_hijacker
-
+from .utils.deep_cache_speedup import deep_cache_speedup
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
 
@@ -292,42 +292,7 @@ class VaeGraphSaver:
         return {}
 
 
-class ControlNetSpeedup:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "control_net": ("CONTROL_NET",),
-                "static_mode": (["enable", "disable"],),
-            }
-        }
 
-    RETURN_TYPES = ("CONTROL_NET",)
-    RETURN_NAMES = ("control_net",)
-    FUNCTION = "apply_controlnet"
-
-    CATEGORY = "OneDiff"
-
-    def apply_controlnet(self, control_net, static_mode):
-        if static_mode == "enable":
-            from comfy.controlnet import ControlNet, ControlLora
-            from .modules.onediff_controlnet import (
-                OneDiffControlNet,
-                OneDiffControlLora,
-            )
-
-            if isinstance(control_net, ControlLora):
-                control_net = OneDiffControlLora.from_controllora(control_net)
-                return (control_net,)
-            elif isinstance(control_net, ControlNet):
-                control_net = OneDiffControlNet.from_controlnet(control_net)
-                return (control_net,)
-            else:
-                raise TypeError(
-                    f"control_net must be ControlNet or ControlLora, got {type(control_net)}"
-                )
-        else:
-            return (control_net,)
 
 
 class Quant8Model:
@@ -424,112 +389,17 @@ class ModuleDeepCacheSpeedup:
         cache_block_id,
         start_step,
         end_step,
-    ):
-        use_graph = static_mode == "enable"
-
-        offload_device = model_management.unet_offload_device()
-        oneflow_model = OneFlowDeepCacheSpeedUpModelPatcher(
-            model.model,
-            load_device=model_management.get_torch_device(),
-            offload_device=offload_device,
+    ):        
+        return deep_cache_speedup(
+            model=model,
+            use_graph=(static_mode == "enable"),
+            cache_interval=cache_interval,
             cache_layer_id=cache_layer_id,
             cache_block_id=cache_block_id,
-            use_graph=use_graph,
+            start_step=start_step,
+            end_step=end_step,
         )
 
-        current_t = -1
-        current_step = -1
-        cache_h = None
-
-        def apply_model(model_function, kwargs):
-            nonlocal current_t, current_step, cache_h
-
-            xa = kwargs["input"]
-            t = kwargs["timestep"]
-            c_concat = kwargs["c"].get("c_concat", None)
-            c_crossattn = kwargs["c"].get("c_crossattn", None)
-            y = kwargs["c"].get("y", None)
-            control = kwargs["c"].get("control", None)
-            transformer_options = kwargs["c"].get("transformer_options", None)
-
-            # https://github.com/comfyanonymous/ComfyUI/blob/629e4c552cc30a75d2756cbff8095640af3af163/comfy/model_base.py#L51-L69
-            sigma = t
-            xc = oneflow_model.model.model_sampling.calculate_input(sigma, xa)
-            if c_concat is not None:
-                xc = torch.cat([xc] + [c_concat], dim=1)
-
-            context = c_crossattn
-            dtype = oneflow_model.model.get_dtype()
-            xc = xc.to(dtype)
-            t = oneflow_model.model.model_sampling.timestep(t).float()
-            context = context.to(dtype)
-            extra_conds = {}
-            for o in kwargs:
-                extra = kwargs[o]
-                if hasattr(extra, "to"):
-                    extra = extra.to(dtype)
-                extra_conds[o] = extra
-
-            x = xc
-            timesteps = t
-            y = None if y is None else y.to(dtype)
-            transformer_options["original_shape"] = list(x.shape)
-            transformer_options["current_index"] = 0
-            transformer_patches = transformer_options.get("patches", {})
-            """
-            Apply the model to an input batch.
-            :param x: an [N x C x ...] Tensor of inputs.
-            :param timesteps: a 1-D batch of timesteps.
-            :param context: conditioning plugged in via crossattn
-            :param y: an [N] Tensor of labels, if class-conditional.
-            :return: an [N x C x ...] Tensor of outputs.
-            """
-
-            # reference https://gist.github.com/laksjdjf/435c512bc19636e9c9af4ee7bea9eb86
-            if t[0].item() > current_t:
-                current_step = -1
-
-            current_t = t[0].item()
-            apply = 1000 - end_step <= current_t <= 1000 - start_step  # t is 999->0
-
-            if apply:
-                current_step += 1
-            else:
-                current_step = -1
-            current_t = t[0].item()
-
-            is_slow_step = current_step % cache_interval == 0 and apply
-
-            model_output = None
-            if is_slow_step:
-                cache_h = None
-                model_output, cache_h = oneflow_model.deep_cache_unet(
-                    x,
-                    timesteps,
-                    context,
-                    y,
-                    control,
-                    transformer_options,
-                    **extra_conds,
-                )
-            else:
-                model_output, cache_h = oneflow_model.fast_deep_cache_unet(
-                    x,
-                    cache_h,
-                    timesteps,
-                    context,
-                    y,
-                    control,
-                    transformer_options,
-                    **extra_conds,
-                )
-
-            return oneflow_model.model.model_sampling.calculate_denoised(
-                sigma, model_output, xa
-            )
-
-        oneflow_model.set_model_unet_function_wrapper(apply_model)
-        return (oneflow_model,)
 
 
 from nodes import CheckpointLoaderSimple, ControlNetLoader

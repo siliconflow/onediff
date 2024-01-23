@@ -496,6 +496,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         weight_inplace_update=False,
         *,
         use_graph=None,
+        gen_compile_options=None,
     ):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
