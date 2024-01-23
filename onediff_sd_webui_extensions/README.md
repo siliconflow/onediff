@@ -100,7 +100,7 @@ Note: The quantified model doesn't currently support LoRA loading, and related f
 
 ## Use OneDiff by API
 
-Run the commands below to use Sable Diffusion WebUI with OneDiff extensions.
+Run the commands below to use Sable Diffusion WebUI with OneDiff extensions (Assume you are in the `stable-diffusion-webui/` dir).
 
 ```
 # start sd-webui client
