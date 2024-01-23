@@ -104,7 +104,7 @@ To use the OneDiff-based sd-webui API, you only need to add a `"script": "onedif
 
 For OneDiff Enterprise, add `"script_args" : [{"0": True}]` to use the quantization feature.
 
-Check file `[txt2img.py](./onediff_sd_webui_extensions/api_examples/txt2img.py)` for more details.
+Check file [txt2img.py](./onediff_sd_webui_extensions/api_examples/txt2img.py) for more details.
 
 Run the commands below to use Sable Diffusion WebUI with OneDiff extensions.
 
