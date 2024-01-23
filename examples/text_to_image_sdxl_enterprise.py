@@ -4,7 +4,6 @@ import time
 
 import torch
 import torch.nn as nn
-from torch._dynamo import allow_in_graph as maybe_allow_in_graph
 
 # oneflow_compile should be imported before importing any diffusers
 from onediff.infer_compiler import oneflow_compile
@@ -110,7 +109,6 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         False,
         False,
         args.bits,
-        maybe_allow_in_graph,
     )
 
 if args.complie_text_encoder:
