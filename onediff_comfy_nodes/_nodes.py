@@ -328,67 +328,6 @@ class ControlNetSpeedup:
             return (control_net,)
 
 
-class ControlNetGraphLoader:
-    @classmethod
-    def INPUT_TYPES(s):
-        folder = os.path.join(OUTPUT_FOLDER, "control_net")
-        graph_files = [
-            f
-            for f in os.listdir(folder)
-            if os.path.isfile(os.path.join(folder, f)) and f.endswith(".graph")
-        ]
-        return {
-            "required": {
-                "control_net": ("CONTROL_NET",),
-                "graph": (sorted(graph_files),),
-            },
-        }
-
-    RETURN_TYPES = ("CONTROL_NET",)
-    RETURN_NAMES = ("control_net",)
-    FUNCTION = "load_graph"
-    CATEGORY = "OneDiff"
-
-    def load_graph(self, control_net, graph):
-        from .modules.onediff_controlnet import HijackControlLora
-
-        device = model_management.get_torch_device()
-
-        lazy_load_hook = partial(
-            load_graph, graph_filename=graph, device=device, subfolder="control_net"
-        )
-        setattr(HijackControlLora, "lazy_load_hook", lazy_load_hook)
-
-        return (control_net,)
-
-
-class ControlNetGraphSaver:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "samples": ("LATENT",),
-                "control_net": ("CONTROL_NET",),
-                "filename_prefix": ("STRING", {"default": "control_net"}),
-            },
-        }
-
-    RETURN_TYPES = ()
-    FUNCTION = "save_graph"
-    CATEGORY = "OneDiff"
-    OUTPUT_NODE = True
-
-    def save_graph(self, samples, control_net, filename_prefix):
-        from .modules.onediff_controlnet import HijackControlLora
-
-        # Unable to directly fetch the controlnet model from comfyui.
-        model = HijackControlLora.oneflow_model
-        device = model_management.get_torch_device()
-
-        save_graph(model, filename_prefix, device, subfolder="control_net")
-        return {}
-
-
 class Quant8Model:
     @classmethod
     def INPUT_TYPES(s):
@@ -591,7 +530,29 @@ class ModuleDeepCacheSpeedup:
         return (oneflow_model,)
 
 
-from nodes import CheckpointLoaderSimple
+from nodes import CheckpointLoaderSimple, ControlNetLoader
+from comfy.controlnet import ControlLora, ControlNet
+
+from .modules.onediff_controlnet import OneDiffControlLora
+
+
+class OneDiffControlNetLoader(ControlNetLoader):
+    CATEGORY = "OneDiff/Loaders"
+    FUNCTION = "onediff_load_controlnet"
+
+    def onediff_load_controlnet(self, control_net_name):
+        controlnet = super().load_controlnet(control_net_name)[0]
+        if isinstance(controlnet, ControlLora):
+            controlnet = OneDiffControlLora.from_controllora(controlnet)
+            return (controlnet,)
+        elif isinstance(controlnet, ControlNet):
+            control_model = controlnet.control_model
+            control_model = control_model.to(model_management.get_torch_device())
+            controlnet.control_model = oneflow_compile(control_model)
+            return (controlnet,)
+        else:
+            print(f"Warning: {type(controlnet)=} is not ControlLora or ControlNet")
+            return (controlnet,)
 
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
