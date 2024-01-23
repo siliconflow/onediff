@@ -6,27 +6,29 @@
 
 Performance of Community Edition
 
-Updated on DEC 7, 2023. Device: RTX 3090
+Updated on January 23, 2024. Device: RTX 3090
 
-| SDXL1.0-base (1024x1024)                                       | torch(Baseline) | onediff(Optimized) | Percentage improvement |
+<!-- | SDXL1.0-base (1024x1024)                                       | torch(Baseline) | onediff(Optimized) | Percentage improvement |
 | -------------------------------------------------------------- | --------------- | ------------------ | ---------------------- |
 | [Stable Diffusion workflow(UNet)](workflows/model-speedup.png) | 4.08it/s        | 6.70it/s           | 64.2 %                 |
-| [LoRA workflow](workflows/model-speedup-lora.png)              | 4.05it/s        | 6.69it/s           | 65.1 %                 |
+| [LoRA workflow](workflows/model-speedup-lora.png)              | 4.05it/s        | 6.69it/s           | 65.1 %                 | -->
 
 ## Documentation
 
-- [Installation Guide](#installation-guide)
-  - [Setup Community Edition](#setup-community-edition)
-  - [Setup Enterprise Edition](#setup-enterprise-edition)
-- [Basical Nodes Usage](#basical-nodes-usage)
-  - [OneDiff LoadCheckpoint ](#load-checkpoint---onediff)
-  - [Quantization](#quantization)
-- [OneDiff Community Examples](#onediff-community-examples)
-  - [LoRA](#lora)
-  - [ControlNet](#controlnet)
-  - [SVD](#svd)
-  - [DeepCache](#deepcache)
-- [Contact](#contact)
+- [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
+  - [Documentation](#documentation)
+    - [Installation Guide](#installation-guide)
+      - [Setup Community Edition](#setup-community-edition)
+      - [Setup Enterprise Edition](#setup-enterprise-edition)
+    - [Basical Nodes Usage](#basical-nodes-usage)
+      - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
+    - [Quantization](#quantization)
+  - [OneDiff Community Examples](#onediff-community-examples)
+    - [LoRA](#lora)
+    - [ControlNet](#controlnet)
+    - [SVD](#svd)
+    - [DeepCache](#deepcache)
+  - [Contact](#contact)
 
 
 ### Installation Guide
