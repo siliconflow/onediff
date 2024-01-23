@@ -38,7 +38,6 @@ def quantize_model(
     if varify_can_use_quantization() is False:
         return model
 
-    from torch._dynamo import allow_in_graph as maybe_allow_in_graph
     from onediff_quant.utils import symm_quantize_sub_module, find_quantizable_modules
     from onediff_quant.utils import get_quantize_module
     from onediff_quant import Quantizer
@@ -90,7 +89,6 @@ def quantize_model(
                 fake_quant=False,
                 static=False,
                 nbits=bits,
-                convert_fn=maybe_allow_in_graph,
             )
 
             modify_sub_module(model, sub_module_name, sub_mod)
