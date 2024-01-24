@@ -180,7 +180,8 @@ jobs:
         run: |
           docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --port 8188 > /app/ComfyUI/onediff_comfyui.log 2>&1"
           sleep 30
-          docker exec  ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
+          docker cp ${{ env.CONTAINER_NAME }}:/app/ComfyUI/onediff_comfyui.log .
+          cat ./onediff_comfyui.log && rm ./onediff_comfyui.log
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
       - name: Test ComfyUI
