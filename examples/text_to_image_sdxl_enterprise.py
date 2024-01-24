@@ -2,6 +2,8 @@ import argparse
 import os
 import time
 
+import oneflow as flow
+
 import torch
 import torch.nn as nn
 
@@ -85,7 +87,7 @@ with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
         ]
 
 
-os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
+# os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
 
 scheduler = EulerDiscreteScheduler.from_pretrained(args.model, subfolder="scheduler")
 pipe = StableDiffusionXLPipeline.from_pretrained(
