@@ -76,10 +76,10 @@ jobs:
       max-parallel: 5
       matrix:
         image:
-          - #onediff:cu118
+          #- onediff:cu118
           - onediff-pro:cu121
         test-suite:
-          - #diffusers_examples
+          #- diffusers_examples
           - comfy
     steps:
       - name: Login to ACR with the AccessKey pair
