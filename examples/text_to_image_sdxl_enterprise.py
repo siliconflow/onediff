@@ -2,8 +2,6 @@ import argparse
 import os
 import time
 
-import oneflow as flow
-
 import torch
 import torch.nn as nn
 
@@ -56,13 +54,9 @@ def parse_args():
 
 args = parse_args()
 
-# assert os.path.isfile(
-#     os.path.join(args.model, "calibrate_info.txt")
-# ), f"calibrate_info.txt is required in args.model ({args.model})"
-
-assert (
-    args.compile
-), "Onediff enterprise model can not be executed in pytorch environment. Please set args.compile to 1!"
+assert os.path.isfile(
+    os.path.join(args.model, "calibrate_info.txt")
+), f"calibrate_info.txt is required in args.model ({args.model})"
 
 from diffusers import StableDiffusionXLPipeline
 import onediff_quant
@@ -76,18 +70,18 @@ infer_args = {
     "num_inference_steps": args.steps,
 }
 calibrate_info = {}
-# with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
-#     for line in f.readlines():
-#         line = line.strip()
-#         items = line.split(" ")
-#         calibrate_info[items[0]] = [
-#             float(items[1]),
-#             int(items[2]),
-#             [float(x) for x in items[3].split(",")],
-#         ]
+with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
+    for line in f.readlines():
+        line = line.strip()
+        items = line.split(" ")
+        calibrate_info[items[0]] = [
+            float(items[1]),
+            int(items[2]),
+            [float(x) for x in items[3].split(",")],
+        ]
 
 
-# os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
+os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
 
 scheduler = EulerDiscreteScheduler.from_pretrained(args.model, subfolder="scheduler")
 pipe = StableDiffusionXLPipeline.from_pretrained(

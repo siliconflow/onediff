@@ -53,12 +53,10 @@ def proxy_class(cls: type):
         mod_name = cls.__module__.replace("torch.", "oneflow.")
         mod = importlib.import_module(mod_name)
         res = getattr(mod, cls.__name__)
-        print(f"#hanbinbin, torch convert {cls} to {res}")
         return res
 
     full_qualified_name = cls.__module__ + "." + cls.__qualname__
     result = transform_mgr.transform_cls(full_qualified_name)
-    print(f"#hanbinbin, transform_mgr convert {cls} to {result}")
     return result
 
 
