@@ -56,9 +56,9 @@ def parse_args():
 
 args = parse_args()
 
-assert os.path.isfile(
-    os.path.join(args.model, "calibrate_info.txt")
-), f"calibrate_info.txt is required in args.model ({args.model})"
+# assert os.path.isfile(
+#     os.path.join(args.model, "calibrate_info.txt")
+# ), f"calibrate_info.txt is required in args.model ({args.model})"
 
 assert (
     args.compile
