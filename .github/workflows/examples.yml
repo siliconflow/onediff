@@ -76,10 +76,10 @@ jobs:
       max-parallel: 5
       matrix:
         image:
-          #- onediff:cu118
+          - onediff:cu118
           - onediff-pro:cu121
         test-suite:
-          #- diffusers_examples
+          - diffusers_examples
           - comfy
     steps:
       - name: Login to ACR with the AccessKey pair
@@ -166,7 +166,7 @@ jobs:
       - name: Install onediff-quant if needed
         if: matrix.image == 'onediff-pro:cu121'
         run: |
-          true #docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
       - name: Pip Install Requirements for ComfyUI & Test
         if: matrix.test-suite == 'comfy'
         run: |
@@ -189,7 +189,6 @@ jobs:
             local workflow_name="$1"
             docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow "$workflow_name" || {
               echo "test_by_ui.py fails! print the ComfyUI logs..."
-              docker exec ${{ env.CONTAINER_NAME }} pkill -f "python3 /app/ComfyUI/main.py"
               docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
               false
             }
