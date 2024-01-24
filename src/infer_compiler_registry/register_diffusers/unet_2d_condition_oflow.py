@@ -151,6 +151,7 @@ class UNet2DConditionModel(
             timesteps = timesteps[None].to(sample.device)
 
         # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
+        # modified to support dynamic shape for onediff
         # timesteps = timesteps.expand(sample.shape[0])
         timesteps = torch._C.broadcast_dim_like(timesteps, sample, dim=0)
 
@@ -209,6 +210,7 @@ class UNet2DConditionModel(
                 )
             time_ids = added_cond_kwargs.get("time_ids")
             time_embeds = self.add_time_proj(time_ids.flatten())
+            # modified to support dynamic shape for onediff
             # time_embeds = time_embeds.reshape((text_embeds.shape[0], -1))
             time_embeds = time_embeds.unflatten(
                 dim=0, shape=(-1, time_ids.shape[1])
