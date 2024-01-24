@@ -34,7 +34,9 @@ def set_attr_of(obj, attr, value):
 
 class OneDiffControlLora(ControlLora):
     @classmethod
-    def from_controllora(cls, controlnet: ControlLora):
+    def from_controllora(
+        cls, controlnet: ControlLora, *, gen_compile_options: callable = None
+    ):
         c = cls(
             controlnet.control_weights,
             global_average_pooling=controlnet.global_average_pooling,
@@ -42,6 +44,7 @@ class OneDiffControlLora(ControlLora):
         )
         controlnet.copy_to(c)
         c._oneflow_model = None
+        c.gen_compile_options = gen_compile_options
         return c
 
     def pre_run(self, model, percent_to_timestep_function):
@@ -75,7 +78,15 @@ class OneDiffControlLora(ControlLora):
             self.control_model.to(dtype)
             self.control_model.to(comfy.model_management.get_torch_device())
 
-            self._oneflow_model = oneflow_compile(self.control_model)
+            compile_options = (
+                self.gen_compile_options(self.control_model)
+                if self.gen_compile_options is not None
+                else {}
+            )
+
+            self._oneflow_model = oneflow_compile(
+                self.control_model, options=compile_options
+            )
 
         self.control_model = self._oneflow_model
 
@@ -108,4 +119,5 @@ class OneDiffControlLora(ControlLora):
         )
         self.copy_to(c)
         c._oneflow_model = self._oneflow_model
+        c.gen_compile_options = self.gen_compile_options
         return c
