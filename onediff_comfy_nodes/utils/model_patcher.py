@@ -36,9 +36,9 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
-        self._1f_weight_inplace_update = weight_inplace_update
-        self._1f_object_patches = {}
-        self._1f_object_patches_backup = {}
+        self.weight_inplace_update = weight_inplace_update
+        self.object_patches = {}
+        self.object_patches_backup = {}
         self.size = size
         self.model = copy.copy(model)
         self.model.__dict__["_modules"] = copy.copy(model.__dict__["_modules"])
@@ -53,25 +53,25 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 options={"graph_file": graph_path, "graph_file_device": graph_device},
             )
         self.model._register_state_dict_hook(state_dict_hook)
-        self._1f_patches = {}
-        self._1f_backup = {}
-        self._1f_model_options = {"transformer_options": {}}
+        self.patches = {}
+        self.backup = {}
+        self.model_options = {"transformer_options": {}}
         self.model_size()
         self.load_device = load_device
-        self._1f_offload_device = offload_device
+        self.offload_device = offload_device
         if current_device is None:
-            self._1f_current_device = self._1f_offload_device
+            self.current_device = self.offload_device
         else:
-            self._1f_current_device = current_device
+            self.current_device = current_device
 
     def clone(self):
         n = OneFlowSpeedUpModelPatcher(
             self,
             self.load_device,
-            self._1f_offload_device,
-            self._1f_size,
-            self._1f_current_device,
-            weight_inplace_update=self._1f_weight_inplace_update,
+            self.offload_device,
+            self.size,
+            self.current_device,
+            weight_inplace_update=self.weight_inplace_update,
         )
         n.patches = {}
         for k in self.patches:
@@ -93,7 +93,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         except:
             pass
 
-        torch_model = self._1f_model.diffusion_model._deployable_module_model._torch_module
+        torch_model = self.model.diffusion_model._deployable_module_model._torch_module
         for name, module in torch_model.named_modules():
             if isinstance(module, CrossAttention) and hasattr(module, "to_qkv"):
                 # TODO(): support bias
@@ -536,3 +536,49 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.current_device = self.offload_device
         else:
             self.current_device = current_device
+
+def get_mixed_speedup_class(module_cls):
+    class MixedSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher, module_cls):
+        def __init__(
+            self,
+            model_patcher,
+            load_device,
+            offload_device,
+            size=0,
+            current_device=None,
+            weight_inplace_update=False,
+            *,
+            use_graph=None,
+        ):
+            self.__dict__.update(**model_patcher.__dict__)
+            OneFlowSpeedUpModelPatcher.__init__(
+                self,
+                model_patcher.model,
+                load_device,
+                offload_device,
+                size,
+                current_device,
+                weight_inplace_update,
+                use_graph=use_graph,
+            )
+
+        def clone(self):
+            cloned = module_cls.clone(self)
+            n = OneFlowSpeedUpModelPatcher(
+                cloned.model,
+                self.load_device,
+                self.offload_device,
+                self.size,
+                self.current_device,
+                weight_inplace_update=self.weight_inplace_update,
+            )
+            n.patches = {}
+            for k in self.patches:
+                n.patches[k] = self.patches[k][:]
+
+            n.object_patches = self.object_patches.copy()
+            n.model_options = copy.deepcopy(self.model_options)
+            n.model_keys = self.model_keys
+            return n
+
+    return MixedSpeedUpModelPatcher
