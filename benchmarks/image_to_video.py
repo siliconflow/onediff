@@ -10,8 +10,8 @@ SEED = None
 WARMUPS = 1
 FRAMES = None
 BATCH = 1
-HEIGHT = None
-WIDTH = None
+HEIGHT = 576
+WIDTH = 1024
 FPS = 7
 DECODE_CHUNK_SIZE = 5
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
@@ -198,7 +198,7 @@ class IterationProfiler:
 
 
 def adjust_resolution():
-    resolutions = [(1024, 512),(768, 768)]
+    resolutions = [(1024, 512),(768, 576)]
     return random.choice(resolutions)
 
 
