@@ -14,7 +14,7 @@ def deep_cache_speedup(
     start_step,
     end_step,
     *,
-    gen_compile_options,
+    gen_compile_options=None,
 ):
     offload_device = model_management.unet_offload_device()
     model_patcher = OneFlowDeepCacheSpeedUpModelPatcher(
