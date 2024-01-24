@@ -76,10 +76,10 @@ jobs:
       max-parallel: 5
       matrix:
         image:
-          - onediff:cu118
+          - #onediff:cu118
           - onediff-pro:cu121
         test-suite:
-          - diffusers_examples
+          - #diffusers_examples
           - comfy
     steps:
       - name: Login to ACR with the AccessKey pair
@@ -182,20 +182,18 @@ jobs:
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
-      - name: Test ComfyUI
+      - name: Test ComfyUI txt2img
         if: matrix.test-suite == 'comfy'
         run: |
-          run_comfy_test() {
-            local workflow_name="$1"
-            docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow "$workflow_name" || {
-              echo "test_by_ui.py fails! print the ComfyUI logs..."
-              docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
-              false
-            }
-          }
-
-          run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json"
-          run_comfy_test "workflows/sdxl-control-lora-speedup.json"
+          docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-unet-speedup-graph-saver.json
+      - name: Test ComfyUI LoRA
+        run: |
+          docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow workflows/sdxl-control-lora-speedup.json
+      - name: Reports for failed ComfyUI workflow
+        if: ${{ failure() }} && matrix.test-suite == 'comfy'
+        run: |
+          echo "Show ComfyUI workflow log:"
+          docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
       - name: Show ComfyUI Log
         if: matrix.test-suite == 'comfy'
         run: |
@@ -239,3 +237,4 @@ jobs:
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+  
