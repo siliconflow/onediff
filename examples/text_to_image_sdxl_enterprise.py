@@ -47,9 +47,6 @@ def parse_args():
     )
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--warmup", type=int, default=1)
-    parser.add_argument("--cache_interval", type=int, default=3)
-    parser.add_argument("--cache_layer_id", type=int, default=0)
-    parser.add_argument("--cache_block_id", type=int, default=0)
 
     args = parser.parse_args()
     return args
@@ -60,10 +57,6 @@ args = parse_args()
 assert os.path.isfile(
     os.path.join(args.model, "calibrate_info.txt")
 ), f"calibrate_info.txt is required in args.model ({args.model})"
-
-assert (
-    args.compile
-), "Onediff enterprise model can not be executed in pytorch environment. Please set args.compile to 1!"
 
 from diffusers import StableDiffusionXLPipeline
 import onediff_quant
@@ -118,10 +111,6 @@ if args.compile_text_encoder:
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
 
 if args.compile:
-    if pipe.text_encoder is not None:
-        pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
-    if pipe.text_encoder_2 is not None:
-        pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
     pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
 

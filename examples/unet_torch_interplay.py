@@ -4,6 +4,8 @@ save graph compiled example: python3 examples/unet_torch_interplay.py --save --m
 load graph compiled example: python3 examples/unet_torch_interplay.py --load
 """
 import os
+import importlib.metadata
+from packaging import version
 import random
 import click
 import oneflow as flow
@@ -112,7 +114,11 @@ def benchmark(token, repeat, sync_interval, save, load, file, model_id, variant)
 
     num_channels = 4
     cross_attention_dim = unet.config["cross_attention_dim"]
-    from diffusers.utils import floats_tensor
+    diffusers_version = version.parse(importlib.metadata.version("diffusers"))
+    if diffusers_version < version.parse("0.21.0"):
+        from diffusers.utils import floats_tensor
+    else:
+        from diffusers.utils.testing_utils import floats_tensor
 
     if (
         model_id == "stabilityai/stable-diffusion-xl-base-1.0"

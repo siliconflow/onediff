@@ -61,10 +61,6 @@ assert os.path.isfile(
     os.path.join(args.model, "calibrate_info.txt")
 ), f"calibrate_info.txt is required in args.model ({args.model})"
 
-assert (
-    args.compile
-), "Onediff enterprise model can not be executed in pytorch environment. Please set args.compile to 1!"
-
 from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
 import onediff_quant
 from onediff_quant.utils import replace_sub_module_with_quantizable_module

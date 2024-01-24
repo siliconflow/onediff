@@ -16,7 +16,6 @@ setup(
         "accelerate",
         "torch",
         "onefx",
-        "onediff",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
