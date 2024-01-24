@@ -76,15 +76,15 @@ infer_args = {
     "num_inference_steps": args.steps,
 }
 calibrate_info = {}
-with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
-    for line in f.readlines():
-        line = line.strip()
-        items = line.split(" ")
-        calibrate_info[items[0]] = [
-            float(items[1]),
-            int(items[2]),
-            [float(x) for x in items[3].split(",")],
-        ]
+# with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
+#     for line in f.readlines():
+#         line = line.strip()
+#         items = line.split(" ")
+#         calibrate_info[items[0]] = [
+#             float(items[1]),
+#             int(items[2]),
+#             [float(x) for x in items[3].split(",")],
+#         ]
 
 
 # os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
