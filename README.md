@@ -47,10 +47,15 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - If you want to use OneDiff on Windows, please use it under WSL.
 - NVIDIA GPUs
 
-## OneDiff Enterprise Edition
-If you need **Enterprise-level Support** for your system or business, please send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+## OneDiff Online Playground
+[Online Playground](https://github.com/siliconflow/onediff/wiki/OneDiff-Online-Playground)
 
-OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low: https://siliconflow.com/onediff.html
+## OneDiff Enterprise Edition
+If you need **Enterprise-level Support** for your system or business, you can 
+- subscript Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
+- or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+
+OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
 
 |                      | OneDiff Enterprise   | OneDiff Community |
 | -------------------- | ------------------- | ----------- |
@@ -67,7 +72,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Technical Support for deployment    | High priority support       | Community           |
 | Get the latest technology/feature | Yes | |
 
-## Install from source or Using in Docker
+## OneDiff Installation
 ### Install from source
 
 #### 1. Install OneFlow
@@ -127,6 +132,12 @@ python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 ```
 
 #### 3. Install OneDiff
+
+- From PyPI
+```
+python3 -m pip install --pre onediff
+```
+- From source
 ```
 git clone https://github.com/siliconflow/onediff.git
 cd onediff && python3 -m pip install -e .
@@ -137,11 +148,6 @@ cd onediff && python3 -m pip install -e .
 ```
 python3 -m pip install huggingface_hub
  ~/.local/bin/huggingface-cli login
-```
-
-### Docker
-```bash
-docker pull oneflowinc/onediff:20231106
 ```
 
 ## Release
@@ -156,15 +162,20 @@ docker pull oneflowinc/onediff:20231106
 - bump version in these files:
 
   ```
-  setup.py
+  .github/workflows/pub.yml
   src/onediff/__init__.py
+  ```
+
+- install build package
+  ```bash
+  python3 -m pip install build
   ```
 
 - build wheel
 
-  ```
+  ```bash
   rm -rf dist
-  python3 setup.py bdist_wheel
+  python3 -m build
   ```
 
 - upload to pypi
