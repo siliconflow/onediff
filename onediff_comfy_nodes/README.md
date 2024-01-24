@@ -4,14 +4,35 @@
 <img src="../imgs/onediff_logo.png" height="100">
 </p>
 
-Performance of Community Edition
+---
 
-Updated on DEC 7, 2023. Device: RTX 3090
+Performance of Community Edition 
 
-| SDXL1.0-base (1024x1024)                                       | torch(Baseline) | onediff(Optimized) | Percentage improvement |
-| -------------------------------------------------------------- | --------------- | ------------------ | ---------------------- |
-| [Stable Diffusion workflow(UNet)](workflows/model-speedup.png) | 4.08it/s        | 6.70it/s           | 64.2 %                 |
-| [LoRA workflow](workflows/model-speedup-lora.png)              | 4.05it/s        | 6.69it/s           | 65.1 %                 |
+Updated on January 23, 2024. Device: RTX 3090
+
+
+<div align="center">
+  
+  **SDXL End2End Time** , Image Size 1024x1024 , Batch Size 1 , steps 20
+
+  <a href="https://github.com/siliconflow/onediff/tree/main" target="_blank">
+  <img width="100%" src="../imgs/comfy_community_version_speed.png"></a>
+</div>
+
+
+<details>
+<summary> Figure Notes </summary>
+
+- Workflow Download Links
+- [SDXL 1.0 (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/basic_base.png)
+- [SDXL 1.0 (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/basic_onediff.png)
+- [LoRA (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/lora_base.png)
+- [LoRA (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/lora_onediff.png)
+- [ControlNet (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/controlnet_base.png)
+- [ControlNet (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/controlnet_onediff.png)
+
+
+</details>
 
 ## Documentation
 
