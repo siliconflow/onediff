@@ -1,0 +1,44 @@
+categories:
+  - Basic
+  - Lora
+  - ControlNets
+
+optimization_scores:
+  - 0.3
+  - 0.3
+  - 0.35
+
+display_scores_on_bars: true  # Whether to display scores on bars
+use_default_scores_on_bars: true  # Whether to use default optimization_scores on bars
+custom_scores_on_bars:
+  - 0.3
+  - 0.3
+  - 0.3
+# scores_format_on_bars: '{score:.2f}'  # Format of the displayed scores on bars
+scores_format_on_bars: '{score:.0%}'
+
+colormap: coolwarm
+colormap_range:
+  - 0.2
+  - 0.5
+  - 0.8
+
+bar_width: 0.6
+rotation_angle: 45
+label_fontsize: 10
+line_color: '#d2b48c'
+line_style: '--'
+line_width: 0.5
+line_alpha: 0.7
+
+figure:
+  figsize:
+    width: 8
+    height: 6
+  dpi: 300
+
+plot_title: 'Optimization Scores for Different Categories'
+x_label: ''
+y_label: 'Optimization Score'
+
+output_filename: 'config.png'
