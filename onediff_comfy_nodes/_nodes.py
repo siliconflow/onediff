@@ -434,8 +434,9 @@ class OneDiffControlNetLoader(ControlNetLoader):
             )
             return (controlnet,)
         else:
-            print(f"Warning: {type(controlnet)=} is not ControlLora or ControlNet")
+            print("\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m")
             return (controlnet,)
+
 
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
