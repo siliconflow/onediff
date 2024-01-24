@@ -29,5 +29,5 @@ def is_quantization_enabled():
 
 
 def is_community_version():
-    is_community = not is_quantization_enabled()
-    return is_community
+    import oneflow.sysconfig
+    return not oneflow.sysconfig.with_enterprise()
