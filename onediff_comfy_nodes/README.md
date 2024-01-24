@@ -15,18 +15,20 @@ Updated on DEC 7, 2023. Device: RTX 3090
 
 ## Documentation
 
-- [Installation Guide](#installation-guide)
-  - [Setup Community Edition](#setup-community-edition)
-  - [Setup Enterprise Edition](#setup-enterprise-edition)
-- [Basical Nodes Usage](#basical-nodes-usage)
-  - [OneDiff LoadCheckpoint ](#load-checkpoint---onediff)
-  - [Quantization](#quantization)
-- [OneDiff Community Examples](#onediff-community-examples)
-  - [LoRA](#lora)
-  - [ControlNet](#controlnet)
-  - [SVD](#svd)
-  - [DeepCache](#deepcache)
-- [Contact](#contact)
+- [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
+  - [Documentation](#documentation)
+    - [Installation Guide](#installation-guide)
+      - [Setup Community Edition](#setup-community-edition)
+      - [Setup Enterprise Edition](#setup-enterprise-edition)
+    - [Basical Nodes Usage](#basical-nodes-usage)
+      - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
+    - [Quantization](#quantization)
+  - [OneDiff Community Examples](#onediff-community-examples)
+    - [LoRA](#lora)
+    - [ControlNet](#controlnet)
+    - [SVD](#svd)
+    - [DeepCache](#deepcache)
+  - [Contact](#contact)
 
 
 ### Installation Guide
@@ -114,9 +116,12 @@ This example demonstrates how to utilize LoRAs. You have the flexibility to modi
 
 ### ControlNet
 
-While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more.
+> doc link: [ControlNet](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ControlNet)
 
-[ControlNet Speedup](workflows/model-speedup-controlnet.png)
+
+While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more. 
+
+[ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
 
 ### SVD
 
