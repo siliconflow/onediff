@@ -164,7 +164,7 @@ jobs:
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m oneflow --doctor
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
       - name: Install onediff-quant if needed
-        if: matrix.image == "onediff-pro:cu121"
+        if: matrix.image == 'onediff-pro:cu121'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
       - name: Pip Install Requirements for ComfyUI & Test
