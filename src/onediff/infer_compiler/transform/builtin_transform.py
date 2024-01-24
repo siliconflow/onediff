@@ -52,10 +52,13 @@ def proxy_class(cls: type):
     if cls.__module__.startswith("torch."):
         mod_name = cls.__module__.replace("torch.", "oneflow.")
         mod = importlib.import_module(mod_name)
-        return getattr(mod, cls.__name__)
+        res = getattr(mod, cls.__name__)
+        print(f"#hanbinbin, torch convert {cls} to {res}")
+        return res
 
     full_qualified_name = cls.__module__ + "." + cls.__qualname__
     result = transform_mgr.transform_cls(full_qualified_name)
+    print(f"#hanbinbin, transform_mgr convert {cls} to {result}")
     return result
 
 
@@ -174,7 +177,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
     new_md_cls = proxy_class(type(mod))
-    print(f"convert {type(mod)} to {new_md_cls}")
+    print(f"#hanbinbin, torch2oflow convert {type(mod)} to {new_md_cls}")
     
     def init(self):
         nonlocal proxy_md
