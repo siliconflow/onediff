@@ -66,7 +66,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
 
     def clone(self):
         n = OneFlowSpeedUpModelPatcher(
-            self,
+            self.model,
             self.load_device,
             self.offload_device,
             self.size,
