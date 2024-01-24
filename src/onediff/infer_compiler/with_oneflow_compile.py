@@ -6,7 +6,6 @@ from oneflow.utils.tensor import to_torch
 from typing import Any
 from functools import wraps
 from itertools import chain
-from collections import OrderedDict
 from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
 from .transform.builtin_transform import torch2oflow
@@ -86,11 +85,6 @@ class DualModule(torch.nn.Module):
         if name == "_oneflow_module":
             return super().__getattribute__(name)
 
-        if name in self._dual_modules:
-            print(f"name: {name} found in self._dual_modules")
-            result = self._dual_modules[name]
-            assert isinstance(result, (DualModule, DualModuleList))
-            return self._dual_modules[name]
         torch_attr = getattr(self._torch_module, name)
         oneflow_attr = (
             None
@@ -101,16 +95,12 @@ class DualModule(torch.nn.Module):
             oneflow_attr = (
                 [None] * len(torch_attr) if oneflow_attr is None else oneflow_attr
             )
-            result = DualModuleList(torch_attr, oneflow_attr)
+            return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
-            result = get_mixed_dual_module(torch_attr.__class__)(torch_attr, oneflow_attr)
+            return get_mixed_dual_module(torch_attr.__class__)(torch_attr, oneflow_attr)
         else:
-            result = oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
-        if isinstance(result, (DualModule, DualModuleList)) and name not in self._dual_modules:
-            print(f"insert name {name} to self._dual_modules")
-            self._dual_modules[name] = result
-        return result
+            return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in ["_torch_module", "_oneflow_module"]:
@@ -201,12 +191,9 @@ class DeployableModule(torch.nn.Module):
         graph_device=None,
     ):
         torch.nn.Module.__init__(self)
-        # mixed_dual_module = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
-        # # avoid to set '_deployable_module_model' in self._modules
-        # object.__setattr__(self, '_deployable_module_model', mixed_dual_module)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module)
-
-
+        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+            torch_module, oneflow_module
+        )
         self._deployable_module_use_graph = use_graph
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
@@ -314,11 +301,8 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def __getattr__(self, name):
-        # import ipdb; ipdb.set_trace()
         if name in self._modules:
             return self._modules[name]
-        # deployable_module_model = object.__getattribute__(self, "_deployable_module_model")
-        # return getattr(deployable_module_model, name)
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
