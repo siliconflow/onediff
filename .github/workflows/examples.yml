@@ -184,8 +184,7 @@ jobs:
           run_comfy_test() {
             local workflow_name="$1"
             docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow "$workflow_name" || {
-              echo "test_by_ui.py fails! print the ComfyUI logs..."
-              docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
+              echo "test_by_ui.py fails! print the ComfyUI logs..." && docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
               false
             }
           }
