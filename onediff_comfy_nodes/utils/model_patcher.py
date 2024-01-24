@@ -515,15 +515,19 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.fast_deep_cache_unet = FastDeepCacheUNet(
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
-
         if use_graph:
+            gen_compile_options = gen_compile_options or (lambda x: {})
+            compile_options = gen_compile_options(self.deep_cache_unet)
             self.deep_cache_unet = oneflow_compile(
                 self.deep_cache_unet,
                 use_graph=use_graph,
+                options=compile_options,
             )
+            compile_options = gen_compile_options(self.fast_deep_cache_unet)
             self.fast_deep_cache_unet = oneflow_compile(
                 self.fast_deep_cache_unet,
                 use_graph=use_graph,
+                options=compile_options,
             )
             self.model._register_state_dict_hook(state_dict_hook)
 

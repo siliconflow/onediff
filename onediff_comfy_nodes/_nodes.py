@@ -32,6 +32,7 @@ from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
 from .modules.hijack_nodes import nodes_hijacker
 from .utils.deep_cache_speedup import deep_cache_speedup
+
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
 
@@ -292,9 +293,6 @@ class VaeGraphSaver:
         return {}
 
 
-
-
-
 class Quant8Model:
     @classmethod
     def INPUT_TYPES(s):
@@ -389,7 +387,7 @@ class ModuleDeepCacheSpeedup:
         cache_block_id,
         start_step,
         end_step,
-    ):        
+    ):
         return deep_cache_speedup(
             model=model,
             use_graph=(static_mode == "enable"),
@@ -399,7 +397,6 @@ class ModuleDeepCacheSpeedup:
             start_step=start_step,
             end_step=end_step,
         )
-
 
 
 from nodes import CheckpointLoaderSimple, ControlNetLoader
@@ -477,6 +474,105 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
                 },
             )
 
+        # set inplace update
+        modelpatcher.weight_inplace_update = True
+        return modelpatcher, clip, vae
+
+
+class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "vae_speedup": (["disable", "enable"],),
+                "static_mode": (["enable", "disable"],),
+                "cache_interval": (
+                    "INT",
+                    {
+                        "default": 3,
+                        "min": 1,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "cache_layer_id": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "cache_block_id": (
+                    "INT",
+                    {"default": 1, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "start_step": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "end_step": (
+                    "INT",
+                    {
+                        "default": 1000,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 0.1,
+                    },
+                ),
+            }
+        }
+
+    CATEGORY = "OneDiff/Loaders"
+    FUNCTION = "onediff_load_checkpoint"
+
+    def onediff_load_checkpoint(
+        self,
+        ckpt_name,
+        vae_speedup,
+        output_vae=True,
+        output_clip=True,
+        static_mode="enable",
+        cache_interval=3,
+        cache_layer_id=0,
+        cache_block_id=1,
+        start_step=0,
+        end_step=1000,
+    ):
+        # CheckpointLoaderSimple.load_checkpoint
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+
+        def gen_compile_options(model):
+            # cache_key = f'{cache_interval}_{cache_layer_id}_{cache_block_id}_{start_step}_{end_step}'
+            graph_file = generate_graph_path(ckpt_name, model)
+            return {
+                "graph_file": graph_file,
+                "graph_file_device": model_management.get_torch_device(),
+            }
+
+        if vae_speedup == "enable":
+            vae.first_stage_model = oneflow_compile(
+                vae.first_stage_model,
+                use_graph=True,
+                options=gen_compile_options(vae.first_stage_model),
+            )
+
+        modelpatcher = deep_cache_speedup(
+            model=modelpatcher,
+            use_graph=(static_mode == "enable"),
+            cache_interval=cache_interval,
+            cache_layer_id=cache_layer_id,
+            cache_block_id=cache_block_id,
+            start_step=start_step,
+            end_step=end_step,
+            gen_compile_options=gen_compile_options,
+        )[0]
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae

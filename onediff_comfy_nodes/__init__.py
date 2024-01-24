@@ -11,6 +11,7 @@ from ._nodes import (
     ModuleDeepCacheSpeedup,
     OneDiffCheckpointLoaderSimple,
     OneDiffControlNetLoader,
+    OneDiffDeepCacheCheckpointLoaderSimple,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -28,6 +29,7 @@ NODE_CLASS_MAPPINGS = {
     "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
+    "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -43,6 +45,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
+    "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
 }
 
 

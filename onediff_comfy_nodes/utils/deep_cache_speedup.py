@@ -13,6 +13,8 @@ def deep_cache_speedup(
     cache_block_id,
     start_step,
     end_step,
+    *,
+    gen_compile_options,
 ):
     offload_device = model_management.unet_offload_device()
     model_patcher = OneFlowDeepCacheSpeedUpModelPatcher(
@@ -22,6 +24,7 @@ def deep_cache_speedup(
         cache_layer_id=cache_layer_id,
         cache_block_id=cache_block_id,
         use_graph=use_graph,
+        gen_compile_options=gen_compile_options,
     )
 
     current_t = -1
