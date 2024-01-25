@@ -57,7 +57,7 @@ def linear_fuse_lora(
         )
 
     else:
-        raise ValueError(f"Invalid offload weight: {offload_weight}")
+        raise ValueError(f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}")
 
     lora_weight = lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
     fused_weight = self.weight.data.float() + lora_weight
@@ -127,7 +127,7 @@ def conv_fuse_lora(
             "_lora_orig_weight", self.weight.data.clone().to(offload_device)
         )
     else:
-        raise ValueError(f"Invalid offload weight: {offload_weight}")
+        raise ValueError(f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}")
 
     lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
     lora_weight = lora_weight.reshape((self.weight.shape)) * lora_scale
@@ -169,25 +169,31 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
 
 def load_and_fuse_lora(
     pipeline: LoraLoaderMixin,
-    lora: Union[str, Path, Dict[str, torch.Tensor]],
-    lora_scale: float = 1.0,
+    pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]],
     adapter_name: Optional[str] = None,
     *,
+    lora_scale: float = 1.0,
     offload_device="cpu",
     offload_weight="lora",
+    use_cache=False,
     **kwargs,
 ) -> None:
     self = pipeline
     if adapter_name is not None:
-        raise ValueError(f"load_and_fuse_lora is not supported for adapter_name")
+        raise ValueError(f"[OneDiff load_and_fuse_lora] adapter_name != None is not supported")
 
-    state_dict, network_alphas = load_state_dict_cached(
-        lora, unet_config=self.unet.config, **kwargs
-    )
+    if use_cache:
+        state_dict, network_alphas = load_state_dict_cached(
+            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs
+        )
+    else:
+        state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
+            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs
+        )
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:
-        raise ValueError("Invalid LoRA checkpoint.")
+        raise ValueError("[OneDiff load_and_fuse_lora] Invalid LoRA checkpoint.")
 
     # load lora into unet
     keys = list(state_dict.keys())
@@ -226,8 +232,14 @@ def load_and_fuse_lora(
     # unet.load_attn
 
     low_cpu_mem_usage = kwargs.pop("low_cpu_mem_usage", _LOW_CPU_MEM_USAGE_DEFAULT)
-    # This value has the same meaning as the `--network_alpha` option in the kohya-ss trainer script.
-    # See https://github.com/darkstorm2150/sd-scripts/blob/main/docs/train_network_README-en.md#execute-learning
+    if low_cpu_mem_usage and not is_accelerate_available():
+        low_cpu_mem_usage = False
+        logger.warning(
+            "Cannot initialize model with low cpu memory usage because `accelerate` was not found in the"
+            " environment. Defaulting to `low_cpu_mem_usage=False`. It is strongly recommended to install"
+            " `accelerate` for faster and less memory-intense model loading. You can do so with: \n```\npip"
+            " install accelerate\n```\n."
+        )
     _pipeline = kwargs.pop("_pipeline", None)
 
     is_network_alphas_none = network_alphas is None
@@ -238,7 +250,7 @@ def load_and_fuse_lora(
     )
     is_custom_diffusion = any("custom_diffusion" in k for k in state_dict.keys())
     if is_custom_diffusion:
-        raise RuntimeError("custom diffusion is not supported now.")
+        raise ValueError("[OneDiff load_and_fuse_lora] custom diffusion is not supported now.")
 
     if is_lora:
         # correct keys
@@ -274,12 +286,12 @@ def load_and_fuse_lora(
         if not is_network_alphas_none:
             if len(set(network_alphas_keys) - used_network_alphas_keys) > 0:
                 raise ValueError(
-                    f"The `network_alphas` has to be empty at this point but has the following keys \n\n {', '.join(network_alphas.keys())}"
+                    f"[OneDiff load_and_fuse_lora] The `network_alphas` has to be empty at this point but has the following keys \n\n {', '.join(network_alphas.keys())}"
                 )
 
         if len(state_dict) > 0:
             raise ValueError(
-                f"The `state_dict` has to be empty at this point but has the following keys \n\n {', '.join(state_dict.keys())}"
+                f"[OneDiff load_and_fuse_lora] The `state_dict` has to be empty at this point but has the following keys \n\n {', '.join(state_dict.keys())}"
             )
 
         for key, value_dict in lora_grouped_dict.items():
@@ -317,11 +329,11 @@ def load_and_fuse_lora(
                     )
             else:
                 raise ValueError(
-                    f"Module {key} is not a LoRACompatibleConv or LoRACompatibleLinear module."
+                    f"[OneDiff load_and_fuse_lora] Module {key} is not a LoRACompatibleConv or LoRACompatibleLinear module."
                 )
     else:
         raise ValueError(
-            f"{lora} does not seem to be in the correct format expected by LoRA training."
+            f"[OneDiff load_and_fuse_lora] {pretrained_model_name_or_path_or_dict} does not seem to be in the correct format expected by LoRA training."
         )
 
     is_model_cpu_offload = False
