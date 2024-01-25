@@ -163,6 +163,10 @@ jobs:
       - run: nvidia-smi -L
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m oneflow --doctor
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+      - name: Install onediff-quant if needed
+        if: startsWith(matrix.image, 'onediff-pro')
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
       - name: Pip Install Requirements for ComfyUI & Test
         if: matrix.test-suite == 'comfy'
         run: |
@@ -184,6 +188,7 @@ jobs:
           run_comfy_test() {
             local workflow_name="$1"
             docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_by_ui.py --comfy_port 8188 --workflow "$workflow_name" || {
+              echo "test_by_ui.py fails! print the ComfyUI logs..."
               docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
               false
             }
@@ -195,6 +200,14 @@ jobs:
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
+      - name: Setup OneDiff diffusers extension
+        if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        run: |
+          docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install e .
+      - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_enterprise.py --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0-int8 --width 512 --height 512 --saved_image output_enterprise_sdxl.png
+      - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --width 512 --height 512 --saved_image output_enterprise_deepcache_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
