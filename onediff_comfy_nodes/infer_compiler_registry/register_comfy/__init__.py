@@ -40,5 +40,8 @@ torch2of_class_map.update(
     }
 )
 
-
 register(torch2oflow_class_map=torch2of_class_map)
+
+
+# from ComfyUI-AnimateDiff-Evolved/animatediff/motion_utils.py
+
