@@ -31,8 +31,8 @@ def graph_file_management(func):
                 [v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)]
             )
             model = self._deployable_module_model.oneflow_module
-            model_key = calculate_model_hash(model) + "_" + flow.__version__
-            return f"{file_path}_{count}_{model_key}.graph"
+            cache_key = calculate_model_hash(model) + "_" + flow.__version__
+            return f"{file_path}_{count}_{cache_key}.graph"
 
         if graph_file:
             graph_file = generate_graph_file_name(graph_file)
