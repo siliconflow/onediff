@@ -44,6 +44,8 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
+os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
+
 # Normal SDXL pipeline init.
 OUTPUT_TYPE = "pil"
 
@@ -96,9 +98,9 @@ image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 # Should have no compilation for these new input shape
 print("Test run with multiple resolutions...")
 if args.run_multiple_resolutions:
-    sizes = [512, 256]
+    sizes = [960, 720, 896, 768]
     if "CI" in os.environ:
-        sizes = [256]
+        sizes = [720]
     for h in sizes:
         for w in sizes:
             image = base(
