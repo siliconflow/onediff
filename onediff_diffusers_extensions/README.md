@@ -101,6 +101,47 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
 
 If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
+## LoRA loading and switching speed up
+
+OneDiff provides a faster implementation of loading LoRA, by invoking `diffusers_extensions.utils.lora.load_and_fuse_lora` you can load and fuse LoRA to pipeline.
+
+```python
+import torch
+from diffusers import DiffusionPipeline
+from onediff.infer_compiler import oneflow_compile
+from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
+
+MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+pipe = DiffusionPipeline.from_pretrained(
+    MODEL_ID, variant="fp16", torch_dtype=torch.float16
+).to("cuda")
+
+LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
+LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
+
+pipe.unet = oneflow_compile(pipe.unet)
+
+# use onediff load_and_fuse_lora
+load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
+images_fusion = pipe(
+    "masterpiece, best quality, mountain",
+    height=1024,
+    width=1024,
+    num_inference_steps=30,
+).images[0]
+images_fusion.save("test_sdxl_lora.png")
+```
+
+We compared different methods of loading LoRA. The comparison of loading LoRA once is as shown in the table below.
+
+| Method                           | Speed | Inference speed | LoRA loading speed    |
+|----------------------------------|-------|------------------|-----------------------|
+| load_lora_weight                 | 1.10s | low              | high                  |
+| load_lora_weight + fuse_lora     | 1.38s | high             | low                   |
+| onediff load_and_fuse_lora       | 0.56s | **high**         | **high**              |
+
+If you want to unload LoRA and then load a new LoRA, you only need to call `load_and_fuse_lora` again. There is no need to manually call `unfuse_lora`, cause it will be called implicitly in `load_and_fuse_lora`. You can also manually call `unfuse_lora` to restore the model's weights.
+
 ## Contact
 
 For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
