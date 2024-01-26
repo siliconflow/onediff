@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Optional, Union, Dict, Tuple
 from collections import OrderedDict, defaultdict
-from contextlib import nullcontext
 
 import torch
 
@@ -10,11 +9,9 @@ from onediff.infer_compiler.with_oneflow_compile import DualModule
 
 from diffusers.loaders.lora import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
-from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT
 from diffusers.utils import is_accelerate_available
 
 if is_accelerate_available():
-    from accelerate import init_empty_weights
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
 
 
@@ -42,7 +39,7 @@ def linear_fuse_lora(
     w_up = state_dict["lora.up.weight"].float().to(device)
 
     if alpha is not None:
-        w_up = w_up * alpha / rank
+        w_up = w_up * (alpha / rank * lora_scale)
 
     if offload_weight == "lora":
         self.register_buffer("_lora_up", w_up.to(offload_device))
@@ -59,7 +56,7 @@ def linear_fuse_lora(
     else:
         raise ValueError(f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}")
 
-    lora_weight = lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
+    lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
     fused_weight = self.weight.data.float() + lora_weight
     self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
@@ -82,7 +79,7 @@ def linear_unfuse_lora(self: torch.nn.Linear):
         w_down = self.get_buffer("_lora_down").to(device).float()
 
         unfused_weight = self.weight.data.float() - (
-            self._lora_scale * torch.bmm(w_up[None, :], w_down[None, :])[0]
+            torch.bmm(w_up[None, :], w_down[None, :])[0]
         )
         self._lora_up = None
         self._lora_down = None
@@ -114,7 +111,7 @@ def conv_fuse_lora(
     w_up = state_dict["lora.up.weight"].float().to(device)
 
     if alpha is not None:
-        w_up = w_up * alpha / rank
+        w_up = w_up * (alpha / rank * lora_scale)
 
     if offload_weight == "lora":
         self.register_buffer("_lora_up", w_up.to(offload_device))
@@ -130,7 +127,7 @@ def conv_fuse_lora(
         raise ValueError(f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}")
 
     lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-    lora_weight = lora_weight.reshape((self.weight.shape)) * lora_scale
+    lora_weight = lora_weight.reshape((self.weight.shape))
 
     fused_weight = self.weight.data.float() + lora_weight
     self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
@@ -155,7 +152,7 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
 
         fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
         fusion = fusion.reshape((fused_weight.shape))
-        unfused_weight = fused_weight.float() - (self._lora_scale * fusion)
+        unfused_weight = fused_weight.float() - fusion
 
         self._lora_up = None
         self._lora_down = None
