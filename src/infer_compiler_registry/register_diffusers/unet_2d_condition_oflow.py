@@ -100,7 +100,9 @@ class UNet2DConditionModel(
         default_overall_up_factor = 2 ** self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        forward_upsample_size = False
+        # forward_upsample_size = False
+        # interpolate through upsample_size
+        forward_upsample_size = True
         upsample_size = None
 
         for dim in sample.shape[-2:]:

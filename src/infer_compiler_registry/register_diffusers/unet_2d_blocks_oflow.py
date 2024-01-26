@@ -10,83 +10,20 @@ from onediff.infer_compiler.transform import transform_mgr
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
+
+LoRACompatibleConv = (
+    transformed_diffusers.models.lora.LoRACompatibleConv
+)
+
+try:
+    USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
+except Exception as e:
+    USE_PEFT_BACKEND = False
+
 if diffusers_version >= version.parse("0.25.00"):
-    LoRACompatibleConv = (
-        transformed_diffusers.models.lora.LoRACompatibleConv
-    )
-
-    try:
-        USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
-    except Exception as e:
-        USE_PEFT_BACKEND = False
-
     class Upsample2D(nn.Module):
         """A 2D upsampling layer with an optional convolution.
-
-        Parameters:
-            channels (`int`):
-                number of channels in the inputs and outputs.
-            use_conv (`bool`, default `False`):
-                option to use a convolution.
-            use_conv_transpose (`bool`, default `False`):
-                option to use a convolution transpose.
-            out_channels (`int`, optional):
-                number of output channels. Defaults to `channels`.
-            name (`str`, default `conv`):
-                name of the upsampling 2D layer.
         """
-
-        def __init__(
-            self,
-            channels: int,
-            use_conv: bool = False,
-            use_conv_transpose: bool = False,
-            out_channels: Optional[int] = None,
-            name: str = "conv",
-            kernel_size: Optional[int] = None,
-            padding=1,
-            norm_type=None,
-            eps=None,
-            elementwise_affine=None,
-            bias=True,
-            interpolate=True,
-        ):
-            super().__init__()
-            self.channels = channels
-            self.out_channels = out_channels or channels
-            self.use_conv = use_conv
-            self.use_conv_transpose = use_conv_transpose
-            self.name = name
-            self.interpolate = interpolate
-            conv_cls = nn.Conv2d if USE_PEFT_BACKEND else LoRACompatibleConv
-
-            if norm_type == "ln_norm":
-                self.norm = nn.LayerNorm(channels, eps, elementwise_affine)
-            elif norm_type == "rms_norm":
-                self.norm = RMSNorm(channels, eps, elementwise_affine)
-            elif norm_type is None:
-                self.norm = None
-            else:
-                raise ValueError(f"unknown norm_type: {norm_type}")
-
-            conv = None
-            if use_conv_transpose:
-                if kernel_size is None:
-                    kernel_size = 4
-                conv = nn.ConvTranspose2d(
-                    channels, self.out_channels, kernel_size=kernel_size, stride=2, padding=padding, bias=bias
-                )
-            elif use_conv:
-                if kernel_size is None:
-                    kernel_size = 3
-                conv = conv_cls(self.channels, self.out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
-
-            # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
-            if name == "conv":
-                self.conv = conv
-            else:
-                self.Conv2d_0 = conv
-
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -141,59 +78,9 @@ if diffusers_version >= version.parse("0.25.00"):
 
             return hidden_states
 else:
-    LoRACompatibleConv = (
-        transformed_diffusers.models.lora.LoRACompatibleConv
-    )
-
-    try:
-        USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
-    except Exception as e:
-        USE_PEFT_BACKEND = False
-        
     class Upsample2D(nn.Module):
         """A 2D upsampling layer with an optional convolution.
-
-        Parameters:
-            channels (`int`):
-                number of channels in the inputs and outputs.
-            use_conv (`bool`, default `False`):
-                option to use a convolution.
-            use_conv_transpose (`bool`, default `False`):
-                option to use a convolution transpose.
-            out_channels (`int`, optional):
-                number of output channels. Defaults to `channels`.
-            name (`str`, default `conv`):
-                name of the upsampling 2D layer.
         """
-
-        def __init__(
-            self,
-            channels: int,
-            use_conv: bool = False,
-            use_conv_transpose: bool = False,
-            out_channels: Optional[int] = None,
-            name: str = "conv",
-        ):
-            super().__init__()
-            self.channels = channels
-            self.out_channels = out_channels or channels
-            self.use_conv = use_conv
-            self.use_conv_transpose = use_conv_transpose
-            self.name = name
-            conv_cls = nn.Conv2d if USE_PEFT_BACKEND else LoRACompatibleConv
-
-            conv = None
-            if use_conv_transpose:
-                conv = nn.ConvTranspose2d(channels, self.out_channels, 4, 2, 1)
-            elif use_conv:
-                conv = conv_cls(self.channels, self.out_channels, 3, padding=1)
-
-            # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
-            if name == "conv":
-                self.conv = conv
-            else:
-                self.Conv2d_0 = conv
-
         def forward(
             self,
             hidden_states: torch.FloatTensor,

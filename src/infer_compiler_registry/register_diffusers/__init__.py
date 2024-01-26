@@ -40,7 +40,6 @@ if diffusers_version >= version.parse("0.24.00"):
         AttnProcessor: AttnProcessorOflow,
         AttnProcessor2_0: AttnProcessorOflow,
         LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
-        Upsample2D: Upsample2DOflow,
         SpatioTemporalResBlock: SpatioTemporalResBlockOflow,
         TemporalDecoder: TemporalDecoderOflow,
     }
@@ -50,10 +49,10 @@ else:
         AttnProcessor: AttnProcessorOflow,
         AttnProcessor2_0: AttnProcessorOflow,
         LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
-        Upsample2D: Upsample2DOflow,
     }
 
 torch2oflow_class_map.update({Transformer2DModel: Transformer2DModelOflow})
 torch2oflow_class_map.update({UNet2DConditionModel: UNet2DConditionModelOflow})
+torch2oflow_class_map.update({Upsample2D: Upsample2DOflow})
 
 register(torch2oflow_class_map=torch2oflow_class_map)
