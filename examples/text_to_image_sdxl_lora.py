@@ -1,21 +1,16 @@
 import torch
 from pathlib import Path
-from huggingface_hub import hf_hub_download
 from diffusers import DiffusionPipeline
-from diffusers.utils import DIFFUSERS_CACHE
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import TensorInplaceAssign
 from onediff.utils.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-MODEL_ID = "/share_nfs/hf_models/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(
     MODEL_ID, variant="fp16", torch_dtype=torch.float16
 ).to("cuda")
-# LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
-# LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
-
-LORA_MODEL_ID = "/data/home/wangyi/workspace/stable-diffusion-webui/models/Lora/watercolor_v1_sdxl_lora.safetensors"
+LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
+LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
 
 pipe.unet = oneflow_compile(pipe.unet)
 generator = torch.manual_seed(0)
@@ -54,7 +49,6 @@ images_fusion = pipe(
     width=1024,
     num_inference_steps=30,
 ).images[0]
-images_fusion.save("test_sdxl_lora.png")
 
 
 # 2. pipe.load_lora_weights + TensorInplaceAssign + pipe.fuse_lora (Deprecated)
