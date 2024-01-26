@@ -188,8 +188,6 @@ class DeployableModule(torch.nn.Module):
         use_graph=True,
         dynamic=True,
         options={},
-        graph_path=None,
-        graph_device=None,
     ):
         torch.nn.Module.__init__(self)
         self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
@@ -389,24 +387,10 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
 def get_mixed_deployable_module(module_cls):
     class MixedDeployableModule(DeployableModule, module_cls):
         def __init__(
-            self,
-            torch_module,
-            oneflow_module,
-            use_graph=True,
-            dynamic=True,
-            options={},
-            graph_path=None,
-            graph_device=None,
+            self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={}
         ):
             DeployableModule.__init__(
-                self,
-                torch_module,
-                oneflow_module,
-                use_graph,
-                dynamic,
-                options,
-                graph_path,
-                graph_device,
+                self, torch_module, oneflow_module, use_graph, dynamic, options
             )
             self._is_raw_deployable_module = False
 

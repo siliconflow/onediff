@@ -1,3 +1,4 @@
+import hashlib
 import os
 import torch
 import oneflow as flow
@@ -6,6 +7,10 @@ from functools import wraps
 from oneflow.framework.args_tree import ArgsTree
 from ..transform.builtin_transform import torch2oflow
 from .log_utils import logger
+
+
+def calculate_model_hash(model):
+    return hashlib.sha256(f"{model}".encode("utf-8")).hexdigest()
 
 
 def graph_file_management(func):
@@ -25,7 +30,9 @@ def graph_file_management(func):
             count = len(
                 [v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)]
             )
-            return f"{graph_file}_{count}.graph"
+            model = self._deployable_module_model.oneflow_module
+            model_key = calculate_model_hash(model) + "_" + flow.__version__
+            return f"{file_path}_{count}_{model_key}.graph"
 
         if graph_file:
             graph_file = generate_graph_file_name(graph_file)
