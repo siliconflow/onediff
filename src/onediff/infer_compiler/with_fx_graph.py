@@ -42,6 +42,7 @@ def fx_node_tranform(gm):
         os.environ.setdefault("ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
         os.environ.setdefault("ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT", "1")
         # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL", "0")
+        # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL", "0")
         os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
         # TODO: enable this will cause the failure of multi resolution warmup
 
@@ -49,7 +50,7 @@ def fx_node_tranform(gm):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
-                self.config.enable_cudnn_conv_heuristic_search_algo(False)
+                # self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
 
             def build(self, *args, **kwargs):

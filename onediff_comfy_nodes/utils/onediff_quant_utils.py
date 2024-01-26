@@ -3,7 +3,6 @@ import comfy
 import torch
 import torch.nn as nn
 
-from torch._dynamo import allow_in_graph as maybe_allow_in_graph
 
 if hasattr(comfy.ops, "disable_weight_init"):
     comfy_ops_Linear = comfy.ops.disable_weight_init.Linear
@@ -36,6 +35,7 @@ def _use_graph():
     os.environ["ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION"] = "1"
     os.environ["ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT"] = "1"
     # os.environ["ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL"] = "0"
+    # os.environ["ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL"] = "0"
     os.environ["ONEFLOW_MLIR_GROUP_MATMUL_QUANT"] = "1"
     os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
     # os.environ["ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH"] = "1"
@@ -241,7 +241,6 @@ def replace_module_with_quantizable_module(
             fake_quant=False,
             static=False,
             nbits=8,
-            convert_fn=maybe_allow_in_graph,
         )
         modify_sub_module(diffusion_model, sub_module_name, sub_mod)
     if use_rewrite_attn:
