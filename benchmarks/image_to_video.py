@@ -26,10 +26,13 @@ import inspect
 import argparse
 import time
 import json
+import random
 from PIL import Image, ImageDraw
-import torch
-from diffusers.utils import load_image, export_to_video
+
 import oneflow as flow
+import torch
+
+from diffusers.utils import load_image, export_to_video
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import set_boolean_env_var
 
@@ -72,6 +75,11 @@ def parse_args():
         "--attention-fp16-score-accum-max-m",
         type=int,
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
+    )
+    parser.add_argument(
+        "--run_multiple_resolutions",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=False,
     )
     return parser.parse_args()
 
@@ -189,6 +197,11 @@ class IterationProfiler:
         return callback_kwargs
 
 
+def adjust_resolution():
+    resolutions = [(1024, 512),(768, 576)]
+    return random.choice(resolutions)
+
+
 def main():
     args = parse_args()
     if args.deepcache:
@@ -228,6 +241,11 @@ def main():
 
     input_image = load_image(args.input_image)
     input_image.resize((width, height), Image.LANCZOS)
+
+    if args.run_multiple_resolutions:
+        new_width, new_height = adjust_resolution()
+        otherResImg = load_image(args.input_image)
+        otherResImg.resize((new_width, new_height), Image.LANCZOS)
 
     if args.control_image is None:
         if args.controlnet is None:
@@ -300,6 +318,13 @@ def main():
     host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
     print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
     print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+
+    if args.run_multiple_resolutions:
+        kwarg_inputs['image'] = otherResImg
+        kwarg_inputs['height'] = new_height
+        kwarg_inputs['width'] = new_width
+        print("Test run with multiple resolutions...")
+        output_frames = pipe(**kwarg_inputs).frames
 
     if args.output_video is not None:
         export_to_video(output_frames[0], args.output_video, fps=args.fps)
