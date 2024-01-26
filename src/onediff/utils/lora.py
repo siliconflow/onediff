@@ -18,6 +18,14 @@ if is_accelerate_available():
 USE_PEFT_BACKEND = False
 
 
+def offload_tensor(tensor, device):
+    cur_device = tensor.device
+    if cur_device == device:
+        return tensor.clone()
+    else:
+        return tensor.to(device)
+
+
 def linear_fuse_lora(
     self: torch.nn.Linear,
     state_dict: Dict[str, torch.Tensor],
@@ -42,19 +50,21 @@ def linear_fuse_lora(
         w_up = w_up * (alpha / rank * lora_scale)
 
     if offload_weight == "lora":
-        self.register_buffer("_lora_up", w_up.to(offload_device))
+        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
         self.register_buffer(
-            "_lora_down", state_dict["lora.down.weight"].to(offload_device)
+            "_lora_down", offload_tensor(state_dict["lora.down.weight"], offload_device)
         )
         self._lora_scale = lora_scale
 
     elif offload_weight == "weight":
         self.register_buffer(
-            "_lora_orig_weight", self.weight.data.clone().to(offload_device)
+            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
         )
 
     else:
-        raise ValueError(f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}")
+        raise ValueError(
+            f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}"
+        )
 
     lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
     fused_weight = self.weight.data.float() + lora_weight
@@ -114,17 +124,19 @@ def conv_fuse_lora(
         w_up = w_up * (alpha / rank * lora_scale)
 
     if offload_weight == "lora":
-        self.register_buffer("_lora_up", w_up.to(offload_device))
+        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
         self.register_buffer(
-            "_lora_down", state_dict["lora.down.weight"].to(offload_device)
+            "_lora_down", offload_tensor(state_dict["lora.down.weight"], offload_device)
         )
         self._lora_scale = lora_scale
     elif offload_weight == "weight":
         self.register_buffer(
-            "_lora_orig_weight", self.weight.data.clone().to(offload_device)
+            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
         )
     else:
-        raise ValueError(f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}")
+        raise ValueError(
+            f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}"
+        )
 
     lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
     lora_weight = lora_weight.reshape((self.weight.shape))
@@ -177,15 +189,21 @@ def load_and_fuse_lora(
 ) -> None:
     self = pipeline
     if adapter_name is not None:
-        raise ValueError(f"[OneDiff load_and_fuse_lora] adapter_name != None is not supported")
+        raise ValueError(
+            f"[OneDiff load_and_fuse_lora] adapter_name != None is not supported"
+        )
 
     if use_cache:
         state_dict, network_alphas = load_state_dict_cached(
-            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs
+            pretrained_model_name_or_path_or_dict,
+            unet_config=self.unet.config,
+            **kwargs,
         )
     else:
         state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
-            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs
+            pretrained_model_name_or_path_or_dict,
+            unet_config=self.unet.config,
+            **kwargs,
         )
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
@@ -237,7 +255,9 @@ def load_and_fuse_lora(
     )
     is_custom_diffusion = any("custom_diffusion" in k for k in state_dict.keys())
     if is_custom_diffusion:
-        raise ValueError("[OneDiff load_and_fuse_lora] custom diffusion is not supported now.")
+        raise ValueError(
+            "[OneDiff load_and_fuse_lora] custom diffusion is not supported now."
+        )
 
     if is_lora:
         # correct keys
