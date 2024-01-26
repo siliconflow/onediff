@@ -3,7 +3,11 @@ from pathlib import Path
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import TensorInplaceAssign
-from onediff.utils.lora import load_and_fuse_lora, unfuse_lora
+
+try:
+    from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
+except ImportError:
+    raise RuntimeError("OneDiff diffusers_extensions is not installed. Please check onediff_diffusers_extensions/README.md to install diffusers_extensions.")
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(

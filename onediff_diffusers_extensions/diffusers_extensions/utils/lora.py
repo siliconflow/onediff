@@ -175,7 +175,6 @@ def conv_unfuse_lora(self: torch.nn.Conv2d):
 
     self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
 
-
 def load_and_fuse_lora(
     pipeline: LoraLoaderMixin,
     pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]],
