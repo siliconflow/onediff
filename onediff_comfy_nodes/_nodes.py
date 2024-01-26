@@ -26,7 +26,7 @@ from .utils import (
     load_graph,
     OUTPUT_FOLDER,
 )
-from .utils.model_patcher import state_dict_hook
+from .utils.model_patcher import state_dict_hook, get_mixed_speedup_class
 from .utils.loader_sample_tools import compoile_unet, quantize_unet
 from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
@@ -73,8 +73,8 @@ class ModelSpeedup:
         use_graph = static_mode == "enable"
 
         offload_device = model_management.unet_offload_device()
-        oneflow_model = OneFlowSpeedUpModelPatcher(
-            model.model,
+        oneflow_model = get_mixed_speedup_class(model.__class__)(
+            model,
             load_device=model_management.get_torch_device(),
             offload_device=offload_device,
             use_graph=use_graph,
