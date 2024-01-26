@@ -230,16 +230,6 @@ def load_and_fuse_lora(
             logger.warn(warn_message)
 
     # unet.load_attn
-
-    low_cpu_mem_usage = kwargs.pop("low_cpu_mem_usage", _LOW_CPU_MEM_USAGE_DEFAULT)
-    if low_cpu_mem_usage and not is_accelerate_available():
-        low_cpu_mem_usage = False
-        logger.warning(
-            "Cannot initialize model with low cpu memory usage because `accelerate` was not found in the"
-            " environment. Defaulting to `low_cpu_mem_usage=False`. It is strongly recommended to install"
-            " `accelerate` for faster and less memory-intense model loading. You can do so with: \n```\npip"
-            " install accelerate\n```\n."
-        )
     _pipeline = kwargs.pop("_pipeline", None)
 
     is_network_alphas_none = network_alphas is None
@@ -304,29 +294,25 @@ def load_and_fuse_lora(
             rank = value_dict["lora.down.weight"].shape[0]
 
             if isinstance(attn_processor, LoRACompatibleConv):
-                ctx = init_empty_weights if low_cpu_mem_usage else nullcontext
-                with ctx():
-                    conv_fuse_lora(
-                        attn_processor,
-                        value_dict,
-                        lora_scale,
-                        mapped_network_alphas.get(key),
-                        rank,
-                        offload_device=offload_device,
-                        offload_weight=offload_weight,
-                    )
+                conv_fuse_lora(
+                    attn_processor,
+                    value_dict,
+                    lora_scale,
+                    mapped_network_alphas.get(key),
+                    rank,
+                    offload_device=offload_device,
+                    offload_weight=offload_weight,
+                )
             elif isinstance(attn_processor, LoRACompatibleLinear):
-                ctx = init_empty_weights if low_cpu_mem_usage else nullcontext
-                with ctx():
-                    linear_fuse_lora(
-                        attn_processor,
-                        value_dict,
-                        lora_scale,
-                        mapped_network_alphas.get(key),
-                        rank,
-                        offload_device=offload_device,
-                        offload_weight=offload_weight,
-                    )
+                linear_fuse_lora(
+                    attn_processor,
+                    value_dict,
+                    lora_scale,
+                    mapped_network_alphas.get(key),
+                    rank,
+                    offload_device=offload_device,
+                    offload_weight=offload_weight,
+                )
             else:
                 raise ValueError(
                     f"[OneDiff load_and_fuse_lora] Module {key} is not a LoRACompatibleConv or LoRACompatibleLinear module."
