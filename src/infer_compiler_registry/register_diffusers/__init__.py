@@ -16,6 +16,9 @@ else:
     from diffusers.models.resnet import Upsample2D
 if diffusers_version >= version.parse("0.24.00"):
     from diffusers.models.resnet import SpatioTemporalResBlock
+    from diffusers.models.transformer_temporal import TransformerSpatioTemporalModel
+    from diffusers.models.attention import TemporalBasicTransformerBlock 
+    from diffusers.models.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
     
     if diffusers_version >= version.parse("0.25.00"):
         from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import TemporalDecoder
@@ -32,6 +35,9 @@ from .spatio_temporal_oflow import (
     SpatioTemporalResBlock as SpatioTemporalResBlockOflow,
 )
 from .spatio_temporal_oflow import TemporalDecoder as TemporalDecoderOflow
+from .spatio_temporal_oflow import TransformerSpatioTemporalModel as TransformerSpatioTemporalModelOflow
+from .spatio_temporal_oflow import TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow
+from .spatio_temporal_oflow import UNetSpatioTemporalConditionModel as UNetSpatioTemporalConditionModelOflow
 
 # For CI
 if diffusers_version >= version.parse("0.24.00"):
@@ -42,6 +48,9 @@ if diffusers_version >= version.parse("0.24.00"):
         LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
         SpatioTemporalResBlock: SpatioTemporalResBlockOflow,
         TemporalDecoder: TemporalDecoderOflow,
+        TransformerSpatioTemporalModel: TransformerSpatioTemporalModelOflow, 
+        TemporalBasicTransformerBlock: TemporalBasicTransformerBlockOflow,
+        UNetSpatioTemporalConditionModel: UNetSpatioTemporalConditionModelOflow,
     }
 else:
     torch2oflow_class_map = {

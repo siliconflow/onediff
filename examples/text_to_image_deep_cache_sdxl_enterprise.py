@@ -27,12 +27,12 @@ def parse_args():
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--bits", type=int, default=8)
     parser.add_argument(
-        "--complie",
+        "--compile",
         default=True,
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
     )
     parser.add_argument(
-        "--complie_text_encoder",
+        "--compile_text_encoder",
         default=False,
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
         help=(
@@ -60,10 +60,6 @@ args = parse_args()
 assert os.path.isfile(
     os.path.join(args.model, "calibrate_info.txt")
 ), f"calibrate_info.txt is required in args.model ({args.model})"
-
-assert (
-    args.complie
-), "Onediff enterprise model can not be executed in pytorch environment. Please set args.complie to 1!"
 
 from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
 import onediff_quant
@@ -113,13 +109,13 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         args.bits,
     )
 
-if args.complie_text_encoder:
+if args.compile_text_encoder:
     if pipe.text_encoder is not None:
         pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
     if pipe.text_encoder_2 is not None:
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
 
-if args.complie:
+if args.compile:
     if pipe.text_encoder is not None:
         pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
     if pipe.text_encoder_2 is not None:
