@@ -28,7 +28,7 @@ generator = torch.manual_seed(0)
 # 1. pipe.load_lora_weights (Low Performence)
 # use load_lora_weights without fuse_lora is not recommended,
 # due to the disruption of attention optimization, the inference speed is slowed down
-pipe.load_lora_weights(LORA_MODEL_ID)
+pipe.load_lora_weights(LORA_MODEL_ID, weight_name=LORA_FILENAME)
 images_fusion = pipe(
     "masterpiece, best quality, mountain",
     generator=generator,
@@ -58,7 +58,7 @@ images_fusion = pipe(
 # 2. pipe.load_lora_weights + TensorInplaceAssign + pipe.fuse_lora (Deprecated)
 # The 'fuse_lora' API is not available in diffuser versions prior to 0.21.0.
 generator = torch.manual_seed(0)
-pipe.load_lora_weights(LORA_MODEL_ID)
+pipe.load_lora_weights(LORA_MODEL_ID, weight_name=LORA_FILENAME)
 if hasattr(pipe, "fuse_lora"):
     # TensorInplaceAssign is DEPRECATED and NOT RECOMMENDED, please use onediff.utils.load_and_fuse_lora
     with TensorInplaceAssign(pipe.unet):
@@ -80,7 +80,7 @@ pipe.unload_lora_weights()
 # 3. onediff.utils.load_and_fuse_lora (RECOMMENDED)
 # load_and_fuse_lora is equivalent to load_lora_weights + fuse_lora
 generator = torch.manual_seed(0)
-load_and_fuse_lora(pipe, LORA_MODEL_ID, lora_scale=1.0)
+load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
 images_fusion = pipe(
     "masterpiece, best quality, mountain",
     generator=generator,
