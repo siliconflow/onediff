@@ -1,12 +1,12 @@
 import torch
 import torch.nn as nn
 from types import MethodType
-import logging
 from .transform.builtin_transform import torch2oflow
 from .utils.args_tree_util import input_output_processor
 from .utils.oneflow_exec_mode import oneflow_exec_mode
-from .utils.module_operations import get_sub_module, modify_sub_module
 from .utils.log_utils import logger
+from .with_oneflow_compile import get_oneflow_graph
+from .transform.manager import transform_mgr
 
 
 def default_is_leaf_fn(attr):
@@ -17,25 +17,80 @@ def default_is_leaf_fn(attr):
     return False
 
 
+class OneFlowModule:
+    def __init__(self, use_graph=True, dynamic=True, options={}):
+        self.of_module = None
+        self.use_graph = use_graph
+        self.dynamic = dynamic
+        self.options = options
+        self.module_dpl_graph = None
+
+    @property
+    def oneflow_module(self):
+        if not self.is_compiled():
+            return None
+        if self.use_graph:
+            return self.module_dpl_graph
+        else:
+            return self.of_module
+
+    def is_compiled(self):
+        return self.of_module is not None
+
+    def _validate(self, pt_module: nn.Module):
+        if not self.is_compiled():
+            logger.warning("OneFlowModule has not been compiled, please compile first")
+            return False
+
+        # check state_dict keys equal
+        state_dict = pt_module.state_dict().keys()
+        of_state_dict = self.of_module.state_dict().keys()
+        assert set(state_dict) == set(of_state_dict)
+        return True
+
+    def compile(self, pt_module: nn.Module):
+        assert isinstance(pt_module, nn.Module)
+        if self.is_compiled():
+            logger.warning(
+                "OneFlowModule has been compiled, recompile will overwrite the previous compiled module"
+            )
+            del self.module_dpl_graph
+        self.of_module = torch2oflow(pt_module)
+
+        assert self._validate(pt_module)
+
+        if self.use_graph:
+            logger.info("OneFlowModule Use Graph Mode")
+            self.module_dpl_graph = get_oneflow_graph(
+                self.of_module, self.options.get("size", 2), self.dynamic
+            )
+            if transform_mgr.debug_mode:
+                self.module_dpl_graph.debug(self.options.get("debug", 0))
+        else:
+            logger.info("OneFlowModule Use Eager Mode")
+
+
 class Proxy:
+    __attrs = ["_proxy", "_is_leaf_fn", "_proxy_of"]
+
     @property
     def __class__(self):
         return self._proxy.__class__
 
-    def __init__(self, proxy_pt, is_leaf_fn=default_is_leaf_fn):
-        self._proxy = proxy_pt
+    def __init__(self, pt_module, is_leaf_fn=default_is_leaf_fn):
+        self._proxy = pt_module
         self._is_leaf_fn = is_leaf_fn
-        self._proxy_of = None
+        self._proxy_of = OneFlowModule(use_graph=False, dynamic=True, options={})
 
     def __getattr__(self, name):
-        if name == "_proxy" or name == "_is_leaf_fn" or name == "_proxy_of":
+        if name in Proxy.__attrs:
             return object.__getattribute__(self, name)
 
         attr = getattr(self._proxy, name)
-        debug_msg = (
-            f"Proxy.__getattr__ {name} {attr.__class__} {self._is_leaf_fn(attr)}"
-        )
-        logger.debug(debug_msg)
+        # debug_msg = (
+        #     f"Proxy.__getattr__ {name} {attr.__class__} {self._is_leaf_fn(attr)}"
+        # )
+        # logger.debug(debug_msg)
 
         if self._is_leaf_fn(attr):
             return attr
@@ -44,24 +99,9 @@ class Proxy:
 
     @input_output_processor
     def __call__(self, *args, **kwargs):
-        if self._proxy_of is None:
-            self._proxy_of = torch2oflow(self._proxy)
-            # validate state_dict().keys()
-
-            if self._proxy_of is None:
-                raise RuntimeError("Proxy.__call__ torch2oflow failed")
-            logger.info("pass torch2oflow")
-            of_state_dict_keys = set(self._proxy_of.state_dict().keys())
-            pt_state_dict_keys = set(self._proxy.state_dict().keys())
-
-            sub_keys = of_state_dict_keys - pt_state_dict_keys
-            if len(sub_keys) > 0:
-                raise RuntimeError(
-                    f"Proxy.__call__ state_dict keys not match {of_state_dict_keys} {pt_state_dict_keys}"
-                )
-            logger.info("pass state_dict keys check")
-
-        _proxy_of = self._proxy_of
+        if not self._proxy_of.is_compiled():
+            self._proxy_of.compile(self._proxy)
+        _proxy_of = self._proxy_of.oneflow_module
         with oneflow_exec_mode():
             return _proxy_of(*args, **kwargs)
 
@@ -73,11 +113,11 @@ class Proxy:
         return ret_pt
 
     def __setattr__(self, name, value):
-        if name == "_proxy" or name == "_is_leaf_fn" or name == "_proxy_of":
+        if name in Proxy.__attrs:
             object.__setattr__(self, name, value)
         else:
-            debug_msg = f"Proxy.__setattr__ {name} {value.__class__}"
-            logger.debug(debug_msg)
+            # debug_msg = f"Proxy.__setattr__ {name} {value.__class__}"
+            # logger.debug(debug_msg)
             setattr(self._proxy, name, value)
 
 
