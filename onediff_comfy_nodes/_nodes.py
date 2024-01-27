@@ -36,6 +36,10 @@ from .utils.deep_cache_speedup import deep_cache_speedup
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
 
+from .modules.hijack_animatediff import animatediff_hijacker
+
+animatediff_hijacker.hijack()
+
 
 __all__ = [
     "ModelSpeedup",
@@ -434,9 +438,10 @@ class OneDiffControlNetLoader(ControlNetLoader):
             )
             return (controlnet,)
         else:
-            print("\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m")
+            print(
+                "\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m"
+            )
             return (controlnet,)
-
 
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):

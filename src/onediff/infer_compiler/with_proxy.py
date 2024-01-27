@@ -47,7 +47,7 @@ class OneFlowModule:
         of_state_dict = self.of_module.state_dict().keys()
         assert set(state_dict) == set(of_state_dict)
         return True
-    
+
     def update_module(self, key, value):
         # TODO support weight update
         raise NotImplementedError
@@ -84,7 +84,7 @@ class Proxy:
     def __init__(self, pt_module, is_leaf_fn=default_is_leaf_fn):
         self._proxy = pt_module
         self._is_leaf_fn = is_leaf_fn
-        self._proxy_of = OneFlowModule(use_graph=True, dynamic=True)
+        self._proxy_of = OneFlowModule(use_graph=False, dynamic=True)
 
     def __getattr__(self, name):
         if name in Proxy.__attrs:
@@ -113,7 +113,7 @@ class Proxy:
         self._proxy[key] = value
 
     def __getitem__(self, key):
-        # TODO support Proxy(self._proxy[key]) 
+        # TODO support Proxy(self._proxy[key])
         return self._proxy[key]
 
     def __setattr__(self, name, value):
