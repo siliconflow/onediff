@@ -26,17 +26,22 @@ def groupnorm_mm_factory(params):
 
 # ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_utils.py
 GroupNormAD_OF_CLS = animatediff_of.animatediff.motion_utils.GroupNormAD
-
+# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_module_ad.py
+AnimateDiffVersion = animatediff_pt.animatediff.motion_module_ad.AnimateDiffVersion
+AnimateDiffFormat = animatediff_pt.animatediff.motion_module_ad.AnimateDiffFormat
+# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/model_utils.py
+ModelTypeSD = animatediff_pt.animatediff.model_utils.ModelTypeSD
 
 def inject_functions(orig_func, self, model, params):
     ret = orig_func(self, model, params)
     # TODO support check info
-    # info = model.motion_model.model.mm_info
-    # if not (info.mm_version == AnimateDiffVersion.V3 or (info.mm_format == AnimateDiffFormat.ANIMATEDIFF and info.sd_type == ModelTypeSD.SD1_5 and
-    #         info.mm_version == AnimateDiffVersion.V2 and params.apply_v2_models_properly)):
-    flow.nn.GroupNorm.forward = groupnorm_mm_factory(params)
-    # if params.apply_mm_groupnorm_hack:
-    GroupNormAD_OF_CLS.forward = groupnorm_mm_factory(params)
+    info = model.motion_model.model.mm_info
+    if not (info.mm_version == AnimateDiffVersion.V3 or (info.mm_format == AnimateDiffFormat.ANIMATEDIFF and info.sd_type == ModelTypeSD.SD1_5 and
+            info.mm_version == AnimateDiffVersion.V2 and params.apply_v2_models_properly)):
+        flow.nn.GroupNorm.forward = groupnorm_mm_factory(params)
+        if params.apply_mm_groupnorm_hack:
+            GroupNormAD_OF_CLS.forward = groupnorm_mm_factory(params)
+
     return ret
 
 
