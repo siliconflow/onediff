@@ -83,18 +83,24 @@ class Upsample2D(nn.Module):
 
         # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
         if self.use_conv:
-            if self.name == "conv":
-                if isinstance(self.conv, LoRACompatibleConv) and not USE_PEFT_BACKEND:
-                    hidden_states = self.conv(hidden_states, scale)
-                else:
+            if diffusers_version < version.parse("0.22.0"):
+                if self.name == "conv":
                     hidden_states = self.conv(hidden_states)
-            else:
-                if (
-                    isinstance(self.Conv2d_0, LoRACompatibleConv)
-                    and not USE_PEFT_BACKEND
-                ):
-                    hidden_states = self.Conv2d_0(hidden_states, scale)
                 else:
                     hidden_states = self.Conv2d_0(hidden_states)
+            else:
+                if self.name == "conv":
+                    if isinstance(self.conv, LoRACompatibleConv) and not USE_PEFT_BACKEND:
+                        hidden_states = self.conv(hidden_states, scale)
+                    else:
+                        hidden_states = self.conv(hidden_states)
+                else:
+                    if (
+                        isinstance(self.Conv2d_0, LoRACompatibleConv)
+                        and not USE_PEFT_BACKEND
+                    ):
+                        hidden_states = self.Conv2d_0(hidden_states, scale)
+                    else:
+                        hidden_states = self.Conv2d_0(hidden_states)
 
         return hidden_states
