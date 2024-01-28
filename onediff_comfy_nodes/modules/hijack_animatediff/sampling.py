@@ -34,7 +34,7 @@ ModelTypeSD = animatediff_pt.animatediff.model_utils.ModelTypeSD
 
 def inject_functions(orig_func, self, model, params):
     ret = orig_func(self, model, params)
-    # TODO support check info
+    # TODO  avoid call more than once
     info = model.motion_model.model.mm_info
     if not (info.mm_version == AnimateDiffVersion.V3 or (info.mm_format == AnimateDiffFormat.ANIMATEDIFF and info.sd_type == ModelTypeSD.SD1_5 and
             info.mm_version == AnimateDiffVersion.V2 and params.apply_v2_models_properly)):
