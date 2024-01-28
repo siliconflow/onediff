@@ -105,7 +105,7 @@ class ProxySubmodule:
         ):
             return flow.Generator()
         elif (
-            isinstance(self._oflow_proxy_submod, (torch.nn.Conv2d, torch.nn.Conv3d))
+            isinstance(self._oflow_proxy_submod, (torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d))
             and attribute == "channel_pos"
         ):
             return "channels_first"
