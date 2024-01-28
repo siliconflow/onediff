@@ -84,7 +84,7 @@ class Proxy:
     def __init__(self, pt_module, is_leaf_fn=default_is_leaf_fn):
         self._proxy = pt_module
         self._is_leaf_fn = is_leaf_fn
-        self._proxy_of = OneFlowModule(use_graph=False, dynamic=True)
+        self._proxy_of = OneFlowModule(use_graph=True, dynamic=True)
 
     def __getattr__(self, name):
         if name in Proxy.__attrs:
