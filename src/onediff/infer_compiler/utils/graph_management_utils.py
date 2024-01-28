@@ -6,7 +6,9 @@ from pathlib import Path
 from functools import wraps
 from oneflow.framework.args_tree import ArgsTree
 from ..transform.builtin_transform import torch2oflow
+from ..transform.manager import transform_mgr
 from .log_utils import logger
+from .cost_util import cost_time
 
 
 def calculate_model_hash(model):
@@ -26,12 +28,22 @@ def graph_file_management(func):
             if file_path.endswith(".graph"):
                 file_path = file_path[:-6]
 
-            args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-            count = len(
-                [v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)]
-            )
-            model = self._deployable_module_model.oneflow_module
-            cache_key = calculate_model_hash(model) + "_" + flow.__version__
+            with cost_time(
+                debug=transform_mgr.debug_mode, message="calculate model input count"
+            ):
+                args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+                count = len(
+                    [v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)]
+                )
+
+            with cost_time(debug=transform_mgr.debug_mode, message="get model"):
+                model = self._deployable_module_model.oneflow_module
+
+            with cost_time(
+                debug=transform_mgr.debug_mode,
+                message="calculate model hash for cache key",
+            ):
+                cache_key = calculate_model_hash(model) + "_" + flow.__version__
             return f"{file_path}_{count}_{cache_key}.graph"
 
         if graph_file:
