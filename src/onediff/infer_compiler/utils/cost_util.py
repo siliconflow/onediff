@@ -94,11 +94,13 @@ class cost_time:
     def __enter__(self):
         if not self.debug:
             return
+        flow._oneflow_internal.eager.Sync()
         self.start_time = time.time()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.debug:
             return
+        flow._oneflow_internal.eager.Sync()
         end_time = time.time()
         logger.debug(f"{self.message} run time {end_time - self.start_time} seconds")
 
@@ -111,8 +113,10 @@ class cost_time:
             logger.debug(
                 f"==> function {module.__name__}.{func.__name__}  try to run..."
             )
+            flow._oneflow_internal.eager.Sync()
             start_time = time.time()
             out = func(*args, **kwargs)
+            flow._oneflow_internal.eager.Sync()
             end_time = time.time()
             logger.debug(f"{func.__name__} run time {end_time - start_time} seconds")
             logger.debug(f"<== function {func.__name__} finish run.")
