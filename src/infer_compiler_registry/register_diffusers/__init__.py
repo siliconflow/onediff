@@ -70,5 +70,6 @@ torch2oflow_class_map.update({UNet2DConditionModel: UNet2DConditionModelOflow})
 torch2oflow_class_map.update({AttnUpBlock2D: AttnUpBlock2DOflow})
 torch2oflow_class_map.update({CrossAttnUpBlock2D: CrossAttnUpBlock2DOflow})
 torch2oflow_class_map.update({UpBlock2D: UpBlock2DOflow})
+torch2oflow_class_map.update({Upsample2D: Upsample2DOflow})
 
 register(torch2oflow_class_map=torch2oflow_class_map)
