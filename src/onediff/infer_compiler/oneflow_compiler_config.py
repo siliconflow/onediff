@@ -109,14 +109,10 @@ class OneFlowCompilerConfig:
                 super().__setattr__(
                     name, parse_boolean_from_env(self.attr2env_var[name])
                 )
-                print(f"{name}={getattr(self, name)}")
-                print(f"{parse_boolean_from_env(self.attr2env_var[name])}")
             elif fields[name].type in (int, Optional[int]):
                 super().__setattr__(
                     name, parse_integer_from_env(self.attr2env_var[name])
                 )
-                print(f"{name}={getattr(self, name)}")
-                print(f"{parse_boolean_from_env(self.attr2env_var[name])}")
             else:
                 raise ValueError(
                     f"Unsupported type {dataclasses.fields(self)[name].type}"
