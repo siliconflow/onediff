@@ -1,106 +1,345 @@
-import oneflow as torch
-import oneflow.nn.functional as F
-from oneflow import nn
-
-import importlib.metadata
-from packaging import version
 from typing import Any, Dict, List, Optional, Tuple, Union
-
+from packaging import version
+import importlib.metadata
+import oneflow as torch
 from onediff.infer_compiler.transform import transform_mgr
 
-transformed_diffusers = transform_mgr.transform_package("diffusers")
+from .resnet_oflow import Upsample2D
+
+diffusers_0210_v = version.parse("0.21.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
-LoRACompatibleConv = transformed_diffusers.models.lora.LoRACompatibleConv
+transformed_diffusers = transform_mgr.transform_package("diffusers")
 
-try:
-    USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
-except Exception as e:
-    USE_PEFT_BACKEND = False
+if diffusers_version < diffusers_0210_v:
 
+    class AttnUpBlock2D(transformed_diffusers.models.unet_2d_blocks.AttnUpBlock2D):
+        def forward(
+            self,
+            hidden_states,
+            res_hidden_states_tuple,
+            temb=None,
+            upsample_size=None,
+            output_like=None,
+        ):
+            for resnet, attn in zip(self.resnets, self.attentions):
+                # pop res hidden states
+                res_hidden_states = res_hidden_states_tuple[-1]
+                res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+                hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
 
-class Upsample2D(nn.Module):
-    """A 2D upsampling layer with an optional convolution.
-    """
+                hidden_states = resnet(hidden_states, temb)
+                hidden_states = attn(hidden_states)
 
-    def forward(
-        self,
-        hidden_states: torch.FloatTensor,
-        output_size: Optional[int] = None,
-        scale: float = 1.0,
-    ) -> torch.FloatTensor:
-        assert hidden_states.shape[1] == self.channels
-
-        if diffusers_version >= version.parse("0.25.00"):
-            if self.norm is not None:
-                hidden_states = self.norm(hidden_states.permute(0, 2, 3, 1)).permute(
-                    0, 3, 1, 2
-                )
-
-        if self.use_conv_transpose:
-            return self.conv(hidden_states)
-
-        # Cast to float32 to as 'upsample_nearest2d_out_frame' op does not support bfloat16
-        # TODO(Suraj): Remove this cast once the issue is fixed in PyTorch
-        # https://github.com/pytorch/pytorch/issues/86679
-        dtype = hidden_states.dtype
-        if dtype == torch.bfloat16:
-            hidden_states = hidden_states.to(torch.float32)
-
-        # upsample_nearest_nhwc fails with large batch sizes. see https://github.com/huggingface/diffusers/issues/984
-        if hidden_states.shape[0] >= 64:
-            hidden_states = hidden_states.contiguous()
-
-        if diffusers_version >= version.parse("0.25.00"):
-            # if `output_size` is passed we force the interpolation output
-            # size and do not make use of `scale_factor=2`
-            if self.interpolate:
-                if output_size is None:
-                    hidden_states = F.interpolate(
-                        hidden_states, scale_factor=2.0, mode="nearest"
-                    )
-                else:
-                    # Rewritten for the switching of uncommon resolutions.
-                    # hidden_states = F.interpolate(hidden_states, size=output_size, mode="nearest")
-                    hidden_states = F.interpolate_like(
-                        hidden_states, like=output_size, mode="nearest"
-                    )
-        else:
-            if output_size is None:
-                hidden_states = F.interpolate(
-                    hidden_states, scale_factor=2.0, mode="nearest"
-                )
-            else:
-                # Rewritten for the switching of uncommon resolutions.
-                # hidden_states = F.interpolate(hidden_states, size=output_size, mode="nearest")
-                hidden_states = F.interpolate_like(
-                    hidden_states, like=output_size, mode="nearest"
-                )
-
-        # If the input is bfloat16, we cast back to bfloat16
-        if dtype == torch.bfloat16:
-            hidden_states = hidden_states.to(dtype)
-
-        # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
-        if self.use_conv:
-            if diffusers_version < version.parse("0.22.0"):
-                if self.name == "conv":
-                    hidden_states = self.conv(hidden_states)
-                else:
-                    hidden_states = self.Conv2d_0(hidden_states)
-            else:
-                if self.name == "conv":
-                    if isinstance(self.conv, LoRACompatibleConv) and not USE_PEFT_BACKEND:
-                        hidden_states = self.conv(hidden_states, scale)
+            if self.upsamplers is not None:
+                for upsampler in self.upsamplers:
+                    if self.upsample_type == "resnet":
+                        hidden_states = upsampler(hidden_states, temb=temb)
                     else:
-                        hidden_states = self.conv(hidden_states)
-                else:
-                    if (
-                        isinstance(self.Conv2d_0, LoRACompatibleConv)
-                        and not USE_PEFT_BACKEND
-                    ):
-                        hidden_states = self.Conv2d_0(hidden_states, scale)
-                    else:
-                        hidden_states = self.Conv2d_0(hidden_states)
+                        hidden_states = upsampler(hidden_states)
 
-        return hidden_states
+    class CrossAttnUpBlock2D(
+        transformed_diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D
+    ):
+        def forward(
+            self,
+            hidden_states: torch.FloatTensor,
+            res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            upsample_size: Optional[int] = None,
+            output_like: Optional[torch.FloatTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
+        ):
+            for resnet, attn in zip(self.resnets, self.attentions):
+                # pop res hidden states
+                res_hidden_states = res_hidden_states_tuple[-1]
+                res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+                hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+
+                if self.training and self.gradient_checkpointing:
+
+                    def create_custom_forward(module, return_dict=None):
+                        def custom_forward(*inputs):
+                            if return_dict is not None:
+                                return module(*inputs, return_dict=return_dict)
+                            else:
+                                return module(*inputs)
+
+                        return custom_forward
+
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if is_torch_version(">=", "1.11.0") else {}
+                    hidden_states = torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(resnet),
+                        hidden_states,
+                        temb,
+                        **ckpt_kwargs,
+                    )
+                    hidden_states = attn(
+                        hidden_states,
+                        encoder_hidden_states=encoder_hidden_states,
+                        cross_attention_kwargs=cross_attention_kwargs,
+                        attention_mask=attention_mask,
+                        encoder_attention_mask=encoder_attention_mask,
+                        return_dict=False,
+                    )[0]
+                else:
+                    hidden_states = resnet(hidden_states, temb)
+                    hidden_states = attn(
+                        hidden_states,
+                        encoder_hidden_states=encoder_hidden_states,
+                        cross_attention_kwargs=cross_attention_kwargs,
+                        attention_mask=attention_mask,
+                        encoder_attention_mask=encoder_attention_mask,
+                        return_dict=False,
+                    )[0]
+
+            if self.upsamplers is not None:
+                for upsampler in self.upsamplers:
+                    hidden_states = upsampler(hidden_states, upsample_size, output_like)
+
+            return hidden_states
+
+    class UpBlock2D(transformed_diffusers.models.unet_2d_blocks.UpBlock2D):
+        def forward(
+            self,
+            hidden_states,
+            res_hidden_states_tuple,
+            temb=None,
+            upsample_size=None,
+            output_like=None,
+        ):
+            for resnet in self.resnets:
+                # pop res hidden states
+                res_hidden_states = res_hidden_states_tuple[-1]
+                res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+                hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+
+                if self.training and self.gradient_checkpointing:
+
+                    def create_custom_forward(module):
+                        def custom_forward(*inputs):
+                            return module(*inputs)
+
+                        return custom_forward
+
+                    if is_torch_version(">=", "1.11.0"):
+                        hidden_states = torch.utils.checkpoint.checkpoint(
+                            create_custom_forward(resnet),
+                            hidden_states,
+                            temb,
+                            use_reentrant=False,
+                        )
+                    else:
+                        hidden_states = torch.utils.checkpoint.checkpoint(
+                            create_custom_forward(resnet), hidden_states, temb
+                        )
+                else:
+                    hidden_states = resnet(hidden_states, temb)
+
+            if self.upsamplers is not None:
+                for upsampler in self.upsamplers:
+                    hidden_states = upsampler(hidden_states, upsample_size, output_like)
+
+            return hidden_states
+
+
+else:
+
+    class AttnUpBlock2D(transformed_diffusers.models.unet_2d_blocks.AttnUpBlock2D):
+        def forward(
+            self,
+            hidden_states: torch.FloatTensor,
+            res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
+            temb: Optional[torch.FloatTensor] = None,
+            upsample_size: Optional[int] = None,
+            output_like: Optional[torch.FloatTensor] = None,
+            scale: float = 1.0,
+        ) -> torch.FloatTensor:
+            for resnet, attn in zip(self.resnets, self.attentions):
+                # pop res hidden states
+                res_hidden_states = res_hidden_states_tuple[-1]
+                res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+                hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+
+                hidden_states = resnet(hidden_states, temb, scale=scale)
+                cross_attention_kwargs = {"scale": scale}
+                hidden_states = attn(hidden_states, **cross_attention_kwargs)
+
+            if self.upsamplers is not None:
+                for upsampler in self.upsamplers:
+                    if self.upsample_type == "resnet":
+                        hidden_states = upsampler(hidden_states, temb=temb, scale=scale)
+                    else:
+                        hidden_states = upsampler(hidden_states, scale=scale)
+
+            return hidden_states
+
+    class CrossAttnUpBlock2D(
+        transformed_diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D
+    ):
+        def forward(
+            self,
+            hidden_states: torch.FloatTensor,
+            res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
+            temb: Optional[torch.FloatTensor] = None,
+            encoder_hidden_states: Optional[torch.FloatTensor] = None,
+            cross_attention_kwargs: Optional[Dict[str, Any]] = None,
+            upsample_size: Optional[int] = None,
+            output_like: Optional[torch.FloatTensor] = None,
+            attention_mask: Optional[torch.FloatTensor] = None,
+            encoder_attention_mask: Optional[torch.FloatTensor] = None,
+        ) -> torch.FloatTensor:
+            lora_scale = (
+                cross_attention_kwargs.get("scale", 1.0)
+                if cross_attention_kwargs is not None
+                else 1.0
+            )
+            is_freeu_enabled = (
+                getattr(self, "s1", None)
+                and getattr(self, "s2", None)
+                and getattr(self, "b1", None)
+                and getattr(self, "b2", None)
+            )
+
+            for resnet, attn in zip(self.resnets, self.attentions):
+                # pop res hidden states
+                res_hidden_states = res_hidden_states_tuple[-1]
+                res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+
+                # FreeU: Only operate on the first two stages
+                if is_freeu_enabled:
+                    hidden_states, res_hidden_states = apply_freeu(
+                        self.resolution_idx,
+                        hidden_states,
+                        res_hidden_states,
+                        s1=self.s1,
+                        s2=self.s2,
+                        b1=self.b1,
+                        b2=self.b2,
+                    )
+
+                hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+
+                if self.training and self.gradient_checkpointing:
+
+                    def create_custom_forward(module, return_dict=None):
+                        def custom_forward(*inputs):
+                            if return_dict is not None:
+                                return module(*inputs, return_dict=return_dict)
+                            else:
+                                return module(*inputs)
+
+                        return custom_forward
+
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if is_torch_version(">=", "1.11.0") else {}
+                    hidden_states = torch.utils.checkpoint.checkpoint(
+                        create_custom_forward(resnet),
+                        hidden_states,
+                        temb,
+                        **ckpt_kwargs,
+                    )
+                    hidden_states = attn(
+                        hidden_states,
+                        encoder_hidden_states=encoder_hidden_states,
+                        cross_attention_kwargs=cross_attention_kwargs,
+                        attention_mask=attention_mask,
+                        encoder_attention_mask=encoder_attention_mask,
+                        return_dict=False,
+                    )[0]
+                else:
+                    hidden_states = resnet(hidden_states, temb, scale=lora_scale)
+                    hidden_states = attn(
+                        hidden_states,
+                        encoder_hidden_states=encoder_hidden_states,
+                        cross_attention_kwargs=cross_attention_kwargs,
+                        attention_mask=attention_mask,
+                        encoder_attention_mask=encoder_attention_mask,
+                        return_dict=False,
+                    )[0]
+
+            if self.upsamplers is not None:
+                for upsampler in self.upsamplers:
+                    hidden_states = upsampler(
+                        hidden_states,
+                        upsample_size,
+                        output_like=output_like,
+                        scale=lora_scale,
+                    )
+
+            return hidden_states
+
+    class UpBlock2D(transformed_diffusers.models.unet_2d_blocks.UpBlock2D):
+        def forward(
+            self,
+            hidden_states: torch.FloatTensor,
+            res_hidden_states_tuple: Tuple[torch.FloatTensor, ...],
+            temb: Optional[torch.FloatTensor] = None,
+            upsample_size: Optional[int] = None,
+            output_like: Optional[torch.FloatTensor] = None,
+            scale: float = 1.0,
+        ) -> torch.FloatTensor:
+            is_freeu_enabled = (
+                getattr(self, "s1", None)
+                and getattr(self, "s2", None)
+                and getattr(self, "b1", None)
+                and getattr(self, "b2", None)
+            )
+
+            for resnet in self.resnets:
+                # pop res hidden states
+                res_hidden_states = res_hidden_states_tuple[-1]
+                res_hidden_states_tuple = res_hidden_states_tuple[:-1]
+
+                # FreeU: Only operate on the first two stages
+                if is_freeu_enabled:
+                    hidden_states, res_hidden_states = apply_freeu(
+                        self.resolution_idx,
+                        hidden_states,
+                        res_hidden_states,
+                        s1=self.s1,
+                        s2=self.s2,
+                        b1=self.b1,
+                        b2=self.b2,
+                    )
+
+                hidden_states = torch.cat([hidden_states, res_hidden_states], dim=1)
+
+                if self.training and self.gradient_checkpointing:
+
+                    def create_custom_forward(module):
+                        def custom_forward(*inputs):
+                            return module(*inputs)
+
+                        return custom_forward
+
+                    if is_torch_version(">=", "1.11.0"):
+                        hidden_states = torch.utils.checkpoint.checkpoint(
+                            create_custom_forward(resnet),
+                            hidden_states,
+                            temb,
+                            use_reentrant=False,
+                        )
+                    else:
+                        hidden_states = torch.utils.checkpoint.checkpoint(
+                            create_custom_forward(resnet), hidden_states, temb
+                        )
+                else:
+                    hidden_states = resnet(hidden_states, temb, scale=scale)
+
+            if self.upsamplers is not None:
+                for upsampler in self.upsamplers:
+                    hidden_states = upsampler(
+                        hidden_states,
+                        upsample_size,
+                        output_like=output_like,
+                        scale=scale,
+                    )
+
+            return hidden_states
