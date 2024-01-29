@@ -429,8 +429,8 @@ def oneflow_compile(
        options (dict): A dictionary of options to pass to the compiler:
         - 'debug' which config the nn.Graph debug level, default -1(no debug info), max 3(max debug info);
         - 'size' which config the cache size when cache is enabled. Note that after onediff v0.12, cache is default disabled.
-        - 'graph_file' which config the graph file path, default None.
-        - 'graph_file_device' which config the device of graph file, default None.
+        - 'graph_file' (None) generates a compilation cache file. If the file exists, loading occurs; if not, compilation is saved after the first.
+        - 'graph_file_device' (None) sets the device for the graph file, default None. Enables flexible loading and compilation shift to the specified device.
     """
 
     set_default_registry()
