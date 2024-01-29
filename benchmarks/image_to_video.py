@@ -12,6 +12,8 @@ FRAMES = None
 BATCH = 1
 HEIGHT = 576
 WIDTH = 1024
+ALTER_HEIGHT = None
+ALTER_WIDTH = None
 FPS = 7
 DECODE_CHUNK_SIZE = 5
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
@@ -33,8 +35,8 @@ import oneflow as flow
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.utils import set_boolean_env_var
+from onediff.infer_compiler.oneflow_compiler_config import oneflow_compiler_config
+from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
 
 
 def parse_args():
@@ -53,14 +55,10 @@ def parse_args():
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
     parser.add_argument("--fps", type=int, default=FPS)
-    parser.add_argument("--decode-chunk-size",
-                        type=int,
-                        default=DECODE_CHUNK_SIZE)
-    parser.add_argument('--cache_interval', type=int, default=CACHE_INTERVAL)
-    parser.add_argument('--cache_branch', type=int, default=CACHE_BRANCH)
-    parser.add_argument("--extra-call-kwargs",
-                        type=str,
-                        default=EXTRA_CALL_KWARGS)
+    parser.add_argument("--decode-chunk-size", type=int, default=DECODE_CHUNK_SIZE)
+    parser.add_argument("--cache_interval", type=int, default=CACHE_INTERVAL)
+    parser.add_argument("--cache_branch", type=int, default=CACHE_BRANCH)
+    parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=None)
@@ -77,9 +75,10 @@ def parse_args():
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
     )
     parser.add_argument(
-        "--run_multiple_resolutions",
-        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-        default=False,
+        "--alter-height", type=int, default=ALTER_HEIGHT,
+    )
+    parser.add_argument(
+        "--alter-width", type=int, default=ALTER_WIDTH,
     )
     return parser.parse_args()
 
@@ -102,23 +101,20 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet,
-            torch_dtype=torch.float16,
-            use_safetensors=True,
+            controlnet, torch_dtype=torch.float16, use_safetensors=True,
         )
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         is_quantized_model = True
         from onediff.quantization import setup_onediff_quant
+
         setup_onediff_quant()
-    pipe = pipeline_cls.from_pretrained(model_name,
-                                        torch_dtype=torch.float16,
-                                        use_safetensors=True,
-                                        **extra_kwargs)
+    pipe = pipeline_cls.from_pretrained(
+        model_name, torch_dtype=torch.float16, use_safetensors=True, **extra_kwargs
+    )
     if scheduler is not None:
-        scheduler_cls = getattr(importlib.import_module("diffusers"),
-                                scheduler)
+        scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
@@ -129,49 +125,14 @@ def load_pipe(
     # Replace quantizable modules by QuantModule.
     if is_quantized_model:
         from onediff.quantization import load_calibration_and_quantize_pipeline
+
         load_calibration_and_quantize_pipeline(
-            os.path.join(model_name, "calibrate_info.txt"), pipe)
-    return pipe
-
-
-def compile_pipe(pipe, deepcache=False, attention_fp16_score_accum_max_m=-1):
-    # set_boolean_env_var('ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION',
-    #                     False)
-    # The absolute element values of K in the attention layer of SVD is too large.
-    # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
-    # But disabling all half accumulations in MHA would slow down the inference,
-    # especially for 40xx series cards.
-    # So here by partially disabling the half accumulation in MHA partially,
-    # we can get a good balance.
-    set_boolean_env_var(
-        "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M",
-        attention_fp16_score_accum_max_m,
-    )
-
-    parts = [
-        "image_encoder",
-        "unet",
-        "controlnet",
-    ]
-    if deepcache:
-        parts.append("fast_unet")
-    for part in parts:
-        if getattr(pipe, part, None) is not None:
-            print(f"Compiling {part}")
-            setattr(pipe, part, oneflow_compile(getattr(pipe, part)))
-    vae_parts = [
-        "decoder",
-        "encoder",
-    ]
-    for part in vae_parts:
-        if getattr(pipe.vae, part, None) is not None:
-            print(f"Compiling vae.{part}")
-            setattr(pipe.vae, part, oneflow_compile(getattr(pipe.vae, part)))
+            os.path.join(model_name, "calibrate_info.txt"), pipe
+        )
     return pipe
 
 
 class IterationProfiler:
-
     def __init__(self):
         self.begin = None
         self.end = None
@@ -197,11 +158,6 @@ class IterationProfiler:
         return callback_kwargs
 
 
-def adjust_resolution():
-    resolutions = [(1024, 512),(768, 576)]
-    return random.choice(resolutions)
-
-
 def main():
     args = parse_args()
     if args.deepcache:
@@ -225,12 +181,16 @@ def main():
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
-        pipe = compile_pipe(
-            pipe,
-            args.deepcache,
-            attention_fp16_score_accum_max_m=args.
-            attention_fp16_score_accum_max_m,
+        # The absolute element values of K in the attention layer of SVD is too large.
+        # The unfused attention (without SDPA) and MHA with half accumulation would both overflow.
+        # But disabling all half accumulations in MHA would slow down the inference,
+        # especially for 40xx series cards.
+        # So here by partially disabling the half accumulation in MHA partially,
+        # we can get a good balance.
+        oneflow_compiler_config.attention_allow_half_precision_score_accumulation_max_m = (
+            args.attention_fp16_score_accum_max_m
         )
+        pipe = compile_pipe(pipe,)
     elif args.compiler == "compile":
         pipe.unet = torch.compile(pipe.unet)
         if hasattr(pipe, "controlnet"):
@@ -239,97 +199,87 @@ def main():
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
-    input_image = load_image(args.input_image)
-    input_image.resize((width, height), Image.LANCZOS)
+    resolutions = [[height, width]]
+    if args.alter_height is not None:
+        # Test dynamic shape.
+        assert args.alter_width is not None
+        resolutions.append([args.alter_height, args.alter_width])
+    for height, width in resolutions:
+        input_image = load_image(args.input_image)
+        input_image.resize((width, height), Image.LANCZOS)
 
-    if args.run_multiple_resolutions:
-        new_width, new_height = adjust_resolution()
-        otherResImg = load_image(args.input_image)
-        otherResImg.resize((new_width, new_height), Image.LANCZOS)
-
-    if args.control_image is None:
-        if args.controlnet is None:
-            control_image = None
+        if args.control_image is None:
+            if args.controlnet is None:
+                control_image = None
+            else:
+                control_image = Image.new("RGB", (width, height))
+                draw = ImageDraw.Draw(control_image)
+                draw.ellipse(
+                    (width // 4, height // 4, width // 4 * 3, height // 4 * 3,),
+                    fill=(255, 255, 255),
+                )
+                del draw
         else:
-            control_image = Image.new("RGB", (width, height))
-            draw = ImageDraw.Draw(control_image)
-            draw.ellipse(
-                (
-                    width // 4,
-                    height // 4,
-                    width // 4 * 3,
-                    height // 4 * 3,
+            control_image = Image.open(args.control_image).convert("RGB")
+            control_image = control_image.resize((args.width, height), Image.LANCZOS)
+
+        def get_kwarg_inputs():
+            kwarg_inputs = dict(
+                image=input_image,
+                height=height,
+                width=args.width,
+                num_inference_steps=args.steps,
+                num_videos_per_prompt=args.batch,
+                num_frames=args.frames,
+                fps=args.fps,
+                decode_chunk_size=args.decode_chunk_size,
+                generator=None
+                if args.seed is None
+                else torch.Generator().manual_seed(args.seed),
+                **(
+                    dict()
+                    if args.extra_call_kwargs is None
+                    else json.loads(args.extra_call_kwargs)
                 ),
-                fill=(255, 255, 255),
             )
-            del draw
-    else:
-        control_image = Image.open(args.control_image).convert("RGB")
-        control_image = control_image.resize((args.width, height),
-                                             Image.LANCZOS)
+            if args.deepcache:
+                kwarg_inputs["cache_interval"] = args.cache_interval
+                kwarg_inputs["cache_branch"] = args.cache_branch
+            if control_image is not None:
+                kwarg_inputs["control_image"] = control_image
+            return kwarg_inputs
 
-    def get_kwarg_inputs():
-        kwarg_inputs = dict(
-            image=input_image,
-            height=height,
-            width=args.width,
-            num_inference_steps=args.steps,
-            num_videos_per_prompt=args.batch,
-            num_frames=args.frames,
-            fps=args.fps,
-            decode_chunk_size=args.decode_chunk_size,
-            generator=None
-            if args.seed is None else torch.Generator().manual_seed(args.seed),
-            **(dict() if args.extra_call_kwargs is None else json.loads(
-                args.extra_call_kwargs)),
-        )
-        if args.deepcache:
-            kwarg_inputs["cache_interval"] = args.cache_interval
-            kwarg_inputs["cache_branch"] = args.cache_branch
-        if control_image is not None:
-            kwarg_inputs["control_image"] = control_image
-        return kwarg_inputs
+        if args.warmups > 0:
+            print("Begin warmup")
+            for _ in range(args.warmups):
+                pipe(**get_kwarg_inputs())
+            print("End warmup")
 
-    if args.warmups > 0:
-        print("Begin warmup")
-        for _ in range(args.warmups):
-            pipe(**get_kwarg_inputs())
-        print("End warmup")
-
-    kwarg_inputs = get_kwarg_inputs()
-    iter_profiler = None
-    if "callback_on_step_end" in inspect.signature(pipe).parameters:
-        iter_profiler = IterationProfiler()
-        kwarg_inputs[
-            "callback_on_step_end"] = iter_profiler.callback_on_step_end
-    elif "callback" in inspect.signature(pipe).parameters:
-        iter_profiler = IterationProfiler()
-        kwarg_inputs[
-            "callback"] = iter_profiler.callback_on_step_end
-    begin = time.time()
-    output_frames = pipe(**kwarg_inputs).frames
-    end = time.time()
-
-    print(f"Inference time: {end - begin:.3f}s")
-    iter_per_sec = iter_profiler.get_iter_per_sec()
-    if iter_per_sec is not None:
-        print(f"Iterations per second: {iter_per_sec:.3f}")
-    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
-    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
-
-    if args.run_multiple_resolutions:
-        kwarg_inputs['image'] = otherResImg
-        kwarg_inputs['height'] = new_height
-        kwarg_inputs['width'] = new_width
-        print("Test run with multiple resolutions...")
+        kwarg_inputs = get_kwarg_inputs()
+        iter_profiler = None
+        if "callback_on_step_end" in inspect.signature(pipe).parameters:
+            iter_profiler = IterationProfiler()
+            kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
+        elif "callback" in inspect.signature(pipe).parameters:
+            iter_profiler = IterationProfiler()
+            kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
+        begin = time.time()
         output_frames = pipe(**kwarg_inputs).frames
+        end = time.time()
 
-    if args.output_video is not None:
-        export_to_video(output_frames[0], args.output_video, fps=args.fps)
-    else:
-        print("Please set `--output-video` to save the output video")
+        print(f"Inference time: {end - begin:.3f}s")
+        iter_per_sec = iter_profiler.get_iter_per_sec()
+        if iter_per_sec is not None:
+            print(f"Iterations per second: {iter_per_sec:.3f}")
+        cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+        host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
+        print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
+        print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+
+        if args.output_video is not None:
+            export_to_video(output_frames[0], args.output_video, fps=args.fps)
+        else:
+            print("Please set `--output-video` to save the output video")
 
 
 if __name__ == "__main__":
