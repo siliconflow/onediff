@@ -43,8 +43,8 @@ def input_output_processor(func):
                 )
                 self._deployable_module_dpl_graph = None
                 self._load_graph_first_run = True
+                self._deployable_module_input_count = input_count
 
-            self._deployable_module_input_count = input_count
         output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
 
