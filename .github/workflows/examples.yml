@@ -236,6 +236,4 @@ jobs:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
-          SDXL_BASE: ${{ env.SDXL_BASE }}
-          UNET_INT8: ${{ env.UNET_INT8 }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
