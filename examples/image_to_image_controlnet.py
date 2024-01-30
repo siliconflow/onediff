@@ -37,6 +37,9 @@ parser.add_argument(
     "--compile_unet", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
 )
 parser.add_argument(
+    "--quant_unet", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
+parser.add_argument(
     "--compile_vae", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
 )
 parser.add_argument(
@@ -69,6 +72,9 @@ pipe.to("cuda")
 
 if args.compile_unet:
     from onediff.infer_compiler import oneflow_compile
+    if args.quant_unet:
+        from onediff.optimization.quant_optimizer import quantize_model
+        pipe.unet = quantize_model(pipe.unet)
     pipe.unet = oneflow_compile(pipe.unet)
 
 if args.compile_vae:
