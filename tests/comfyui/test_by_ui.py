@@ -34,6 +34,8 @@ Run the test script:
 python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-unet-speedup-graph-saver.json
 python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-control-lora-speedup.json
 
+python tests/comfyui/websockets_api_example.py  
+
 If you need to shutdown the test containers, run:
 
 docker compose -f tests/comfy-docker-compose.yml down
