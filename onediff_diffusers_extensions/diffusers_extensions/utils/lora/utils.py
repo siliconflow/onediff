@@ -23,15 +23,35 @@ def linear_fuse_lora(
     offload_device="cpu",
     offload_weight="lora",
 ):
+    r"""
+    This will fuse the LoRA weights in `state_dict` into Linear module.
+
+    Parameters:
+        self (Union[torch.nn.Linear, PatchedLoraProjection]):
+            Model layer to be fused, must be Linear or PatchedLoraProjection.
+        state_dict (Dict[str, torch.Tensor]):
+            Dictionary containing LoRA weight.
+        lora_scale (float, optional):
+            Scaling factor for LoRA weights. Default is 1.0.
+        alpha (float, optional):
+            Alpha parameter of LoRA weights. Default is None.
+        rank (float, optional):
+            Rank of LoRA weights. Default is None.
+        prefix (str, optional):
+            Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
+        offload_device (str, optional):
+            Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
+        offload_weight (str, optional):
+            Which weights to be offloaded, can be "lora" or "weight". Default is "lora".
+            If set to "weight", the weight of Linear rather than LoRA will be saved for unfusing.
+    """
     assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
-    # if isinstance(self, PatchedLoraProjection):
-    #     import ipdb; ipdb.set_trace()
     if isinstance(self, DualModule):
         self = self._torch_module
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
 
-    linear_unfuse_lora(self)
+    _linear_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
     down_key = prefix + ".down.weight"
     up_key = prefix + ".up.weight"
@@ -64,7 +84,7 @@ def linear_fuse_lora(
     self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
-def linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
+def _linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
     assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
     if isinstance(self, DualModule):
         self = self._torch_module
@@ -109,10 +129,32 @@ def conv_fuse_lora(
     offload_device="cpu",
     offload_weight="lora",
 ) -> None:
+    r"""
+    This will fuse the LoRA weights in `state_dict` into Conv2d module.
+
+    Parameters:
+        self (torch.nn.Conv2d):
+            Model layer to be fused, must be torch.nn.Conv2d.
+        state_dict (Dict[str, torch.Tensor]):
+            Dictionary containing LoRA weight.
+        lora_scale (float, optional):
+            Scaling factor for LoRA weights. Default is 1.0.
+        alpha (float, optional):
+            Alpha parameter of LoRA weights. Default is None.
+        rank (float, optional):
+            Rank of LoRA weights. Default is None.
+        prefix (str, optional):
+            Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
+        offload_device (str, optional):
+            Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
+        offload_weight (str, optional):
+            Which weights to be offloaded, can be "lora" or "weight". Default is "lora".
+            If set to "weight", the weight of Conv2d rather than LoRA will be saved for unfusing.
+    """
     assert isinstance(self, torch.nn.Conv2d)
     if isinstance(self, DualModule):
         self = self._torch_module
-    conv_unfuse_lora(self)
+    _conv_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
     down_key = prefix + ".down.weight"
@@ -145,7 +187,7 @@ def conv_fuse_lora(
     self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
-def conv_unfuse_lora(self: torch.nn.Conv2d):
+def _conv_unfuse_lora(self: torch.nn.Conv2d):
     assert isinstance(self, torch.nn.Conv2d)
 
     fused_weight = self.weight.data

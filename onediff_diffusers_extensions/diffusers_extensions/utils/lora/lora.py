@@ -5,13 +5,12 @@ from collections import OrderedDict, defaultdict
 import torch
 
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.infer_compiler.with_oneflow_compile import DualModule
 
 from diffusers.loaders.lora import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear, PatchedLoraProjection
 from diffusers.utils import is_accelerate_available
 
-from .utils import linear_fuse_lora, linear_unfuse_lora, conv_fuse_lora, conv_unfuse_lora
+from .utils import linear_fuse_lora, _linear_unfuse_lora, conv_fuse_lora, _conv_unfuse_lora
 from .text_encoder import load_lora_into_text_encoder
 
 if is_accelerate_available():
@@ -19,7 +18,6 @@ if is_accelerate_available():
 
 
 USE_PEFT_BACKEND = False
-
 
 def load_and_fuse_lora(
     pipeline: LoraLoaderMixin,
@@ -224,11 +222,10 @@ def load_and_fuse_lora(
             _pipeline.enable_sequential_cpu_offload()
         # Unsafe code />
 
-    # load lora weights
+    # load lora weights into text encoder
     if len(text_encoder_state_dict) > 0:
         load_lora_into_text_encoder(
             self,
-        # self.load_lora_into_text_encoder(
             text_encoder_state_dict,
             network_alphas=text_encoder_network_alphas,
             text_encoder=self.text_encoder,
@@ -238,8 +235,7 @@ def load_and_fuse_lora(
             _pipeline=self,
         )
 
-    if len(text_encoder_2_state_dict) > 0:
-        # self.load_lora_into_text_encoder(
+    if len(text_encoder_2_state_dict) > 0 and hasattr(self, "text_encoder_2"):
         load_lora_into_text_encoder(
             self,
             text_encoder_2_state_dict,
@@ -255,9 +251,9 @@ def load_and_fuse_lora(
 def unfuse_lora(self: LoraLoaderMixin):
     def _unfuse_lora(m: torch.nn.Module):
         if isinstance(m, (torch.nn.Linear, PatchedLoraProjection)):
-            linear_unfuse_lora(m)
+            _linear_unfuse_lora(m)
         elif isinstance(m, torch.nn.Conv2d):
-            conv_unfuse_lora(m)
+            _conv_unfuse_lora(m)
 
     self.unet.apply(_unfuse_lora)
     self.text_encoder.apply(_unfuse_lora)

@@ -7,7 +7,6 @@ from diffusers.models.modeling_utils import (
     _LOW_CPU_MEM_USAGE_DEFAULT,
 )
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.utils.profiler import with_cProfile
 
 from .utils import linear_fuse_lora
 
@@ -16,7 +15,7 @@ USE_PEFT_BACKEND = False
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
 
-@with_cProfile()
+# The code is mainly referenced from https://github.com/huggingface/diffusers/blob/b09b90e24c7ef0252a1a587939972c2e02d305a6/src/diffusers/loaders/lora.py#L485
 def load_lora_into_text_encoder(
     cls,
     state_dict,
@@ -29,9 +28,11 @@ def load_lora_into_text_encoder(
     _pipeline=None,
 ):
     """
-    This will load the LoRA layers specified in `state_dict` into `text_encoder`
+    This will load and fuse the LoRA layers specified in `state_dict` into `text_encoder`
 
     Parameters:
+        cls (`LoraLoaderMixin`):
+            The pipeline to load lora into its text encoder
         state_dict (`dict`):
             A standard state dict containing the lora layer parameters. The key should be prefixed with an
             additional `text_encoder` to distinguish between unet lora layers.
@@ -181,7 +182,6 @@ def load_lora_into_text_encoder(
                 scale_lora_layers(text_encoder, weight=lora_scale)
             else:
 
-                # lora_parameters = []
                 network_alphas = {} if network_alphas is None else network_alphas
                 is_network_alphas_populated = len(network_alphas) > 0
 

@@ -93,7 +93,7 @@ images_fusion.save("test_sdxl_lora_method3.png")
 
 # 4. unfuse_lora can uninstall LoRA weights and restore the weights of UNet 
 generator = torch.manual_seed(0)
-unfuse_lora(pipe.unet)
+unfuse_lora(pipe)
 images_fusion = pipe(
     "masterpiece, best quality, mountain",
     generator=generator,
