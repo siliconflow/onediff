@@ -198,6 +198,8 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
+        self._load_graph_first_run = True
+        self._deployable_module_input_count = None
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
@@ -207,6 +209,11 @@ class DeployableModule(torch.nn.Module):
         instance._deployable_module_dpl_graph = (
             existing_module._deployable_module_dpl_graph if use_graph else None
         )
+        instance._load_graph_first_run = existing_module._load_graph_first_run
+        instance._deployable_module_input_count = (
+            existing_module._deployable_module_input_count
+        )
+
         return instance
 
     def get_graph(self):

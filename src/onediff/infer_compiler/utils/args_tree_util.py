@@ -33,22 +33,19 @@ def input_output_processor(func):
         out = out_tree.map_leaf(output_fn)
         return out[0]
 
-    def wrapper(cls, *args, **kwargs):
+    def wrapper(self: "DeployableModule", *args, **kwargs):
         mapped_args, mapped_kwargs, input_count = process_input(*args, **kwargs)
-        if cls._deployable_module_use_graph:
-            count = getattr(cls, "_deployable_module_input_count", input_count)
+        if self._deployable_module_use_graph:
+            count = self._deployable_module_input_count
             if count != input_count:
                 logger.warning(
-                    f"{type(cls._deployable_module_model.oneflow_module)} input count changed, will reload graph. "
-                    f"When setting the strength parameter in the 'Apply ControlNet' node, please exercise caution. "
-                    f"Please check and avoid toggling the strength parameter between values greater than 0 and 0, as it may lead to unnecessary graph reloading."
+                    f"Module {type(self)} input count changed from {count} to {input_count}, will compile again."
                 )
+                self._deployable_module_dpl_graph = None
+                self._load_graph_first_run = True
 
-                cls._deployable_module_dpl_graph = None
-                setattr(cls, "_load_graph_first_run", True)
-
-            setattr(cls, "_deployable_module_input_count", input_count)
-        output = func(cls, *mapped_args, **mapped_kwargs)
+            self._deployable_module_input_count = input_count
+        output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
 
     return wrapper
