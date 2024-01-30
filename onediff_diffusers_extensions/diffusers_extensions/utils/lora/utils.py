@@ -1,8 +1,14 @@
 from typing import Dict, Union
+from packaging import version
 
 import torch
+import diffusers
 from onediff.infer_compiler.with_oneflow_compile import DualModule
-from diffusers.models.lora import PatchedLoraProjection
+
+if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
+    from diffusers.loaders import PatchedLoraProjection
+else:
+    from diffusers.models.lora import PatchedLoraProjection
 
 def offload_tensor(tensor, device):
     cur_device = tensor.device

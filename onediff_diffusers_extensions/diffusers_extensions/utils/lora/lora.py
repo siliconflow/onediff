@@ -6,7 +6,7 @@ import torch
 
 from onediff.infer_compiler.utils.log_utils import logger
 
-from diffusers.loaders.lora import LoraLoaderMixin
+from diffusers.loaders import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear, PatchedLoraProjection
 from diffusers.utils import is_accelerate_available
 
