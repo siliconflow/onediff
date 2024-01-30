@@ -46,6 +46,13 @@ def compile_pipe(
         if obj is not None:
             print(f"Compiling {part}")
             recursive_setattr(pipe, part, oneflow_compile(obj))
+
+    if 'image_processor' not in ignores:
+        print("Patching image_processor")
+
+        from diffusers_extensions.utils.patch_image_processor import patch_image_prcessor as patch_image_prcessor_
+        patch_image_prcessor_(pipe.image_processor)
+
     return pipe
 
 
