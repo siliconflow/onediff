@@ -23,9 +23,9 @@ import argparse
 import time
 import json
 import torch
-from PIL import (Image, ImageDraw)
+from PIL import Image, ImageDraw
 import oneflow as flow
-from onediff.infer_compiler import oneflow_compile
+from diffusers_extensions import compile_pipe
 
 
 def parse_args():
@@ -43,12 +43,10 @@ def parse_args():
     parser.add_argument("--batch", type=int, default=BATCH)
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
-    parser.add_argument('--cache_interval', type=int, default=CACHE_INTERVAL)
-    parser.add_argument('--cache_layer_id', type=int, default=CACHE_LAYER_ID)
-    parser.add_argument('--cache_block_id', type=int, default=CACHE_BLOCK_ID)
-    parser.add_argument("--extra-call-kwargs",
-                        type=str,
-                        default=EXTRA_CALL_KWARGS)
+    parser.add_argument("--cache_interval", type=int, default=CACHE_INTERVAL)
+    parser.add_argument("--cache_layer_id", type=int, default=CACHE_LAYER_ID)
+    parser.add_argument("--cache_block_id", type=int, default=CACHE_BLOCK_ID)
+    parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
     parser.add_argument("--input-image", type=str, default=None)
     parser.add_argument("--control-image", type=str, default=None)
     parser.add_argument("--output-image", type=str, default=None)
@@ -57,17 +55,20 @@ def parse_args():
         "--compiler",
         type=str,
         default="oneflow",
-        choices=["none", "oneflow", "compile", "compile-max-autotune"])
+        choices=["none", "oneflow", "compile", "compile-max-autotune"],
+    )
     return parser.parse_args()
 
 
-def load_pipe(pipeline_cls,
-              model_name,
-              variant=None,
-              custom_pipeline=None,
-              scheduler=None,
-              lora=None,
-              controlnet=None):
+def load_pipe(
+    pipeline_cls,
+    model_name,
+    variant=None,
+    custom_pipeline=None,
+    scheduler=None,
+    lora=None,
+    controlnet=None,
+):
     extra_kwargs = {}
     if custom_pipeline is not None:
         extra_kwargs["custom_pipeline"] = custom_pipeline
@@ -75,28 +76,27 @@ def load_pipe(pipeline_cls,
         extra_kwargs["variant"] = variant
     if controlnet is not None:
         from diffusers import ControlNetModel
+
         controlnet = ControlNetModel.from_pretrained(
-            controlnet,
-            torch_dtype=torch.float16,
-            use_safetensors=True,
+            controlnet, torch_dtype=torch.float16, use_safetensors=True,
         )
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         is_quantized_model = True
         from onediff.quantization import setup_onediff_quant
+
         setup_onediff_quant()
-    pipe = pipeline_cls.from_pretrained(model_name,
-                                        torch_dtype=torch.float16,
-                                        use_safetensors=True,
-                                        **extra_kwargs)
+    pipe = pipeline_cls.from_pretrained(
+        model_name, torch_dtype=torch.float16, use_safetensors=True, **extra_kwargs
+    )
     if scheduler is not None:
-        scheduler_cls = getattr(importlib.import_module("onediff.schedulers"),
-                                scheduler, None)
+        scheduler_cls = getattr(
+            importlib.import_module("onediff.schedulers"), scheduler, None
+        )
         if scheduler_cls is None:
             print("No optimized scheduler found, use the plain one.")
-            scheduler_cls = getattr(importlib.import_module("diffusers"),
-                                    scheduler)
+            scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
@@ -107,39 +107,14 @@ def load_pipe(pipeline_cls,
     # Replace quantizable modules by QuantModule.
     if is_quantized_model:
         from onediff.quantization import load_calibration_and_quantize_pipeline
+
         load_calibration_and_quantize_pipeline(
-            os.path.join(model_name, "calibrate_info.txt"), pipe)
-    return pipe
-
-
-def compile_pipe(pipe, deepcache=False):
-    # Compiling SD21 could make it output out of range values in the first run.
-    parts = [
-        "text_encoder",
-        "text_encoder_2",
-        "image_encoder",
-        "unet",
-        "controlnet",
-    ]
-    if deepcache:
-        parts.append("fast_unet")
-    for part in parts:
-        if getattr(pipe, part, None) is not None:
-            print(f"Compiling {part}")
-            setattr(pipe, part, oneflow_compile(getattr(pipe, part)))
-    vae_parts = [
-        "decoder",
-        "encoder",
-    ]
-    for part in vae_parts:
-        if getattr(pipe.vae, part, None) is not None:
-            print(f"Compiling vae.{part}")
-            setattr(pipe.vae, part, oneflow_compile(getattr(pipe.vae, part)))
+            os.path.join(model_name, "calibrate_info.txt"), pipe
+        )
     return pipe
 
 
 class IterationProfiler:
-
     def __init__(self):
         self.begin = None
         self.end = None
@@ -169,7 +144,9 @@ def main():
     args = parse_args()
     if args.input_image is None:
         if args.deepcache:
-            from diffusers_extensions.deep_cache import StableDiffusionXLPipeline as pipeline_cls
+            from diffusers_extensions.deep_cache import (
+                StableDiffusionXLPipeline as pipeline_cls,
+            )
         else:
             from diffusers import AutoPipelineForText2Image as pipeline_cls
     else:
@@ -193,7 +170,7 @@ def main():
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
-        pipe = compile_pipe(pipe, args.deepcache)
+        pipe = compile_pipe(pipe)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         pipe.unet = torch.compile(pipe.unet, mode=mode)
@@ -215,9 +192,10 @@ def main():
         else:
             control_image = Image.new("RGB", (width, height))
             draw = ImageDraw.Draw(control_image)
-            draw.ellipse((args.width // 4, height // 4, args.width // 4 * 3,
-                          height // 4 * 3),
-                         fill=(255, 255, 255))
+            draw.ellipse(
+                (args.width // 4, height // 4, args.width // 4 * 3, height // 4 * 3),
+                fill=(255, 255, 255),
+            )
             del draw
     else:
         control_image = Image.open(args.control_image).convert("RGB")
@@ -230,10 +208,14 @@ def main():
             width=width,
             num_inference_steps=args.steps,
             num_images_per_prompt=args.batch,
-            generator=None if args.seed is None else torch.Generator(
-                device="cuda").manual_seed(args.seed),
-            **(dict() if args.extra_call_kwargs is None else json.loads(
-                args.extra_call_kwargs)),
+            generator=None
+            if args.seed is None
+            else torch.Generator(device="cuda").manual_seed(args.seed),
+            **(
+                dict()
+                if args.extra_call_kwargs is None
+                else json.loads(args.extra_call_kwargs)
+            ),
         )
         if args.deepcache:
             kwarg_inputs["cache_interval"] = args.cache_interval
@@ -263,12 +245,10 @@ def main():
     iter_profiler = None
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
         iter_profiler = IterationProfiler()
-        kwarg_inputs[
-            "callback_on_step_end"] = iter_profiler.callback_on_step_end
+        kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
     elif "callback" in inspect.signature(pipe).parameters:
         iter_profiler = IterationProfiler()
-        kwarg_inputs[
-            "callback"] = iter_profiler.callback_on_step_end
+        kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_images = pipe(**kwarg_inputs).images
     end = time.time()
