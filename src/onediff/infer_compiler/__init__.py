@@ -2,6 +2,7 @@ import os
 import torch
 import oneflow as flow
 
+from .oneflow_compiler_config import oneflow_compiler_config
 from .utils.patch_for_compiler import *  # TODO:
 from .transform.custom_transform import register
 from .with_oneflow_compile import oneflow_compile

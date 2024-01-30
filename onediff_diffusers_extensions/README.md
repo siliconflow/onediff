@@ -26,7 +26,7 @@ OneDiff diffusers extensions include multiple popular accelerated versions of th
 ```python
 import torch
 
-from onediff.infer_compiler import oneflow_compile
+from diffusers_extensions import compile_pipe
 from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
@@ -37,9 +37,7 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-pipe.unet = oneflow_compile(pipe.unet)
-pipe.fast_unet = oneflow_compile(pipe.fast_unet)
-pipe.vae = oneflow_compile(pipe.vae)
+pipe = compile_pipe(pipe)
 
 prompt = "A photo of a cat. Focus light and create sharp, defined edges."
 # Warmup
@@ -62,7 +60,7 @@ deepcache_output = pipe(
 ```python
 import torch
 
-from onediff.infer_compiler import oneflow_compile
+from diffusers_extensions import compile_pipe
 from diffusers_extensions.deep_cache import StableDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
@@ -73,9 +71,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-pipe.unet = oneflow_compile(pipe.unet)
-pipe.fast_unet = oneflow_compile(pipe.fast_unet)
-pipe.vae = oneflow_compile(pipe.vae)
+pipe = compile_pipe(pipe)
 
 prompt = "a photo of an astronaut on a moon"
 # Warmup
@@ -93,6 +89,46 @@ deepcache_output = pipe(
 ).images[0]
 ```
 
+### Run Stable Video Diffusion with OneDiff diffusers extensions
+
+```python
+import torch
+
+from diffusers.utils import load_image, export_to_video
+from diffusers_extensions import compile_pipe, compiler_config
+from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
+
+pipe = StableDiffusionPipeline.from_pretrained(
+    "stabilityai/stable-video-diffusion-img2vid-xt",
+    torch_dtype=torch.float16,
+    variant="fp16",
+    use_safetensors=True
+)
+pipe.to("cuda")
+
+compiler_config.attention_allow_half_precision_score_accumulation_max_m = 0
+pipe = compile_pipe(pipe)
+
+input_image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true")
+input_image = input_image.resize((1024, 576))
+
+# Warmup
+for i in range(1):
+    deepcache_output = pipe(
+        input_image, 
+        decode_chunk_size=5,
+        cache_interval=3, cache_layer_id=0, cache_block_id=0,
+    ).frames[0]
+
+deepcache_output = pipe(
+    input_image, 
+    decode_chunk_size=5,
+    cache_interval=3, cache_layer_id=0, cache_block_id=0,
+).frames[0]
+
+export_to_video(deepcache_output, "generated.mp4", fps=7)
+```
+
 ### Quantization
 
 **Note**: Quantization feature is only supported by **OneDiff Enterprise**.
@@ -108,7 +144,7 @@ OneDiff provides a faster implementation of loading LoRA, by invoking `diffusers
 ```python
 import torch
 from diffusers import DiffusionPipeline
-from onediff.infer_compiler import oneflow_compile
+from diffusers_extensions import compile_pipe
 from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
@@ -119,7 +155,7 @@ pipe = DiffusionPipeline.from_pretrained(
 LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
 LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
 
-pipe.unet = oneflow_compile(pipe.unet)
+pipe = compile_pipe(pipe)
 
 # use onediff load_and_fuse_lora
 load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
