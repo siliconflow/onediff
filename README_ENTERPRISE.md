@@ -100,13 +100,13 @@ Click the links below to view the workflow images, or load them directly into Co
 
 ## Diffusers with OneDiff Enterprise
 
-### Accessing Diffusers Models
+### SDXL
+
+#### Accessing Diffusers Models
 
 To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-onediff-enterprise-v2](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-enterprise-v2/tree/main) on HuggingFace.
 
-### Scripts
-
-#### SDXL
+#### Scripts
 
 Run [text_to_image_sdxl_enterprise.py](examples/text_to_image_sdxl_enterprise.py) by command:
 
@@ -122,6 +122,31 @@ Ensure that you have installed [OneDiff Diffusers Extensions](onediff_diffusers_
 
 ```bash
 python text_to_image_deep_cache_sdxl_enterprise.py --model $model_path --saved_image output_deepcache.png
+```
+
+### SVD
+
+#### Accessing Diffusers Models
+
+To download the necessary models, please visit the [siliconflow/stable-video-diffusion-img2vid-xt-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-img2vid-xt-deepcache-int8) on HuggingFace.
+
+#### Scripts
+
+```bash
+python3 benchmarks/image_to_video.py \     
+  --model $model_path \    
+  --input-image path/to/input_image.jpg \     
+  --output-video path/to/output_image.mp4   
+```
+
+#### SVD + DeepCache
+
+```bash
+python3 benchmarks/image_to_video.py \     
+  --model $model_path \     
+  --deepcache \     
+  --input-image path/to/input_image.jpg \     
+  --output-video path/to/output_image.mp4 
 ```
 
 
