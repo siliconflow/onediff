@@ -153,7 +153,7 @@ def load_and_fuse_lora(
             )
 
         for key, value_dict in lora_grouped_dict.items():
-            attn_processor = self.unet
+            attn_processor = self.unet._torch_module
             for sub_key in key.split("."):
                 attn_processor = getattr(attn_processor, sub_key)
 
