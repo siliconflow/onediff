@@ -25,7 +25,7 @@ import json
 import torch
 from PIL import Image, ImageDraw
 import oneflow as flow
-from diffusers_extensions import compile_pipe
+from onediffx import compile_pipe
 
 
 def parse_args():
@@ -144,7 +144,7 @@ def main():
     args = parse_args()
     if args.input_image is None:
         if args.deepcache:
-            from diffusers_extensions.deep_cache import (
+            from onediffx.deep_cache import (
                 StableDiffusionXLPipeline as pipeline_cls,
             )
         else:

@@ -1,18 +1,18 @@
-# OneDiff Diffusers Extensions
+# OneDiffX
 
-OneDiff diffusers extensions include multiple popular accelerated versions of the AIGC algorithm, such as DeepCache, which you would have a hard time finding elsewhere.
+OneDiffX include multiple popular accelerated versions of the AIGC algorithm, such as DeepCache, which you would have a hard time finding elsewhere.
 
 - [Install and Setup](#install-and-setup)
 - [DeepCache Speedup](#deepcache-speedup)
-    - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediff-diffusers-extensions)
-    - [Stable Diffuison 1.5](#run-stable-diffusion-15-with-onediff-diffusers-extensions)
+    - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediffx)
+    - [Stable Diffuison 1.5](#run-stable-diffusion-15-with-onediffx)
 - [Contact](#contact)
 
 ## Install and setup
 
 1. Follow the steps [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-from-source) to install onediff. 
 
-2. Install diffusers_extensions by following these steps
+2. Install onediffx by following these steps
 
     ```
     git clone https://github.com/siliconflow/onediff.git
@@ -21,13 +21,13 @@ OneDiff diffusers extensions include multiple popular accelerated versions of th
 
 ## DeepCache speedup
 
-### Run Stable Diffusion XL with OneDiff diffusers extensions
+### Run Stable Diffusion XL with OneDiffX
 
 ```python
 import torch
 
-from diffusers_extensions import compile_pipe
-from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
+from onediffx import compile_pipe
+from onediffx.deep_cache import StableDiffusionXLPipeline
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-base-1.0",
@@ -60,8 +60,8 @@ deepcache_output = pipe(
 ```python
 import torch
 
-from diffusers_extensions import compile_pipe
-from diffusers_extensions.deep_cache import StableDiffusionPipeline
+from onediffx import compile_pipe
+from onediffx.deep_cache import StableDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "runwayml/stable-diffusion-v1-5",
@@ -89,14 +89,14 @@ deepcache_output = pipe(
 ).images[0]
 ```
 
-### Run Stable Video Diffusion with OneDiff diffusers extensions
+### Run Stable Video Diffusion with OneDiffX
 
 ```python
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from diffusers_extensions import compile_pipe, compiler_config
-from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
+from onediffx import compile_pipe, compiler_config
+from onediffx.deep_cache import StableVideoDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "stabilityai/stable-video-diffusion-img2vid-xt",
@@ -139,13 +139,13 @@ If you possess a OneDiff Enterprise license key, you can access instructions on 
 
 ## LoRA loading and switching speed up
 
-OneDiff provides a faster implementation of loading LoRA, by invoking `diffusers_extensions.utils.lora.load_and_fuse_lora` you can load and fuse LoRA to pipeline.
+OneDiff provides a faster implementation of loading LoRA, by invoking `onediffx.utils.lora.load_and_fuse_lora` you can load and fuse LoRA to pipeline.
 
 ```python
 import torch
 from diffusers import DiffusionPipeline
-from diffusers_extensions import compile_pipe
-from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
+from onediffx import compile_pipe
+from onediffx.utils.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(

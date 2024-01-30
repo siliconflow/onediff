@@ -35,7 +35,7 @@ import oneflow as flow
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from diffusers_extensions import compile_pipe, compiler_config
+from onediffx import compile_pipe, compiler_config
 
 
 def parse_args():
@@ -160,7 +160,7 @@ class IterationProfiler:
 def main():
     args = parse_args()
     if args.deepcache:
-        from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
+        from onediffx.deep_cache import StableVideoDiffusionPipeline
     else:
         from diffusers import StableVideoDiffusionPipeline
 
