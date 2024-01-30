@@ -11,9 +11,6 @@ export SELENIUM_IMAGE=standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-202
 export SELENIUM_CONTAINER_NAME=selenium-test
 export COMFYUI_PORT=8855
 export CONTAINER_NAME=onediff-test
-export SDXL_BASE=/share_nfs/hf_models/sd_xl_base_1.0.safetensors
-export UNET_INT8=/share_nfs/hf_models/unet_int8
-export CONTROL_LORA_OPENPOSEXL2_RANK256=/share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
 
 And then:
 
@@ -26,13 +23,16 @@ git clone https://github.com/comfyanonymous/ComfyUI.git
 
 docker compose -f tests/comfy-docker-compose.yml up -d
 docker exec $CONTAINER_NAME python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+docker exec $CONTAINER_NAME python3 tests/comfyui/conftest.py -c tests/comfyui/conftest.yaml
 docker exec $CONTAINER_NAME python3 -m pip install -r tests/comfyui/requirements.txt --user
 docker exec $CONTAINER_NAME python3 -m pip install -r /app/ComfyUI/requirements.txt --user
-docker exec -it $CONTAINER_NAME python3 /app/ComfyUI/main.py --cuda-device 0
+docker exec $CONTAINER_NAME python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121 --user
+docker exec -it $CONTAINER_NAME python3 /app/ComfyUI/main.py --cuda-device 0 --port 8188
 
 Run the test script:
 
 python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-unet-speedup-graph-saver.json
+python tests/comfyui/test_by_ui.py --comfy_port 8188 --workflow tests/comfyui/workflows/sdxl-control-lora-speedup.json
 
 If you need to shutdown the test containers, run:
 

@@ -15,9 +15,6 @@ env:
   REGION_ID: cn-beijing
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
-  SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
-  UNET_INT8: /share_nfs/hf_models/unet_int8
-  CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
   SELENIUM_CONTAINER_NAME: selenium-test
   SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
 concurrency:
@@ -140,8 +137,6 @@ jobs:
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
           COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
-          SDXL_BASE: ${{ env.SDXL_BASE }}
-          UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
@@ -155,8 +150,6 @@ jobs:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
-          SDXL_BASE: ${{ env.SDXL_BASE }}
-          UNET_INT8: ${{ env.UNET_INT8 }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - run: nvidia-smi
@@ -170,6 +163,7 @@ jobs:
       - name: Pip Install Requirements for ComfyUI & Test
         if: matrix.test-suite == 'comfy'
         run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 tests/comfyui/conftest.py -c tests/comfyui/conftest.yaml
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
       - name: Print pip package versions
@@ -230,8 +224,6 @@ jobs:
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
           COMFYUI_SRC_DIR: ${{ env.COMFYUI_SRC_DIR }}
-          SDXL_BASE: ${{ env.SDXL_BASE }}
-          UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}

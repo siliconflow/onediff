@@ -1,0 +1,15 @@
+# Config file for ComfyUI tests in onediff
+COMFYUI_ROOT: /app/ComfyUI
+input:
+  control:
+    - /share_nfs/hf_models/comfyui_resources/input/control/sdxl-unet-control-lora-speedup.png
+models:
+  checkpoints:
+    - /share_nfs/hf_models/sd_xl_base_1.0.safetensors
+  controlnet:
+    - /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
+  loras:
+    - /share_nfs/hf_models/watercolor_v1_sdxl_lora.safetensors
+  unet_int8:
+    - /share_nfs/hf_models/unet_int8
+custom_nodes:
