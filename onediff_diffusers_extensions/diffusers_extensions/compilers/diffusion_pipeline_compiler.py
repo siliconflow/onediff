@@ -47,3 +47,6 @@ def compile_pipe(
             print(f"Compiling {part}")
             recursive_setattr(pipe, part, oneflow_compile(obj))
     return pipe
+
+
+# TODO: Add save_pipe() and load_pipe()

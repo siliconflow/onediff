@@ -25,7 +25,7 @@ import json
 import torch
 from PIL import Image, ImageDraw
 import oneflow as flow
-from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
+from diffusers_extensions import compile_pipe
 
 
 def parse_args():

@@ -26,7 +26,7 @@ OneDiff diffusers extensions include multiple popular accelerated versions of th
 ```python
 import torch
 
-from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
+from diffusers_extensions import compile_pipe
 from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
@@ -60,7 +60,7 @@ deepcache_output = pipe(
 ```python
 import torch
 
-from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
+from diffusers_extensions import compile_pipe
 from diffusers_extensions.deep_cache import StableDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
@@ -95,8 +95,7 @@ deepcache_output = pipe(
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from onediff.infer_compiler.oneflow_compiler_config import oneflow_compiler_config
-from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
+from diffusers_extensions import compile_pipe, compiler_config
 from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
@@ -107,7 +106,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-oneflow_compiler_config.attention_allow_half_precision_score_accumulation_max_m = 0
+compiler_config.attention_allow_half_precision_score_accumulation_max_m = 0
 pipe = compile_pipe(pipe)
 
 input_image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true")
@@ -145,7 +144,7 @@ OneDiff provides a faster implementation of loading LoRA, by invoking `diffusers
 ```python
 import torch
 from diffusers import DiffusionPipeline
-from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
+from diffusers_extensions import compile_pipe
 from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"

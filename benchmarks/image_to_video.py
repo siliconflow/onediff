@@ -35,8 +35,7 @@ import oneflow as flow
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from onediff.infer_compiler.oneflow_compiler_config import oneflow_compiler_config
-from diffusers_extensions.compilers.diffusion_pipeline_compiler import compile_pipe
+from diffusers_extensions import compile_pipe, compiler_config
 
 
 def parse_args():
@@ -187,7 +186,7 @@ def main():
         # especially for 40xx series cards.
         # So here by partially disabling the half accumulation in MHA partially,
         # we can get a good balance.
-        oneflow_compiler_config.attention_allow_half_precision_score_accumulation_max_m = (
+        compiler_config.attention_allow_half_precision_score_accumulation_max_m = (
             args.attention_fp16_score_accum_max_m
         )
         pipe = compile_pipe(pipe,)
