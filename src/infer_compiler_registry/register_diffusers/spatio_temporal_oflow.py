@@ -366,7 +366,6 @@ class TransformerSpatioTemporalModel(nn.Module):
         """
         # 1. Input
         batch_frames, _, height, width = hidden_states.shape
-        hidden_states_in = hidden_states
         num_frames = image_only_indicator.shape[-1]
         batch_size = batch_frames // num_frames
 
@@ -382,9 +381,11 @@ class TransformerSpatioTemporalModel(nn.Module):
         #     height * width, batch_size, 1, time_context.shape[-1]
         # )
         # Rewrite for onediff SVD dynamic shape
-        broadcast_tensor = hidden_states.flatten(2, 3)
         time_context = torch._C.broadcast_dim_like(
-            time_context_first_timestep[None, :], broadcast_tensor, dim=0, like_dim=2
+            time_context_first_timestep[None, :],
+            hidden_states.flatten(2, 3),
+            dim=0,
+            like_dim=2,
         )
         # time_context = time_context.reshape(height * width * batch_size, 1, time_context.shape[-1])
         # Rewrite for onediff SVD dynamic shape
