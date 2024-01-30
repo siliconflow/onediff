@@ -382,9 +382,9 @@ class TransformerSpatioTemporalModel(nn.Module):
         #     height * width, batch_size, 1, time_context.shape[-1]
         # )
         # Rewrite for onediff SVD dynamic shape
-        broadcast_tensor = hidden_states.flatten(2, 3).permute(2, 0, 1)
+        broadcast_tensor = hidden_states.flatten(2, 3)
         time_context = torch._C.broadcast_dim_like(
-            time_context_first_timestep[None, :], broadcast_tensor, dim=0
+            time_context_first_timestep[None, :], broadcast_tensor, dim=0, like_dim=2
         )
         # time_context = time_context.reshape(height * width * batch_size, 1, time_context.shape[-1])
         # Rewrite for onediff SVD dynamic shape
@@ -450,7 +450,9 @@ class TransformerSpatioTemporalModel(nn.Module):
         # hidden_states = hidden_states.reshape(batch_frames, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
         # Rewrite for onediff SVD dynamic shape
         hidden_states = (
-            hidden_states.permute(0, 2, 1).reshape_as(hidden_states_in).contiguous()
+            hidden_states.reshape_as(residual.permute(0, 2, 3, 1))
+            .permute(0, 3, 1, 2)
+            .contiguous()
         )
 
         output = hidden_states + residual
