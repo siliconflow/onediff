@@ -44,7 +44,6 @@ def input_output_processor(func):
                     f"Please check and avoid toggling the strength parameter between values greater than 0 and 0, as it may lead to unnecessary graph reloading."
                 )
 
-                del cls._deployable_module_model.oneflow_module
                 cls._deployable_module_dpl_graph = None
                 setattr(cls, "_load_graph_first_run", True)
 
