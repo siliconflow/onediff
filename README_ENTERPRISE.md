@@ -16,8 +16,12 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [Accessing ComfyUI Models](#accessing-comfyui-models)
     - [Workflow](#workflow)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
-    - [Accessing Diffusers Models](#accessing-diffusers-models)
-    - [Scripts](#scripts)
+    - [SDXL](#SDXL)
+        - [Accessing Diffusers Models](#accessing-diffusers-models)
+        - [Scripts](#scripts)
+    - [SVD](#SVD)
+        - [Accessing Diffusers Models](#accessing-diffusers-models)
+        - [Scripts](#scripts)
 
 
 ## Get the license key
@@ -131,6 +135,8 @@ python text_to_image_deep_cache_sdxl_enterprise.py --model $model_path --saved_i
 To download the necessary models, please visit the [siliconflow/stable-video-diffusion-img2vid-xt-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-img2vid-xt-deepcache-int8) on HuggingFace.
 
 #### Scripts
+
+Run [image_to_video.py](benchmarks/image_to_video.py):
 
 ```bash
 python3 benchmarks/image_to_video.py \     
