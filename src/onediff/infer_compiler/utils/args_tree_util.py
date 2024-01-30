@@ -39,7 +39,7 @@ def input_output_processor(func):
             count = self._deployable_module_input_count
             if count != input_count:
                 logger.warning(
-                    f"Module {type(self)} input count changed from {count} to {input_count}, will compile again."
+                    f"Module {type(self._deployable_module_model.oneflow_module)} input count changed from {count} to {input_count}, will compile again."
                 )
                 self._deployable_module_dpl_graph = None
                 self._load_graph_first_run = True
