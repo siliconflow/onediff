@@ -8,8 +8,11 @@ from onediff.infer_compiler.utils.log_utils import logger
 from onediff.infer_compiler.with_oneflow_compile import DualModule
 
 from diffusers.loaders.lora import LoraLoaderMixin
-from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
+from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear, PatchedLoraProjection
 from diffusers.utils import is_accelerate_available
+
+from .utils import linear_fuse_lora, linear_unfuse_lora, conv_fuse_lora, conv_unfuse_lora
+from .text_encoder import load_lora_into_text_encoder
 
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
@@ -17,163 +20,6 @@ if is_accelerate_available():
 
 USE_PEFT_BACKEND = False
 
-
-def offload_tensor(tensor, device):
-    cur_device = tensor.device
-    if cur_device == device:
-        return tensor.clone()
-    else:
-        return tensor.to(device)
-
-
-def linear_fuse_lora(
-    self: torch.nn.Linear,
-    state_dict: Dict[str, torch.Tensor],
-    lora_scale: float = 1.0,
-    alpha: float = None,
-    rank: float = None,
-    *,
-    offload_device="cpu",
-    offload_weight="lora",
-):
-    assert isinstance(self, torch.nn.Linear)
-    if isinstance(self, DualModule):
-        self = self._torch_module
-
-    linear_unfuse_lora(self)
-    dtype, device = self.weight.data.dtype, self.weight.data.device
-
-    w_down = state_dict["lora.down.weight"].float().to(device)
-    w_up = state_dict["lora.up.weight"].float().to(device)
-
-    if alpha is not None:
-        w_up = w_up * (alpha / rank * lora_scale)
-
-    if offload_weight == "lora":
-        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
-        self.register_buffer(
-            "_lora_down", offload_tensor(state_dict["lora.down.weight"], offload_device)
-        )
-        self._lora_scale = lora_scale
-
-    elif offload_weight == "weight":
-        self.register_buffer(
-            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
-        )
-
-    else:
-        raise ValueError(
-            f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}"
-        )
-
-    lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
-    fused_weight = self.weight.data.float() + lora_weight
-    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
-
-
-def linear_unfuse_lora(self: torch.nn.Linear):
-    assert isinstance(self, torch.nn.Linear)
-
-    fused_weight = self.weight.data
-    dtype, device = fused_weight.dtype, fused_weight.device
-
-    if (
-        "_lora_orig_weight" in self._buffers
-        and self.get_buffer("_lora_orig_weight") is not None
-    ):
-        unfused_weight = self._lora_orig_weight
-        self._lora_orig_weight = None
-
-    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self.get_buffer("_lora_up").to(device=device).float()
-        w_down = self.get_buffer("_lora_down").to(device).float()
-
-        unfused_weight = self.weight.data.float() - (
-            torch.bmm(w_up[None, :], w_down[None, :])[0]
-        )
-        self._lora_up = None
-        self._lora_down = None
-        self._lora_scale = None
-
-    else:
-        return
-
-    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
-
-
-def conv_fuse_lora(
-    self: torch.nn.Conv2d,
-    state_dict: Dict[str, torch.Tensor],
-    lora_scale: float = 1.0,
-    alpha: float = None,
-    rank: float = None,
-    *,
-    offload_device="cpu",
-    offload_weight="lora",
-) -> None:
-    assert isinstance(self, torch.nn.Conv2d)
-    if isinstance(self, DualModule):
-        self = self._torch_module
-    conv_unfuse_lora(self)
-    dtype, device = self.weight.data.dtype, self.weight.data.device
-
-    w_down = state_dict["lora.down.weight"].float().to(device)
-    w_up = state_dict["lora.up.weight"].float().to(device)
-
-    if alpha is not None:
-        w_up = w_up * (alpha / rank * lora_scale)
-
-    if offload_weight == "lora":
-        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
-        self.register_buffer(
-            "_lora_down", offload_tensor(state_dict["lora.down.weight"], offload_device)
-        )
-        self._lora_scale = lora_scale
-    elif offload_weight == "weight":
-        self.register_buffer(
-            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
-        )
-    else:
-        raise ValueError(
-            f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}"
-        )
-
-    lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-    lora_weight = lora_weight.reshape((self.weight.shape))
-
-    fused_weight = self.weight.data.float() + lora_weight
-    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
-
-
-def conv_unfuse_lora(self: torch.nn.Conv2d):
-    assert isinstance(self, torch.nn.Conv2d)
-
-    fused_weight = self.weight.data
-    dtype, device = fused_weight.dtype, fused_weight.device
-
-    if (
-        "_lora_orig_weight" in self._buffers
-        and self.get_buffer("_lora_orig_weight") is not None
-    ):
-        unfused_weight = self._lora_orig_weight
-        self._lora_orig_weight = None
-
-    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self._lora_up.to(device=device).float()
-        w_down = self._lora_down.to(device).float()
-
-        fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-        fusion = fusion.reshape((fused_weight.shape))
-        unfused_weight = fused_weight.float() - fusion
-
-        self._lora_up = None
-        self._lora_down = None
-        self._lora_scale = None
-
-    else:
-        return
-
-    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
 
 def load_and_fuse_lora(
     pipeline: LoraLoaderMixin,
@@ -208,6 +54,14 @@ def load_and_fuse_lora(
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:
         raise ValueError("[OneDiff load_and_fuse_lora] Invalid LoRA checkpoint.")
+
+    text_encoder_state_dict = {
+        k: v for k, v in state_dict.items() if "text_encoder." in k
+    }
+    text_encoder_2_state_dict = {
+        k: v for k, v in state_dict.items() if "text_encoder_2." in k
+    }
+    text_encoder_network_alphas = network_alphas
 
     # load lora into unet
     keys = list(state_dict.keys())
@@ -371,13 +225,12 @@ def load_and_fuse_lora(
         # Unsafe code />
 
     # load lora weights
-    text_encoder_state_dict = {
-        k: v for k, v in state_dict.items() if "text_encoder." in k
-    }
     if len(text_encoder_state_dict) > 0:
-        self.load_lora_into_text_encoder(
+        load_lora_into_text_encoder(
+            self,
+        # self.load_lora_into_text_encoder(
             text_encoder_state_dict,
-            network_alphas=network_alphas,
+            network_alphas=text_encoder_network_alphas,
             text_encoder=self.text_encoder,
             prefix="text_encoder",
             lora_scale=self.lora_scale,
@@ -385,13 +238,12 @@ def load_and_fuse_lora(
             _pipeline=self,
         )
 
-    text_encoder_2_state_dict = {
-        k: v for k, v in state_dict.items() if "text_encoder_2." in k
-    }
     if len(text_encoder_2_state_dict) > 0:
-        self.load_lora_into_text_encoder(
+        # self.load_lora_into_text_encoder(
+        load_lora_into_text_encoder(
+            self,
             text_encoder_2_state_dict,
-            network_alphas=network_alphas,
+            network_alphas=text_encoder_network_alphas,
             text_encoder=self.text_encoder_2,
             prefix="text_encoder_2",
             lora_scale=self.lora_scale,
@@ -400,14 +252,17 @@ def load_and_fuse_lora(
         )
 
 
-def unfuse_lora(self: torch.nn.Module):
+def unfuse_lora(self: LoraLoaderMixin):
     def _unfuse_lora(m: torch.nn.Module):
-        if isinstance(m, torch.nn.Linear):
+        if isinstance(m, (torch.nn.Linear, PatchedLoraProjection)):
             linear_unfuse_lora(m)
         elif isinstance(m, torch.nn.Conv2d):
             conv_unfuse_lora(m)
 
-    self.apply(_unfuse_lora)
+    self.unet.apply(_unfuse_lora)
+    self.text_encoder.apply(_unfuse_lora)
+    if hasattr(self, "text_encoder_2"):
+        self.text_encoder_2.apply(_unfuse_lora)
 
 
 class LRUCacheDict(OrderedDict):

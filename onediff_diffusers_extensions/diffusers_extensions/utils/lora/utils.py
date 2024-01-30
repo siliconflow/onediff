@@ -1,0 +1,176 @@
+from typing import Dict, Union
+
+import torch
+from onediff.infer_compiler.with_oneflow_compile import DualModule
+from diffusers.models.lora import PatchedLoraProjection
+
+def offload_tensor(tensor, device):
+    cur_device = tensor.device
+    if cur_device == device:
+        return tensor.clone()
+    else:
+        return tensor.to(device)
+
+
+def linear_fuse_lora(
+    self: Union[torch.nn.Linear, PatchedLoraProjection],
+    state_dict: Dict[str, torch.Tensor],
+    lora_scale: float = 1.0,
+    alpha: float = None,
+    rank: float = None,
+    *,
+    prefix="lora",
+    offload_device="cpu",
+    offload_weight="lora",
+):
+    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
+    # if isinstance(self, PatchedLoraProjection):
+    #     import ipdb; ipdb.set_trace()
+    if isinstance(self, DualModule):
+        self = self._torch_module
+    if isinstance(self, PatchedLoraProjection):
+        self = self.regular_linear_layer
+
+    linear_unfuse_lora(self)
+    dtype, device = self.weight.data.dtype, self.weight.data.device
+    down_key = prefix + ".down.weight"
+    up_key = prefix + ".up.weight"
+
+    w_down = state_dict[down_key].float().to(device)
+    w_up = state_dict[up_key].float().to(device)
+
+    if alpha is not None:
+        w_up = w_up * (alpha / rank * lora_scale)
+
+    if offload_weight == "lora":
+        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
+        self.register_buffer(
+            "_lora_down", offload_tensor(state_dict[down_key], offload_device)
+        )
+        self._lora_scale = lora_scale
+
+    elif offload_weight == "weight":
+        self.register_buffer(
+            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
+        )
+
+    else:
+        raise ValueError(
+            f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}"
+        )
+
+    lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
+    fused_weight = self.weight.data.float() + lora_weight
+    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+
+
+def linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
+    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
+    if isinstance(self, DualModule):
+        self = self._torch_module
+    if isinstance(self, PatchedLoraProjection):
+        self = self.regular_linear_layer
+
+    fused_weight = self.weight.data
+    dtype, device = fused_weight.dtype, fused_weight.device
+
+    if (
+        "_lora_orig_weight" in self._buffers
+        and self.get_buffer("_lora_orig_weight") is not None
+    ):
+        unfused_weight = self._lora_orig_weight
+        self._lora_orig_weight = None
+
+    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
+        w_up = self.get_buffer("_lora_up").to(device=device).float()
+        w_down = self.get_buffer("_lora_down").to(device).float()
+
+        unfused_weight = self.weight.data.float() - (
+            torch.bmm(w_up[None, :], w_down[None, :])[0]
+        )
+        self._lora_up = None
+        self._lora_down = None
+        self._lora_scale = None
+
+    else:
+        return
+
+    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
+
+
+def conv_fuse_lora(
+    self: torch.nn.Conv2d,
+    state_dict: Dict[str, torch.Tensor],
+    lora_scale: float = 1.0,
+    alpha: float = None,
+    rank: float = None,
+    *,
+    prefix="lora",
+    offload_device="cpu",
+    offload_weight="lora",
+) -> None:
+    assert isinstance(self, torch.nn.Conv2d)
+    if isinstance(self, DualModule):
+        self = self._torch_module
+    conv_unfuse_lora(self)
+    dtype, device = self.weight.data.dtype, self.weight.data.device
+
+    down_key = prefix + ".down.weight"
+    up_key = prefix + ".up.weight"
+    w_down = state_dict[down_key].float().to(device)
+    w_up = state_dict[up_key].float().to(device)
+
+    if alpha is not None:
+        w_up = w_up * (alpha / rank * lora_scale)
+
+    if offload_weight == "lora":
+        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
+        self.register_buffer(
+            "_lora_down", offload_tensor(state_dict[down_key], offload_device)
+        )
+        self._lora_scale = lora_scale
+    elif offload_weight == "weight":
+        self.register_buffer(
+            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
+        )
+    else:
+        raise ValueError(
+            f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}"
+        )
+
+    lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+    lora_weight = lora_weight.reshape((self.weight.shape))
+
+    fused_weight = self.weight.data.float() + lora_weight
+    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+
+
+def conv_unfuse_lora(self: torch.nn.Conv2d):
+    assert isinstance(self, torch.nn.Conv2d)
+
+    fused_weight = self.weight.data
+    dtype, device = fused_weight.dtype, fused_weight.device
+
+    if (
+        "_lora_orig_weight" in self._buffers
+        and self.get_buffer("_lora_orig_weight") is not None
+    ):
+        unfused_weight = self._lora_orig_weight
+        self._lora_orig_weight = None
+
+    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
+        w_up = self._lora_up.to(device=device).float()
+        w_down = self._lora_down.to(device).float()
+
+        fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+        fusion = fusion.reshape((fused_weight.shape))
+        unfused_weight = fused_weight.float() - fusion
+
+        self._lora_up = None
+        self._lora_down = None
+        self._lora_scale = None
+
+    else:
+        return
+
+    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
