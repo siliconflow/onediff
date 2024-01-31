@@ -267,7 +267,8 @@ def unfuse_lora(self: LoraLoaderMixin):
             _conv_unfuse_lora(m)
 
     self.unet.apply(_unfuse_lora)
-    self.text_encoder.apply(_unfuse_lora)
+    if hasattr(self, "text_encoder"):
+        self.text_encoder.apply(_unfuse_lora)
     if hasattr(self, "text_encoder_2"):
         self.text_encoder_2.apply(_unfuse_lora)
 
