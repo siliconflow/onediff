@@ -1,11 +1,13 @@
 from pathlib import Path
 from typing import Optional, Union, Dict, Tuple
 from collections import OrderedDict, defaultdict
+from packaging import version
 
 import torch
 
 from onediff.infer_compiler.utils.log_utils import logger
 
+import diffusers
 from diffusers.loaders import LoraLoaderMixin
 from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear, PatchedLoraProjection
 from diffusers.utils import is_accelerate_available
@@ -15,6 +17,8 @@ from .text_encoder import load_lora_into_text_encoder
 
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
+
+is_onediffx_available = version.parse(diffusers.__version__) >= version.parse("0.21.0")
 
 
 USE_PEFT_BACKEND = False
@@ -30,6 +34,9 @@ def load_and_fuse_lora(
     use_cache=False,
     **kwargs,
 ) -> None:
+    if not is_onediffx_available:
+        raise RuntimeError("onediffx lora only supports diffusers of at least version 0.21.0")
+
     self = pipeline
     if adapter_name is not None:
         raise ValueError(

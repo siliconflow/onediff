@@ -240,7 +240,7 @@ The results are shown below
 
 ### Note
 
-1. OneDiff extensions for LoRA is currently not supported for PEFT.
+1. OneDiff extensions for LoRA is currently not supported for PEFT, and only supports diffusers of at least version 0.21.0.
 
 2. Diffusers (without PEFT) are limited to loading only one LoRA. Consequently, onediffx is also restricted to loading a single LoRA. We are currently developing onediffx that are compatible with PEFT, enabling onediffx to load multiple LoRAs.
 
