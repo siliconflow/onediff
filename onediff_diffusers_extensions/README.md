@@ -140,33 +140,33 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 ### Example
 
 ```python
-  import torch
-  from diffusers import DiffusionPipeline
-  from onediff.infer_compiler import oneflow_compile
-  from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
-  
-  MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
-  pipe = DiffusionPipeline.from_pretrained(
-    MODEL_ID, variant="fp16", torch_dtype=torch.float16
-  ).to("cuda")
-  
-  LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
-  LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
-  
-  pipe.unet = oneflow_compile(pipe.unet)
-  
-  # use onediff load_and_fuse_lora
-  load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
-  images_fusion = pipe(
+import torch
+from diffusers import DiffusionPipeline
+from onediff.infer_compiler import oneflow_compile
+from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
+
+MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
+pipe = DiffusionPipeline.from_pretrained(MODEL_ID, variant="fp16", torch_dtype=torch.float16).to("cuda")
+
+LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
+LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
+
+pipe.unet = oneflow_compile(pipe.unet)
+
+# use onediff load_and_fuse_lora
+load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
+images_fusion = pipe(
     "masterpiece, best quality, mountain",
     height=1024,
     width=1024,
     num_inference_steps=30,
-  ).images[0]
-  images_fusion.save("test_sdxl_lora.png")
-  
-  # unload LoRA weights and restore base model
-  unfuse_lora(pipe)
+).images[0]
+images_fusion.save("test_sdxl_lora.png")
+
+# before loading another LoRA, you need to
+# unload LoRA weights and restore base model
+unfuse_lora(pipe)
+load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
 ```
 
 ### Benchmark
@@ -182,13 +182,13 @@ We choose 5 LoRAs to profile loading and switching speed of 3 different APIs
 
 The results are shown below
 
-| LoRA name | size | load_lora_weight | load_lora_weight + fuse_lora | **onediffx load_and_fuse_lora** | unet cnt | te1 cnt | te2 cnt | src link |
-|---|---|---|---|---|---|---|---|---|
-| SDXL-Emoji-Lora-r4.safetensors | 28M | 1.69 s | 2.34 s | **0.78 s** | 2166 | 216 | 576 | https://novita.ai/model/SDXL-Emoji-Lora-r4_160282 |
-| sdxl_metal_lora.safetensors | 23M | 0.97 s | 1.73 s | **0.19 s** | 1120 | 0 | 0 | |
-| simple_drawing_xl_b1-000012.safetensors | 55M | 1.67 s | 2.57 s | **0.77 s** | 2166 | 216 | 576 | https://civitai.com/models/177820/sdxl-simple-drawing |
-| texta.safetensors | 270M | 1.72 s | 2.86 s | **0.97 s** | 2364 | 0 | 0 | https://civitai.com/models/221240/texta-generate-text-with-sdxl |
-| watercolor_v1_sdxl_lora.safetensors | 12M | 1.54 s | 2.01 s | **0.35 s** | 1680 | 0 | 0 | |
+| LoRA name                                | size  | load_lora_weight | load_lora_weight + fuse_lora | **onediffx load_and_fuse_lora** | unet cnt | te1 cnt | te2 cnt | src link                                      |
+|------------------------------------------|-------|-------------------|-----------------------------|----------------------------------|----------|---------|---------|-----------------------------------------------|
+| SDXL-Emoji-Lora-r4.safetensors           | 28M   | 1.69 s            | 2.34 s                      | **0.78 s**                       | 2166     | 216     | 576     | [Link](https://novita.ai/model/SDXL-Emoji-Lora-r4_160282)             |
+| sdxl_metal_lora.safetensors              | 23M   | 0.97 s            | 1.73 s                      | **0.19 s**                       | 1120     | 0       | 0       |                                               |
+| simple_drawing_xl_b1-000012.safetensors | 55M   | 1.67 s            | 2.57 s                      | **0.77 s**                       | 2166     | 216     | 576     | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)        |
+| texta.safetensors                        | 270M  | 1.72 s            | 2.86 s                      | **0.97 s**                       | 2364     | 0       | 0       | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
+| watercolor_v1_sdxl_lora.safetensors     | 12M   | 1.54 s            | 2.01 s                      | **0.35 s**                       | 1680     | 0       | 0       |                                               |
 
 
 ## Contact
