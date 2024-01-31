@@ -1,12 +1,12 @@
-# OneDiffX
+# OneDiffX (for HF diffusers)
 
-OneDiffX is an OneDiff Extension for HF diffusers. It provides some acceleration utilities, such as DeepCache.
+OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration utilities, such as DeepCache.
 
 - [Install and Setup](#install-and-setup)
 - [compile_pipe](#compile_pipe)
 - [DeepCache Speedup](#deepcache-speedup)
     - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediffx)
-    - [Stable Diffuison 1.5](#run-stable-diffusion-15-with-onediffx)
+    - [Stable Diffusion 1.5](#run-stable-diffusion-15-with-onediffx)
 - [LoRA loading and switching speed up](#lora-loading-and-switching-speed-up)
 - [Quantization](#quantization)
 - [Contact](#contact)
