@@ -1,6 +1,6 @@
 # OneDiffX
 
-OneDiffX include multiple popular accelerated versions of the AIGC algorithm, such as DeepCache, which you would have a hard time finding elsewhere.
+OneDiffX is an Onediff Extension for HF diffusers, it provides some acceleration utilities, such as DeepCache for SD/SDXL.
 
 - [Install and Setup](#install-and-setup)
 - [DeepCache Speedup](#deepcache-speedup)
