@@ -169,7 +169,7 @@ def main():
     assert args.face_analysis_root is not None, "Please set `--face-analysis-root` to the path of the working directory of insightface.app.FaceAnalysis"
     assert os.path.isdir(
         os.path.join(args.face_analysis_root, "models", "antelopev2")
-    ), f"Please download models from https://drive.google.com/file/d/18wEUfMNohBJ4K3Ly5wpTejPfDzp-8fI8/view?usp=sharing to {os.path.join(args.face_analysis_root, 'models', 'antelopev2')}"
+    ), f"Please download models from https://drive.google.com/file/d/18wEUfMNohBJ4K3Ly5wpTejPfDzp-8fI8/view?usp=sharing and extract to {os.path.join(args.face_analysis_root, 'models', 'antelopev2')}"
     assert args.input_image is not None, "Please set `--input-image` to the path of the input image"
     assert not args.deepcache
 
