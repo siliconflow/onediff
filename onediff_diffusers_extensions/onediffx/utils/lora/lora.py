@@ -14,6 +14,7 @@ from diffusers.utils import is_accelerate_available
 
 from .utils import linear_fuse_lora, _linear_unfuse_lora, conv_fuse_lora, _conv_unfuse_lora
 from .text_encoder import load_lora_into_text_encoder
+from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
@@ -160,7 +161,10 @@ def load_and_fuse_lora(
             )
 
         for key, value_dict in lora_grouped_dict.items():
-            attn_processor = self.unet._torch_module
+            if isinstance(self.unet, DeployableModule):
+                attn_processor = self.unet._torch_module
+            else:
+                attn_processor = self.unet
             for sub_key in key.split("."):
                 attn_processor = getattr(attn_processor, sub_key)
 
@@ -237,7 +241,7 @@ def load_and_fuse_lora(
             network_alphas=text_encoder_network_alphas,
             text_encoder=self.text_encoder,
             prefix="text_encoder",
-            lora_scale=self.lora_scale,
+            lora_scale=lora_scale,
             adapter_name=adapter_name,
             _pipeline=self,
         )
@@ -249,7 +253,7 @@ def load_and_fuse_lora(
             network_alphas=text_encoder_network_alphas,
             text_encoder=self.text_encoder_2,
             prefix="text_encoder_2",
-            lora_scale=self.lora_scale,
+            lora_scale=lora_scale,
             adapter_name=adapter_name,
             _pipeline=self,
         )
