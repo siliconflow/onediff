@@ -2,7 +2,7 @@
 ci mem limit: 12288MiB
 
 Run the test script:
-python tests/comfyui/test_inference.py -w tests/comfyui/workflow_apis/comfyui_basic.json
+python3 tests/comfyui/test_inference.py -w tests/comfyui/workflow_apis/comfyui_basic.json
 python tests/comfyui/test_inference.py -w tests/comfyui/workflow_apis/comfyui_lora.json
 python tests/comfyui/test_inference.py -w tests/comfyui/workflow_apis/comfyui_controlnet-lora.json
 """

@@ -190,7 +190,7 @@ jobs:
 
           run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json"
           run_comfy_test "workflows/sdxl-control-lora-speedup.json"
-          python tests/comfyui/test_inference.py -w tests/comfyui/workflow_apis/comfyui_basic.json -t 100 -p 8188
+          docker exec $CONTAINER_NAME python3 tests/comfyui/test_inference.py -w tests/comfyui/workflow_apis/comfyui_basic.json -t 100 -p 8188
       - name: Show ComfyUI Log
         if: matrix.test-suite == 'comfy'
         run: |
