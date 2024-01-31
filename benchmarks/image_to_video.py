@@ -16,10 +16,10 @@ ALTER_HEIGHT = None
 ALTER_WIDTH = None
 FPS = 7
 DECODE_CHUNK_SIZE = 5
-EXTRA_CALL_KWARGS = None
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
 CONTROL_IMAGE = None
 OUTPUT_VIDEO = None
+EXTRA_CALL_KWARGS = None
 ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 CACHE_INTERVAL = 3
 CACHE_BRANCH = 0
