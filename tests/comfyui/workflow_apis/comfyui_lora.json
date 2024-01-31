@@ -1,0 +1,127 @@
+{
+    "5": {
+      "inputs": {
+        "width": 512,
+        "height": 512,
+        "batch_size": 1
+      },
+      "class_type": "EmptyLatentImage",
+      "_meta": {
+        "title": "Empty Latent Image"
+      }
+    },
+    "24": {
+      "inputs": {
+        "seed": 1,
+        "steps": 17,
+        "cfg": 7.71,
+        "sampler_name": "euler",
+        "scheduler": "karras",
+        "denoise": 1,
+        "model": [
+          "29",
+          0
+        ],
+        "positive": [
+          "26",
+          0
+        ],
+        "negative": [
+          "27",
+          0
+        ],
+        "latent_image": [
+          "5",
+          0
+        ]
+      },
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "KSampler"
+      }
+    },
+    "26": {
+      "inputs": {
+        "text": "a cute magical flying dog",
+        "clip": [
+          "29",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "CLIP Text Encode (Prompt)"
+      }
+    },
+    "27": {
+      "inputs": {
+        "text": "text, watermark",
+        "clip": [
+          "29",
+          1
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "CLIP Text Encode (Prompt)"
+      }
+    },
+    "28": {
+      "inputs": {
+        "samples": [
+          "24",
+          0
+        ],
+        "vae": [
+          "35",
+          2
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "VAE Decode"
+      }
+    },
+    "29": {
+      "inputs": {
+        "lora_name": "watercolor_v1_sdxl_lora.safetensors",
+        "strength_model": 0,
+        "strength_clip": 1,
+        "model": [
+          "35",
+          0
+        ],
+        "clip": [
+          "35",
+          1
+        ]
+      },
+      "class_type": "LoraLoader",
+      "_meta": {
+        "title": "Load LoRA"
+      }
+    },
+    "30": {
+      "inputs": {
+        "filename_prefix": "torch_lora",
+        "images": [
+          "28",
+          0
+        ]
+      },
+      "class_type": "SaveImage",
+      "_meta": {
+        "title": "Save Image"
+      }
+    },
+    "35": {
+      "inputs": {
+        "ckpt_name": "sd_xl_base_1.0.safetensors",
+        "vae_speedup": "enable"
+      },
+      "class_type": "OneDiffCheckpointLoaderSimple",
+      "_meta": {
+        "title": "Load Checkpoint - OneDiff"
+      }
+    }
+  }
