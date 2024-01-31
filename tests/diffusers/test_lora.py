@@ -1,15 +1,17 @@
-from PIL import Image
 import unittest
-from collections import defaultdict
 import random
+from PIL import Image
+from collections import defaultdict
 from typing import Dict, List, Tuple
-import numpy as np
-from skimage.metrics import structural_similarity
+
 import torch
+import numpy as np
 import safetensors.torch
+from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
-from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
+
+from onediffx.utils.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "/share_nfs/hf_models/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(
@@ -33,21 +35,6 @@ loras = [
 loras = {x: safetensors.torch.load_file(x) for x in loras}
 image_file_prefix = "/share_nfs/onediff_ci/diffusers/images"
 
-# for name, lora in loras.items():
-#     generator = torch.manual_seed(0)
-#     load_and_fuse_lora(pipe, lora)
-#     images_fusion = pipe(
-#         "a cat", generator=generator, height=1024, width=1024, num_inference_steps=30,
-#     ).images[0]
-#     image_name = name.split("/")[-1].split(".")[0]
-#     target_image = np.array(Image.open(f"{image_file_prefix}/test_sdxl_lora_{image_name}.png"))
-#     curr_image = np.array(images_fusion)
-#     ssim = structural_similarity(
-#         curr_image, target_image, channel_axis=-1, data_range=255
-#     )
-#     assert ssim > 0.98
-#     unfuse_lora(pipe)
-
 weight_num = 20
 weight_names = {
     "unet": [x for x, _ in pipe.unet.named_parameters()],
@@ -59,7 +46,6 @@ if hasattr(pipe, "text_encoder_2"):
     )
 random_weight_names = {k: random.choices(weight_names[k], k=weight_num) for k in weight_names}
 original_weights = defaultdict(list)
-
 for part, names in random_weight_names.items():
     for name in names:
         original_weights[part].append([name, getattr(pipe, part).get_parameter(name)])
