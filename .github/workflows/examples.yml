@@ -193,7 +193,13 @@ jobs:
               false
             }
           }
+          
+          run_comfy_api_test() {
+            local workflow_name="$1"
+            docker exec -w /src/onediff/tests/comfyui ${{ env.CONTAINER_NAME }} python3 test_inference.py -p 8188 --workflow "$workflow_name" 
+          }
 
+          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_basic.json"
           run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json"
           run_comfy_test "workflows/sdxl-control-lora-speedup.json"
       - name: Show ComfyUI Log
