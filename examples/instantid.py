@@ -40,7 +40,7 @@ pipe.cuda()
 
 # load adapter
 pipe.load_ip_adapter_instantid(face_adapter)
-#pipe.unet = oneflow_compile(pipe.unet)
+pipe.unet = oneflow_compile(pipe.unet)
 
 # load an image
 face_image = load_image("https://huggingface.co/datasets/YiYiXu/testing-images/resolve/main/ai_face2.png")
