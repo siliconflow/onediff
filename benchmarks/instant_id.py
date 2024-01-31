@@ -46,9 +46,7 @@ from onediffx import compile_pipe
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--repo", type=str, default=REPO)
-    parser.add_argument("--face-analysis-root",
-                        type=str,
-                        default=FACE_ANALYSIS_ROOT)
+    parser.add_argument("--face-analysis-root", type=str, default=FACE_ANALYSIS_ROOT)
     parser.add_argument("--model", type=str, default=MODEL)
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
@@ -66,9 +64,7 @@ def parse_args():
     parser.add_argument("--cache_interval", type=int, default=CACHE_INTERVAL)
     parser.add_argument("--cache_layer_id", type=int, default=CACHE_LAYER_ID)
     parser.add_argument("--cache_block_id", type=int, default=CACHE_BLOCK_ID)
-    parser.add_argument("--extra-call-kwargs",
-                        type=str,
-                        default=EXTRA_CALL_KWARGS)
+    parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
     parser.add_argument("--deepcache", action="store_true")
@@ -99,8 +95,7 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet,
-            torch_dtype=torch.float16,
+            controlnet, torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
@@ -109,16 +104,16 @@ def load_pipe(
         from onediff.quantization import setup_onediff_quant
 
         setup_onediff_quant()
-    pipe = pipeline_cls.from_pretrained(model_name,
-                                        torch_dtype=torch.float16,
-                                        **extra_kwargs)
+    pipe = pipeline_cls.from_pretrained(
+        model_name, torch_dtype=torch.float16, **extra_kwargs
+    )
     if scheduler is not None:
-        scheduler_cls = getattr(importlib.import_module("onediff.schedulers"),
-                                scheduler, None)
+        scheduler_cls = getattr(
+            importlib.import_module("onediff.schedulers"), scheduler, None
+        )
         if scheduler_cls is None:
             print("No optimized scheduler found, use the plain one.")
-            scheduler_cls = getattr(importlib.import_module("diffusers"),
-                                    scheduler)
+            scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
@@ -131,12 +126,12 @@ def load_pipe(
         from onediff.quantization import load_calibration_and_quantize_pipeline
 
         load_calibration_and_quantize_pipeline(
-            os.path.join(model_name, "calibrate_info.txt"), pipe)
+            os.path.join(model_name, "calibrate_info.txt"), pipe
+        )
     return pipe
 
 
 class IterationProfiler:
-
     def __init__(self):
         self.begin = None
         self.end = None
@@ -165,17 +160,41 @@ class IterationProfiler:
 def main():
     args = parse_args()
 
-    assert args.repo is not None, "Please set `--repo` to the local path of the cloned repo of https://github.com/InstantID/InstantID"
-    assert args.controlnet is not None, "Please set `--controlnet` to the name or path of the controlnet"
-    assert args.face_analysis_root is not None, "Please set `--face-analysis-root` to the path of the working directory of insightface.app.FaceAnalysis"
+    assert (
+        args.repo is not None
+    ), "Please set `--repo` to the local path of the cloned repo of https://github.com/InstantID/InstantID"
+    assert (
+        args.controlnet is not None
+    ), "Please set `--controlnet` to the name or path of the controlnet"
+    assert (
+        args.face_analysis_root is not None
+    ), "Please set `--face-analysis-root` to the path of the working directory of insightface.app.FaceAnalysis"
     assert os.path.isdir(
         os.path.join(args.face_analysis_root, "models", "antelopev2")
     ), f"Please download models from https://drive.google.com/file/d/18wEUfMNohBJ4K3Ly5wpTejPfDzp-8fI8/view?usp=sharing and extract to {os.path.join(args.face_analysis_root, 'models', 'antelopev2')}"
-    assert args.input_image is not None, "Please set `--input-image` to the path of the input image"
+    assert (
+        args.input_image is not None
+    ), "Please set `--input-image` to the path of the input image"
     assert not args.deepcache
 
+    if args.compiler == "oneflow":
+        # Patch the attention processors to make them compatible with us.
+        attention_processor_path = os.path.join(
+            args.repo, "ip_adapter", "attention_processor.py"
+        )
+        with open(attention_processor_path, "r") as f:
+            content = f.read()
+
+        with open(attention_processor_path, "w") as f:
+            content = content.replace("__call__", "forward")
+            f.write(content)
+
     sys.path.insert(0, args.repo)
-    from pipeline_stable_diffusion_xl_instantid import StableDiffusionXLInstantIDPipeline, draw_kps
+
+    from pipeline_stable_diffusion_xl_instantid import (
+        StableDiffusionXLInstantIDPipeline,
+        draw_kps,
+    )
 
     if os.path.exists(args.controlnet):
         controlnet = args.controlnet
@@ -183,9 +202,10 @@ def main():
         controlnet = snapshot_download(args.controlnet)
 
     app = FaceAnalysis(
-        name='antelopev2',
+        name="antelopev2",
         root=args.face_analysis_root,
-        providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    )
     app.prepare(ctx_id=0, det_size=(640, 640))
 
     face_adapter = os.path.join(controlnet, "ip-adapter.bin")
@@ -226,9 +246,14 @@ def main():
 
     face_image = input_image
     face_info = app.get(cv2.cvtColor(np.array(face_image), cv2.COLOR_RGB2BGR))
-    face_info = sorted(face_info, key=lambda x:(x['bbox'][2]-x['bbox'][0])*x['bbox'][3]-x['bbox'][1])[-1]  # only use the maximum face
-    face_emb = face_info['embedding']
-    face_kps = draw_kps(face_image, face_info['kps'])
+    face_info = sorted(
+        face_info,
+        key=lambda x: (x["bbox"][2] - x["bbox"][0]) * x["bbox"][3] - x["bbox"][1],
+    )[
+        -1
+    ]  # only use the maximum face
+    face_emb = face_info["embedding"]
+    face_kps = draw_kps(face_image, face_info["kps"])
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(
@@ -240,10 +265,14 @@ def main():
             width=width,
             num_inference_steps=args.steps,
             num_images_per_prompt=args.batch,
-            generator=None if args.seed is None else torch.Generator(
-                device="cuda").manual_seed(args.seed),
-            **(dict() if args.extra_call_kwargs is None else json.loads(
-                args.extra_call_kwargs)),
+            generator=None
+            if args.seed is None
+            else torch.Generator(device="cuda").manual_seed(args.seed),
+            **(
+                dict()
+                if args.extra_call_kwargs is None
+                else json.loads(args.extra_call_kwargs)
+            ),
         )
         if args.deepcache:
             kwarg_inputs["cache_interval"] = args.cache_interval
@@ -266,8 +295,7 @@ def main():
     iter_profiler = None
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
         iter_profiler = IterationProfiler()
-        kwarg_inputs[
-            "callback_on_step_end"] = iter_profiler.callback_on_step_end
+        kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
     elif "callback" in inspect.signature(pipe).parameters:
         iter_profiler = IterationProfiler()
         kwarg_inputs["callback"] = iter_profiler.callback_on_step_end

@@ -151,9 +151,7 @@ def main():
     args = parse_args()
     if args.input_image is None:
         if args.deepcache:
-            from onediffx.deep_cache import (
-                StableDiffusionXLPipeline as pipeline_cls,
-            )
+            from onediffx.deep_cache import StableDiffusionXLPipeline as pipeline_cls
         else:
             from diffusers import AutoPipelineForText2Image as pipeline_cls
     else:
