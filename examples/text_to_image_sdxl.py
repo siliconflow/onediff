@@ -96,9 +96,9 @@ image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 # Should have no compilation for these new input shape
 print("Test run with multiple resolutions...")
 if args.run_multiple_resolutions:
-    sizes = [512, 256]
+    sizes = [960, 720, 896, 768]
     if "CI" in os.environ:
-        sizes = [256]
+        sizes = [360]
     for h in sizes:
         for w in sizes:
             image = base(
@@ -108,3 +108,16 @@ if args.run_multiple_resolutions:
                 num_inference_steps=args.n_steps,
                 output_type=OUTPUT_TYPE,
             ).images
+
+
+print("Test run with other another uncommon resolution...")
+if args.run_multiple_resolutions:
+    h = 544
+    w = 408
+    image = base(
+        prompt=args.prompt,
+        height=h,
+        width=w,
+        num_inference_steps=args.n_steps,
+        output_type=OUTPUT_TYPE,
+    ).images
