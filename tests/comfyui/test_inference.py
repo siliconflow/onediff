@@ -94,17 +94,45 @@ ONEDIFF_TO_TORCH = {
 class ComfyClient:
     # From examples/websockets_api_example.py
 
+    # def start_client(self, listen:str, port:int):
+    #     # Start client
+    #     comfy_client = ComfyClient()
+    #     # Connect to server (with retries)
+    #     n_tries = 5
+    #     for i in range(n_tries):
+    #         time.sleep(4)
+    #         try:
+    #             comfy_client.connect(listen=listen, port=port)
+    #         except ConnectionRefusedError as e:
+    #             print(e)
+    #             print(f"({i+1}/{n_tries}) Retrying...")
+    #         else:
+    #             break
+    #     return comfy_client
+
     def connect(
         self,
         listen: str = "127.0.0.1",
         port: Union[str, int] = 30000,
         client_id: str = str(uuid.uuid4()),
+        n_tries=5,
     ):
-        self.client_id = client_id
-        self.server_address = f"{listen}:{port}"
-        ws = websocket.WebSocket()
-        ws.connect("ws://{}/ws?clientId={}".format(self.server_address, self.client_id))
-        self.ws = ws
+        for i in range(n_tries):
+            time.sleep(4)
+            self.client_id = client_id
+            self.server_address = f"{listen}:{port}"
+            try:
+                ws = websocket.WebSocket()
+                ws.connect(
+                    "ws://{}/ws?clientId={}".format(self.server_address, self.client_id)
+                )
+                self.ws = ws
+            except ConnectionRefusedError as e:
+                print(e)
+                print(f"({i+1}/{n_tries}) Retrying...")
+
+            else:
+                break
 
     def queue_prompt(self, prompt):
         p = {"prompt": prompt, "client_id": self.client_id}
@@ -234,7 +262,6 @@ def run_inference_tests(client, comfy_graph):
                 client.get_images(comfy_graph.graph)
 
     print("Inference Tests Done", time.time() - start_time, "seconds")
-    
 
 
 def get_comfy_graph(file_path):
