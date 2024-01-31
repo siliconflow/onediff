@@ -40,7 +40,7 @@ from diffusers.utils import load_image
 from insightface.app import FaceAnalysis
 
 import oneflow as flow
-from diffusers_extensions import compile_pipe
+from onediffx import compile_pipe
 
 
 def parse_args():

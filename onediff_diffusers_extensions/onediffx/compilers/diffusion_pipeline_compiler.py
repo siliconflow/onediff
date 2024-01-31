@@ -50,7 +50,7 @@ def compile_pipe(
     if 'image_processor' not in ignores:
         print("Patching image_processor")
 
-        from diffusers_extensions.utils.patch_image_processor import patch_image_prcessor as patch_image_prcessor_
+        from onediffx.utils.patch_image_processor import patch_image_prcessor as patch_image_prcessor_
         patch_image_prcessor_(pipe.image_processor)
 
     return pipe
