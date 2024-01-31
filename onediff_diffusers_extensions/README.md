@@ -151,7 +151,7 @@ export_to_video(deepcache_output, "generated.mp4", fps=7)
 ```
 
 
-## LoRA loading and switching speed up
+## More Efficient LoRA loading and switching
 
 OneDiff provides a more efficient implementation of loading LoRA, by invoking `load_and_fuse_lora` you can load and fuse LoRA to pipeline, and by invoking `unfuse_lora` you can restore the weight of base model.
 
@@ -237,6 +237,12 @@ The results are shown below
 | simple_drawing_xl_b1-000012.safetensors | 55M   | 1.67 s            | 2.57 s                      | **0.77 s**                       | 2166     | 216     | 576     | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)        |
 | texta.safetensors                        | 270M  | 1.72 s            | 2.86 s                      | **0.97 s**                       | 2364     | 0       | 0       | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
 | watercolor_v1_sdxl_lora.safetensors     | 12M   | 1.54 s            | 2.01 s                      | **0.35 s**                       | 1680     | 0       | 0       |                                               |
+
+### Note
+
+1. OneDiff extensions for LoRA is currently not supported for PEFT.
+
+2. Diffusers (without PEFT) are limited to loading only one LoRA. Consequently, onediffx is also restricted to loading a single LoRA. We are currently developing onediffx that are compatible with PEFT, enabling onediffx to load multiple LoRAs.
 
 
 ## Quantization
