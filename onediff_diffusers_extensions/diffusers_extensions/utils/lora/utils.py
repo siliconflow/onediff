@@ -57,7 +57,6 @@ def linear_fuse_lora(
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
 
-    _linear_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
     down_key = prefix + ".down.weight"
     up_key = prefix + ".up.weight"
@@ -160,7 +159,6 @@ def conv_fuse_lora(
     assert isinstance(self, torch.nn.Conv2d)
     if isinstance(self, DualModule):
         self = self._torch_module
-    _conv_unfuse_lora(self)
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
     down_key = prefix + ".down.weight"
