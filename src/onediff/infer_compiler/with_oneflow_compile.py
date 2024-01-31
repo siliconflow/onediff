@@ -188,8 +188,6 @@ class DeployableModule(torch.nn.Module):
         use_graph=True,
         dynamic=True,
         options={},
-        graph_path=None,
-        graph_device=None,
     ):
         torch.nn.Module.__init__(self)
         self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
@@ -360,24 +358,10 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
 def get_mixed_deployable_module(module_cls):
     class MixedDeployableModule(DeployableModule, module_cls):
         def __init__(
-            self,
-            torch_module,
-            oneflow_module,
-            use_graph=True,
-            dynamic=True,
-            options={},
-            graph_path=None,
-            graph_device=None,
+            self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={}
         ):
             DeployableModule.__init__(
-                self,
-                torch_module,
-                oneflow_module,
-                use_graph,
-                dynamic,
-                options,
-                graph_path,
-                graph_device,
+                self, torch_module, oneflow_module, use_graph, dynamic, options
             )
             self._is_raw_deployable_module = False
 
@@ -415,6 +399,8 @@ def oneflow_compile(
        options (dict): A dictionary of options to pass to the compiler:
         - 'debug' which config the nn.Graph debug level, default -1(no debug info), max 3(max debug info);
         - 'size' which config the cache size when cache is enabled. Note that after onediff v0.12, cache is default disabled.
+        - 'graph_file' (None) generates a compilation cache file. If the file exists, loading occurs; if not, the compilation result is saved after the first run.
+        - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
     """
 
     set_default_registry()

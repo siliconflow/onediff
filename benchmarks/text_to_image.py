@@ -12,6 +12,9 @@ BATCH = 1
 HEIGHT = None
 WIDTH = None
 EXTRA_CALL_KWARGS = None
+INPUT_IMAGE = None
+CONTROL_IMAGE = None
+OUTPUT_IMAGE = None
 CACHE_INTERVAL = 3
 CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
@@ -24,6 +27,8 @@ import time
 import json
 import torch
 from PIL import Image, ImageDraw
+from diffusers.utils import load_image
+
 import oneflow as flow
 from diffusers_extensions import compile_pipe
 
@@ -35,7 +40,7 @@ def parse_args():
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     parser.add_argument("--scheduler", type=str, default=SCHEDULER)
     parser.add_argument("--lora", type=str, default=LORA)
-    parser.add_argument("--controlnet", type=str, default=None)
+    parser.add_argument("--controlnet", type=str, default=CONTROLNET)
     parser.add_argument("--steps", type=int, default=STEPS)
     parser.add_argument("--prompt", type=str, default=PROMPT)
     parser.add_argument("--seed", type=int, default=SEED)
@@ -47,9 +52,9 @@ def parse_args():
     parser.add_argument("--cache_layer_id", type=int, default=CACHE_LAYER_ID)
     parser.add_argument("--cache_block_id", type=int, default=CACHE_BLOCK_ID)
     parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
-    parser.add_argument("--input-image", type=str, default=None)
-    parser.add_argument("--control-image", type=str, default=None)
-    parser.add_argument("--output-image", type=str, default=None)
+    parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
+    parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
+    parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
         "--compiler",
@@ -78,7 +83,7 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16, use_safetensors=True,
+            controlnet, torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
@@ -88,7 +93,7 @@ def load_pipe(
 
         setup_onediff_quant()
     pipe = pipeline_cls.from_pretrained(
-        model_name, torch_dtype=torch.float16, use_safetensors=True, **extra_kwargs
+        model_name, torch_dtype=torch.float16, **extra_kwargs
     )
     if scheduler is not None:
         scheduler_cls = getattr(
@@ -183,7 +188,7 @@ def main():
     if args.input_image is None:
         input_image = None
     else:
-        input_image = Image.open(args.input_image).convert("RGB")
+        input_image = load_image(args.input_image)
         input_image = input_image.resize((width, height), Image.LANCZOS)
 
     if args.control_image is None:
@@ -198,7 +203,7 @@ def main():
             )
             del draw
     else:
-        control_image = Image.open(args.control_image).convert("RGB")
+        control_image = load_image(args.control_image)
         control_image = control_image.resize((width, height), Image.LANCZOS)
 
     def get_kwarg_inputs():
@@ -217,10 +222,6 @@ def main():
                 else json.loads(args.extra_call_kwargs)
             ),
         )
-        if args.deepcache:
-            kwarg_inputs["cache_interval"] = args.cache_interval
-            kwarg_inputs["cache_layer_id"] = args.cache_layer_id
-            kwarg_inputs["cache_block_id"] = args.cache_block_id
         if input_image is not None:
             kwarg_inputs["image"] = input_image
         if control_image is not None:
@@ -228,6 +229,10 @@ def main():
                 kwarg_inputs["image"] = control_image
             else:
                 kwarg_inputs["control_image"] = control_image
+        if args.deepcache:
+            kwarg_inputs["cache_interval"] = args.cache_interval
+            kwarg_inputs["cache_layer_id"] = args.cache_layer_id
+            kwarg_inputs["cache_block_id"] = args.cache_block_id
         return kwarg_inputs
 
     # NOTE: Warm it up.
