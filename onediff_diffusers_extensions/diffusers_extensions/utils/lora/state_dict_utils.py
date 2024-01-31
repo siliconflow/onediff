@@ -14,6 +14,9 @@
 """
 State dict utilities: utility methods for converting state dicts easily
 """
+
+# The code is copied from https://github.com/huggingface/diffusers/blob/87a92f779c5ba9c180aec4b90c38149eb108d888/src/diffusers/utils/state_dict_utils.py
+
 import enum
 
 
