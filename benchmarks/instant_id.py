@@ -1,25 +1,30 @@
-MODEL = "runwayml/stable-diffusion-v1-5"
+REPO = None
+FACE_ANALYSIS_ROOT = None
+MODEL = "wangqixun/YamerMIX_v8"
 VARIANT = None
 CUSTOM_PIPELINE = None
 SCHEDULER = "EulerDiscreteScheduler"
 LORA = None
-CONTROLNET = None
+CONTROLNET = "InstantX/InstantID"
 STEPS = 30
-PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
-NEGATIVE_PROMPT = None
+PROMPT = "film noir style, ink sketch|vector, male man, highly detailed, sharp focus, ultra sharpness, monochrome, high contrast, dramatic shadows, 1940s style, mysterious, cinematic"
+NEGATIVE_PROMPT = "ugly, deformed, noisy, blurry, low contrast, realism, photorealistic, vibrant, colorful"
 SEED = None
 WARMUPS = 3
 BATCH = 1
 HEIGHT = None
 WIDTH = None
-INPUT_IMAGE = None
-CONTROL_IMAGE = None
+INPUT_IMAGE = "https://github.com/InstantID/InstantID/blob/main/examples/musk_resize.jpeg?raw=true"
 OUTPUT_IMAGE = None
-EXTRA_CALL_KWARGS = None
+EXTRA_CALL_KWARGS = """{
+    "controlnet_conditioning_scale": 0.8,
+    "ip_adapter_scale": 0.8
+}"""
 CACHE_INTERVAL = 3
 CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
 
+import sys
 import os
 import importlib
 import inspect
@@ -28,7 +33,11 @@ import time
 import json
 import torch
 from PIL import Image, ImageDraw
+import numpy as np
+import cv2
+from huggingface_hub import snapshot_download
 from diffusers.utils import load_image
+from insightface.app import FaceAnalysis
 
 import oneflow as flow
 from onediffx import compile_pipe
@@ -36,6 +45,8 @@ from onediffx import compile_pipe
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--repo", type=str, default=REPO)
+    parser.add_argument("--face-analysis-root", type=str, default=FACE_ANALYSIS_ROOT)
     parser.add_argument("--model", type=str, default=MODEL)
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
@@ -55,7 +66,6 @@ def parse_args():
     parser.add_argument("--cache_block_id", type=int, default=CACHE_BLOCK_ID)
     parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
-    parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
@@ -149,23 +159,69 @@ class IterationProfiler:
 
 def main():
     args = parse_args()
-    if args.input_image is None:
-        if args.deepcache:
-            from onediffx.deep_cache import StableDiffusionXLPipeline as pipeline_cls
-        else:
-            from diffusers import AutoPipelineForText2Image as pipeline_cls
+
+    assert (
+        args.repo is not None
+    ), "Please set `--repo` to the local path of the cloned repo of https://github.com/InstantID/InstantID"
+    assert (
+        args.controlnet is not None
+    ), "Please set `--controlnet` to the name or path of the controlnet"
+    assert (
+        args.face_analysis_root is not None
+    ), "Please set `--face-analysis-root` to the path of the working directory of insightface.app.FaceAnalysis"
+    assert os.path.isdir(
+        os.path.join(args.face_analysis_root, "models", "antelopev2")
+    ), f"Please download models from https://drive.google.com/file/d/18wEUfMNohBJ4K3Ly5wpTejPfDzp-8fI8/view?usp=sharing and extract to {os.path.join(args.face_analysis_root, 'models', 'antelopev2')}"
+    assert (
+        args.input_image is not None
+    ), "Please set `--input-image` to the path of the input image"
+    assert not args.deepcache
+
+    if args.compiler == "oneflow":
+        # Patch the attention processors to make them compatible with us.
+        attention_processor_path = os.path.join(
+            args.repo, "ip_adapter", "attention_processor.py"
+        )
+        with open(attention_processor_path, "r") as f:
+            content = f.read()
+
+        with open(attention_processor_path, "w") as f:
+            content = content.replace("__call__", "forward")
+            f.write(content)
+
+    sys.path.insert(0, args.repo)
+
+    from pipeline_stable_diffusion_xl_instantid import (
+        StableDiffusionXLInstantIDPipeline,
+        draw_kps,
+    )
+
+    if os.path.exists(args.controlnet):
+        controlnet = args.controlnet
     else:
-        from diffusers import AutoPipelineForImage2Image as pipeline_cls
+        controlnet = snapshot_download(args.controlnet)
+
+    app = FaceAnalysis(
+        name="antelopev2",
+        root=args.face_analysis_root,
+        providers=["CUDAExecutionProvider", "CPUExecutionProvider"],
+    )
+    app.prepare(ctx_id=0, det_size=(640, 640))
+
+    face_adapter = os.path.join(controlnet, "ip-adapter.bin")
+    controlnet_path = os.path.join(controlnet, "ControlNetModel")
 
     pipe = load_pipe(
-        pipeline_cls,
+        StableDiffusionXLInstantIDPipeline,
         args.model,
         variant=args.variant,
         custom_pipeline=args.custom_pipeline,
         scheduler=args.scheduler,
         lora=args.lora,
-        controlnet=args.controlnet,
+        controlnet=controlnet_path,
     )
+
+    pipe.load_ip_adapter_instantid(face_adapter)
 
     height = args.height
     width = args.width
@@ -185,31 +241,26 @@ def main():
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
-    if args.input_image is None:
-        input_image = None
-    else:
-        input_image = load_image(args.input_image)
-        input_image = input_image.resize((width, height), Image.LANCZOS)
+    input_image = load_image(args.input_image)
+    input_image = input_image.resize((width, height), Image.LANCZOS)
 
-    if args.control_image is None:
-        if args.controlnet is None:
-            control_image = None
-        else:
-            control_image = Image.new("RGB", (width, height))
-            draw = ImageDraw.Draw(control_image)
-            draw.ellipse(
-                (args.width // 4, height // 4, args.width // 4 * 3, height // 4 * 3),
-                fill=(255, 255, 255),
-            )
-            del draw
-    else:
-        control_image = load_image(args.control_image)
-        control_image = control_image.resize((width, height), Image.LANCZOS)
+    face_image = input_image
+    face_info = app.get(cv2.cvtColor(np.array(face_image), cv2.COLOR_RGB2BGR))
+    face_info = sorted(
+        face_info,
+        key=lambda x: (x["bbox"][2] - x["bbox"][0]) * x["bbox"][3] - x["bbox"][1],
+    )[
+        -1
+    ]  # only use the maximum face
+    face_emb = face_info["embedding"]
+    face_kps = draw_kps(face_image, face_info["kps"])
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(
             prompt=args.prompt,
             negative_prompt=args.negative_prompt,
+            image_embeds=face_emb,
+            image=face_kps,
             height=height,
             width=width,
             num_inference_steps=args.steps,
@@ -223,13 +274,6 @@ def main():
                 else json.loads(args.extra_call_kwargs)
             ),
         )
-        if input_image is not None:
-            kwarg_inputs["image"] = input_image
-        if control_image is not None:
-            if input_image is None:
-                kwarg_inputs["image"] = control_image
-            else:
-                kwarg_inputs["control_image"] = control_image
         if args.deepcache:
             kwarg_inputs["cache_interval"] = args.cache_interval
             kwarg_inputs["cache_layer_id"] = args.cache_layer_id
