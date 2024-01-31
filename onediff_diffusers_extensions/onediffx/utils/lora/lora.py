@@ -259,18 +259,18 @@ def load_and_fuse_lora(
         )
 
 
-def unfuse_lora(self: LoraLoaderMixin):
+def unfuse_lora(pipeline: LoraLoaderMixin):
     def _unfuse_lora(m: torch.nn.Module):
         if isinstance(m, (torch.nn.Linear, PatchedLoraProjection)):
             _linear_unfuse_lora(m)
         elif isinstance(m, torch.nn.Conv2d):
             _conv_unfuse_lora(m)
 
-    self.unet.apply(_unfuse_lora)
-    if hasattr(self, "text_encoder"):
-        self.text_encoder.apply(_unfuse_lora)
-    if hasattr(self, "text_encoder_2"):
-        self.text_encoder_2.apply(_unfuse_lora)
+    pipeline.unet.apply(_unfuse_lora)
+    if hasattr(pipeline, "text_encoder"):
+        pipeline.text_encoder.apply(_unfuse_lora)
+    if hasattr(pipeline, "text_encoder_2"):
+        pipeline.text_encoder_2.apply(_unfuse_lora)
 
 
 class LRUCacheDict(OrderedDict):
