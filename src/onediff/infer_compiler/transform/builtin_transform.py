@@ -149,6 +149,9 @@ def torch2oflow(mod, *args, **kwargs):
 
 
 def default_converter(obj, verbose=False, *, proxy_cls=None):
+    if obj is torch.nn.Linear:
+        print("hit!!!")
+        return flow.nn.Linear
     if not is_need_mock(type(obj)):
         return obj
     try:
@@ -158,7 +161,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
                 self.__dict__[k] = torch2oflow(attr)
-  
+        #print(f"#### {str(obj)}, {str(type(obj))} to {str(new_obj_cls)}")
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
 
@@ -167,7 +170,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return of_obj
     except Exception as e:
         logger.warning(f"Unsupported type: {type(obj)} {e=}")
-        # raise NotImplementedError(f"Unsupported type: {obj}")
+        raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
 
 @torch2oflow.register
@@ -194,6 +197,7 @@ def _(mod: torch.nn.Module, verbose=False):
             if k not in self.__dict__:
                 attr = getattr(proxy_md, k)
                 try:
+                    #print(f"### {k}, {attr}, {type(attr)}, {type(self)}")
                     self.__dict__[k] = torch2oflow(attr)
 
                 except Exception as e:

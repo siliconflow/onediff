@@ -171,7 +171,7 @@ class AttnProcessor(nn.Module):
     ):
         super().__init__()
 
-    def __call__(
+    def forward(
         self,
         attn,
         hidden_states,
@@ -257,7 +257,7 @@ class IPAttnProcessor(nn.Module):
         self.to_k_ip = nn.Linear(cross_attention_dim or hidden_size, hidden_size, bias=False)
         self.to_v_ip = nn.Linear(cross_attention_dim or hidden_size, hidden_size, bias=False)
 
-    def __call__(
+    def forward(
         self,
         attn,
         hidden_states,
@@ -540,7 +540,7 @@ class StableDiffusionXLInstantIDPipeline(StableDiffusionXLControlNetPipeline):
 
     @torch.no_grad()
     @replace_example_docstring(EXAMPLE_DOC_STRING)
-    def __call__(
+    def forward(
         self,
         prompt: Union[str, List[str]] = None,
         prompt_2: Optional[Union[str, List[str]]] = None,
