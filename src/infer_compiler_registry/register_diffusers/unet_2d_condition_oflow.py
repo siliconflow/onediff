@@ -100,7 +100,9 @@ class UNet2DConditionModel(
         default_overall_up_factor = 2 ** self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        forward_upsample_size = False
+        # forward_upsample_size = False
+        # interpolate through upsample_size
+        forward_upsample_size = True
         upsample_size = None
 
         for dim in sample.shape[-2:]:
@@ -431,7 +433,13 @@ class UNet2DConditionModel(
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
-                upsample_size = down_block_res_samples[-1].shape[2:]
+                # To support dynamic switching of special resolutions, pass a like tensor.
+                # upsample_size = down_block_res_samples[-1].shape[2:]
+                upsample_size = down_block_res_samples[-1]
+
+            output_like = None
+            if not is_final_block:
+                output_like = down_block_res_samples[-1]
 
             if (
                 hasattr(upsample_block, "has_cross_attention")
@@ -444,6 +452,7 @@ class UNet2DConditionModel(
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     upsample_size=upsample_size,
+                    output_like=output_like,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                 )
@@ -454,6 +463,7 @@ class UNet2DConditionModel(
                         temb=emb,
                         res_hidden_states_tuple=res_samples,
                         upsample_size=upsample_size,
+                        output_like=output_like,
                     )
                 else:
                     sample = upsample_block(
@@ -461,6 +471,7 @@ class UNet2DConditionModel(
                         temb=emb,
                         res_hidden_states_tuple=res_samples,
                         upsample_size=upsample_size,
+                        output_like=output_like,
                         scale=lora_scale,
                     )
 

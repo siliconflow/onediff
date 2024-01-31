@@ -53,6 +53,7 @@ class TransformManager:
         self.logger.debug(debug_message)
 
     def _transform_entity(self, entity):
+        # TODO: Optimize _transform_entity for faster SDXL conversion (1.47s)
         result = self.mocker.mock_entity(entity)
         if result is None:
             RuntimeError(f"Failed to transform entity: {entity}")

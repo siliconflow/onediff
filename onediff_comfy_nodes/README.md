@@ -137,9 +137,12 @@ This example demonstrates how to utilize LoRAs. You have the flexibility to modi
 
 ### ControlNet
 
-While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more.
+> doc link: [ControlNet](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ControlNet)
 
-[ControlNet Speedup](workflows/model-speedup-controlnet.png)
+
+While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more. 
+
+[ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
 
 ### SVD
 
