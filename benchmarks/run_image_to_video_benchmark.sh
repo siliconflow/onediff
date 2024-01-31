@@ -53,7 +53,7 @@ else
   [ -d ${MODEL_DIR}/stable-video-diffusion-img2vid-xt ] && SVD_XT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt
 
   python3 -c "import onediff_quant" && echo "enable quant model" && BENCHMARK_QUANT_MODEL=1 || echo "disable quant model"
-  python3 -c "import diffusers_extensions" && echo "enable deepcache model" && BENCHMARK_DEEP_CACHE_MODEL=1 || echo "disable deepcache model"
+  # python3 -c "import onediffx" && echo "enable deepcache model" && BENCHMARK_DEEP_CACHE_MODEL=1 || echo "disable deepcache model"
 
   SVD_XT_QUANT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt-int8
   SVD_XT_DEEP_CACHE_QUANT_MODEL_PATH=${MODEL_DIR}/stable-video-diffusion-img2vid-xt-deepcache-int8

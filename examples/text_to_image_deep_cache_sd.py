@@ -10,7 +10,7 @@ import torch
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 
-from diffusers_extensions.deep_cache import StableDiffusionPipeline
+from onediffx.deep_cache import StableDiffusionPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

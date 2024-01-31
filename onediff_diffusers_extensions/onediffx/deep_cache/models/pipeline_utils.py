@@ -102,11 +102,11 @@ def get_class_obj_and_candidates(library_name, class_name, importable_classes, p
     else:
         # else we just import it from the library. 
         if class_name == 'UNet2DConditionModel':
-            library_name = "diffusers_extensions.deep_cache.models.unet_2d_condition"
+            library_name = "onediffx.deep_cache.models.unet_2d_condition"
         
         if class_name == 'UNetSpatioTemporalConditionModel':
             assert diffusers_version >= version.parse("0.24.0"), "SVD not support in diffusers-" + diffusers_version
-            library_name = "diffusers_extensions.deep_cache.models.unet_spatio_temporal_condition"
+            library_name = "onediffx.deep_cache.models.unet_spatio_temporal_condition"
         
         library = importlib.import_module(library_name)
         class_obj = getattr(library, class_name)

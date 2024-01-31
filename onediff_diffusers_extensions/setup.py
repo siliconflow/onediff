@@ -1,7 +1,7 @@
 from setuptools import find_packages, setup
 
 setup(
-    name="diffusers_extensions",
+    name="onediffx",
     version="0.1.0",
     description="onediff extensions for diffusers",
     url="https://github.com/siliconflow/onediff",

@@ -437,6 +437,10 @@ class UNet2DConditionModel(
                 # upsample_size = down_block_res_samples[-1].shape[2:]
                 upsample_size = down_block_res_samples[-1]
 
+            output_like = None
+            if not is_final_block:
+                output_like = down_block_res_samples[-1]
+
             if (
                 hasattr(upsample_block, "has_cross_attention")
                 and upsample_block.has_cross_attention
@@ -448,6 +452,7 @@ class UNet2DConditionModel(
                     encoder_hidden_states=encoder_hidden_states,
                     cross_attention_kwargs=cross_attention_kwargs,
                     upsample_size=upsample_size,
+                    output_like=output_like,
                     attention_mask=attention_mask,
                     encoder_attention_mask=encoder_attention_mask,
                 )
@@ -458,6 +463,7 @@ class UNet2DConditionModel(
                         temb=emb,
                         res_hidden_states_tuple=res_samples,
                         upsample_size=upsample_size,
+                        output_like=output_like,
                     )
                 else:
                     sample = upsample_block(
@@ -465,6 +471,7 @@ class UNet2DConditionModel(
                         temb=emb,
                         res_hidden_states_tuple=res_samples,
                         upsample_size=upsample_size,
+                        output_like=output_like,
                         scale=lora_scale,
                     )
 
