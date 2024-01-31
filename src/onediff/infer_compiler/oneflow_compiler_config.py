@@ -11,8 +11,8 @@ from .utils import (
 
 def init_default_env():
     # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
-    # os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
-    # os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
+    os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
+    os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
 
     os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
     os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
