@@ -1,33 +1,54 @@
-# OneDiff Diffusers Extensions
+# OneDiffX (for HF diffusers)
 
-OneDiff diffusers extensions include multiple popular accelerated versions of the AIGC algorithm, such as DeepCache, which you would have a hard time finding elsewhere.
+OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration utilities, such as DeepCache.
 
 - [Install and Setup](#install-and-setup)
+- [compile_pipe](#compile_pipe)
 - [DeepCache Speedup](#deepcache-speedup)
-    - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediff-diffusers-extensions)
-    - [Stable Diffuison 1.5](#run-stable-diffusion-15-with-onediff-diffusers-extensions)
+    - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediffx)
+    - [Stable Diffusion 1.5](#run-stable-diffusion-15-with-onediffx)
+- [LoRA loading and switching speed up](#lora-loading-and-switching-speed-up)
+- [Quantization](#quantization)
 - [Contact](#contact)
 
 ## Install and setup
 
 1. Follow the steps [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-from-source) to install onediff. 
 
-2. Install diffusers_extensions by following these steps
+2. Install onediffx by following these steps
 
     ```
     git clone https://github.com/siliconflow/onediff.git
     cd onediff_diffusers_extensions && python3 -m pip install -e .
     ```
+## compile_pipe
+Compile diffusers pipeline with `compile_pipe`.
+```
+import torch
+from diffusers import StableDiffusionXLPipeline
+
+from onediffx import compile_pipe
+
+pipe = StableDiffusionXLPipeline.from_pretrained(
+    "stabilityai/stable-diffusion-xl-base-1.0",
+    torch_dtype=torch.float16,
+    variant="fp16",
+    use_safetensors=True
+)
+pipe.to("cuda")
+
+pipe = compile_pipe(pipe)
+```
 
 ## DeepCache speedup
 
-### Run Stable Diffusion XL with OneDiff diffusers extensions
+### Run Stable Diffusion XL with OneDiffX
 
 ```python
 import torch
 
-from diffusers_extensions import compile_pipe
-from diffusers_extensions.deep_cache import StableDiffusionXLPipeline
+from onediffx import compile_pipe
+from onediffx.deep_cache import StableDiffusionXLPipeline
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
     "stabilityai/stable-diffusion-xl-base-1.0",
@@ -55,13 +76,13 @@ deepcache_output = pipe(
 ).images[0]
 ```
 
-### Run Stable Diffusion 1.5 with OneDiff diffusers extensions
+### Run Stable Diffusion 1.5 with OneDiffX
 
 ```python
 import torch
 
-from diffusers_extensions import compile_pipe
-from diffusers_extensions.deep_cache import StableDiffusionPipeline
+from onediffx import compile_pipe
+from onediffx.deep_cache import StableDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "runwayml/stable-diffusion-v1-5",
@@ -89,14 +110,14 @@ deepcache_output = pipe(
 ).images[0]
 ```
 
-### Run Stable Video Diffusion with OneDiff diffusers extensions
+### Run Stable Video Diffusion with OneDiffX
 
 ```python
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from diffusers_extensions import compile_pipe, compiler_config
-from diffusers_extensions.deep_cache import StableVideoDiffusionPipeline
+from onediffx import compile_pipe, compiler_config
+from onediffx.deep_cache import StableVideoDiffusionPipeline
 
 pipe = StableDiffusionPipeline.from_pretrained(
     "stabilityai/stable-video-diffusion-img2vid-xt",
@@ -129,23 +150,15 @@ deepcache_output = pipe(
 export_to_video(deepcache_output, "generated.mp4", fps=7)
 ```
 
-### Quantization
-
-**Note**: Quantization feature is only supported by **OneDiff Enterprise**.
-
-OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
-
-If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
-
 ## LoRA loading and switching speed up
 
-OneDiff provides a faster implementation of loading LoRA, by invoking `diffusers_extensions.utils.lora.load_and_fuse_lora` you can load and fuse LoRA to pipeline.
+OneDiff provides a faster implementation of loading LoRA, by invoking `onediffx.utils.lora.load_and_fuse_lora` you can load and fuse LoRA to pipeline.
 
 ```python
 import torch
 from diffusers import DiffusionPipeline
-from diffusers_extensions import compile_pipe
-from diffusers_extensions.utils.lora import load_and_fuse_lora, unfuse_lora
+from onediffx import compile_pipe
+from onediffx.utils.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(
@@ -177,6 +190,14 @@ We compared different methods of loading LoRA. The comparison of loading LoRA on
 | onediff load_and_fuse_lora       | 0.56s | **high**         | **high**              |
 
 If you want to unload LoRA and then load a new LoRA, you only need to call `load_and_fuse_lora` again. There is no need to manually call `unfuse_lora`, cause it will be called implicitly in `load_and_fuse_lora`. You can also manually call `unfuse_lora` to restore the model's weights.
+
+## Quantization
+
+**Note**: Quantization feature is only supported by **OneDiff Enterprise**.
+
+OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
+
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
 ## Contact
 
