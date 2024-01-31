@@ -160,7 +160,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
                 self.__dict__[k] = torch2oflow(attr)
-        #print(f"#### {str(obj)}, {str(type(obj))} to {str(new_obj_cls)}")
+
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
 
