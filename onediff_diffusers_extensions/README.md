@@ -25,6 +25,8 @@ OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration 
 Compile diffusers pipeline with `compile_pipe`.
 ```
 import torch
+from diffusers import StableDiffusionXLPipeline
+
 from onediffx import compile_pipe
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
