@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 from types import MethodType
 from .transform.builtin_transform import torch2oflow
-from .utils.args_tree_util import input_output_processor
+from .utils.args_tree_util import process_input, process_output
 from .utils.oneflow_exec_mode import oneflow_exec_mode
 from .utils.log_utils import logger
 from .with_oneflow_compile import get_oneflow_graph
@@ -17,6 +17,7 @@ def default_is_leaf_fn(attr):
     return False
 
 
+
 class OneFlowModule:
     def __init__(self, use_graph=True, dynamic=True, options={}):
         self.of_module = None
@@ -24,9 +25,10 @@ class OneFlowModule:
         self.dynamic = dynamic
         self.options = options
         self.module_dpl_graph = None
+        self.current_input_count = None
 
     @property
-    def oneflow_module(self):
+    def compiled_model(self):
         if not self.is_compiled():
             return None
         if self.use_graph:
@@ -66,14 +68,20 @@ class OneFlowModule:
         if self.use_graph:
             logger.info("OneFlowModule Use Graph Mode")
             self.module_dpl_graph = get_oneflow_graph(
-                self.of_module, self.options.get("size", 2), self.dynamic
+                self.of_module, self.options.get("size", 9), self.dynamic
             )
             if transform_mgr.debug_mode:
                 self.module_dpl_graph.debug(self.options.get("debug", 0))
         else:
             logger.info("OneFlowModule Use Eager Mode")
 
-
+    def __call__(self, *args, **kwargs):
+        mapped_args, mapped_kwargs, _ = process_input(*args, **kwargs)
+        with oneflow_exec_mode(self.use_graph):
+            out =  self.compiled_model(*mapped_args, **mapped_kwargs)
+        return process_output(out)
+        
+    
 class Proxy:
     __attrs = ["_proxy", "_is_leaf_fn", "_proxy_of"]
 
@@ -84,30 +92,23 @@ class Proxy:
     def __init__(self, pt_module, is_leaf_fn=default_is_leaf_fn):
         self._proxy = pt_module
         self._is_leaf_fn = is_leaf_fn
-        self._proxy_of = OneFlowModule(use_graph=True, dynamic=True)
+        self._proxy_of = OneFlowModule(use_graph=True, dynamic=False)
 
     def __getattr__(self, name):
         if name in Proxy.__attrs:
             return object.__getattribute__(self, name)
 
         attr = getattr(self._proxy, name)
-        # debug_msg = (
-        #     f"Proxy.__getattr__ {name} {attr.__class__} {self._is_leaf_fn(attr)}"
-        # )
-        # logger.debug(debug_msg)
 
         if self._is_leaf_fn(attr):
             return attr
         else:
             return Proxy(attr, self._is_leaf_fn)
 
-    @input_output_processor
     def __call__(self, *args, **kwargs):
         if not self._proxy_of.is_compiled():
             self._proxy_of.compile(self._proxy)
-        _proxy_of = self._proxy_of.oneflow_module
-        with oneflow_exec_mode():
-            return _proxy_of(*args, **kwargs)
+        return self._proxy_of(*args, **kwargs)
 
     def __setitem__(self, key, value):
         self._proxy[key] = value
@@ -120,8 +121,6 @@ class Proxy:
         if name in Proxy.__attrs:
             object.__setattr__(self, name, value)
         else:
-            # debug_msg = f"Proxy.__setattr__ {name} {value.__class__}"
-            # logger.debug(debug_msg)
             setattr(self._proxy, name, value)
 
 
