@@ -20,8 +20,11 @@ from .utils.graph_management_utils import graph_file_management
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         torch.nn.Module.__init__(self)
-        self._torch_module = torch_module
-        self._oneflow_module = oneflow_module
+        object.__setattr__(self, "_torch_module", torch_module)
+        object.__setattr__(self, "_oneflow_module", oneflow_module)
+        object.__setattr__(self, "_modules", torch_module._modules)
+        # self._torch_module = torch_module
+        # self._oneflow_module = oneflow_module
 
     @property
     def oneflow_module(self):
@@ -190,9 +193,13 @@ class DeployableModule(torch.nn.Module):
         options={},
     ):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+        # self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+        #     torch_module, oneflow_module
+        # )
+        object.__setattr__(self, "_deployable_module_model", get_mixed_dual_module(torch_module.__class__)(
             torch_module, oneflow_module
-        )
+        ))
+        object.__setattr__(self, "_modules", torch_module._modules)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = options
