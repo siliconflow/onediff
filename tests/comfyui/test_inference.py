@@ -134,6 +134,9 @@ class ComfyClient:
             else:
                 break
 
+    def close(self):
+        self.ws.close()
+
     def queue_prompt(self, prompt):
         p = {"prompt": prompt, "client_id": self.client_id}
         data = json.dumps(p).encode("utf-8")
@@ -286,5 +289,7 @@ if __name__ == "__main__":
         run_inference_tests(client, comfy_graph)
     except TimeoutException as e:
         raise RuntimeError(f"Timeout after {args.timeout} seconds") from e
+
     finally:
+        client.close()
         signal.alarm(0)
