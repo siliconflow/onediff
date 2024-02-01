@@ -90,7 +90,19 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 
 ### Accessing ComfyUI Models
 
-To download the necessary models, please visit the [siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main) and the [siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main) on HuggingFace.
+
+To download the necessary models:
+
+
+1. **SD 1.5**
+   - For more information and to access the model, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
+
+2. **SDXL**
+   - For details, visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
+
+3. **SVD**
+   - For details, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
+
 
 **NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
 
@@ -101,6 +113,8 @@ Click the links below to view the workflow images, or load them directly into Co
 - [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
 - [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
 - [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
+- [SVD](xx.png)
+- [SVD + DeepCache](xx.png)
 
 ## Diffusers with OneDiff Enterprise
 
