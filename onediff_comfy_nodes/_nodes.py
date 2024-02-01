@@ -770,7 +770,6 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(comfy_extras.nodes_video_mod
                 "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
             )
 
-        # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
@@ -795,10 +794,6 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(comfy_extras.nodes_video_mod
         modelpatcher.model.diffusion_model = quant_unet
 
         if need_compile:
-            # compiled_unet = compoile_unet(
-            #     modelpatcher.model.diffusion_model, graph_file
-            # )
-            # modelpatcher.model.diffusion_model = compiled_unet
             offload_device = model_management.unet_offload_device()
             modelpatcher = OneFlowSpeedUpModelPatcher(
                 modelpatcher.model,
@@ -820,7 +815,6 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(comfy_extras.nodes_video_mod
                 },
             )
 
-        # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
 
