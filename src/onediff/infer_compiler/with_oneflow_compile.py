@@ -81,9 +81,7 @@ class DualModule(torch.nn.Module):
                 _align_tensor(module, self._oneflow_module.get_submodule(name))
 
     def __getattr__(self, name):
-        if name == "_torch_module":
-            return self._modules[name]
-        if name == "_oneflow_module":
+        if name == "_torch_module" or name == "_oneflow_module":
             return super().__getattribute__(name)
 
         torch_attr = getattr(self._torch_module, name)
@@ -308,8 +306,6 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def __getattr__(self, name):
-        if name in self._modules:
-            return self._modules[name]
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
