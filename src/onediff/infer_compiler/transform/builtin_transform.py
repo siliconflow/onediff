@@ -149,6 +149,10 @@ def torch2oflow(mod, *args, **kwargs):
 
 
 def default_converter(obj, verbose=False, *, proxy_cls=None):
+    # Higher versions of diffusers might use torch.nn.modules.Linear
+    if obj is torch.nn.Linear:
+        return flow.nn.Linear
+
     if not is_need_mock(type(obj)):
         return obj
     try:
