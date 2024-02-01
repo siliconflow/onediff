@@ -115,6 +115,9 @@ class DualModule(torch.nn.Module):
                     setattr(self._oneflow_module, name, v)
             setattr(self._torch_module, name, value)
 
+    def extra_repr(self) -> str:
+        return self._torch_module.extra_repr()
+
 
 class DualModuleList(torch.nn.ModuleList):
     def __init__(self, torch_modules, oneflow_modules):
@@ -152,9 +155,6 @@ class DualModuleList(torch.nn.ModuleList):
             value = torch2oflow(value)
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
-
-    def extra_repr(self) -> str:
-        return self._torch_module.extra_repr()
 
 
 def get_mixed_dual_module(module_cls):
