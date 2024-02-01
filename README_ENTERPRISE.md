@@ -13,15 +13,12 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [For NA/EU users](#for-naeu-users)
     - [For CN users](#for-cn-users)
 - [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
-    - [Accessing ComfyUI Models](#accessing-comfyui-models)
-    - [Workflow](#workflow)
+    - [SD-1.5](#SD-1.5)
+    - [SDXL](#SDXL)
+    - [SVD](#SVD)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
-        - [Accessing Diffusers Models](#accessing-diffusers-models)
-        - [Scripts](#scripts)
     - [SVD](#SVD)
-        - [Accessing Diffusers Models](#accessing-diffusers-models)
-        - [Scripts](#scripts)
 
 
 ## Get the license key
@@ -88,33 +85,37 @@ python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=o
 
 Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
 
-### Accessing ComfyUI Models
-
-
 To download the necessary models:
 
-
-1. **SD 1.5**
-   - For more information and to access the model, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
-
-2. **SDXL**
-   - For details, visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
-
-3. **SVD**
-   - For details, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
+### SD-1.5
 
 
-**NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
+  For more information and to access the model, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
 
-### Workflow
 
 Click the links below to view the workflow images, or load them directly into ComfyUI.
 
-- [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
-- [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
-- [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
-- [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)
-- [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
+  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
+
+### SDXL
+
+  For model details, visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
+
+
+  - Workflow: [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
+  - Workflow: [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
+
+### SVD
+
+
+  For model details, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
+
+
+  - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)
+  - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
+
+**NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
+
 
 ## Diffusers with OneDiff Enterprise
 
