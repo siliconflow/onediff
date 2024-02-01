@@ -37,6 +37,7 @@ model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
 
 from .modules.hijack_animatediff import animatediff_hijacker
+
 animatediff_hijacker.hijack()
 
 

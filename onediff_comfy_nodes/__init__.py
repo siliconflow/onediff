@@ -76,6 +76,3 @@ if _USE_UNET_INT8:
             "QuantKSampler": "Quant K Sampler",
         }
     )
-
-
-

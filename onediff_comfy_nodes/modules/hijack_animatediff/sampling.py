@@ -33,31 +33,44 @@ AnimateDiffFormat = animatediff_pt.animatediff.motion_module_ad.AnimateDiffForma
 ModelTypeSD = animatediff_pt.animatediff.model_utils.ModelTypeSD
 
 _HANDLES = []
+
+
 def inject_functions(orig_func, self, model, params):
     global _HANDLES
 
     ret = orig_func(self, model, params)
     # TODO  avoid call more than once
     info = model.motion_model.model.mm_info
-    if not (info.mm_version == AnimateDiffVersion.V3 or (info.mm_format == AnimateDiffFormat.ANIMATEDIFF and info.sd_type == ModelTypeSD.SD1_5 and
-            info.mm_version == AnimateDiffVersion.V2 and params.apply_v2_models_properly)):
+    if not (
+        info.mm_version == AnimateDiffVersion.V3
+        or (
+            info.mm_format == AnimateDiffFormat.ANIMATEDIFF
+            and info.sd_type == ModelTypeSD.SD1_5
+            and info.mm_version == AnimateDiffVersion.V2
+            and params.apply_v2_models_properly
+        )
+    ):
         org_func = flow.nn.GroupNorm.forward
         flow.nn.GroupNorm.forward = groupnorm_mm_factory(params)
+
         def restore_groupnorm():
             flow.nn.GroupNorm.forward = org_func
+
         _HANDLES.append(restore_groupnorm)
 
         if params.apply_mm_groupnorm_hack:
             orig_func = GroupNormAD_OF_CLS.forward
             GroupNormAD_OF_CLS.forward = groupnorm_mm_factory(params)
+
             def restore_groupnorm_ad():
                 GroupNormAD_OF_CLS.forward = orig_func
+
             _HANDLES.append(restore_groupnorm_ad)
 
     return ret
 
 
-def restore_functions(orig_func,*args, **kwargs):
+def restore_functions(orig_func, *args, **kwargs):
     global _HANDLES
 
     ret = orig_func(*args, **kwargs)
