@@ -2,6 +2,8 @@ import oneflow as torch
 import oneflow.nn as nn
 import oneflow.nn.functional as F
 
+from einops import rearrange
+
 
 class AlphaBlender(nn.Module):
     strategies = ["learned", "fixed", "learned_with_images"]
