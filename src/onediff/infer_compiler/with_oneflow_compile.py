@@ -91,9 +91,8 @@ class DualModule(torch.nn.Module):
             else getattr(self._oneflow_module, name)
         )
         if isinstance(torch_attr, torch.nn.ModuleList):
-            oneflow_attr = (
-                [None] * len(torch_attr) if oneflow_attr is None else oneflow_attr
-            )
+            if oneflow_attr is None:
+                oneflow_attr = flow.nn.ModuleList([None] * len(torch_attr))
             return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
@@ -157,6 +156,9 @@ class DualModuleList(torch.nn.ModuleList):
 
 
 def get_mixed_dual_module(module_cls):
+    if issubclass(module_cls, DualModule) and "MixedDualModule" in module_cls.__name__:
+        return module_cls
+
     class MixedDualModule(DualModule, module_cls):
         def __init__(self, torch_module, oneflow_module):
             DualModule.__init__(self, torch_module, oneflow_module)
@@ -165,6 +167,10 @@ def get_mixed_dual_module(module_cls):
             return f"{self.__class__.__name__}(of {module_cls.__name__})"
 
     return MixedDualModule
+
+@torch2oflow.register
+def _(mod: DualModule, verbose=False):
+    return torch2oflow(mod._torch_module, verbose)
 
 
 def handle_deployable_exception(func):
