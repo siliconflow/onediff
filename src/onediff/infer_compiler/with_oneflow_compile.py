@@ -23,8 +23,6 @@ class DualModule(torch.nn.Module):
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_oneflow_module", oneflow_module)
         object.__setattr__(self, "_modules", torch_module._modules)
-        # self._torch_module = torch_module
-        # self._oneflow_module = oneflow_module
 
     @property
     def oneflow_module(self):
@@ -193,9 +191,6 @@ class DeployableModule(torch.nn.Module):
         options={},
     ):
         torch.nn.Module.__init__(self)
-        # self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
-        #     torch_module, oneflow_module
-        # )
         object.__setattr__(self, "_deployable_module_model", get_mixed_dual_module(torch_module.__class__)(
             torch_module, oneflow_module
         ))
