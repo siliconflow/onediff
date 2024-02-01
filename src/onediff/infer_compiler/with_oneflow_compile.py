@@ -153,11 +153,17 @@ class DualModuleList(torch.nn.ModuleList):
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
 
+    def extra_repr(self) -> str:
+        return self._torch_module.extra_repr()
+
 
 def get_mixed_dual_module(module_cls):
     class MixedDualModule(DualModule, module_cls):
         def __init__(self, torch_module, oneflow_module):
             DualModule.__init__(self, torch_module, oneflow_module)
+
+        def _get_name(self) -> str:
+            return f"{self.__class__.__name__}(of {module_cls.__name__})"
 
     return MixedDualModule
 
@@ -316,6 +322,9 @@ class DeployableModule(torch.nn.Module):
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
 
+    def extra_repr(self) -> str:
+        return self._deployable_module_model.extra_repr()
+
 
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
@@ -383,6 +392,9 @@ def get_mixed_deployable_module(module_cls):
                 existing_module._deployable_module_dpl_graph if use_graph else None
             )
             return instance
+
+        def _get_name(self):
+            return f"{self.__class__.__name__}(of {module_cls.__name__})"
 
     return MixedDeployableModule
 
