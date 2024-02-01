@@ -346,9 +346,8 @@ class SpatialVideoTransformer(
             #     time_context_first_timestep, "b ... -> (b n) ...", n=h * w
             # )
             # Rewrite for onediff SVD dynamic shape
-            broadcast_tensor = x.flatten(2, 3).permute(2, 0, 1)
             time_context = torch._C.broadcast_dim_like(
-                time_context_first_timestep[None, :], broadcast_tensor, dim=0
+                time_context_first_timestep[None, :], x.flatten(2, 3), dim=0, like_dim=2,
             ).flatten(0, 1)
 
         elif time_context is not None and not self.use_spatial_context:
