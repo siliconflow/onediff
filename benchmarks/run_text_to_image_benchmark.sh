@@ -57,7 +57,7 @@ else
   [ -d ${MODEL_DIR}/stable-diffusion-xl-base-1.0 ] && SDXL_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0
 
   python3 -c "import onediff_quant" && echo "enable quant model" && BENCHMARK_QUANT_MODEL=1 || echo "disable quant model"
-  python3 -c "import diffusers_extensions" && echo "enable deepcache model" && BENCHMARK_DEEP_CACHE_MODEL=1 || echo "disable deepcache model"
+  # python3 -c "import onediffx" && echo "enable deepcache model" && BENCHMARK_DEEP_CACHE_MODEL=1 || echo "disable deepcache model"
 
   SDXL_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-int8
   SDXL_DEEP_CACHE_QUANT_MODEL_PATH=${MODEL_DIR}/stable-diffusion-xl-base-1.0-deepcache-int8
