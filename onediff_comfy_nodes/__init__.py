@@ -78,19 +78,4 @@ if _USE_UNET_INT8:
     )
 
 
-from _proxy_nodes import OneDiffCheckpointLoaderSimple_Proxy
-NODE_CLASS_MAPPINGS.update(
-    {
-        "OneDiffCheckpointLoaderSimple_Proxy": OneDiffCheckpointLoaderSimple_Proxy,
-    }
-
-)
-
-NODE_DISPLAY_NAME_MAPPINGS.update(
-    {
-        "OneDiffCheckpointLoaderSimple_Proxy": "Load Checkpoint - OneDiff (Proxy)",
-    }
-)
-
-
 
