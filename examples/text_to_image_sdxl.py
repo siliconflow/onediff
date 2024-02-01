@@ -110,14 +110,14 @@ if args.run_multiple_resolutions:
             ).images
 
 
-print("Test run with other another uncommon resolution...")
-if args.run_multiple_resolutions:
-    h = 544
-    w = 408
-    image = base(
-        prompt=args.prompt,
-        height=h,
-        width=w,
-        num_inference_steps=args.n_steps,
-        output_type=OUTPUT_TYPE,
-    ).images
+# print("Test run with other another uncommon resolution...")
+# if args.run_multiple_resolutions:
+#     h = 544
+#     w = 408
+#     image = base(
+#         prompt=args.prompt,
+#         height=h,
+#         width=w,
+#         num_inference_steps=args.n_steps,
+#         output_type=OUTPUT_TYPE,
+#     ).images

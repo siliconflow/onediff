@@ -20,8 +20,9 @@ from .utils.graph_management_utils import graph_file_management
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         torch.nn.Module.__init__(self)
-        self._torch_module = torch_module
-        self._oneflow_module = oneflow_module
+        object.__setattr__(self, "_torch_module", torch_module)
+        object.__setattr__(self, "_oneflow_module", oneflow_module)
+        object.__setattr__(self, "_modules", torch_module._modules)
 
     @property
     def oneflow_module(self):
@@ -80,9 +81,7 @@ class DualModule(torch.nn.Module):
                 _align_tensor(module, self._oneflow_module.get_submodule(name))
 
     def __getattr__(self, name):
-        if name == "_torch_module":
-            return self._modules[name]
-        if name == "_oneflow_module":
+        if name == "_torch_module" or name == "_oneflow_module":
             return super().__getattribute__(name)
 
         torch_attr = getattr(self._torch_module, name)
@@ -196,9 +195,10 @@ class DeployableModule(torch.nn.Module):
         options={},
     ):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+        object.__setattr__(self, "_deployable_module_model", get_mixed_dual_module(torch_module.__class__)(
             torch_module, oneflow_module
-        )
+        ))
+        object.__setattr__(self, "_modules", torch_module._modules)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = options
@@ -312,8 +312,6 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def __getattr__(self, name):
-        if name in self._modules:
-            return self._modules[name]
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
