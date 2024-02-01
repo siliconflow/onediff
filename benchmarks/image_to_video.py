@@ -17,6 +17,8 @@ ALTER_WIDTH = None
 FPS = 7
 DECODE_CHUNK_SIZE = 5
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
+CONTROL_IMAGE = None
+OUTPUT_VIDEO = None
 EXTRA_CALL_KWARGS = None
 ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 CACHE_INTERVAL = 3
@@ -29,12 +31,11 @@ import argparse
 import time
 import json
 import random
+import torch
 from PIL import Image, ImageDraw
+from diffusers.utils import load_image, export_to_video
 
 import oneflow as flow
-import torch
-
-from diffusers.utils import load_image, export_to_video
 from onediffx import compile_pipe, compiler_config
 
 
@@ -45,7 +46,7 @@ def parse_args():
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     parser.add_argument("--scheduler", type=str, default=SCHEDULER)
     parser.add_argument("--lora", type=str, default=LORA)
-    parser.add_argument("--controlnet", type=str, default=None)
+    parser.add_argument("--controlnet", type=str, default=CONTROLNET)
     parser.add_argument("--steps", type=int, default=STEPS)
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--warmups", type=int, default=WARMUPS)
@@ -60,8 +61,8 @@ def parse_args():
     parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
-    parser.add_argument("--control-image", type=str, default=None)
-    parser.add_argument("--output-video", type=str, default=None)
+    parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
+    parser.add_argument("--output-video", type=str, default=OUTPUT_VIDEO)
     parser.add_argument(
         "--compiler",
         type=str,
@@ -100,7 +101,7 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16, use_safetensors=True,
+            controlnet, torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
     is_quantized_model = False
@@ -110,7 +111,7 @@ def load_pipe(
 
         setup_onediff_quant()
     pipe = pipeline_cls.from_pretrained(
-        model_name, torch_dtype=torch.float16, use_safetensors=True, **extra_kwargs
+        model_name, torch_dtype=torch.float16, **extra_kwargs
     )
     if scheduler is not None:
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
@@ -219,7 +220,7 @@ def main():
                 )
                 del draw
         else:
-            control_image = Image.open(args.control_image).convert("RGB")
+            control_image = load_image(args.control_image)
             control_image = control_image.resize((args.width, height), Image.LANCZOS)
 
         def get_kwarg_inputs():
@@ -241,11 +242,11 @@ def main():
                     else json.loads(args.extra_call_kwargs)
                 ),
             )
+            if control_image is not None:
+                kwarg_inputs["control_image"] = control_image
             if args.deepcache:
                 kwarg_inputs["cache_interval"] = args.cache_interval
                 kwarg_inputs["cache_branch"] = args.cache_branch
-            if control_image is not None:
-                kwarg_inputs["control_image"] = control_image
             return kwarg_inputs
 
         if args.warmups > 0:
