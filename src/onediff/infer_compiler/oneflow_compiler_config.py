@@ -29,7 +29,7 @@ def init_default_env():
     os.environ.setdefault("ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL", "1")
     os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
     # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL", "0")
-    os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL", "0")
+    # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL", "0")
 
     os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
     os.environ.setdefault("ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
