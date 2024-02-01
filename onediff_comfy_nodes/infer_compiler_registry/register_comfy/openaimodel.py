@@ -3,14 +3,8 @@ import oneflow as th  # 'th' is the way ComfyUI name the torch
 import oneflow.nn.functional as F
 from onediff.infer_compiler.transform import proxy_class
 from onediff.infer_compiler.transform import transform_mgr
-from einops import rearrange
-from abc import abstractmethod
 
 onediff_comfy = transform_mgr.transform_package("comfy")
-
-ops = onediff_comfy.ops.disable_weight_init
-ResBlock = onediff_comfy.ldm.modules.diffusionmodules.openaimodel.ResBlock
-checkpoint = onediff_comfy.ldm.modules.diffusionmodules.util.checkpoint
 
 
 class Upsample(proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.Upsample)):
@@ -157,70 +151,3 @@ class UNetModel(proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.UNetM
             return self.id_predictor(h)
         else:
             return self.out(h)
-
-
-class VideoResBlock(
-    proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.VideoResBlock)
-):
-    def _forward(self, x, emb):
-        if self.updown:
-            in_rest, in_conv = self.in_layers[:-1], self.in_layers[-1]
-            h = in_rest(x)
-            h = self.h_upd(h)
-            x = self.x_upd(x)
-            h = in_conv(h)
-        else:
-            h = self.in_layers(x)
-
-        emb_out = None
-        if not self.skip_t_emb:
-            emb_out = self.emb_layers(emb).type(h.dtype)
-            while len(emb_out.shape) < len(h.shape):
-                emb_out = emb_out[..., None]
-        if self.use_scale_shift_norm:
-            out_norm, out_rest = self.out_layers[0], self.out_layers[1:]
-            h = out_norm(h)
-            if emb_out is not None:
-                scale, shift = th.chunk(emb_out, 2, dim=1)
-                h *= 1 + scale
-                h += shift
-            h = out_rest(h)
-        else:
-            if emb_out is not None:
-                if self.exchange_temb_dims:
-                    # emb_out = rearrange(emb_out, "b t c ... -> b c t ...")
-                    # Rewrite for onediff SVD dynamic shape
-                    emb_out = emb_out.permute(0, 2, 1, 3, 4)
-                h = h + emb_out
-            h = self.out_layers(h)
-        return self.skip_connection(x) + h
-
-    def forward(
-        self,
-        x: th.Tensor,
-        emb: th.Tensor,
-        num_video_frames: int,
-        image_only_indicator=None,
-    ) -> th.Tensor:
-        # Rewrite for onediff SVD dynamic shape
-        # x = super().forward(x, emb)
-        x = checkpoint(self._forward, (x, emb), self.parameters(), self.use_checkpoint)
-
-        # x_mix = rearrange(x, "(b t) c h w -> b c t h w", t=num_video_frames)
-        batch_frames, _, _, _ = x.shape
-        batch_size = batch_frames // num_video_frames
-        x_mix = x.unflatten(0, shape=(batch_size, -1)).permute(0, 2, 1, 3, 4)
-        # x = rearrange(x, "(b t) c h w -> b c t h w", t=num_video_frames)
-        x = x.unflatten(0, shape=(batch_size, -1)).permute(0, 2, 1, 3, 4)
-
-        # x = self.time_stack(
-        #     x, rearrange(emb, "(b t) ... -> b t ...", t=num_video_frames)
-        # )
-        x = self.time_stack(x, emb.unflatten(0, shape=(batch_size, -1)))
-
-        x = self.time_mixer(
-            x_spatial=x_mix, x_temporal=x, image_only_indicator=image_only_indicator
-        )
-        # x = rearrange(x, "b c t h w -> (b t) c h w")
-        x = x.permute(0, 2, 1, 3, 4).flatten(0, 1)
-        return x
