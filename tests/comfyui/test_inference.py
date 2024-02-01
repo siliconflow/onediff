@@ -55,7 +55,7 @@ def parse_args():
         "--ssim_thresholds",
         nargs="+",
         type=float,
-        default=[0.85, 0.8, 0.6],
+        default=[0.8, 0.7, 0.6],
         help="List of ssim_thresholds to workflows",
     )
     parser.add_argument(
