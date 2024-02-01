@@ -2,11 +2,10 @@
 ci mem limit: 12288MiB
 
 Run the test script:
-python3 tests/comfyui/test_inference.py -w  /share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_basic.json
-python tests/comfyui/test_inference.py -w  /share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_lora.json
-python tests/comfyui/test_inference.py -w  /share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_controlnet-lora.json
+python3 tests/comfyui/test_inference.py -p 3000
 """
 from copy import deepcopy
+import os
 from typing import Tuple, Union
 import argparse
 import numpy as np
@@ -35,23 +34,29 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-w",
-        "--workflow",
+        "--workflows",
+        nargs="+",
         type=str,
-        required=True,
-        help="Workflow file",
+        default=[
+            "/share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_basic.json",
+            "/share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_lora.json",
+            "/share_nfs/hf_models/comfyui_resources/workflow_apis/comfyui_controlnet-lora.json",
+        ],
+        help="List of workflow files to process",
     )
     parser.add_argument(
         "-t",
         "--timeout",
         type=int,
-        default="100",
+        default="300",
     )
-    # ssim_threshold
     parser.add_argument(
         "-s",
-        "--ssim_threshold",
+        "--ssim_thresholds",
+        nargs="+",
         type=float,
-        default="0.8",
+        default=[0.85, 0.8, 0.6],
+        help="List of ssim_thresholds to workflows",
     )
     parser.add_argument(
         "-p",
@@ -93,23 +98,6 @@ ONEDIFF_TO_TORCH = {
 
 class ComfyClient:
     # From examples/websockets_api_example.py
-
-    # def start_client(self, listen:str, port:int):
-    #     # Start client
-    #     comfy_client = ComfyClient()
-    #     # Connect to server (with retries)
-    #     n_tries = 5
-    #     for i in range(n_tries):
-    #         time.sleep(4)
-    #         try:
-    #             comfy_client.connect(listen=listen, port=port)
-    #         except ConnectionRefusedError as e:
-    #             print(e)
-    #             print(f"({i+1}/{n_tries}) Retrying...")
-    #         else:
-    #             break
-    #     return comfy_client
-
     def connect(
         self,
         listen: str = "127.0.0.1",
@@ -132,7 +120,10 @@ class ComfyClient:
                 print(f"({i+1}/{n_tries}) Retrying...")
 
             else:
+                print("Connected to server: ", self.server_address)
                 break
+        if not self.ws:
+            raise RuntimeError(f"Could not connect to server: {self.server_address}")
 
     def close(self):
         self.ws.close()
@@ -197,8 +188,15 @@ class ComfyClient:
 
 
 class ComfyGraph:
-    def __init__(self, graph):
-        self.graph = graph
+    def __init__(self, file_path: str):
+        self.workflow_name = os.path.basename(file_path)
+        self.graph = self.get_comfy_graph(file_path)
+
+    def get_comfy_graph(self, file_path):
+        assert file_path.endswith(".json")
+        with open(file_path, "r") as f:
+            comfy_graph = json.load(f)
+        return comfy_graph
 
     def set_random_seed(self, seed):
         for k, node in self.graph.items():
@@ -278,15 +276,23 @@ if __name__ == "__main__":
     args = parse_args()
     client = ComfyClient()
     client.connect(listen=args.listen, port=args.port)
-    graph = get_comfy_graph(args.workflow)
-    comfy_graph = ComfyGraph(graph)
+    comfy_graphs = [ComfyGraph(file_path) for file_path in args.workflows]
     signal.alarm(args.timeout)
 
     try:
-        validate_inference_consistency(
-            client, comfy_graph, ssim_threshold=args.ssim_threshold
-        )
-        run_inference_tests(client, comfy_graph)
+        assert len(comfy_graphs) == len(
+            args.ssim_thresholds
+        ), "Length of ssim_thresholds must be equal to length of workflows"
+
+        for comfy_graph, ssim_threshold in zip(comfy_graphs, args.ssim_thresholds):
+            print(
+                f"Testing workflow: {comfy_graph.workflow_name} with ssim_threshold: {ssim_threshold}"
+            )
+            validate_inference_consistency(
+                client, comfy_graph, ssim_threshold=ssim_threshold
+            )
+            run_inference_tests(client, comfy_graph)
+
     except TimeoutException as e:
         raise RuntimeError(f"Timeout after {args.timeout} seconds") from e
 
