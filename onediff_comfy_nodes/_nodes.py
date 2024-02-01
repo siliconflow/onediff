@@ -399,6 +399,7 @@ class ModuleDeepCacheSpeedup:
         )
 
 
+import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from comfy.controlnet import ControlLora, ControlNet
 
@@ -670,6 +671,104 @@ class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
         output_clip=True,
     ):
         need_compile = compile == "enable"
+
+        # CheckpointLoaderSimple.load_checkpoint
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+
+        ckpt_name = f"{ckpt_name}_quant_{model_path}"
+        model_path = (
+            Path(folder_paths.models_dir)
+            / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+            / model_path
+        )
+        graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
+
+        calibrate_info = torch.load(model_path)
+
+        load_device = model_management.get_torch_device()
+        diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
+        quant_unet = quantize_unet(
+            diffusion_model=diffusion_model,
+            inplace=True,
+            calibrate_info=calibrate_info,
+        )
+        modelpatcher.model.diffusion_model = quant_unet
+
+        if need_compile:
+            # compiled_unet = compoile_unet(
+            #     modelpatcher.model.diffusion_model, graph_file
+            # )
+            # modelpatcher.model.diffusion_model = compiled_unet
+            offload_device = model_management.unet_offload_device()
+            modelpatcher = OneFlowSpeedUpModelPatcher(
+                modelpatcher.model,
+                load_device=model_management.get_torch_device(),
+                offload_device=offload_device,
+                use_graph=True,
+                graph_path=graph_file,
+                graph_device=model_management.get_torch_device(),
+            )
+
+        if vae_speedup == "enable":
+            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            vae.first_stage_model = oneflow_compile(
+                vae.first_stage_model,
+                use_graph=True,
+                options={
+                    "graph_file": file_path,
+                    "graph_file_device": model_management.get_torch_device(),
+                },
+            )
+
+        # set inplace update
+        modelpatcher.weight_inplace_update = True
+        return modelpatcher, clip, vae
+
+
+class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(comfy_extras.nodes_video_model.ImageOnlyCheckpointLoader):
+    @classmethod
+    def INPUT_TYPES(s):
+        paths = []
+        for search_path in folder_paths.get_folder_paths(
+            ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+        ):
+            if os.path.exists(search_path):
+                search_path = Path(search_path)
+                paths.extend(
+                    [
+                        os.path.relpath(p, start=search_path)
+                        for p in search_path.glob("*.pt")
+                    ]
+                )
+
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "model_path": (paths,),
+                "compile": (["enable", "disable"],),
+                "vae_speedup": (["disable", "enable"],),
+            }
+        }
+
+    CATEGORY = "OneDiff/Loaders"
+    FUNCTION = "onediff_load_checkpoint"
+
+    def onediff_load_checkpoint(
+        self,
+        ckpt_name,
+        model_path,
+        compile,
+        vae_speedup,
+        output_vae=True,
+        output_clip=True,
+    ):
+        need_compile = compile == "enable"
+        if need_compile:
+            set_boolean_env_var(
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
+            )
 
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
