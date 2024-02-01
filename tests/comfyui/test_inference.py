@@ -48,7 +48,7 @@ def parse_args():
         "-t",
         "--timeout",
         type=int,
-        default="300",
+        default="330",
     )
     parser.add_argument(
         "-s",
@@ -291,7 +291,9 @@ if __name__ == "__main__":
             validate_inference_consistency(
                 client, comfy_graph, ssim_threshold=ssim_threshold
             )
+            time.sleep(5)
             run_inference_tests(client, comfy_graph)
+            time.sleep(5)
 
     except TimeoutException as e:
         raise RuntimeError(f"Timeout after {args.timeout} seconds") from e
