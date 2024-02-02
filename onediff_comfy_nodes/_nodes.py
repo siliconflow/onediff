@@ -672,9 +672,16 @@ class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
         output_vae=True,
         output_clip=True,
     ):
-        return onediff_load_quant_checkpoint_advanced(
-            self, ckpt_name, model_path, compile, vae_speedup, output_vae, output_clip
+        need_compile = compile == "enable"
+
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
         )
+        modelpatcher, vae = onediff_load_quant_checkpoint_advanced(
+            ckpt_name, model_path, need_compile, vae_speedup, modelpatcher, vae
+        )
+
+        return modelpatcher, clip, vae
 
 
 class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
@@ -722,9 +729,14 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
                 "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
             )
 
-        return onediff_load_quant_checkpoint_advanced(
-            self, ckpt_name, model_path, compile, vae_speedup, output_vae, output_clip
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
         )
+        modelpatcher, vae = onediff_load_quant_checkpoint_advanced(
+            ckpt_name, model_path, need_compile, vae_speedup, modelpatcher, vae
+        )
+
+        return modelpatcher, clip, vae
 
 
 if _USE_UNET_INT8:
