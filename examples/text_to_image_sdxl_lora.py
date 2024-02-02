@@ -5,7 +5,7 @@ from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import TensorInplaceAssign
 
 try:
-    from onediffx.utils.lora import load_and_fuse_lora, unfuse_lora
+    from onediffx.lora import load_and_fuse_lora, unfuse_lora
 except ImportError:
     raise RuntimeError("OneDiff onediffx is not installed. Please check onediff_diffusers_extensions/README.md to install onediffx.")
 
