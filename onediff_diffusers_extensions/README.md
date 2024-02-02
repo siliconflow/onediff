@@ -7,7 +7,7 @@ OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration 
 - [DeepCache Speedup](#deepcache-speedup)
     - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediffx)
     - [Stable Diffusion 1.5](#run-stable-diffusion-15-with-onediffx)
-- [LoRA loading and switching speed up](#lora-loading-and-switching-speed-up)
+- [Fast LoRA loading and switching](#fast-lora-loading-and-switching)
 - [Quantization](#quantization)
 - [Contact](#contact)
 
@@ -151,7 +151,7 @@ export_to_video(deepcache_output, "generated.mp4", fps=7)
 ```
 
 
-## More Efficient LoRA loading and switching
+## Fast LoRA loading and switching
 
 OneDiff provides a more efficient implementation of loading LoRA, by invoking `load_and_fuse_lora` you can load and fuse LoRA to pipeline, and by invoking `unfuse_lora` you can restore the weight of base model.
 

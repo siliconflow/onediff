@@ -19,7 +19,7 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
 
-is_onediffx_available = version.parse(diffusers.__version__) >= version.parse("0.21.0")
+is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.21.0")
 
 
 USE_PEFT_BACKEND = False
@@ -35,8 +35,8 @@ def load_and_fuse_lora(
     use_cache=False,
     **kwargs,
 ) -> None:
-    if not is_onediffx_available:
-        raise RuntimeError("onediffx lora only supports diffusers of at least version 0.21.0")
+    if not is_onediffx_lora_available:
+        raise RuntimeError("onediffx.lora only supports diffusers of at least version 0.21.0")
 
     self = pipeline
     if adapter_name is not None:
