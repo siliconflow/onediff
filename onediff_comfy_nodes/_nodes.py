@@ -32,6 +32,7 @@ from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
 from .modules.hijack_nodes import nodes_hijacker
 from .utils.deep_cache_speedup import deep_cache_speedup
+from .utils.onediff_load_utils import onediff_load_quant_checkpoint_advanced
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -435,9 +436,10 @@ class OneDiffControlNetLoader(ControlNetLoader):
             )
             return (controlnet,)
         else:
-            print("\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m")
+            print(
+                "\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m"
+            )
             return (controlnet,)
-
 
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
@@ -670,64 +672,14 @@ class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
         output_vae=True,
         output_clip=True,
     ):
-        need_compile = compile == "enable"
-
-        # CheckpointLoaderSimple.load_checkpoint
-        modelpatcher, clip, vae = self.load_checkpoint(
-            ckpt_name, output_vae, output_clip
+        return onediff_load_quant_checkpoint_advanced(
+            self, ckpt_name, model_path, compile, vae_speedup, output_vae, output_clip
         )
 
-        ckpt_name = f"{ckpt_name}_quant_{model_path}"
-        model_path = (
-            Path(folder_paths.models_dir)
-            / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-            / model_path
-        )
-        graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
 
-        calibrate_info = torch.load(model_path)
-
-        load_device = model_management.get_torch_device()
-        diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
-        quant_unet = quantize_unet(
-            diffusion_model=diffusion_model,
-            inplace=True,
-            calibrate_info=calibrate_info,
-        )
-        modelpatcher.model.diffusion_model = quant_unet
-
-        if need_compile:
-            # compiled_unet = compoile_unet(
-            #     modelpatcher.model.diffusion_model, graph_file
-            # )
-            # modelpatcher.model.diffusion_model = compiled_unet
-            offload_device = model_management.unet_offload_device()
-            modelpatcher = OneFlowSpeedUpModelPatcher(
-                modelpatcher.model,
-                load_device=model_management.get_torch_device(),
-                offload_device=offload_device,
-                use_graph=True,
-                graph_path=graph_file,
-                graph_device=model_management.get_torch_device(),
-            )
-
-        if vae_speedup == "enable":
-            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = oneflow_compile(
-                vae.first_stage_model,
-                use_graph=True,
-                options={
-                    "graph_file": file_path,
-                    "graph_file_device": model_management.get_torch_device(),
-                },
-            )
-
-        # set inplace update
-        modelpatcher.weight_inplace_update = True
-        return modelpatcher, clip, vae
-
-
-class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(comfy_extras.nodes_video_model.ImageOnlyCheckpointLoader):
+class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
+    comfy_extras.nodes_video_model.ImageOnlyCheckpointLoader
+):
     @classmethod
     def INPUT_TYPES(s):
         paths = []
@@ -770,53 +722,9 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(comfy_extras.nodes_video_mod
                 "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
             )
 
-        modelpatcher, clip, vae = self.load_checkpoint(
-            ckpt_name, output_vae, output_clip
+        return onediff_load_quant_checkpoint_advanced(
+            self, ckpt_name, model_path, compile, vae_speedup, output_vae, output_clip
         )
-
-        ckpt_name = f"{ckpt_name}_quant_{model_path}"
-        model_path = (
-            Path(folder_paths.models_dir)
-            / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-            / model_path
-        )
-        graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
-
-        calibrate_info = torch.load(model_path)
-
-        load_device = model_management.get_torch_device()
-        diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
-        quant_unet = quantize_unet(
-            diffusion_model=diffusion_model,
-            inplace=True,
-            calibrate_info=calibrate_info,
-        )
-        modelpatcher.model.diffusion_model = quant_unet
-
-        if need_compile:
-            offload_device = model_management.unet_offload_device()
-            modelpatcher = OneFlowSpeedUpModelPatcher(
-                modelpatcher.model,
-                load_device=model_management.get_torch_device(),
-                offload_device=offload_device,
-                use_graph=True,
-                graph_path=graph_file,
-                graph_device=model_management.get_torch_device(),
-            )
-
-        if vae_speedup == "enable":
-            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = oneflow_compile(
-                vae.first_stage_model,
-                use_graph=True,
-                options={
-                    "graph_file": file_path,
-                    "graph_file_device": model_management.get_torch_device(),
-                },
-            )
-
-        modelpatcher.weight_inplace_update = True
-        return modelpatcher, clip, vae
 
 
 if _USE_UNET_INT8:
