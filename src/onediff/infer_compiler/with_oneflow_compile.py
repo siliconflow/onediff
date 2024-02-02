@@ -161,6 +161,8 @@ def get_mixed_dual_module(module_cls):
 
     class MixedDualModule(DualModule, module_cls):
         def __init__(self, torch_module, oneflow_module):
+            while isinstance(torch_module, DualModule):
+                torch_module = torch_module._torch_module
             DualModule.__init__(self, torch_module, oneflow_module)
 
         def _get_name(self) -> str:

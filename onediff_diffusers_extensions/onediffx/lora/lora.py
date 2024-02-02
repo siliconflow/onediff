@@ -172,7 +172,7 @@ def load_and_fuse_lora(
             # or add_{k,v,q,out_proj}_proj_lora layers.
             rank = value_dict["lora.down.weight"].shape[0]
 
-            if isinstance(attn_processor, LoRACompatibleConv):
+            if isinstance(attn_processor, (LoRACompatibleConv, torch.nn.Conv2d)):
                 conv_fuse_lora(
                     attn_processor,
                     value_dict,
@@ -182,7 +182,7 @@ def load_and_fuse_lora(
                     offload_device=offload_device,
                     offload_weight=offload_weight,
                 )
-            elif isinstance(attn_processor, LoRACompatibleLinear):
+            elif isinstance(attn_processor, (LoRACompatibleLinear, torch.nn.Linear)):
                 linear_fuse_lora(
                     attn_processor,
                     value_dict,
