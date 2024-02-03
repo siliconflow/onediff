@@ -156,7 +156,7 @@ export_to_video(deepcache_output, "generated.mp4", fps=7)
 OneDiff provides a more efficient implementation of loading LoRA, by invoking `load_and_fuse_lora` you can load and fuse LoRA to pipeline, and by invoking `unfuse_lora` you can restore the weight of base model.
 
 ### API
-`onediffx.utils.lora.load_and_fuse_lora(pipeline: LoraLoaderMixin, pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, *, lora_scale: float = 1.0, offload_device="cpu", offload_weight="lora", use_cache=False, **kwargs)`:
+`onediffx.lora.load_and_fuse_lora(pipeline: LoraLoaderMixin, pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, *, lora_scale: float = 1.0, offload_device="cpu", offload_weight="lora", use_cache=False, **kwargs)`:
 - pipeline (`LoraLoaderMixin`): The pipeline that will load and fuse LoRA weight.
 
 - pretrained_model_name_or_path_or_dict (`str` or `os.PathLike` or `dict`):  Can be either:
@@ -181,7 +181,7 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 
   
 
-`onediffx.utils.lora.unfuse_lora(pipeline: LoraLoaderMixin) -> None`:
+`onediffx.lora.unfuse_lora(pipeline: LoraLoaderMixin) -> None`:
 
 - pipeline (`LoraLoaderMixin`): The pipeline that will unfuse LoRA weight.
 
@@ -191,7 +191,7 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 import torch
 from diffusers import DiffusionPipeline
 from onediffx import compile_pipe
-from onediffx.utils.lora import load_and_fuse_lora, unfuse_lora
+from onediffx.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(MODEL_ID, variant="fp16", torch_dtype=torch.float16).to("cuda")
@@ -225,18 +225,19 @@ We choose 5 LoRAs to profile loading and switching speed of 3 different APIs
 
 2. `load_lora_weight + fuse_lora`, which has high inference performance but low loading performance
 
-3. `onediffx.utils.lora.load_and_fuse_lora`, which has high loading performance and high inference performance
+3. `onediffx.lora.load_and_fuse_lora`, which has high loading performance and high inference performance
 
 
 The results are shown below
 
-| LoRA name                                | size  | load_lora_weight | load_lora_weight + fuse_lora | **onediffx load_and_fuse_lora** | unet cnt | te1 cnt | te2 cnt | src link                                      |
-|------------------------------------------|-------|-------------------|-----------------------------|----------------------------------|----------|---------|---------|-----------------------------------------------|
-| SDXL-Emoji-Lora-r4.safetensors           | 28M   | 1.69 s            | 2.34 s                      | **0.78 s**                       | 2166     | 216     | 576     | [Link](https://novita.ai/model/SDXL-Emoji-Lora-r4_160282)             |
-| sdxl_metal_lora.safetensors              | 23M   | 0.97 s            | 1.73 s                      | **0.19 s**                       | 1120     | 0       | 0       |                                               |
-| simple_drawing_xl_b1-000012.safetensors | 55M   | 1.67 s            | 2.57 s                      | **0.77 s**                       | 2166     | 216     | 576     | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)        |
-| texta.safetensors                        | 270M  | 1.72 s            | 2.86 s                      | **0.97 s**                       | 2364     | 0       | 0       | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
-| watercolor_v1_sdxl_lora.safetensors     | 12M   | 1.54 s            | 2.01 s                      | **0.35 s**                       | 1680     | 0       | 0       |                                               |
+| LoRA name                               | size | load_lora_weight | load_lora_weight + fuse_lora | **onediffx load_and_fuse_lora** | src link                                                                |
+|-----------------------------------------|------|------------------|------------------------------|---------------------------------|-------------------------------------------------------------------------|
+| SDXL-Emoji-Lora-r4.safetensors          | 28M  | 1.69 s           | 2.34 s                       | **0.78 s**                      | [Link](https://novita.ai/model/SDXL-Emoji-Lora-r4_160282)               |
+| sdxl_metal_lora.safetensors             | 23M  | 0.97 s           | 1.73 s                       | **0.19 s**                      |                                                                         |
+| simple_drawing_xl_b1-000012.safetensors | 55M  | 1.67 s           | 2.57 s                       | **0.77 s**                      | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)           |
+| texta.safetensors                       | 270M | 1.72 s           | 2.86 s                       | **0.97 s**                      | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
+| watercolor_v1_sdxl_lora.safetensors     | 12M  | 1.54 s           | 2.01 s                       | **0.35 s**                      |                                                                         |
+
 
 ### Note
 

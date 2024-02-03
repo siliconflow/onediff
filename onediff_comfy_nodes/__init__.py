@@ -55,6 +55,7 @@ if _USE_UNET_INT8:
         QuantKSampler,
         OneDiffQuantCheckpointLoaderSimple,
         OneDiffQuantCheckpointLoaderSimpleAdvanced,
+        ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
     )
 
     NODE_CLASS_MAPPINGS.update(
@@ -63,6 +64,7 @@ if _USE_UNET_INT8:
             "Quant8Model": Quant8Model,
             "OneDiffQuantCheckpointLoaderSimple": OneDiffQuantCheckpointLoaderSimple,
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": OneDiffQuantCheckpointLoaderSimpleAdvanced,
+            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": ImageOnlyOneDiffQuantCheckpointLoaderAdvanced, 
             "QuantKSampler": QuantKSampler,
         }
     )
@@ -73,6 +75,7 @@ if _USE_UNET_INT8:
             "Quant8Model": "Model Quantization(int8)",
             "OneDiffQuantCheckpointLoaderSimple": "Load Checkpoint - OneDiff Quant",
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": "Load Checkpoint - OneDiff Quant Advanced",
+            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": "Load Checkpoint - OneDiff Quant Advanced (img2vid)",
             "QuantKSampler": "Quant K Sampler",
         }
     )
