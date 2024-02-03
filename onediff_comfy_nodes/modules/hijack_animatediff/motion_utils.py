@@ -4,7 +4,7 @@ import oneflow as torch
 from onediff.infer_compiler.transform import register
 
 CrossAttentionMM_OF_CLS = animatediff_of.animatediff.motion_utils.CrossAttentionMM
-CrossAttentionMM_PT = animatediff_pt.animatediff.motion_utils.CrossAttentionMM
+CrossAttentionMM_PT_CLS = animatediff_pt.animatediff.motion_utils.CrossAttentionMM
 
 
 def exists(val):
@@ -70,4 +70,4 @@ class CrossAttentionMM_OF(CrossAttentionMM_OF_CLS):
         return self.to_out(out)
 
 
-register(torch2oflow_class_map={CrossAttentionMM_PT: CrossAttentionMM_OF})
+register(torch2oflow_class_map={CrossAttentionMM_PT_CLS: CrossAttentionMM_OF})

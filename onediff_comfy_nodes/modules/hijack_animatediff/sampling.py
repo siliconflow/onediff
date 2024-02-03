@@ -16,9 +16,14 @@ def groupnorm_mm_factory(params):
             axes_factor = input.size(0) // params.video_length
         else:
             axes_factor = input.size(0) // params.context_length
-        input = rearrange(input, "(b f) c h w -> b c f h w", b=axes_factor)
+
+        # input = rearrange(input, "(b f) c h w -> b c f h w", b=axes_factor)
+        # (b f) c h w -> b f c h w -> b c f h w
+        input = input.unflatten(0, (axes_factor, -1)).permute(0, 2, 1, 3, 4)
         input = group_norm(input, self.num_groups, self.weight, self.bias, self.eps)
-        input = rearrange(input, "b c f h w -> (b f) c h w", b=axes_factor)
+        # input = rearrange(input, "b c f h w -> (b f) c h w", b=axes_factor)
+        # b c f h w -> b f c h w -> (b f) c h w
+        input = input.permute(0, 2, 1, 3, 4).flatten(0, 1)
         return input
 
     return groupnorm_mm_forward

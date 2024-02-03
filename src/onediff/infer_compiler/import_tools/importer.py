@@ -4,12 +4,12 @@ import importlib
 from inspect import ismodule
 from typing import Optional, Union
 from types import FunctionType, ModuleType
-from oneflow.mock_torch import DynamicMockModule
 from pathlib import Path
 from importlib.metadata import requires
 from .format_utils import MockEntityNameFormatter
+from .dyn_mock_mod import DynamicMockModule
 
-__all__ = ["import_module_from_path", "LazyMocker", "is_need_mock"]
+__all__ = ["LazyMocker", "is_need_mock"]
 
 
 def is_need_mock(cls) -> bool:
@@ -26,29 +26,6 @@ def is_need_mock(cls) -> bool:
                 return True
         return False
     return True
-
-
-def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
-    if isinstance(module_path, Path):
-        module_path = str(module_path)
-    module_name = os.path.basename(module_path)
-    if os.path.isfile(module_path):
-        sp = os.path.splitext(module_path)
-        module_name = sp[0]
-
-    if os.path.isfile(module_path):
-        module_spec = importlib.util.spec_from_file_location(module_name, module_path)
-        module_dir = os.path.split(module_path)[0]
-    else:
-        module_spec = importlib.util.spec_from_file_location(
-            module_name, os.path.join(module_path, "__init__.py")
-        )
-        module_dir = module_path
-
-    module = importlib.util.module_from_spec(module_spec)
-    sys.modules[module_name] = module
-    module_spec.loader.exec_module(module)
-    return module
 
 
 class DynamicModuleLoader(ModuleType):
