@@ -1,7 +1,8 @@
 import torch
 from comfy import model_management
+from comfy.model_base import SVD_img2vid
 
-
+from onediff.infer_compiler.utils import set_boolean_env_var
 from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
 
 
@@ -32,6 +33,10 @@ def deep_cache_speedup(
     cache_h = None
 
     def apply_model(model_function, kwargs):
+        if isinstance(model_patcher.model, SVD_img2vid):
+            set_boolean_env_var(
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
+            )
         nonlocal current_t, current_step, cache_h
 
         xa = kwargs["input"]
