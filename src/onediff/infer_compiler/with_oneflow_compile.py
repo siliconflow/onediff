@@ -16,13 +16,16 @@ from .utils.cost_util import cost_cnt
 from .utils.param_utils import parse_device, check_device
 from .utils.graph_management_utils import graph_file_management
 
+_from_torch = [
+    '_parameters',
+    '_buffers',
+    '_modules',
+]
 
-class DualModule(torch.nn.Module):
+class DualModule:
     def __init__(self, torch_module, oneflow_module):
-        torch.nn.Module.__init__(self)
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_oneflow_module", oneflow_module)
-        object.__setattr__(self, "_modules", torch_module._modules)
 
     @property
     def oneflow_module(self):
@@ -85,6 +88,10 @@ class DualModule(torch.nn.Module):
             return super().__getattribute__(name)
 
         torch_attr = getattr(self._torch_module, name)
+
+        if name in _from_torch:
+            return torch_attr
+
         oneflow_attr = (
             None
             if self._oneflow_module is None
