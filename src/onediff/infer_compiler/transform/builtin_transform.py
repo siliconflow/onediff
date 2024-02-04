@@ -105,7 +105,10 @@ class ProxySubmodule:
         ):
             return flow.Generator()
         elif (
-            isinstance(self._oflow_proxy_submod, (torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d))
+            isinstance(
+                self._oflow_proxy_submod,
+                (torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d),
+            )
             and attribute == "channel_pos"
         ):
             return "channels_first"
@@ -148,6 +151,13 @@ def torch2oflow(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
 
+@torch2oflow.register
+def _(mod: type):
+    if not is_need_mock(mod):
+        return mod
+    return proxy_class(mod)
+
+
 def default_converter(obj, verbose=False, *, proxy_cls=None):
     # Higher versions of diffusers might use torch.nn.modules.Linear
     if obj is torch.nn.Linear:
@@ -162,7 +172,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
                 self.__dict__[k] = torch2oflow(attr)
-  
+
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
 
@@ -174,11 +184,12 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         # raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
 
+
 @torch2oflow.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
     new_md_cls = proxy_class(type(mod))
-    
+
     def init(self):
         nonlocal proxy_md
 
@@ -223,7 +234,7 @@ def _(mod: torch.nn.Module, verbose=False):
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
     of_mod = of_mod_cls()
-    
+
     if of_mod.training:
         of_mod.training = False
         if verbose:
@@ -244,7 +255,7 @@ def _(mod: torch.nn.Module, verbose=False):
 def _(mod: torch.nn.BatchNorm1d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     of_mod.channel_axis = 1
-    
+
     return of_mod
 
 
@@ -254,7 +265,7 @@ def _(mod: torch.nn.BatchNorm2d, verbose=False):
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
         of_mod.channel_axis = 3
     else:
-        of_mod.channel_axis = 1 
+        of_mod.channel_axis = 1
 
     return of_mod
 
@@ -263,15 +274,15 @@ def _(mod: torch.nn.BatchNorm2d, verbose=False):
 def _(mod: torch.nn.BatchNorm3d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     of_mod.channel_axis = 1
-    
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.MaxPool1d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -279,26 +290,26 @@ def _(mod: torch.nn.MaxPool1d, verbose=False):
 def _(mod: torch.nn.MaxPool2d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
-        of_mod.channel_pos = 'channels_last'
+        of_mod.channel_pos = "channels_last"
     else:
-        of_mod.channel_pos = 'channels_first'
-    
+        of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.MaxPool3d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.AvgPool1d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -306,18 +317,18 @@ def _(mod: torch.nn.AvgPool1d, verbose=False):
 def _(mod: torch.nn.AvgPool2d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
-        of_mod.channel_pos = 'channels_last'
+        of_mod.channel_pos = "channels_last"
     else:
-        of_mod.channel_pos = 'channels_first'
-    
+        of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.AvgPool3d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -325,10 +336,10 @@ def _(mod: torch.nn.AvgPool3d, verbose=False):
 def _(mod: torch.nn.AdaptiveAvgPool2d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
-        of_mod.channel_pos = 'channels_last'
+        of_mod.channel_pos = "channels_last"
     else:
-        of_mod.channel_pos = 'channels_first'
-    
+        of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -350,7 +361,7 @@ def _(mod: torch.nn.Sequential, verbose=False):
         of_mod_list.append(submod)
 
     of_mod_seq = proxy_class(type(mod))(*of_mod_list)
-    
+
     return of_mod_seq
 
 
@@ -418,6 +429,7 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 @torch2oflow.register
 def _(mod: None, verbose=False):
     return mod
+
 
 @torch2oflow.register
 def _(mod: types.BuiltinFunctionType, verbose=False):
