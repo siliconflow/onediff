@@ -7,12 +7,11 @@ from ._nodes import (
     VaeSpeedup,
     VaeGraphLoader,
     VaeGraphSaver,
-    ControlNetSpeedup,
-    ControlNetGraphLoader,
-    ControlNetGraphSaver,
     SVDSpeedup,
     ModuleDeepCacheSpeedup,
     OneDiffCheckpointLoaderSimple,
+    OneDiffControlNetLoader,
+    OneDiffDeepCacheCheckpointLoaderSimple,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -26,12 +25,11 @@ NODE_CLASS_MAPPINGS = {
     "VaeSpeedup": VaeSpeedup,
     "VaeGraphSaver": VaeGraphSaver,
     "VaeGraphLoader": VaeGraphLoader,
-    "ControlNetSpeedup": ControlNetSpeedup,
-    "ControlNetGraphLoader": ControlNetGraphLoader,
-    "ControlNetGraphSaver": ControlNetGraphSaver,
     "SVDSpeedup": SVDSpeedup,
     "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
+    "OneDiffControlNetLoader": OneDiffControlNetLoader,
+    "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -43,12 +41,11 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "VaeSpeedup": "VAE Speedup",
     "VaeGraphLoader": "VAE Graph Loader",
     "VaeGraphSaver": "VAE Graph Saver",
-    "ControlNetSpeedup": "ControlNet Speedup",
-    "ControlNetGraphLoader": "ControlNet Graph Loader",
-    "ControlNetGraphSaver": "ControlNet Graph Saver",
     "SVDSpeedup": "SVD Speedup",
     "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
+    "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
+    "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
 }
 
 
@@ -58,6 +55,7 @@ if _USE_UNET_INT8:
         QuantKSampler,
         OneDiffQuantCheckpointLoaderSimple,
         OneDiffQuantCheckpointLoaderSimpleAdvanced,
+        ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
     )
 
     NODE_CLASS_MAPPINGS.update(
@@ -66,6 +64,7 @@ if _USE_UNET_INT8:
             "Quant8Model": Quant8Model,
             "OneDiffQuantCheckpointLoaderSimple": OneDiffQuantCheckpointLoaderSimple,
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": OneDiffQuantCheckpointLoaderSimpleAdvanced,
+            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": ImageOnlyOneDiffQuantCheckpointLoaderAdvanced, 
             "QuantKSampler": QuantKSampler,
         }
     )
@@ -76,6 +75,7 @@ if _USE_UNET_INT8:
             "Quant8Model": "Model Quantization(int8)",
             "OneDiffQuantCheckpointLoaderSimple": "Load Checkpoint - OneDiff Quant",
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": "Load Checkpoint - OneDiff Quant Advanced",
+            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": "Load Checkpoint - OneDiff Quant Advanced (img2vid)",
             "QuantKSampler": "Quant K Sampler",
         }
     )

@@ -496,6 +496,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         weight_inplace_update=False,
         *,
         use_graph=None,
+        gen_compile_options=None,
     ):
         from onediff.infer_compiler import oneflow_compile
         from onediff.infer_compiler.with_oneflow_compile import DeployableModule
@@ -514,15 +515,19 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         self.fast_deep_cache_unet = FastDeepCacheUNet(
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
-
         if use_graph:
+            gen_compile_options = gen_compile_options or (lambda x: {})
+            compile_options = gen_compile_options(self.deep_cache_unet)
             self.deep_cache_unet = oneflow_compile(
                 self.deep_cache_unet,
                 use_graph=use_graph,
+                options=compile_options,
             )
+            compile_options = gen_compile_options(self.fast_deep_cache_unet)
             self.fast_deep_cache_unet = oneflow_compile(
                 self.fast_deep_cache_unet,
                 use_graph=use_graph,
+                options=compile_options,
             )
             self.model._register_state_dict_hook(state_dict_hook)
 
@@ -536,3 +541,49 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.current_device = self.offload_device
         else:
             self.current_device = current_device
+
+def get_mixed_speedup_class(module_cls):
+    class MixedSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher, module_cls):
+        def __init__(
+            self,
+            model_patcher,
+            load_device,
+            offload_device,
+            size=0,
+            current_device=None,
+            weight_inplace_update=False,
+            *,
+            use_graph=None,
+        ):
+            self.__dict__.update(**model_patcher.__dict__)
+            OneFlowSpeedUpModelPatcher.__init__(
+                self,
+                model_patcher.model,
+                load_device,
+                offload_device,
+                size,
+                current_device,
+                weight_inplace_update,
+                use_graph=use_graph,
+            )
+
+        def clone(self):
+            cloned = module_cls.clone(self)
+            n = OneFlowSpeedUpModelPatcher(
+                cloned.model,
+                self.load_device,
+                self.offload_device,
+                self.size,
+                self.current_device,
+                weight_inplace_update=self.weight_inplace_update,
+            )
+            n.patches = {}
+            for k in self.patches:
+                n.patches[k] = self.patches[k][:]
+
+            n.object_patches = self.object_patches.copy()
+            n.model_options = copy.deepcopy(self.model_options)
+            n.model_keys = self.model_keys
+            return n
+
+    return MixedSpeedUpModelPatcher

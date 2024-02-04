@@ -20,8 +20,9 @@ from .utils.graph_management_utils import graph_file_management
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
         torch.nn.Module.__init__(self)
-        self._torch_module = torch_module
-        self._oneflow_module = oneflow_module
+        object.__setattr__(self, "_torch_module", torch_module)
+        object.__setattr__(self, "_oneflow_module", oneflow_module)
+        object.__setattr__(self, "_modules", torch_module._modules)
 
     @property
     def oneflow_module(self):
@@ -44,9 +45,9 @@ class DualModule(torch.nn.Module):
             self._oneflow_module.to(*args, **kwargs)
         else:
             if self._oneflow_module is not None:
-                args = [torch2oflow(v) for v in args]
-                kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
-                self._oneflow_module.to(*args, **kwargs)
+                of_args = [torch2oflow(v) for v in args]
+                of_kwargs = {k: torch2oflow(v) for k, v in kwargs.items()}
+                self._oneflow_module.to(*of_args, **of_kwargs)
                 self._torch_module_to_with_check(*args, **kwargs)
             else:
                 self._torch_module.to(*args, **kwargs)
@@ -80,9 +81,7 @@ class DualModule(torch.nn.Module):
                 _align_tensor(module, self._oneflow_module.get_submodule(name))
 
     def __getattr__(self, name):
-        if name == "_torch_module":
-            return self._modules[name]
-        if name == "_oneflow_module":
+        if name == "_torch_module" or name == "_oneflow_module":
             return super().__getattribute__(name)
 
         torch_attr = getattr(self._torch_module, name)
@@ -114,6 +113,9 @@ class DualModule(torch.nn.Module):
                 else:
                     setattr(self._oneflow_module, name, v)
             setattr(self._torch_module, name, value)
+
+    def extra_repr(self) -> str:
+        return self._torch_module.extra_repr()
 
 
 class DualModuleList(torch.nn.ModuleList):
@@ -159,6 +161,9 @@ def get_mixed_dual_module(module_cls):
         def __init__(self, torch_module, oneflow_module):
             DualModule.__init__(self, torch_module, oneflow_module)
 
+        def _get_name(self) -> str:
+            return f"{self.__class__.__name__}(of {module_cls.__name__})"
+
     return MixedDualModule
 
 
@@ -188,18 +193,19 @@ class DeployableModule(torch.nn.Module):
         use_graph=True,
         dynamic=True,
         options={},
-        graph_path=None,
-        graph_device=None,
     ):
         torch.nn.Module.__init__(self)
-        self._deployable_module_model = get_mixed_dual_module(torch_module.__class__)(
+        object.__setattr__(self, "_deployable_module_model", get_mixed_dual_module(torch_module.__class__)(
             torch_module, oneflow_module
-        )
+        ))
+        object.__setattr__(self, "_modules", torch_module._modules)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
+        self._load_graph_first_run = True
+        self._deployable_module_input_count = None
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
@@ -209,6 +215,11 @@ class DeployableModule(torch.nn.Module):
         instance._deployable_module_dpl_graph = (
             existing_module._deployable_module_dpl_graph if use_graph else None
         )
+        instance._load_graph_first_run = existing_module._load_graph_first_run
+        instance._deployable_module_input_count = (
+            existing_module._deployable_module_input_count
+        )
+
         return instance
 
     def get_graph(self):
@@ -301,8 +312,6 @@ class DeployableModule(torch.nn.Module):
         return output
 
     def __getattr__(self, name):
-        if name in self._modules:
-            return self._modules[name]
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
@@ -311,42 +320,16 @@ class DeployableModule(torch.nn.Module):
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
 
+    def extra_repr(self) -> str:
+        return self._deployable_module_model.extra_repr()
+
 
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
     def __init__(self, model):
-        # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
-        os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
-        os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_ENABLE_ROUND_TRIP", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_FUSE_FORWARD_OPS", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_PREFER_NHWC", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR", "1")
-        os.environ.setdefault(
-            "ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1"
-        )
-        os.environ.setdefault(
-            "ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1"
-        )
-        os.environ.setdefault("ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
-        os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
-        os.environ.setdefault("ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
-        os.environ.setdefault("ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT", "1")
-        # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL", "0")
-        os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
-        # TODO: enable this will cause the failure of multi resolution warmup
-        # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")
-        # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
-
         super().__init__(enable_get_runtime_state_dict=True)
         self.model = model
-        self.config.enable_cudnn_conv_heuristic_search_algo(False)
+        # self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
     def build(self, *args, **kwargs):
@@ -389,24 +372,10 @@ def state_dict_hook(module, state_dict, prefix, local_metadata):
 def get_mixed_deployable_module(module_cls):
     class MixedDeployableModule(DeployableModule, module_cls):
         def __init__(
-            self,
-            torch_module,
-            oneflow_module,
-            use_graph=True,
-            dynamic=True,
-            options={},
-            graph_path=None,
-            graph_device=None,
+            self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={}
         ):
             DeployableModule.__init__(
-                self,
-                torch_module,
-                oneflow_module,
-                use_graph,
-                dynamic,
-                options,
-                graph_path,
-                graph_device,
+                self, torch_module, oneflow_module, use_graph, dynamic, options
             )
             self._is_raw_deployable_module = False
 
@@ -421,6 +390,9 @@ def get_mixed_deployable_module(module_cls):
                 existing_module._deployable_module_dpl_graph if use_graph else None
             )
             return instance
+
+        def _get_name(self):
+            return f"{self.__class__.__name__}(of {module_cls.__name__})"
 
     return MixedDeployableModule
 
@@ -444,6 +416,8 @@ def oneflow_compile(
        options (dict): A dictionary of options to pass to the compiler:
         - 'debug' which config the nn.Graph debug level, default -1(no debug info), max 3(max debug info);
         - 'size' which config the cache size when cache is enabled. Note that after onediff v0.12, cache is default disabled.
+        - 'graph_file' (None) generates a compilation cache file. If the file exists, loading occurs; if not, the compilation result is saved after the first run.
+        - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
     """
 
     set_default_registry()

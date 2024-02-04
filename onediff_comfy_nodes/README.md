@@ -4,32 +4,59 @@
 <img src="../imgs/onediff_logo.png" height="100">
 </p>
 
-Performance of Community Edition
+---
 
-Updated on DEC 7, 2023. Device: RTX 3090
+Performance of Community Edition 
 
-| SDXL1.0-base (1024x1024)                                       | torch(Baseline) | onediff(Optimized) | Percentage improvement |
-| -------------------------------------------------------------- | --------------- | ------------------ | ---------------------- |
-| [Stable Diffusion workflow(UNet)](workflows/model-speedup.png) | 4.08it/s        | 6.70it/s           | 64.2 %                 |
-| [LoRA workflow](workflows/model-speedup-lora.png)              | 4.05it/s        | 6.69it/s           | 65.1 %                 |
+Updated on January 23, 2024. Device: RTX 3090
+
+
+<div align="center">
+  
+  **SDXL End2End Time** , Image Size 1024x1024 , Batch Size 1 , steps 20
+
+  <a href="https://github.com/siliconflow/onediff/tree/main" target="_blank">
+  <img width="100%" src="../imgs/comfy_community_version_speed.png"></a>
+</div>
+
+
+<details>
+<summary> Figure Notes </summary>
+
+- Workflow Download Links
+- [SDXL 1.0 (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/basic_base.png)
+- [SDXL 1.0 (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/basic_onediff.png)
+- [LoRA (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/lora_base.png)
+- [LoRA (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/lora_onediff.png)
+- [ControlNet (Base)](https://github.com/siliconflow/onediff/releases/download/0.12.0/controlnet_base.png)
+- [ControlNet (OneDiff)](https://github.com/siliconflow/onediff/releases/download/0.12.0/controlnet_onediff.png)
+
+
+</details>
 
 ## Documentation
 
-- [Installation Guide](#installation-guide)
-- [Basical Nodes Usage](#basical-nodes-usage)
-  - [OneDiff LoadCheckpoint ](#load-checkpoint---onediff)
-  - [Quantization](#quantization)
-- [OneDiff Community Examples](#onediff-community-examples)
-  - [LoRA](#lora)
-  - [ControlNet](#controlnet)
-  - [SVD](#svd)
-  - [DeepCache](#deepcache)
-- [Contact](#contact)
+- [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
+  - [Documentation](#documentation)
+    - [Installation Guide](#installation-guide)
+      - [Setup Community Edition](#setup-community-edition)
+      - [Setup Enterprise Edition](#setup-enterprise-edition)
+    - [Basical Nodes Usage](#basical-nodes-usage)
+      - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
+    - [Quantization](#quantization)
+  - [OneDiff Community Examples](#onediff-community-examples)
+    - [LoRA](#lora)
+    - [ControlNet](#controlnet)
+    - [SVD](#svd)
+    - [DeepCache](#deepcache)
+  - [Contact](#contact)
 
 
 ### Installation Guide
 
 Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) first, and then:
+
+#### Setup Community Edition
 
 <details close>
 <summary>Setup Community Edition</summary>
@@ -61,38 +88,13 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 </details>
 
+#### Setup Enterprise Edition
 
+1. [Install OneDiff Enterprise](../README_ENTERPRISE.md#install-onediff-enterprise)
 
-<details close>
-<summary>Setup Enterprise Edition</summary>
-
-1. Install OneFlow Enterprise
-  * Install OneFlow Community(CUDA 11.x)
+2. Install onediff_comfy_nodes for ComfyUI
     ```bash
-      python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu118
-    ```
-
-  * Install OneFlow Community(CUDA 12.x)
-    ```bash
-      python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121
-    ```
-
-2. Get license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.
-
-3. Set up the key
-    ```bash
-    export SILICON_ONEDIFF_LICENSE_KEY=YOUR_LICENSE_KEY
-    ```
-
-
-4. Install OneDiff and OneDiff Quant
-    ```bash
-    python3 -m pip install onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant && \
-    git clone https://github.com/siliconflow/onediff.git  && \
-    cd onediff && pip install -e . && cd ..
-    ```
-5. Install onediff_comfy_nodes for ComfyUI
-    ```bash
+    git clone https://github.com/siliconflow/onediff.git
     cd onediff 
     cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
     ```
@@ -135,9 +137,12 @@ This example demonstrates how to utilize LoRAs. You have the flexibility to modi
 
 ### ControlNet
 
-While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more.
+> doc link: [ControlNet](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ControlNet)
 
-[ControlNet Speedup](workflows/model-speedup-controlnet.png)
+
+While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more. 
+
+[ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
 
 ### SVD
 
