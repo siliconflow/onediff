@@ -9,7 +9,6 @@ import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
@@ -48,10 +47,8 @@ args = parser.parse_args()
 OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
-scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
 base = StableDiffusionXLPipeline.from_pretrained(
     args.base,
-    scheduler=scheduler,
     torch_dtype=torch.float16,
     variant=args.variant,
     use_safetensors=True,
@@ -59,19 +56,32 @@ base = StableDiffusionXLPipeline.from_pretrained(
 base.to("cuda")
 
 # Compile unet with oneflow
+import time
 if args.compile_unet:
     print("Compiling unet with oneflow.")
+    flow._oneflow_internal.eager.Sync()
+    start_time = time.time()
     base.unet = oneflow_compile(base.unet)
+    flow._oneflow_internal.eager.Sync()
+    end_time = time.time()
+    print(f"{end_time-start_time}s elapsed: compile")
 
-# Compile vae with oneflow
-if args.compile_vae:
-    print("Compiling vae with oneflow.")
-    base.vae.decoder = oneflow_compile(base.vae.decoder)
+    print("Loading from graph")
+    flow._oneflow_internal.eager.Sync()
+    start_time = time.time()
+    #import pdb;pdb.set_trace()
+    base.unet.load_graph("easy_unet_graph.graph")
+    flow._oneflow_internal.eager.Sync()
+    end_time = time.time()
+    print(f"{end_time-start_time}s elapsed: unet.load_graph")
 
 # Warmup with run
 # Will do compilatioin in the first run
 print("Warmup with running graphs...")
 torch.manual_seed(args.seed)
+
+flow._oneflow_internal.eager.Sync()
+start_time = time.time()
 image = base(
     prompt=args.prompt,
     height=args.height,
@@ -79,10 +89,20 @@ image = base(
     num_inference_steps=args.n_steps,
     output_type=OUTPUT_TYPE,
 ).images
+flow._oneflow_internal.eager.Sync()
+end_time = time.time()
+print(f"{end_time-start_time}s elapsed: 1st infer")
+
+# if args.compile_unet:
+#     base.unet.save_graph("easy_unet_graph.graph")
 
 # Normal SDXL run
 print("Normal SDXL run...")
+
 torch.manual_seed(args.seed)
+
+flow._oneflow_internal.eager.Sync()
+start_time = time.time()
 image = base(
     prompt=args.prompt,
     height=args.height,
@@ -90,34 +110,9 @@ image = base(
     num_inference_steps=args.n_steps,
     output_type=OUTPUT_TYPE,
 ).images
+flow._oneflow_internal.eager.Sync()
+end_time = time.time()
+print(f"{end_time-start_time}s elapsed: 2nd infer")
+
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 
-
-# Should have no compilation for these new input shape
-print("Test run with multiple resolutions...")
-if args.run_multiple_resolutions:
-    sizes = [960, 720, 896, 768]
-    if "CI" in os.environ:
-        sizes = [360]
-    for h in sizes:
-        for w in sizes:
-            image = base(
-                prompt=args.prompt,
-                height=h,
-                width=w,
-                num_inference_steps=args.n_steps,
-                output_type=OUTPUT_TYPE,
-            ).images
-
-
-# print("Test run with other another uncommon resolution...")
-# if args.run_multiple_resolutions:
-#     h = 544
-#     w = 408
-#     image = base(
-#         prompt=args.prompt,
-#         height=h,
-#         width=w,
-#         num_inference_steps=args.n_steps,
-#         output_type=OUTPUT_TYPE,
-#     ).images
