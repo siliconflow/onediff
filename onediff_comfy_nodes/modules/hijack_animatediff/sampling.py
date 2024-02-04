@@ -2,6 +2,7 @@
 from einops import rearrange
 from oneflow.nn.functional import group_norm
 import oneflow as flow
+from onediff.infer_compiler.transform import register
 from ._config import animatediff_pt, animatediff_hijacker, animatediff_of
 
 FunctionInjectionHolder = animatediff_pt.animatediff.sampling.FunctionInjectionHolder
@@ -29,13 +30,14 @@ def groupnorm_mm_factory(params):
     return groupnorm_mm_forward
 
 
-# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_utils.py
-GroupNormAD_OF_CLS = animatediff_of.animatediff.motion_utils.GroupNormAD
+# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_motion.py
+GroupNormAD_OF_CLS = animatediff_of.animatediff.utils_motion.GroupNormAD
+GroupNormAD_PT_CLS = animatediff_pt.animatediff.utils_motion.GroupNormAD
 # ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_module_ad.py
 AnimateDiffVersion = animatediff_pt.animatediff.motion_module_ad.AnimateDiffVersion
 AnimateDiffFormat = animatediff_pt.animatediff.motion_module_ad.AnimateDiffFormat
-# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/model_utils.py
-ModelTypeSD = animatediff_pt.animatediff.model_utils.ModelTypeSD
+# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_model.py
+ModelTypeSD = animatediff_pt.animatediff.utils_model.ModelTypeSD
 
 _HANDLES = []
 
@@ -71,7 +73,6 @@ def inject_functions(orig_func, self, model, params):
                 GroupNormAD_OF_CLS.forward = orig_func
 
             _HANDLES.append(restore_groupnorm_ad)
-
     return ret
 
 

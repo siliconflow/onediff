@@ -1,10 +1,10 @@
-# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_utils.py
+# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_motion.py
 from ._config import animatediff_of, animatediff_pt
 import oneflow as torch
 from onediff.infer_compiler.transform import register
-
-CrossAttentionMM_OF_CLS = animatediff_of.animatediff.motion_utils.CrossAttentionMM
-CrossAttentionMM_PT_CLS = animatediff_pt.animatediff.motion_utils.CrossAttentionMM
+# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_motion.py
+CrossAttentionMM_OF_CLS = animatediff_of.animatediff.utils_motion.CrossAttentionMM
+CrossAttentionMM_PT_CLS = animatediff_pt.animatediff.utils_motion.CrossAttentionMM
 
 
 def exists(val):

@@ -95,7 +95,7 @@ class VersatileAttention_OF(VersatileAttention_OF_CLS):
         #     mask=attention_mask,
         #     scale_mask=scale_mask,
         # )
-        from .motion_utils import CrossAttentionMM_OF
+        from .utils_motion import CrossAttentionMM_OF
 
         hidden_states = CrossAttentionMM_OF.forward(
             self,
