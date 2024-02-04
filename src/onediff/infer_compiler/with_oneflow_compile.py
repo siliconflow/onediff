@@ -1,6 +1,7 @@
 import os
 import types
 import torch
+import time
 import oneflow as flow
 from oneflow.utils.tensor import to_torch
 from typing import Any
@@ -229,11 +230,23 @@ class DeployableModule(torch.nn.Module):
             size = self._deployable_module_options["size"]
         else:
             size = 9
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
+        of_module = self._deployable_module_model.oneflow_module
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"    {end_time-start_time}s elpased: assign of_module time")
+
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
         self._deployable_module_dpl_graph = get_oneflow_graph(
-            self._deployable_module_model.oneflow_module,
+            of_module,
             size,
             self._deployable_module_enable_dynamic,
         )
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"    {end_time-start_time}s elpased: get_oneflow_graph time")
         # Enabel debug mode
         if transform_mgr.debug_mode:
             self._deployable_module_dpl_graph.debug(0)
@@ -315,7 +328,19 @@ class DeployableModule(torch.nn.Module):
         return getattr(self._deployable_module_model, name)
 
     def load_graph(self, file_path, device=None, run_warmup=True):
-        self.get_graph().load_graph(file_path, device, run_warmup)
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
+        dpl_graph = self.get_graph()
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"  {end_time-start_time}s elpased: dpl_graph time")
+
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
+        dpl_graph.load_graph(file_path, device, run_warmup)
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"  {end_time-start_time}s elpased: load_graph time")
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
