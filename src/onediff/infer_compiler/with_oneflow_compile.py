@@ -23,6 +23,8 @@ class DualModule(torch.nn.Module):
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_oneflow_module", oneflow_module)
         object.__setattr__(self, "_modules", torch_module._modules)
+        object.__setattr__(self, "_parameters", torch_module._parameters)
+        object.__setattr__(self, "_buffers", torch_module._buffers)
 
     @property
     def oneflow_module(self):
