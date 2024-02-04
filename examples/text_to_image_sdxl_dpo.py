@@ -12,11 +12,9 @@ pipe = DiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-from onediff.infer_compiler import oneflow_compile
+from onediffx import compile_pipe
 
-pipe.unet = oneflow_compile(pipe.unet, dynamic=False)
-pipe.vae.encoder = oneflow_compile(pipe.vae.encoder)
-pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
+pipe = compile_pipe(pipe)
 
 pipe.load_lora_weights("radames/sd-21-DPO-LoRA", adapter_name="dpo-lora-sd21")
 pipe.set_adapters(["dpo-lora-sd21"], adapter_weights=[1.0]) # you can play with adapter_weights to increase the effect of the LoRA model
