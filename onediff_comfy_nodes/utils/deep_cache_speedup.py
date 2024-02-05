@@ -99,13 +99,7 @@ def deep_cache_speedup(
         if is_slow_step:
             cache_h = None
             model_output, cache_h = model_patcher.deep_cache_unet(
-                x,
-                timesteps,
-                context,
-                y,
-                control,
-                transformer_options,
-                **extra_conds,
+                x, timesteps, context, y, control, transformer_options, **extra_conds,
             )
         else:
             model_output, cache_h = model_patcher.fast_deep_cache_unet(

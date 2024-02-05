@@ -23,9 +23,7 @@ image = np.array(image)
 LOW_THRESHOLD = 100
 HIGH_THRESHOLD = 200
 PROMPT = "disco dancer with colorful lights, best quality, extremely detailed"
-NEGATIVE_PROMPT = (
-    "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
-)
+NEGATIVE_PROMPT = "longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality"
 
 image = cv2.Canny(image, LOW_THRESHOLD, HIGH_THRESHOLD)
 image = image[:, :, None]
