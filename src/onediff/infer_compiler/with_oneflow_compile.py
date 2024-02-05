@@ -205,7 +205,6 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
-        self._deployable_module_input_count = None
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
