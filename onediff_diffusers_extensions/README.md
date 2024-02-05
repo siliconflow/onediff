@@ -119,7 +119,7 @@ from diffusers.utils import load_image, export_to_video
 from onediffx import compile_pipe, compiler_config
 from onediffx.deep_cache import StableVideoDiffusionPipeline
 
-pipe = StableDiffusionPipeline.from_pretrained(
+pipe = StableVideoDiffusionPipeline.from_pretrained(
     "stabilityai/stable-video-diffusion-img2vid-xt",
     torch_dtype=torch.float16,
     variant="fp16",
@@ -138,13 +138,13 @@ for i in range(1):
     deepcache_output = pipe(
         input_image, 
         decode_chunk_size=5,
-        cache_interval=3, cache_layer_id=0, cache_block_id=0,
+        cache_interval=3, cache_branch=0,
     ).frames[0]
 
 deepcache_output = pipe(
     input_image, 
     decode_chunk_size=5,
-    cache_interval=3, cache_layer_id=0, cache_block_id=0,
+    cache_interval=3, cache_branch=0,
 ).frames[0]
 
 export_to_video(deepcache_output, "generated.mp4", fps=7)
