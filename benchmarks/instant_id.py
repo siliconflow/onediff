@@ -182,12 +182,14 @@ def main():
         attention_processor_path = os.path.join(
             args.repo, "ip_adapter", "attention_processor.py"
         )
+
         with open(attention_processor_path, "r") as f:
             content = f.read()
 
-        with open(attention_processor_path, "w") as f:
+        if "__call__" in content:
             content = content.replace("__call__", "forward")
-            f.write(content)
+            with open(attention_processor_path, "w") as f:
+                f.write(content)
 
     sys.path.insert(0, args.repo)
 
