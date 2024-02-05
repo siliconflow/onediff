@@ -36,6 +36,7 @@ def init_default_env():
     os.environ.setdefault("ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT", "1")
     # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
     # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", "-1")
+    os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_QUANTIZATION", "0")
 
     os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
 
@@ -73,6 +74,7 @@ class OneFlowCompilerConfig:
     linear_embedding_skip_init: Optional[bool] = None
     attention_allow_half_precision_accumulation: Optional[bool] = None
     attention_allow_half_precision_score_accumulation_max_m: Optional[int] = None
+    attention_allow_quantization: Optional[bool] = None
 
     attr2env_var = {
         "run_graph_by_vm": "ONEFLOW_RUN_GRAPH_BY_VM",
