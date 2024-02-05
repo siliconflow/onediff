@@ -161,10 +161,6 @@ def _(mod: type):
 
 
 def default_converter(obj, verbose=False, *, proxy_cls=None):
-    # Workaround for Linear and LoRACompatibleLinear.
-    if inspect.isclass(obj):
-        return obj
-
     if not is_need_mock(type(obj)):
         return obj
     try:
