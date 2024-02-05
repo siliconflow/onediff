@@ -35,15 +35,17 @@ def input_output_processor(func):
 
     def wrapper(self: "DeployableModule", *args, **kwargs):
         mapped_args, mapped_kwargs, input_count = process_input(*args, **kwargs)
-        if self._deployable_module_use_graph:
-            count = self._deployable_module_input_count
+        if (
+            self._deployable_module_use_graph
+            and self._deployable_module_dpl_graph is not None
+        ):
+            count = len(self._deployable_module_dpl_graph._input_op_names)
             if count != input_count:
                 logger.warning(
                     f"Module {type(self._deployable_module_model.oneflow_module)} input tensor count changed from {count} to {input_count}, will compile again."
                 )
                 self._deployable_module_dpl_graph = None
                 self._load_graph_first_run = True
-                self._deployable_module_input_count = input_count
 
         output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
