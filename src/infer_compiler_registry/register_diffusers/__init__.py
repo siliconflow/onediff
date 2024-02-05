@@ -20,7 +20,10 @@ if diffusers_version >= version.parse("0.24.00"):
     from diffusers.models.resnet import SpatioTemporalResBlock
     from diffusers.models.transformer_temporal import TransformerSpatioTemporalModel
     from diffusers.models.attention import TemporalBasicTransformerBlock 
-    from diffusers.models.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
+    if diffusers_version >= version.parse("0.26.00"):
+        from diffusers.models.unets.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
+    else:
+        from diffusers.models.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
     
     if diffusers_version >= version.parse("0.25.00"):
         from diffusers.models.autoencoders.autoencoder_kl_temporal_decoder import TemporalDecoder
