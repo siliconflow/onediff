@@ -239,7 +239,6 @@ The results are shown below
 | watercolor_v1_sdxl_lora.safetensors     | 12M  | 1.54 s           | 2.01 s                       | **0.35 s**                      |                                                                         |
 
 
-
 ### Note
 
 1. OneDiff extensions for LoRA is currently not supported for PEFT, and only supports diffusers of at least version 0.21.0.
