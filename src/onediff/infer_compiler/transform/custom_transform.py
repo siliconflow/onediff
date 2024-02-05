@@ -1,8 +1,8 @@
 """A module for registering custom torch2oflow functions and classes."""
 import inspect
+import importlib.util
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
-import importlib.util
 from ..import_tools import import_module_from_path
 from .manager import transform_mgr
 from .builtin_transform import torch2oflow
