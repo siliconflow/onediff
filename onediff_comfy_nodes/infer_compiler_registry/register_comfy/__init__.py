@@ -8,7 +8,9 @@ register(package_names=[comfy_path])
 import comfy
 from .attention import CrossAttention as CrossAttention1f
 from .attention import SpatialTransformer as SpatialTransformer1f
+from .attention import SpatialVideoTransformer as SpatialVideoTransformer1f
 from .linear import Linear as Linear1f
+from .util import AlphaBlender as AlphaBlender1f
 from .deep_cache_unet import DeepCacheUNet
 from .deep_cache_unet import FastDeepCacheUNet
 
@@ -26,22 +28,23 @@ else:
 torch2of_class_map = {
     comfy.ldm.modules.attention.CrossAttention: CrossAttention1f,
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
+    comfy.ldm.modules.attention.SpatialVideoTransformer: SpatialVideoTransformer1f,
+    comfy.ldm.modules.diffusionmodules.util.AlphaBlender: AlphaBlender1f,
     comfy_ops_Linear: Linear1f,
     AttnBlock: AttnBlock1f,
 }
 
-if not is_community_version():
-    from .openaimodel import Upsample as Upsample1f
-    from .openaimodel import UNetModel as UNetModel1f
+from .openaimodel import Upsample as Upsample1f
+from .openaimodel import UNetModel as UNetModel1f
+from .openaimodel import VideoResBlock as VideoResBlock1f
 
-    torch2of_class_map.update(
-        {
-            comfy.ldm.modules.diffusionmodules.openaimodel.Upsample: Upsample1f,
-            comfy.ldm.modules.diffusionmodules.openaimodel.UNetModel: UNetModel1f,
-        }
-    )
-else:
-    print("Dynamic batchsize is not supported in community version.")
+torch2of_class_map.update(
+    {
+        comfy.ldm.modules.diffusionmodules.openaimodel.Upsample: Upsample1f,
+        comfy.ldm.modules.diffusionmodules.openaimodel.UNetModel: UNetModel1f,
+        comfy.ldm.modules.diffusionmodules.openaimodel.VideoResBlock: VideoResBlock1f,
+    }
+)
 
 
 register(torch2oflow_class_map=torch2of_class_map)

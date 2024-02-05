@@ -4,6 +4,8 @@ import time
 import inspect
 from .log_utils import logger
 
+__all__ = ["cost_cnt", "cost_time"]
+
 
 class cost_cnt:
     def __init__(self, debug=False, message="\t"):
@@ -73,6 +75,50 @@ class cost_cnt:
                 f"{func.__name__} host mem diff {after_host_used - before_host_used} MB"
             )
 
+            logger.debug(f"<== function {func.__name__} finish run.")
+            logger.debug("")
+            return out
+
+        return clocked
+
+
+class cost_time:
+    """
+    simple cost time code ranges using a context manager or a decorator.
+    """
+
+    def __init__(self, debug=False, message="\t"):
+        self.debug = debug
+        self.message = message
+
+    def __enter__(self):
+        if not self.debug:
+            return
+        flow._oneflow_internal.eager.Sync()
+        self.start_time = time.time()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.debug:
+            return
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        logger.debug(f"{self.message} run time {end_time - self.start_time} seconds")
+
+    def __call__(self, func):
+        @wraps(func)
+        def clocked(*args, **kwargs):
+            if not self.debug:
+                return func(*args, **kwargs)
+            module = inspect.getmodule(func)
+            logger.debug(
+                f"==> function {module.__name__}.{func.__name__}  try to run..."
+            )
+            flow._oneflow_internal.eager.Sync()
+            start_time = time.time()
+            out = func(*args, **kwargs)
+            flow._oneflow_internal.eager.Sync()
+            end_time = time.time()
+            logger.debug(f"{func.__name__} run time {end_time - start_time} seconds")
             logger.debug(f"<== function {func.__name__} finish run.")
             logger.debug("")
             return out

@@ -8,6 +8,7 @@ from .onediff_quant_utils import (
     _use_graph,
     quantize_and_save_model,
 )
+from .onediff_load_utils import onediff_load_quant_checkpoint_advanced
 from .model_patcher import OneFlowSpeedUpModelPatcher, OneFlowDeepCacheSpeedUpModelPatcher
 
 OUTPUT_FOLDER = os.path.join(

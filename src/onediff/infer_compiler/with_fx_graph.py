@@ -20,36 +20,12 @@ def fx_node_tranform(gm):
     if not enable_graph:
         oneflow_fn = of_gm.forward
     else:
-        # Align this with env setting in `with_oneflow_compile`.
-        # Otherwise, infererence using PyTorch with OneFlow backend on 
-        # multiple input shapes may crash
-        os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
-        os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_CSE", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_ENABLE_ROUND_TRIP", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_FUSE_FORWARD_OPS", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_FUSE_OPS_WITH_BACKWARD_IMPL", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL", "1")
-        os.environ.setdefault("ONEFLOW_MLIR_PREFER_NHWC", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_CONV_BIAS", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_FUSED_LINEAR", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL", "1")
-        os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
-        os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
-        os.environ.setdefault("ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
-        os.environ.setdefault("ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT", "1")
-        # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL", "0")
-        os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
-        # TODO: enable this will cause the failure of multi resolution warmup
 
         class OfGraph(flow.nn.Graph):
             def __init__(self):
                 super().__init__()
                 self.fx_md = of_gm
-                self.config.enable_cudnn_conv_heuristic_search_algo(False)
+                # self.config.enable_cudnn_conv_heuristic_search_algo(False)
                 self.config.allow_fuse_add_to_output(True)
 
             def build(self, *args, **kwargs):
