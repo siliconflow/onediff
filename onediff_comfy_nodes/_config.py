@@ -8,7 +8,8 @@ _USE_UNET_INT8 = True
 COMFYUI_ROOT = Path(os.path.abspath(__file__)).parents[2]
 COMFYUI_SPEEDUP_ROOT = Path(os.path.abspath(__file__)).parents[0]
 INFER_COMPILER_REGISTRY = Path(COMFYUI_SPEEDUP_ROOT) / "infer_compiler_registry"
-
+os.environ["COMFYUI_ROOT"] = str(COMFYUI_ROOT)
+sys.path.append(str(COMFYUI_ROOT/ "custom_nodes"))
 sys.path.insert(0, str(COMFYUI_ROOT))
 sys.path.insert(0, str(COMFYUI_SPEEDUP_ROOT))
 sys.path.insert(0, str(INFER_COMPILER_REGISTRY))

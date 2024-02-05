@@ -1,3 +1,4 @@
+from inspect import ismodule
 import os
 import sys
 import importlib
@@ -8,7 +9,12 @@ from pathlib import Path
 from importlib.metadata import requires
 from .format_utils import MockEntityNameFormatter
 
-__all__ = ["import_module_from_path", "LazyMocker", "is_need_mock"]
+__all__ = [
+    "import_module_from_path",
+    "LazyMocker",
+    "is_need_mock",
+    "DynamicModuleLoader",
+]
 
 
 def is_need_mock(cls) -> bool:
@@ -48,6 +54,33 @@ def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
     sys.modules[module_name] = module
     module_spec.loader.exec_module(module)
     return module
+
+
+class DynamicModuleLoader(ModuleType):
+    def __init__(self, obj_entity: ModuleType, pkg_root=None, module_path=None):
+        self.obj_entity = obj_entity
+        self.pkg_root = pkg_root
+        self.module_path = module_path
+
+    @classmethod
+    def from_path(cls, module_path: str):
+        model_name = os.path.basename(module_path)
+        module = importlib.import_module(model_name)
+        return cls(module, module_path, module_path)
+
+    def __getattr__(self, name):
+        obj_entity = getattr(self.obj_entity, name, None)
+        module_path = os.path.join(self.module_path, name)
+        if obj_entity is None:
+            pkg_name = os.path.basename(self.pkg_root)
+            absolute_name = os.path.relpath(module_path, self.pkg_root).replace(
+                os.path.sep, "."
+            )
+            absolute_name = f"{pkg_name}.{absolute_name}"
+            obj_entity = importlib.import_module(absolute_name)
+        if ismodule(obj_entity):
+            return DynamicModuleLoader(obj_entity, self.pkg_root, module_path)
+        return obj_entity
 
 
 class LazyMocker:

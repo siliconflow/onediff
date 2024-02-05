@@ -31,12 +31,17 @@ from .utils.loader_sample_tools import compoile_unet, quantize_unet
 from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
 from .modules.hijack_nodes import nodes_hijacker
+from .modules.hijack_samplers import samplers_hijacker
 from .utils.deep_cache_speedup import deep_cache_speedup
 from .utils.onediff_load_utils import onediff_load_quant_checkpoint_advanced
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
+samplers_hijacker.hijack()
 
+from .modules.hijack_ipadapter_plus import ipadapter_plus_hijacker
+ipadapter_plus_hijacker.hijack()
+# onediff/onediff_comfy_nodes/modules/hijack_ipadapter_plus
 
 __all__ = [
     "ModelSpeedup",
