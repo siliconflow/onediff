@@ -374,31 +374,6 @@ class OneflowGraph(flow.nn.Graph):
 
         args_tree._is_dataclass = original_is_dataclass
 
-        # for name, rsd in state_dict.items():
-        #     _eager_outputs = state_dict[name]["outputs_original"]
-        #     temp = list(_eager_outputs)
-        #     if dataclasses.is_dataclass(temp[0]):
-        #         from onediff.infer_compiler.transform import proxy_class
-        #         import transformers
-
-        #         if isinstance(
-        #             temp[0],
-        #             proxy_class(transformers.modeling_outputs.BaseModelOutputWithPooling),
-        #         ):
-        #             temp[0] = transformers.modeling_outputs.BaseModelOutputWithPooling(
-        #                 **temp[0]
-        #             )
-        #             _eager_outputs = tuple(temp)
-        #         if isinstance(
-        #             temp[0],
-        #             proxy_class(transformers.models.clip.modeling_clip.CLIPTextModelOutput),
-        #         ):
-        #             temp[0] = transformers.models.clip.modeling_clip.CLIPTextModelOutput(
-        #                 **temp[0]
-        #             )
-        #             _eager_outputs = tuple(temp)
-        #     state_dict[name]["outputs_original"] = _eager_outputs
-
         flow.save(state_dict, file_path)
 
 
