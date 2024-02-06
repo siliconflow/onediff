@@ -43,6 +43,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
     revision="fp16",
     torch_dtype=torch.float16,
     safety_checker=None,
+    **extra_args,
 )
 pipe = pipe.to("cuda")
 
