@@ -7,7 +7,9 @@ from onediff.infer_compiler.utils import TensorInplaceAssign
 try:
     from onediffx.lora import load_and_fuse_lora, unfuse_lora
 except ImportError:
-    raise RuntimeError("OneDiff onediffx is not installed. Please check onediff_diffusers_extensions/README.md to install onediffx.")
+    raise RuntimeError(
+        "OneDiff onediffx is not installed. Please check onediff_diffusers_extensions/README.md to install onediffx."
+    )
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(
@@ -91,7 +93,7 @@ images_fusion = pipe(
 
 images_fusion.save("test_sdxl_lora_method3.png")
 
-# 4. unfuse_lora can uninstall LoRA weights and restore the weights of UNet 
+# 4. unfuse_lora can uninstall LoRA weights and restore the weights of UNet
 generator = torch.manual_seed(0)
 unfuse_lora(pipe)
 images_fusion = pipe(

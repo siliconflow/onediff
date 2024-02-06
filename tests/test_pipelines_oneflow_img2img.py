@@ -32,6 +32,7 @@ from diffusers import (
 from diffusers.utils import floats_tensor, load_image, torch_device
 from transformers import CLIPTextConfig, CLIPTextModel, CLIPTokenizer
 
+
 class PipelineFastTests(unittest.TestCase):
     def tearDown(self):
         super().tearDown()

@@ -61,10 +61,7 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [
-                    torch_module.named_parameters(),
-                    torch_module.named_buffers(),
-                ]
+                [torch_module.named_parameters(), torch_module.named_buffers(),]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -172,6 +169,7 @@ def get_mixed_dual_module(module_cls):
 
     return MixedDualModule
 
+
 @torch2oflow.register
 def _(mod: DualModule, verbose=False):
     return torch2oflow(mod._torch_module, verbose)
@@ -197,17 +195,14 @@ def handle_deployable_exception(func):
 
 class DeployableModule(torch.nn.Module):
     def __init__(
-        self,
-        torch_module,
-        oneflow_module,
-        use_graph=True,
-        dynamic=True,
-        options={},
+        self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={},
     ):
         torch.nn.Module.__init__(self)
-        object.__setattr__(self, "_deployable_module_model", get_mixed_dual_module(torch_module.__class__)(
-            torch_module, oneflow_module
-        ))
+        object.__setattr__(
+            self,
+            "_deployable_module_model",
+            get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module),
+        )
         object.__setattr__(self, "_modules", torch_module._modules)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
@@ -407,11 +402,7 @@ def get_mixed_deployable_module(module_cls):
 
 
 def oneflow_compile(
-    torch_module: torch.nn.Module,
-    *,
-    use_graph=True,
-    dynamic=True,
-    options={},
+    torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, options={},
 ) -> DeployableModule:
     """
     Transform a torch nn.Module to oneflow.nn.Module, then optimize it with oneflow.nn.Graph.

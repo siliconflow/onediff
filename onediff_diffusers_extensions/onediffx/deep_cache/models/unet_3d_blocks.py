@@ -81,7 +81,9 @@ def get_down_block(
         )
     elif down_block_type == "CrossAttnDownBlock3D":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnDownBlock3D")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnDownBlock3D"
+            )
         return CrossAttnDownBlock3D(
             num_layers=num_layers,
             in_channels=in_channels,
@@ -117,7 +119,9 @@ def get_down_block(
         )
     elif down_block_type == "CrossAttnDownBlockMotion":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnDownBlockMotion")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnDownBlockMotion"
+            )
         return CrossAttnDownBlockMotion(
             num_layers=num_layers,
             in_channels=in_channels,
@@ -150,7 +154,9 @@ def get_down_block(
     elif down_block_type == "CrossAttnDownBlockSpatioTemporal":
         # added for SDV
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnDownBlockSpatioTemporal")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnDownBlockSpatioTemporal"
+            )
         return CrossAttnDownBlockSpatioTemporal(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -213,7 +219,9 @@ def get_up_block(
         )
     elif up_block_type == "CrossAttnUpBlock3D":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnUpBlock3D")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnUpBlock3D"
+            )
         return CrossAttnUpBlock3D(
             num_layers=num_layers,
             in_channels=in_channels,
@@ -251,7 +259,9 @@ def get_up_block(
         )
     elif up_block_type == "CrossAttnUpBlockMotion":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnUpBlockMotion")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnUpBlockMotion"
+            )
         return CrossAttnUpBlockMotion(
             num_layers=num_layers,
             in_channels=in_channels,
@@ -287,7 +297,9 @@ def get_up_block(
     elif up_block_type == "CrossAttnUpBlockSpatioTemporal":
         # added for SDV
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnUpBlockSpatioTemporal")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnUpBlockSpatioTemporal"
+            )
         return CrossAttnUpBlockSpatioTemporal(
             in_channels=in_channels,
             out_channels=out_channels,
@@ -379,14 +391,15 @@ class DownBlockSpatioTemporal(nn.Module):
                     )
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
 
             output_states = output_states + (hidden_states,)
 
-            if exist_module_idx is not None and exist_module_idx == len(output_states) - 1:
+            if (
+                exist_module_idx is not None
+                and exist_module_idx == len(output_states) - 1
+            ):
                 return hidden_states, output_states
 
         if self.downsamplers is not None:
@@ -482,7 +495,9 @@ class CrossAttnDownBlockSpatioTemporal(nn.Module):
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                ckpt_kwargs: Dict[str, Any] = {
+                    "use_reentrant": False
+                } if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(resnet),
                     hidden_states,
@@ -499,9 +514,7 @@ class CrossAttnDownBlockSpatioTemporal(nn.Module):
                 )[0]
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
                 hidden_states = attn(
                     hidden_states,
@@ -511,7 +524,10 @@ class CrossAttnDownBlockSpatioTemporal(nn.Module):
                 )[0]
 
             output_states = output_states + (hidden_states,)
-            if exist_module_idx is not None and exist_module_idx == len(output_states) - 1:
+            if (
+                exist_module_idx is not None
+                and exist_module_idx == len(output_states) - 1
+            ):
                 return hidden_states, output_states
 
         if self.downsamplers is not None:
@@ -554,7 +570,9 @@ class UpBlockSpatioTemporal(nn.Module):
         self.resnets = nn.ModuleList(resnets)
 
         if add_upsample:
-            self.upsamplers = nn.ModuleList([Upsample2D(out_channels, use_conv=True, out_channels=out_channels)])
+            self.upsamplers = nn.ModuleList(
+                [Upsample2D(out_channels, use_conv=True, out_channels=out_channels)]
+            )
         else:
             self.upsamplers = None
 
@@ -605,9 +623,7 @@ class UpBlockSpatioTemporal(nn.Module):
                     )
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
 
         if self.upsamplers is not None:
@@ -668,7 +684,9 @@ class CrossAttnUpBlockSpatioTemporal(nn.Module):
         self.resnets = nn.ModuleList(resnets)
 
         if add_upsample:
-            self.upsamplers = nn.ModuleList([Upsample2D(out_channels, use_conv=True, out_channels=out_channels)])
+            self.upsamplers = nn.ModuleList(
+                [Upsample2D(out_channels, use_conv=True, out_channels=out_channels)]
+            )
         else:
             self.upsamplers = None
 
@@ -706,7 +724,9 @@ class CrossAttnUpBlockSpatioTemporal(nn.Module):
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                ckpt_kwargs: Dict[str, Any] = {
+                    "use_reentrant": False
+                } if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(resnet),
                     hidden_states,
@@ -722,9 +742,7 @@ class CrossAttnUpBlockSpatioTemporal(nn.Module):
                 )[0]
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
                 hidden_states = attn(
                     hidden_states,

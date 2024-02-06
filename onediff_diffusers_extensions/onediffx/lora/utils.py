@@ -10,6 +10,7 @@ if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
 else:
     from diffusers.models.lora import PatchedLoraProjection
 
+
 def offload_tensor(tensor, device):
     cur_device = tensor.device
     if cur_device == device:

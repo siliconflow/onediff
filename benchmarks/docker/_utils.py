@@ -156,7 +156,7 @@ def gen_docker_compose_yaml(container_name, image, envs, volumes, output_dir):
         "volumes": [],
         "working_dir": "/app",
         "restart": "no",
-        "command": "/bin/bash -c \"cd /app/onediff/benchmarks && bash run_benchmark.sh /benchmark_model\"",
+        "command": '/bin/bash -c "cd /app/onediff/benchmarks && bash run_benchmark.sh /benchmark_model"',
     }
     onediff_benchmark_service["container_name"] = container_name
     onediff_benchmark_service["image"] = image

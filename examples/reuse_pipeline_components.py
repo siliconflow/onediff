@@ -20,9 +20,7 @@ from onediff.infer_compiler import oneflow_compile
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ckpt_path",
-        type=str,
-        default="runwayml/stable-diffusion-v1-5",
+        "--ckpt_path", type=str, default="runwayml/stable-diffusion-v1-5",
     )
     return parser.parse_args()
 

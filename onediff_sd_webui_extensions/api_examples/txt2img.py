@@ -60,7 +60,6 @@ if __name__ == "__main__":
         "sampler_name": "DPM++ 2M Karras",
         "n_iter": 1,
         "batch_size": 1,
-
         # Enable OneDiff speed up
         "script_name": "onediff_diffusion_model",
         # If you are using OneDiff Enterprise, add the field below to enable quant feature
