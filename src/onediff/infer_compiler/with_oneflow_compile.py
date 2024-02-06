@@ -369,6 +369,7 @@ class OneflowGraph(flow.nn.Graph):
         for name, rsd in state_dict.items():
             output = state_dict[name]["outputs_original"]
             out_tree = args_tree.ArgsTree((output, None), False)
+            # dataclass type needs to be reversed to torch type to avoid saving error.
             out = out_tree.map_leaf(reverse_dataclass)
             state_dict[name]["outputs_original"] = out[0]
 
