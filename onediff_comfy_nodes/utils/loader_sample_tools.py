@@ -26,9 +26,7 @@ def compoile_unet(diffusion_model, graph_file):
     }
 
     diffusion_model = oneflow_compile(
-        diffusion_model,
-        use_graph=use_graph,
-        options=compile_options,
+        diffusion_model, use_graph=use_graph, options=compile_options,
     )
 
     return diffusion_model
