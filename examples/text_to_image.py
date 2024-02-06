@@ -1,6 +1,7 @@
 """
 example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id xx
 """
+
 import argparse
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
@@ -24,6 +25,7 @@ def parse_args():
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--variant", type=str, default="fp16")
     cmd_args = parser.parse_args()
     return cmd_args
 
@@ -36,7 +38,7 @@ pipe = StableDiffusionPipeline.from_pretrained(
     scheduler=scheduler,
     use_auth_token=True,
     revision="fp16",
-    variant="fp16",
+    variant=args.variant,
     torch_dtype=torch.float16,
     safety_checker=None,
 )
