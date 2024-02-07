@@ -27,9 +27,7 @@ def onediff_load_quant_checkpoint_advanced(
     load_device = model_management.get_torch_device()
     diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
     quant_unet = quantize_unet(
-        diffusion_model=diffusion_model,
-        inplace=True,
-        calibrate_info=calibrate_info,
+        diffusion_model=diffusion_model, inplace=True, calibrate_info=calibrate_info,
     )
     modelpatcher.model.diffusion_model = quant_unet
 

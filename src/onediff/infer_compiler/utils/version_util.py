@@ -1,6 +1,7 @@
 from importlib_metadata import version
 from .log_utils import logger
 
+
 def get_support_message():
     recipient_email = "caishenghang@oneflow.org"
 
@@ -30,4 +31,5 @@ def is_quantization_enabled():
 
 def is_community_version():
     import oneflow.sysconfig
+
     return not oneflow.sysconfig.with_enterprise()

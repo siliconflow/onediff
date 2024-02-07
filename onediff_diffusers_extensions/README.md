@@ -119,7 +119,7 @@ from diffusers.utils import load_image, export_to_video
 from onediffx import compile_pipe, compiler_config
 from onediffx.deep_cache import StableVideoDiffusionPipeline
 
-pipe = StableDiffusionPipeline.from_pretrained(
+pipe = StableVideoDiffusionPipeline.from_pretrained(
     "stabilityai/stable-video-diffusion-img2vid-xt",
     torch_dtype=torch.float16,
     variant="fp16",
@@ -138,13 +138,13 @@ for i in range(1):
     deepcache_output = pipe(
         input_image, 
         decode_chunk_size=5,
-        cache_interval=3, cache_layer_id=0, cache_block_id=0,
+        cache_interval=3, cache_branch=0,
     ).frames[0]
 
 deepcache_output = pipe(
     input_image, 
     decode_chunk_size=5,
-    cache_interval=3, cache_layer_id=0, cache_block_id=0,
+    cache_interval=3, cache_branch=0,
 ).frames[0]
 
 export_to_video(deepcache_output, "generated.mp4", fps=7)
@@ -237,7 +237,6 @@ The results are shown below
 | simple_drawing_xl_b1-000012.safetensors | 55M  | 1.67 s           | 2.57 s                       | **0.77 s**                      | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)           |
 | texta.safetensors                       | 270M | 1.72 s           | 2.86 s                       | **0.97 s**                      | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
 | watercolor_v1_sdxl_lora.safetensors     | 12M  | 1.54 s           | 2.01 s                       | **0.35 s**                      |                                                                         |
-
 
 
 ### Note

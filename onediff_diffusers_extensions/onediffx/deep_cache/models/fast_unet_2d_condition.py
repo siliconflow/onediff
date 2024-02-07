@@ -9,6 +9,7 @@ from .unet_2d_condition import UNet2DConditionOutput
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
+
 class FastUNet2DConditionModel(nn.Module):
     def __init__(self, unet_module):
         super().__init__()

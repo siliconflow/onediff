@@ -29,9 +29,7 @@ parser.add_argument("--saved_image", type=str, required=False, default="sd-out.p
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
-    "--compile",
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=True,
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True,
 )
 parser.add_argument(
     "--use_multiple_resolutions",
@@ -64,7 +62,7 @@ if args.compile:
 
 # Define multiple resolutions for warmup
 resolutions = (
-    [(512, 512), (256, 256), ]
+    [(512, 512), (256, 256),]
     if args.use_multiple_resolutions
     else [(args.height, args.width)]
 )
@@ -78,8 +76,12 @@ for resolution in resolutions:
             width=resolution[1],
             num_inference_steps=args.n_steps,
             output_type=OUTPUT_TYPE,
-            cache_interval=5, cache_layer_id=0, cache_block_id=0,
-            uniform=False, pow=1.4, center=15,
+            cache_interval=5,
+            cache_layer_id=0,
+            cache_block_id=0,
+            uniform=False,
+            pow=1.4,
+            center=15,
         ).images
 
 # Normal SD-1.5 run
@@ -90,7 +92,11 @@ image = base(
     width=args.width,
     num_inference_steps=args.n_steps,
     output_type=OUTPUT_TYPE,
-    cache_interval=5, cache_layer_id=0, cache_block_id=0,
-    uniform=False, pow=1.4, center=15,
+    cache_interval=5,
+    cache_layer_id=0,
+    cache_block_id=0,
+    uniform=False,
+    pow=1.4,
+    center=15,
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
