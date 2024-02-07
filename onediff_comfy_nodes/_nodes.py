@@ -39,9 +39,9 @@ model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
 samplers_hijacker.hijack()
 
+# onediff/onediff_comfy_nodes/modules/hijack_ipadapter_plus
 from .modules.hijack_ipadapter_plus import ipadapter_plus_hijacker
 ipadapter_plus_hijacker.hijack()
-# onediff/onediff_comfy_nodes/modules/hijack_ipadapter_plus
 
 __all__ = [
     "ModelSpeedup",

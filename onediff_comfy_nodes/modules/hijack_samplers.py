@@ -1,4 +1,5 @@
 # ComfyUI/comfy/samplers.py
+from typing import Any
 import torch
 from comfy import model_management
 # ComfyUI/comfy/samplers.py
@@ -8,8 +9,19 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 from .sd_hijack_utils import Hijacker
 
-
-
+class Value:
+    def __init__(self, v):
+        self.v = v
+    def item(self):
+        return self.v
+    
+class TempStep:
+    def __init__(self, timestep):
+        self.timesteps = []
+        for t in timestep:
+            self.timesteps.append(Value(t.item()))
+    def __getitem__(self, i):
+        return self.timesteps[i]
 
 def calc_cond_uncond_batch_of(orig_func, model, cond, uncond, x_in, timestep, model_options):
     out_cond = torch.zeros_like(x_in)
@@ -97,19 +109,7 @@ def calc_cond_uncond_batch_of(orig_func, model, cond, uncond, x_in, timestep, mo
                 transformer_options["patches"] = patches
 
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
-        class Value:
-            def __init__(self, v):
-                self.v = v
-            def item(self):
-                return self.v
-        class TempStep:
-            def __init__(self, timestep):
-                self.timesteps = []
-                for t in timestep:
-                    self.timesteps.append(Value(t.item()))
-            def __getitem__(self, i):
-                return self.timesteps[i]
-            
+
         transformer_options["sigmas"] = TempStep(timestep)
 
         c['transformer_options'] = transformer_options
@@ -137,7 +137,7 @@ def calc_cond_uncond_batch_of(orig_func, model, cond, uncond, x_in, timestep, mo
 
 
 def cond_func(orig_func, model,*args, **kwargs):
-    return isinstance(model, DeployableModule) 
+    return isinstance(model.diffusion_model, DeployableModule) 
 samplers_hijacker = Hijacker()
 samplers_hijacker.register(calc_cond_uncond_batch, calc_cond_uncond_batch_of, cond_func)
 

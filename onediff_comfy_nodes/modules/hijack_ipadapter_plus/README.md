@@ -1,0 +1,2 @@
+- GitHub: https://github.com/cubiq/ComfyUI_IPAdapter_plus 
+- commit_id: 90d3451
