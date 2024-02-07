@@ -193,18 +193,15 @@ class CrossAttentionPatch_OF(torch.nn.Module):
 
         return out.to(dtype=org_dtype)
     
-    def to(self,*args,**kwargs):
-        print("Warning: CrossAttentionPatch_OF.to() is called, but it is not implemented yet.")
+    def to(self, *args, **kwargs):
+        # print("Warning: CrossAttentionPatch_OF.to() is called, but it is not implemented yet.")
         return self
 
 def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
     from onediff.infer_compiler.transform import torch2oflow
+    from onediff.infer_compiler import oneflow_compile
     patch_kwargs = torch2oflow(patch_kwargs)
-    compiled_options = model.model.diffusion_model._deployable_module_options
-    if "graph_file" in compiled_options:
-        # set to None to force recompile
-        compiled_options["graph_file"] = None
-    
+    model.model.diffusion_model = oneflow_compile(model.model.diffusion_model, use_graph=True, dynamic=False, options={})
 
     to = model.model_options["transformer_options"]
     if "patches_replace" not in to:
