@@ -541,7 +541,9 @@ class UNetSpatioTemporalConditionModel(
         sample = self.conv_out(sample)
 
         # 7. Reshape back to original shape
-        sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
+        # sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
+        # Rewrite for onediff SVD dynamic shape
+        sample = sample.unflatten(0, shape=(batch_size, -1))
 
         if not return_dict:
             return (sample, cache_features)
