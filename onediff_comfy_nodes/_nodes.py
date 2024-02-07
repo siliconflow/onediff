@@ -63,10 +63,7 @@ class ModelSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"model": ("MODEL",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -99,11 +96,7 @@ class UNETLoaderInt8:
                     if "calibrate_info.txt" in files:
                         paths.append(os.path.relpath(root, start=search_path))
 
-        return {
-            "required": {
-                "model_path": (paths,),
-            }
-        }
+        return {"required": {"model_path": (paths,),}}
 
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "load_unet_int8"
@@ -140,10 +133,7 @@ class ModelGraphLoader:
             if os.path.isfile(os.path.join(unet_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {
-                "model": ("MODEL",),
-                "graph": (sorted(graph_files),),
-            },
+            "required": {"model": ("MODEL",), "graph": (sorted(graph_files),),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -185,10 +175,7 @@ class SVDSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"model": ("MODEL",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -218,10 +205,7 @@ class VaeSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "vae": ("VAE",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"vae": ("VAE",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -254,10 +238,7 @@ class VaeGraphLoader:
             if os.path.isfile(os.path.join(vae_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {
-                "vae": ("VAE",),
-                "graph": (sorted(graph_files),),
-            },
+            "required": {"vae": ("VAE",), "graph": (sorted(graph_files),),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -370,12 +351,7 @@ class ModuleDeepCacheSpeedup:
                 ),
                 "end_step": (
                     "INT",
-                    {
-                        "default": 1000,
-                        "min": 0,
-                        "max": 1000,
-                        "step": 0.1,
-                    },
+                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
                 ),
             },
         }
@@ -526,12 +502,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
                 ),
                 "end_step": (
                     "INT",
-                    {
-                        "default": 1000,
-                        "min": 0,
-                        "max": 1000,
-                        "step": 0.1,
-                    },
+                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
                 ),
             }
         }

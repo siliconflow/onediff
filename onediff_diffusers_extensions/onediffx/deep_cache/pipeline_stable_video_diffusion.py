@@ -31,11 +31,15 @@ from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 from diffusers import StableVideoDiffusionPipeline as OrgStableVideoDiffusionPipeline
-from diffusers.pipelines.stable_video_diffusion import StableVideoDiffusionPipelineOutput
+from diffusers.pipelines.stable_video_diffusion import (
+    StableVideoDiffusionPipelineOutput,
+)
 
 
 from .models.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
-from .models.fast_unet_spatio_temporal_condition import FastUNetSpatioTemporalConditionModel
+from .models.fast_unet_spatio_temporal_condition import (
+    FastUNetSpatioTemporalConditionModel,
+)
 
 
 from .models.pipeline_utils import enable_deep_cache_pipeline
@@ -43,11 +47,14 @@ from .models.pipeline_utils import enable_deep_cache_pipeline
 
 enable_deep_cache_pipeline()
 
+
 def _append_dims(x, target_dims):
     """Appends dimensions to the end of a tensor until it has target_dims dimensions."""
     dims_to_append = target_dims - x.ndim
     if dims_to_append < 0:
-        raise ValueError(f"input has {x.ndim} dims but target_dims is {target_dims}, which is less")
+        raise ValueError(
+            f"input has {x.ndim} dims but target_dims is {target_dims}, which is less"
+        )
     return x[(...,) + (None,) * dims_to_append]
 
 
@@ -108,7 +115,7 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
 
-        self.fast_unet=FastUNetSpatioTemporalConditionModel(self.unet)
+        self.fast_unet = FastUNetSpatioTemporalConditionModel(self.unet)
 
     @torch.no_grad()
     def __call__(
@@ -130,7 +137,7 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
         output_type: Optional[str] = "pil",
         callback_on_step_end: Optional[Callable[[int, int, Dict], None]] = None,
         callback_on_step_end_tensor_inputs: List[str] = ["latents"],
-        cache_interval: Optional[int] = 1, 
+        cache_interval: Optional[int] = 1,
         cache_branch: Optional[int] = None,
         return_dict: bool = True,
     ):
@@ -214,8 +221,12 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
         height = height or self.unet.config.sample_size * self.vae_scale_factor
         width = width or self.unet.config.sample_size * self.vae_scale_factor
 
-        num_frames = num_frames if num_frames is not None else self.unet.config.num_frames
-        decode_chunk_size = decode_chunk_size if decode_chunk_size is not None else num_frames
+        num_frames = (
+            num_frames if num_frames is not None else self.unet.config.num_frames
+        )
+        decode_chunk_size = (
+            decode_chunk_size if decode_chunk_size is not None else num_frames
+        )
 
         # 1. Check inputs. Raise error if not correct
         self.check_inputs(image, height, width)
@@ -234,7 +245,9 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
         do_classifier_free_guidance = max_guidance_scale > 1.0
 
         # 3. Encode input image
-        image_embeddings = self._encode_image(image, device, num_videos_per_prompt, do_classifier_free_guidance)
+        image_embeddings = self._encode_image(
+            image, device, num_videos_per_prompt, do_classifier_free_guidance
+        )
 
         # NOTE: Stable Diffusion Video was conditioned on fps - 1, which
         # is why it is reduced here.
@@ -243,14 +256,20 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
 
         # 4. Encode input image using VAE
         image = self.image_processor.preprocess(image, height=height, width=width)
-        noise = randn_tensor(image.shape, generator=generator, device=image.device, dtype=image.dtype)
+        noise = randn_tensor(
+            image.shape, generator=generator, device=image.device, dtype=image.dtype
+        )
         image = image + noise_aug_strength * noise
 
-        needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+        needs_upcasting = (
+            self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+        )
         if needs_upcasting:
             self.vae.to(dtype=torch.float32)
 
-        image_latents = self._encode_vae_image(image, device, num_videos_per_prompt, do_classifier_free_guidance)
+        image_latents = self._encode_vae_image(
+            image, device, num_videos_per_prompt, do_classifier_free_guidance
+        )
         image_latents = image_latents.to(image_embeddings.dtype)
 
         # cast back to fp16 if needed
@@ -292,7 +311,9 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
         )
 
         # 7. Prepare guidance scale
-        guidance_scale = torch.linspace(min_guidance_scale, max_guidance_scale, num_frames).unsqueeze(0)
+        guidance_scale = torch.linspace(
+            min_guidance_scale, max_guidance_scale, num_frames
+        ).unsqueeze(0)
         guidance_scale = guidance_scale.to(device, latents.dtype)
         guidance_scale = guidance_scale.repeat(batch_size * num_videos_per_prompt, 1)
         guidance_scale = _append_dims(guidance_scale, latents.ndim)
@@ -309,11 +330,17 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                latent_model_input = (
+                    torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                )
+                latent_model_input = self.scheduler.scale_model_input(
+                    latent_model_input, t
+                )
 
                 # Concatenate image_latents over channels dimention
-                latent_model_input = torch.cat([latent_model_input, image_latents], dim=2)
+                latent_model_input = torch.cat(
+                    [latent_model_input, image_latents], dim=2
+                )
 
                 if i in interval_seq:
                     cache_features = None
@@ -341,7 +368,9 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
                 # perform guidance
                 if do_classifier_free_guidance:
                     noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)
-                    noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_cond - noise_pred_uncond)
+                    noise_pred = noise_pred_uncond + self.guidance_scale * (
+                        noise_pred_cond - noise_pred_uncond
+                    )
 
                 # compute the previous noisy sample x_t -> x_t-1
                 latents = self.scheduler.step(noise_pred, t, latents).prev_sample
@@ -354,7 +383,9 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
 
                     latents = callback_outputs.pop("latents", latents)
 
-                if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                if i == len(timesteps) - 1 or (
+                    (i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0
+                ):
                     progress_bar.update()
 
         if not output_type == "latent":
@@ -372,4 +403,3 @@ class StableVideoDiffusionPipeline(OrgStableVideoDiffusionPipeline):
             return frames
 
         return StableVideoDiffusionPipelineOutput(frames=frames)
-

@@ -21,6 +21,8 @@ def is_need_mock(cls) -> bool:
     assert isinstance(cls, (type, str))
     main_pkg = cls.__module__.split(".")[0]
     try:
+        if main_pkg == "torch":
+            return True
         pkgs = requires(main_pkg)
     except Exception as e:
         return True

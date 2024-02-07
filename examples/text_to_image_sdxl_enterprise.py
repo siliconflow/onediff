@@ -96,12 +96,7 @@ pipe.to("cuda")
 
 for sub_module_name, sub_calibrate_info in calibrate_info.items():
     replace_sub_module_with_quantizable_module(
-        pipe.unet,
-        sub_module_name,
-        sub_calibrate_info,
-        False,
-        False,
-        args.bits,
+        pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
 if args.compile_text_encoder:
