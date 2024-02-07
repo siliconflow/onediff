@@ -5,6 +5,7 @@ from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 class HijackLoraActivate:
     def __init__(self):
         from modules import extra_networks
+
         if "lora" in extra_networks.extra_network_registry:
             cls_extra_network_lora = type(extra_networks.extra_network_registry["lora"])
         else:
