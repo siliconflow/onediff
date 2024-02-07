@@ -51,14 +51,11 @@ def singledispatch_proxy(func):
 
 
 def proxy_class(cls: type):
-    if cls.__module__.startswith("torch."):
-        mod_name = cls.__module__.replace("torch.", "oneflow.")
-        mod = importlib.import_module(mod_name)
-        return getattr(mod, cls.__name__)
+    return transform_mgr.transform_cls(cls)
 
-    full_qualified_name = cls.__module__ + "." + cls.__qualname__
-    result = transform_mgr.transform_cls(full_qualified_name)
-    return result
+
+def reverse_proxy_class(cls: type):
+    return transform_mgr.reverse_transform_cls(cls)
 
 
 class ProxySubmodule:
