@@ -47,11 +47,6 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
     - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
     - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
 
-## OS and GPU support
-- Linux
-  - If you want to use OneDiff on Windows, please use it under WSL.
-- NVIDIA GPUs
-
 ## OneDiff Online Playground
 [Online Playground](https://github.com/siliconflow/onediff/wiki/OneDiff-Online-Playground)
 
@@ -76,6 +71,11 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
 | Technical Support for deployment    | High priority support       | Community           |
 | Get the latest technology/feature | Yes | |
+
+## OS and GPU support
+- Linux
+  - If you want to use OneDiff on Windows, please use it under WSL.
+- NVIDIA GPUs
 
 ## OneDiff Installation
 ### Install from source
