@@ -95,7 +95,7 @@ class TransformManager:
                 f"{mock_full_cls_name} not in _oflow_to_torch_cls_map, import it directly."
             )
             mod = importlib.import_module(cls.__module__)
-            return getattr(mod, cls.__name__)
+            return getattr(mod, cls.__qualname__)
 
     def transform_func(self, func: types.FunctionType):
         # TODO: support transform function cache
