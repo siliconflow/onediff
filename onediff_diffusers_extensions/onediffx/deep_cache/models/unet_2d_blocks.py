@@ -43,13 +43,17 @@ from diffusers.models.resnet import (
 )
 from diffusers.models.transformer_2d import Transformer2DModel
 
+if diffusers.__version__ >= "0.26.0":
+    from diffusers.models.unets.unet_2d_blocks import DownEncoderBlock2D
+else:
+    from diffusers.models.unet_2d_blocks import DownEncoderBlock2D
+
 from diffusers.models.unet_2d_blocks import (
     ResnetDownsampleBlock2D,
     AttnDownBlock2D,
     SimpleCrossAttnDownBlock2D,
     SkipDownBlock2D,
     AttnSkipDownBlock2D,
-    DownEncoderBlock2D,
     AttnDownEncoderBlock2D,
     KDownBlock2D,
     KAttentionBlock,
