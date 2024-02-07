@@ -9,20 +9,32 @@ from onediff.infer_compiler.utils.log_utils import logger
 
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
-from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear, PatchedLoraProjection
+from diffusers.models.lora import (
+    LoRACompatibleConv,
+    LoRACompatibleLinear,
+    PatchedLoraProjection,
+)
 from diffusers.utils import is_accelerate_available
 
-from .utils import linear_fuse_lora, _linear_unfuse_lora, conv_fuse_lora, _conv_unfuse_lora
+from .utils import (
+    linear_fuse_lora,
+    _linear_unfuse_lora,
+    conv_fuse_lora,
+    _conv_unfuse_lora,
+)
 from .text_encoder import load_lora_into_text_encoder
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
 
-is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.21.0")
+is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse(
+    "0.21.0"
+)
 
 
 USE_PEFT_BACKEND = False
+
 
 def load_and_fuse_lora(
     pipeline: LoraLoaderMixin,
@@ -36,7 +48,9 @@ def load_and_fuse_lora(
     **kwargs,
 ) -> None:
     if not is_onediffx_lora_available:
-        raise RuntimeError("onediffx.lora only supports diffusers of at least version 0.21.0")
+        raise RuntimeError(
+            "onediffx.lora only supports diffusers of at least version 0.21.0"
+        )
 
     self = pipeline
     if adapter_name is not None:
@@ -172,7 +186,7 @@ def load_and_fuse_lora(
             # or add_{k,v,q,out_proj}_proj_lora layers.
             rank = value_dict["lora.down.weight"].shape[0]
 
-            if isinstance(attn_processor, LoRACompatibleConv):
+            if isinstance(attn_processor, (LoRACompatibleConv, torch.nn.Conv2d)):
                 conv_fuse_lora(
                     attn_processor,
                     value_dict,
@@ -182,7 +196,7 @@ def load_and_fuse_lora(
                     offload_device=offload_device,
                     offload_weight=offload_weight,
                 )
-            elif isinstance(attn_processor, LoRACompatibleLinear):
+            elif isinstance(attn_processor, (LoRACompatibleLinear, torch.nn.Linear)):
                 linear_fuse_lora(
                     attn_processor,
                     value_dict,

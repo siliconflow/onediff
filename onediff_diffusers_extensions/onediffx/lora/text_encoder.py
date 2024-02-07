@@ -3,6 +3,7 @@ from packaging import version
 
 import torch
 import diffusers
+
 if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils import convert_state_dict_to_diffusers
 else:
@@ -10,9 +11,7 @@ else:
 from diffusers.models.lora import text_encoder_attn_modules, text_encoder_mlp_modules
 from diffusers.utils import is_accelerate_available
 
-from diffusers.models.modeling_utils import (
-    _LOW_CPU_MEM_USAGE_DEFAULT,
-)
+from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT
 from onediff.infer_compiler.utils.log_utils import logger
 
 from .utils import linear_fuse_lora

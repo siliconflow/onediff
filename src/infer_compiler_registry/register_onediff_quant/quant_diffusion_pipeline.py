@@ -12,6 +12,7 @@ from onediff_quant.utils import (
 def _use_graph():
     os.environ["with_graph"] = "1"
 
+
 class QuantDiffusionPipeline:
     def __init__(
         self,

@@ -13,9 +13,7 @@ from onediff.infer_compiler import oneflow_compile
 from diffusers import AutoPipelineForText2Image
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--base", type=str, default="stabilityai/sdxl-turbo"
-)
+parser.add_argument("--base", type=str, default="stabilityai/sdxl-turbo")
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
     "--prompt",

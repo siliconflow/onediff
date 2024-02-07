@@ -28,5 +28,5 @@ def load_calibration_and_quantize_pipeline(calibration_path, pipe):
             static=False,
             nbits=8,
             convert_quant_module_fn=maybe_allow_in_graph,
-            original_module_name=None
+            original_module_name=None,
         )

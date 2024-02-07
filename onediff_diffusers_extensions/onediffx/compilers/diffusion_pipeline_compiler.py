@@ -18,9 +18,7 @@ def recursive_setattr(obj, attr, value):
 
 
 def compile_pipe(
-        pipe,
-        *,
-        ignores=(),
+    pipe, *, ignores=(),
 ):
     parts = [
         "text_encoder",
@@ -47,10 +45,13 @@ def compile_pipe(
             print(f"Compiling {part}")
             recursive_setattr(pipe, part, oneflow_compile(obj))
 
-    if 'image_processor' not in ignores:
+    if "image_processor" not in ignores:
         print("Patching image_processor")
 
-        from onediffx.utils.patch_image_processor import patch_image_prcessor as patch_image_prcessor_
+        from onediffx.utils.patch_image_processor import (
+            patch_image_prcessor as patch_image_prcessor_,
+        )
+
         patch_image_prcessor_(pipe.image_processor)
 
     return pipe
