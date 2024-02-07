@@ -53,35 +53,19 @@ from selenium.common.exceptions import TimeoutException
 def parse_args():
     parser = argparse.ArgumentParser(description="Test ComfyUI workflow by Selenium.")
     parser.add_argument(
-        "-w",
-        "--workflow",
-        type=str,
-        required=True,
-        help="Workflow file",
+        "-w", "--workflow", type=str, required=True, help="Workflow file",
     )
     parser.add_argument(
-        "-t",
-        "--timeout",
-        type=int,
-        default="200",
+        "-t", "--timeout", type=int, default="200",
     )
     parser.add_argument(
-        "--host",
-        type=str,
-        default="127.0.0.1",
-        help="The selenium service host",
+        "--host", type=str, default="127.0.0.1", help="The selenium service host",
     )
     parser.add_argument(
-        "--port",
-        type=str,
-        default="4444",
-        help="The selenium service port",
+        "--port", type=str, default="4444", help="The selenium service port",
     )
     parser.add_argument(
-        "--comfy_port",
-        type=str,
-        default="8188",
-        help="The ComfyUI service port",
+        "--comfy_port", type=str, default="8188", help="The ComfyUI service port",
     )
     args = parser.parse_args()
     return args

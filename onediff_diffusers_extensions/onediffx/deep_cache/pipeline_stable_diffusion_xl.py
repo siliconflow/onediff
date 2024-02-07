@@ -60,7 +60,9 @@ from .models.pipeline_utils import enable_deep_cache_pipeline
 enable_deep_cache_pipeline()
 
 if is_invisible_watermark_available():
-    from diffusers.pipelines.stable_diffusion_xl.watermark import StableDiffusionXLWatermarker
+    from diffusers.pipelines.stable_diffusion_xl.watermark import (
+        StableDiffusionXLWatermarker,
+    )
 
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
@@ -88,25 +90,35 @@ def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
     Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
     Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
     """
-    std_text = noise_pred_text.std(dim=list(range(1, noise_pred_text.ndim)), keepdim=True)
+    std_text = noise_pred_text.std(
+        dim=list(range(1, noise_pred_text.ndim)), keepdim=True
+    )
     std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)
     # rescale the results from guidance (fixes overexposure)
     noise_pred_rescaled = noise_cfg * (std_text / std_cfg)
     # mix with the original results from guidance by factor guidance_rescale to avoid "plain looking" images
-    noise_cfg = guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
+    noise_cfg = (
+        guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
+    )
     return noise_cfg
+
 
 def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
     while pow > 1:
         # Generate linearly spaced values between 0 and a max value
-        x_values = np.linspace((-center)**(1/pow), (total_numbers-center)**(1/pow), n_samples+1)
-        indices = [0] + [x+center for x in np.unique(np.int32(x_values**pow))[1:-1]]
+        x_values = np.linspace(
+            (-center) ** (1 / pow), (total_numbers - center) ** (1 / pow), n_samples + 1
+        )
+        indices = [0] + [x + center for x in np.unique(np.int32(x_values ** pow))[1:-1]]
         if len(indices) == n_samples:
             break
-        pow -=0.02
+        pow -= 0.02
     if pow <= 1:
-        raise ValueError("Cannot find suitable pow. Please adjust n_samples or decrease center.")
+        raise ValueError(
+            "Cannot find suitable pow. Please adjust n_samples or decrease center."
+        )
     return indices, pow
+
 
 class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
     r"""
@@ -178,19 +190,27 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
             unet=unet,
             scheduler=scheduler,
         )
-        self.register_to_config(force_zeros_for_empty_prompt=force_zeros_for_empty_prompt)
+        self.register_to_config(
+            force_zeros_for_empty_prompt=force_zeros_for_empty_prompt
+        )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
         self.default_sample_size = self.unet.config.sample_size
 
-        add_watermarker = add_watermarker if add_watermarker is not None else is_invisible_watermark_available()
+        add_watermarker = (
+            add_watermarker
+            if add_watermarker is not None
+            else is_invisible_watermark_available()
+        )
 
-        self.fast_unet=FastUNet2DConditionModel(self.unet)
+        self.fast_unet = FastUNet2DConditionModel(self.unet)
 
-        self.vae_upcasted =  False
+        self.vae_upcasted = False
 
         # make sure the VAE is in float32 mode, as it overflows in float16
-        self.needs_upcasting = self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+        self.needs_upcasting = (
+            self.vae.dtype == torch.float16 and self.vae.config.force_upcast
+        )
 
         if add_watermarker:
             self.watermark = StableDiffusionXLWatermarker()
@@ -407,7 +427,9 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
 
         # 3. Encode input prompt
         text_encoder_lora_scale = (
-            cross_attention_kwargs.get("scale", None) if cross_attention_kwargs is not None else None
+            cross_attention_kwargs.get("scale", None)
+            if cross_attention_kwargs is not None
+            else None
         )
         (
             prompt_embeds,
@@ -455,7 +477,10 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
         diffusers_version = version.parse(importlib.metadata.version("diffusers"))
         if diffusers_version < version.parse("0.22.0"):
             add_time_ids = self._get_add_time_ids(
-                original_size, crops_coords_top_left, target_size, dtype=prompt_embeds.dtype
+                original_size,
+                crops_coords_top_left,
+                target_size,
+                dtype=prompt_embeds.dtype,
             )
             if negative_original_size is not None and negative_target_size is not None:
                 negative_add_time_ids = self._get_add_time_ids(
@@ -492,25 +517,38 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
 
         if do_classifier_free_guidance:
             prompt_embeds = torch.cat([negative_prompt_embeds, prompt_embeds], dim=0)
-            add_text_embeds = torch.cat([negative_pooled_prompt_embeds, add_text_embeds], dim=0)
+            add_text_embeds = torch.cat(
+                [negative_pooled_prompt_embeds, add_text_embeds], dim=0
+            )
             add_time_ids = torch.cat([negative_add_time_ids, add_time_ids], dim=0)
 
         prompt_embeds = prompt_embeds.to(device)
         add_text_embeds = add_text_embeds.to(device)
-        add_time_ids = add_time_ids.to(device).repeat(batch_size * num_images_per_prompt, 1)
+        add_time_ids = add_time_ids.to(device).repeat(
+            batch_size * num_images_per_prompt, 1
+        )
 
         # 8. Denoising loop
-        num_warmup_steps = max(len(timesteps) - num_inference_steps * self.scheduler.order, 0)
+        num_warmup_steps = max(
+            len(timesteps) - num_inference_steps * self.scheduler.order, 0
+        )
 
         # 7.1 Apply denoising_end
-        if denoising_end is not None and isinstance(denoising_end, float) and denoising_end > 0 and denoising_end < 1:
+        if (
+            denoising_end is not None
+            and isinstance(denoising_end, float)
+            and denoising_end > 0
+            and denoising_end < 1
+        ):
             discrete_timestep_cutoff = int(
                 round(
                     self.scheduler.config.num_train_timesteps
                     - (denoising_end * self.scheduler.config.num_train_timesteps)
                 )
             )
-            num_inference_steps = len(list(filter(lambda ts: ts >= discrete_timestep_cutoff, timesteps)))
+            num_inference_steps = len(
+                list(filter(lambda ts: ts >= discrete_timestep_cutoff, timesteps))
+            )
             timesteps = timesteps[:num_inference_steps]
 
         if cache_interval == 1:
@@ -519,26 +557,35 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
             if uniform:
                 interval_seq = list(range(0, num_inference_steps, cache_interval))
             else:
-                num_slow_step = num_inference_steps//cache_interval
-                if num_inference_steps%cache_interval != 0:
+                num_slow_step = num_inference_steps // cache_interval
+                if num_inference_steps % cache_interval != 0:
                     num_slow_step += 1
-                
-                interval_seq, pow = sample_from_quad_center(num_inference_steps, num_slow_step, center=center, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
-        #print(interval_seq)
-        
+
+                interval_seq, pow = sample_from_quad_center(
+                    num_inference_steps, num_slow_step, center=center, pow=pow
+                )  # [0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
+        # print(interval_seq)
+
         prv_features = None
         with self.progress_bar(total=num_inference_steps) as progress_bar:
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
-                latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                latent_model_input = (
+                    torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                )
 
-                latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                latent_model_input = self.scheduler.scale_model_input(
+                    latent_model_input, t
+                )
 
-                added_cond_kwargs = {"text_embeds": add_text_embeds, "time_ids": add_time_ids}
+                added_cond_kwargs = {
+                    "text_embeds": add_text_embeds,
+                    "time_ids": add_time_ids,
+                }
 
                 if i in interval_seq or cache_interval == 1:
                     prv_features = None
-                    #print(t, prv_features is None)
+                    # print(t, prv_features is None)
                     # predict the noise residual
                     noise_pred, prv_features = self.unet(
                         latent_model_input,
@@ -567,17 +614,25 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
                 # perform guidance
                 if do_classifier_free_guidance:
                     noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                    noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                    noise_pred = noise_pred_uncond + guidance_scale * (
+                        noise_pred_text - noise_pred_uncond
+                    )
 
                 if do_classifier_free_guidance and guidance_rescale > 0.0:
                     # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                    noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=guidance_rescale)
+                    noise_pred = rescale_noise_cfg(
+                        noise_pred, noise_pred_text, guidance_rescale=guidance_rescale
+                    )
 
                 # compute the previous noisy sample x_t -> x_t-1
-                latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
+                latents = self.scheduler.step(
+                    noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                )[0]
 
                 # call the callback, if provided
-                if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                if i == len(timesteps) - 1 or (
+                    (i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0
+                ):
                     progress_bar.update()
                     if callback is not None and i % callback_steps == 0:
                         callback(i, t, latents)
@@ -589,7 +644,9 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
                 dtype = next(iter(self.vae.post_quant_conv.parameters())).dtype
                 latents = latents.to(dtype)
 
-            image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
+            image = self.vae.decode(
+                latents / self.vae.config.scaling_factor, return_dict=False
+            )[0]
         else:
             image = latents
 

@@ -53,12 +53,22 @@ base.unet = oneflow_compile(
 base.vae.decoder = oneflow_compile(
     base.vae.decoder, options={"size": cmd_args.num_dynamic_input_size}
 )
+if base.text_encoder is not None:
+    base.text_encoder = oneflow_compile(base.text_encoder)
+if base.text_encoder_2 is not None:
+    base.text_encoder_2 = oneflow_compile(base.text_encoder_2)
 
 if cmd_args.load:
     print("Loading graphs to avoid compilation...")
     # run_warmup is True to run unet/vae once to make the cuda runtime ready.
     base.unet.load_graph("base_unet_compiled", run_warmup=True)
     base.vae.decoder.load_graph("base_vae_compiled", run_warmup=True)
+    if base.text_encoder is not None:
+        print("Loading text_encoder...")
+        base.text_encoder.load_graph("base_text_encoder_compiled", run_warmup=True)
+    if base.text_encoder_2 is not None:
+        print("Loading text_encoder_2...")
+        base.text_encoder_2.load_graph("base_text_encoder_2_compiled", run_warmup=True)
 else:
     print("Warmup with running graphs...")
     sizes = [1024, 896]
@@ -96,3 +106,7 @@ if cmd_args.save:
     print("Saving graphs...")
     base.unet.save_graph("base_unet_compiled")
     base.vae.decoder.save_graph("base_vae_compiled")
+    if base.text_encoder is not None:
+        base.text_encoder.save_graph("base_text_encoder_compiled")
+    if base.text_encoder_2 is not None:
+        base.text_encoder_2.save_graph("base_text_encoder_2_compiled")

@@ -41,11 +41,7 @@ def is_compiled(ckpt_name):
 
 
 def compile_unet(
-    unet_model,
-    quantization=False,
-    *,
-    use_graph=True,
-    options={},
+    unet_model, quantization=False, *, use_graph=True, options={},
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM

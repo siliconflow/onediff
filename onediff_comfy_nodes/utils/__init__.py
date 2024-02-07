@@ -9,7 +9,10 @@ from .onediff_quant_utils import (
     quantize_and_save_model,
 )
 from .onediff_load_utils import onediff_load_quant_checkpoint_advanced
-from .model_patcher import OneFlowSpeedUpModelPatcher, OneFlowDeepCacheSpeedUpModelPatcher
+from .model_patcher import (
+    OneFlowSpeedUpModelPatcher,
+    OneFlowDeepCacheSpeedUpModelPatcher,
+)
 
 OUTPUT_FOLDER = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "..", "graphs"
@@ -42,9 +45,7 @@ def save_graph(deploy_module, prefix: str, device: str, subfolder: str):
     module_class_name = match.group(1)
 
     graph_filename = os.path.join(
-        OUTPUT_FOLDER,
-        subfolder,
-        f"{prefix}-{device}-{module_class_name}.graph",
+        OUTPUT_FOLDER, subfolder, f"{prefix}-{device}-{module_class_name}.graph",
     )
 
     if isinstance(deploy_module, DeployableModule):
