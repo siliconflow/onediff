@@ -3,6 +3,7 @@
 import os
 import importlib
 import types
+import inspect
 from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -157,10 +158,6 @@ def _(mod: type):
 
 
 def default_converter(obj, verbose=False, *, proxy_cls=None):
-    # Higher versions of diffusers might use torch.nn.modules.Linear
-    if obj is torch.nn.Linear:
-        return flow.nn.Linear
-
     if not is_need_mock(type(obj)):
         return obj
     try:
@@ -208,7 +205,6 @@ def _(mod: torch.nn.Module, verbose=False):
                 attr = getattr(proxy_md, k)
                 try:
                     self.__dict__[k] = torch2oflow(attr)
-
                 except Exception as e:
                     logger.error(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")

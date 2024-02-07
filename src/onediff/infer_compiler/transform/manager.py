@@ -28,7 +28,7 @@ class TransformManager:
 
     def _setup_logger(self):
         name = "ONEDIFF"
-        level = logging.DEBUG if self.debug_mode else logging.ERROR
+        level = logging.DEBUG if self.debug_mode else logging.WARNING
         logger.configure_logging(name=name, file_name=None, level=level, log_dir=None)
         self.logger = logger
 
