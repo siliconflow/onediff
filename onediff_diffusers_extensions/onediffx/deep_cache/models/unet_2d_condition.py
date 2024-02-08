@@ -18,6 +18,15 @@ import torch
 import torch.nn as nn
 import torch.utils.checkpoint
 
+import diffusers
+
+if diffusers.__version__ >= "0.26.0":
+    from diffusers.models.embeddings import (
+        GLIGENTextBoundingboxProjection as PositionNet,
+    )
+else:
+    from diffusers.models.embeddings import PositionNet
+
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import UNet2DConditionLoadersMixin
 from diffusers.utils import BaseOutput, logging
@@ -34,7 +43,6 @@ from diffusers.models.embeddings import (
     ImageHintTimeEmbedding,
     ImageProjection,
     ImageTimeEmbedding,
-    PositionNet,
     TextImageProjection,
     TextImageTimeEmbedding,
     TextTimeEmbedding,

@@ -3,6 +3,8 @@ from typing import Any, Dict, Optional, Tuple, Union
 import torch
 from torch import nn
 
+import torch
+import diffusers
 from diffusers.utils import is_torch_version
 from diffusers.utils.torch_utils import apply_freeu
 from diffusers.models.attention import Attention
@@ -20,21 +22,38 @@ from diffusers.models.transformer_temporal import (
     TransformerTemporalModel,
 )
 
-from diffusers.models.unet_3d_blocks import (
-    UNetMidBlock3DCrossAttn,
-    CrossAttnDownBlock3D,
-    DownBlock3D,
-    CrossAttnUpBlock3D,
-    UpBlock3D,
-    DownBlockMotion,
-    CrossAttnDownBlockMotion,
-    CrossAttnUpBlockMotion,
-    UpBlockMotion,
-    UNetMidBlockCrossAttnMotion,
-    MidBlockTemporalDecoder,
-    UpBlockTemporalDecoder,
-    UNetMidBlockSpatioTemporal,
-)
+if diffusers.__version__ >= "0.26.0":
+    from diffusers.models.unets.unet_3d_blocks import (
+        UNetMidBlock3DCrossAttn,
+        CrossAttnDownBlock3D,
+        DownBlock3D,
+        CrossAttnUpBlock3D,
+        UpBlock3D,
+        DownBlockMotion,
+        CrossAttnDownBlockMotion,
+        CrossAttnUpBlockMotion,
+        UpBlockMotion,
+        UNetMidBlockCrossAttnMotion,
+        MidBlockTemporalDecoder,
+        UpBlockTemporalDecoder,
+        UNetMidBlockSpatioTemporal,
+    )
+else:
+    from diffusers.models.unet_3d_blocks import (
+        UNetMidBlock3DCrossAttn,
+        CrossAttnDownBlock3D,
+        DownBlock3D,
+        CrossAttnUpBlock3D,
+        UpBlock3D,
+        DownBlockMotion,
+        CrossAttnDownBlockMotion,
+        CrossAttnUpBlockMotion,
+        UpBlockMotion,
+        UNetMidBlockCrossAttnMotion,
+        MidBlockTemporalDecoder,
+        UpBlockTemporalDecoder,
+        UNetMidBlockSpatioTemporal,
+    )
 
 
 def get_down_block(
