@@ -1,6 +1,7 @@
 """
 example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id xx
 """
+
 import argparse
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
@@ -15,13 +16,16 @@ def parse_args():
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
     )
     parser.add_argument(
-        "--model_id", type=str, default="runwayml/stable-diffusion-v1-5",
+        "--model_id",
+        type=str,
+        default="runwayml/stable-diffusion-v1-5",
     )
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
+    parser.add_argument("--variant", type=str, default="fp16")
     cmd_args = parser.parse_args()
     return cmd_args
 
@@ -29,14 +33,17 @@ def parse_args():
 args = parse_args()
 
 scheduler = EulerDiscreteScheduler.from_pretrained(args.model_id, subfolder="scheduler")
+extra_args = {}
+if args.variant:
+    extra_args["variant"] = args.variant
 pipe = StableDiffusionPipeline.from_pretrained(
     args.model_id,
     scheduler=scheduler,
     use_auth_token=True,
     revision="fp16",
-    variant="fp16",
     torch_dtype=torch.float16,
     safety_checker=None,
+    **extra_args,
 )
 pipe = pipe.to("cuda")
 
