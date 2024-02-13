@@ -15,7 +15,8 @@ def patch_image_prcessor(processor):
         processor.pt_to_pil = pt_to_pil.__get__(processor)
     else:
         warnings.warn(
-            f"Image processor {type(processor)} is not supported for patching")
+            f"Image processor {type(processor)} is not supported for patching"
+        )
 
 
 def postprocess(
@@ -31,11 +32,11 @@ def postprocess(
     if output_type not in ["latent", "pt", "np", "pil"]:
         deprecation_message = (
             f"the output_type {output_type} is outdated and has been set to `np`. Please make sure to set it to one of these instead: "
-            "`pil`, `np`, `pt`, `latent`")
-        deprecate("Unsupported output_type",
-                  "1.0.0",
-                  deprecation_message,
-                  standard_warn=False)
+            "`pil`, `np`, `pt`, `latent`"
+        )
+        deprecate(
+            "Unsupported output_type", "1.0.0", deprecation_message, standard_warn=False
+        )
         output_type = "np"
 
     if output_type == "latent":
@@ -44,10 +45,12 @@ def postprocess(
     if do_denormalize is None:
         do_denormalize = [self.config.do_normalize] * image.shape[0]
 
-    image = torch.stack([
-        self.denormalize(image[i]) if do_denormalize[i] else image[i]
-        for i in range(image.shape[0])
-    ])
+    image = torch.stack(
+        [
+            self.denormalize(image[i]) if do_denormalize[i] else image[i]
+            for i in range(image.shape[0])
+        ]
+    )
 
     if output_type == "pt":
         return image
@@ -81,9 +84,15 @@ def pt_to_numpy(images: torch.FloatTensor) -> np.ndarray:
 
 @torch.jit.script
 def _pt_to_pil_pre(images):
-    return images.permute(
-        0, 2, 3,
-        1).contiguous().float().mul(255).round().to(dtype=torch.uint8).cpu()
+    return (
+        images.permute(0, 2, 3, 1)
+        .contiguous()
+        .float()
+        .mul(255)
+        .round()
+        .to(dtype=torch.uint8)
+        .cpu()
+    )
 
 
 @staticmethod
@@ -97,9 +106,7 @@ def pt_to_pil(images: np.ndarray) -> PIL.Image.Image:
     images = _pt_to_pil_pre(images).numpy()
     if images.shape[-1] == 1:
         # special case for grayscale (single channel) images
-        pil_images = [
-            Image.fromarray(image.squeeze(), mode="L") for image in images
-        ]
+        pil_images = [Image.fromarray(image.squeeze(), mode="L") for image in images]
     else:
         pil_images = [Image.fromarray(image) for image in images]
 

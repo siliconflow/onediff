@@ -20,7 +20,6 @@ def oneflow_backend(gm, example_inputs, *args, **kwargs):
         transformed_fn = fx_node_tranform(gm)
 
     def wrapped_forward(*args, **kwargs):
-        
         def input_fn(value):
             if isinstance(value, torch.Tensor):
                 return flow.utils.tensor.from_torch(value.contiguous())

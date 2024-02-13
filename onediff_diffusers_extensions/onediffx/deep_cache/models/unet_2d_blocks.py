@@ -39,9 +39,13 @@ from diffusers.models.resnet import (
     KDownsample2D,
     KUpsample2D,
     ResnetBlock2D,
-    Upsample2D,
 )
 from diffusers.models.transformer_2d import Transformer2DModel
+
+if diffusers.__version__ >= "0.26.0":
+    from diffusers.models.unets.unet_2d_blocks import DownEncoderBlock2D
+else:
+    from diffusers.models.unet_2d_blocks import DownEncoderBlock2D
 
 from diffusers.models.unet_2d_blocks import (
     ResnetDownsampleBlock2D,
@@ -49,7 +53,6 @@ from diffusers.models.unet_2d_blocks import (
     SimpleCrossAttnDownBlock2D,
     SkipDownBlock2D,
     AttnSkipDownBlock2D,
-    DownEncoderBlock2D,
     AttnDownEncoderBlock2D,
     KDownBlock2D,
     KAttentionBlock,
@@ -65,8 +68,15 @@ from diffusers.models.unet_2d_blocks import (
     KCrossAttnUpBlock2D,
 )
 
+LoRACompatibleConv = diffusers.models.lora.LoRACompatibleConv
+
+try:
+    USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
+except Exception as e:
+    USE_PEFT_BACKEND = False
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
+
 
 def get_down_block(
     down_block_type,
@@ -102,7 +112,11 @@ def get_down_block(
         )
         attention_head_dim = num_attention_heads
 
-    down_block_type = down_block_type[7:] if down_block_type.startswith("UNetRes") else down_block_type
+    down_block_type = (
+        down_block_type[7:]
+        if down_block_type.startswith("UNetRes")
+        else down_block_type
+    )
     if down_block_type == "DownBlock2D":
         return DownBlock2D(
             num_layers=num_layers,
@@ -153,7 +167,9 @@ def get_down_block(
         )
     elif down_block_type == "CrossAttnDownBlock2D":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnDownBlock2D")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnDownBlock2D"
+            )
         return CrossAttnDownBlock2D(
             num_layers=num_layers,
             transformer_layers_per_block=transformer_layers_per_block,
@@ -177,7 +193,9 @@ def get_down_block(
         )
     elif down_block_type == "SimpleCrossAttnDownBlock2D":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for SimpleCrossAttnDownBlock2D")
+            raise ValueError(
+                "cross_attention_dim must be specified for SimpleCrossAttnDownBlock2D"
+            )
         return SimpleCrossAttnDownBlock2D(
             num_layers=num_layers,
             in_channels=in_channels,
@@ -311,7 +329,9 @@ def get_up_block(
         )
         attention_head_dim = num_attention_heads
 
-    up_block_type = up_block_type[7:] if up_block_type.startswith("UNetRes") else up_block_type
+    up_block_type = (
+        up_block_type[7:] if up_block_type.startswith("UNetRes") else up_block_type
+    )
     if up_block_type == "UpBlock2D":
         return UpBlock2D(
             num_layers=num_layers,
@@ -344,7 +364,9 @@ def get_up_block(
         )
     elif up_block_type == "CrossAttnUpBlock2D":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for CrossAttnUpBlock2D")
+            raise ValueError(
+                "cross_attention_dim must be specified for CrossAttnUpBlock2D"
+            )
         return CrossAttnUpBlock2D(
             num_layers=num_layers,
             transformer_layers_per_block=transformer_layers_per_block,
@@ -368,7 +390,9 @@ def get_up_block(
         )
     elif up_block_type == "SimpleCrossAttnUpBlock2D":
         if cross_attention_dim is None:
-            raise ValueError("cross_attention_dim must be specified for SimpleCrossAttnUpBlock2D")
+            raise ValueError(
+                "cross_attention_dim must be specified for SimpleCrossAttnUpBlock2D"
+            )
         return SimpleCrossAttnUpBlock2D(
             num_layers=num_layers,
             in_channels=in_channels,
@@ -490,6 +514,130 @@ def get_up_block(
     raise ValueError(f"{up_block_type} does not exist.")
 
 
+class Upsample2D(nn.Module):
+    """A 2D upsampling layer with an optional convolution.
+
+    Parameters:
+        channels (`int`):
+            number of channels in the inputs and outputs.
+        use_conv (`bool`, default `False`):
+            option to use a convolution.
+        use_conv_transpose (`bool`, default `False`):
+            option to use a convolution transpose.
+        out_channels (`int`, optional):
+            number of output channels. Defaults to `channels`.
+        name (`str`, default `conv`):
+            name of the upsampling 2D layer.
+    """
+
+    def __init__(
+        self,
+        channels: int,
+        use_conv: bool = False,
+        use_conv_transpose: bool = False,
+        out_channels: Optional[int] = None,
+        name: str = "conv",
+        kernel_size: Optional[int] = None,
+        padding=1,
+        norm_type=None,
+        eps=None,
+        elementwise_affine=None,
+        bias=True,
+        interpolate=True,
+    ):
+        super().__init__()
+        self.channels = channels
+        self.out_channels = out_channels or channels
+        self.use_conv = use_conv
+        self.use_conv_transpose = use_conv_transpose
+        self.name = name
+        self.interpolate = interpolate
+        conv_cls = nn.Conv2d if USE_PEFT_BACKEND else LoRACompatibleConv
+
+        if norm_type == "ln_norm":
+            self.norm = nn.LayerNorm(channels, eps, elementwise_affine)
+        elif norm_type == "rms_norm":
+            self.norm = RMSNorm(channels, eps, elementwise_affine)
+        elif norm_type is None:
+            self.norm = None
+        else:
+            raise ValueError(f"unknown norm_type: {norm_type}")
+
+        conv = None
+        if use_conv_transpose:
+            if kernel_size is None:
+                kernel_size = 4
+            conv = nn.ConvTranspose2d(
+                channels, self.out_channels, kernel_size=kernel_size, stride=2, padding=padding, bias=bias
+            )
+        elif use_conv:
+            if kernel_size is None:
+                kernel_size = 3
+            conv = conv_cls(self.channels, self.out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
+
+        # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
+        if name == "conv":
+            self.conv = conv
+        else:
+            self.Conv2d_0 = conv
+
+    def forward(
+        self,
+        hidden_states: torch.FloatTensor,
+        output_size: Optional[int] = None,
+        scale: float = 1.0,
+    ) -> torch.FloatTensor:
+        assert hidden_states.shape[1] == self.channels
+
+        if self.norm is not None:
+            hidden_states = self.norm(hidden_states.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+
+        if self.use_conv_transpose:
+            return self.conv(hidden_states)
+
+        # Cast to float32 to as 'upsample_nearest2d_out_frame' op does not support bfloat16
+        # TODO(Suraj): Remove this cast once the issue is fixed in PyTorch
+        # https://github.com/pytorch/pytorch/issues/86679
+        dtype = hidden_states.dtype
+        if dtype == torch.bfloat16:
+            hidden_states = hidden_states.to(torch.float32)
+
+        # upsample_nearest_nhwc fails with large batch sizes. see https://github.com/huggingface/diffusers/issues/984
+        if hidden_states.shape[0] >= 64:
+            hidden_states = hidden_states.contiguous()
+
+        # if `output_size` is passed we force the interpolation output
+        # size and do not make use of `scale_factor=2`
+        if self.interpolate:
+            if output_size is None:
+                hidden_states = F.interpolate(hidden_states, scale_factor=2.0, mode="nearest")
+            else:
+                # Rewritten for the switching of uncommon resolutions.
+                # hidden_states = F.interpolate(hidden_states, size=output_size, mode="nearest")
+                hidden_states = F.interpolate_like(
+                    hidden_states, like=output_size, mode="nearest"
+                )
+
+        # If the input is bfloat16, we cast back to bfloat16
+        if dtype == torch.bfloat16:
+            hidden_states = hidden_states.to(dtype)
+
+        # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
+        if self.use_conv:
+            if self.name == "conv":
+                if isinstance(self.conv, LoRACompatibleConv) and not USE_PEFT_BACKEND:
+                    hidden_states = self.conv(hidden_states, scale)
+                else:
+                    hidden_states = self.conv(hidden_states)
+            else:
+                if isinstance(self.Conv2d_0, LoRACompatibleConv) and not USE_PEFT_BACKEND:
+                    hidden_states = self.Conv2d_0(hidden_states, scale)
+                else:
+                    hidden_states = self.Conv2d_0(hidden_states)
+
+        return hidden_states
+
+
 class CrossAttnDownBlock2D(nn.Module):
     def __init__(
         self,
@@ -571,7 +719,11 @@ class CrossAttnDownBlock2D(nn.Module):
             self.downsamplers = nn.ModuleList(
                 [
                     Downsample2D(
-                        out_channels, use_conv=True, out_channels=out_channels, padding=downsample_padding, name="op"
+                        out_channels,
+                        use_conv=True,
+                        out_channels=out_channels,
+                        padding=downsample_padding,
+                        name="op",
                     )
                 ]
             )
@@ -593,7 +745,11 @@ class CrossAttnDownBlock2D(nn.Module):
     ):
         output_states = ()
 
-        lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
+        lora_scale = (
+            cross_attention_kwargs.get("scale", 1.0)
+            if cross_attention_kwargs is not None
+            else 1.0
+        )
 
         blocks = list(zip(self.resnets, self.attentions))
 
@@ -609,12 +765,11 @@ class CrossAttnDownBlock2D(nn.Module):
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                ckpt_kwargs: Dict[str, Any] = {
+                    "use_reentrant": False
+                } if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(resnet),
-                    hidden_states,
-                    temb,
-                    **ckpt_kwargs,
+                    create_custom_forward(resnet), hidden_states, temb, **ckpt_kwargs,
                 )
                 hidden_states = attn(
                     hidden_states,
@@ -640,8 +795,11 @@ class CrossAttnDownBlock2D(nn.Module):
                 hidden_states = hidden_states + additional_residuals
 
             output_states = output_states + (hidden_states,)
-            if exist_block_number is not None and len(output_states) == exist_block_number + 1:
-                return hidden_states, output_states            
+            if (
+                exist_block_number is not None
+                and len(output_states) == exist_block_number + 1
+            ):
+                return hidden_states, output_states
 
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
@@ -695,7 +853,11 @@ class DownBlock2D(nn.Module):
             self.downsamplers = nn.ModuleList(
                 [
                     Downsample2D(
-                        out_channels, use_conv=True, out_channels=out_channels, padding=downsample_padding, name="op"
+                        out_channels,
+                        use_conv=True,
+                        out_channels=out_channels,
+                        padding=downsample_padding,
+                        name="op",
                     )
                 ]
             )
@@ -704,7 +866,9 @@ class DownBlock2D(nn.Module):
 
         self.gradient_checkpointing = False
 
-    def forward(self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,):
+    def forward(
+        self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,
+    ):
         output_states = ()
 
         for resnet in self.resnets:
@@ -718,7 +882,10 @@ class DownBlock2D(nn.Module):
 
                 if is_torch_version(">=", "1.11.0"):
                     hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(resnet), hidden_states, temb, use_reentrant=False
+                        create_custom_forward(resnet),
+                        hidden_states,
+                        temb,
+                        use_reentrant=False,
                     )
                 else:
                     hidden_states = torch.utils.checkpoint.checkpoint(
@@ -728,8 +895,11 @@ class DownBlock2D(nn.Module):
                 hidden_states = resnet(hidden_states, temb, scale=scale)
 
             output_states = output_states + (hidden_states,)
-            if exist_block_number is not None and len(output_states) == exist_block_number + 1:
-                return hidden_states, output_states 
+            if (
+                exist_block_number is not None
+                and len(output_states) == exist_block_number + 1
+            ):
+                return hidden_states, output_states
 
         if self.downsamplers is not None:
             for downsampler in self.downsamplers:
@@ -738,8 +908,6 @@ class DownBlock2D(nn.Module):
             output_states = output_states + (hidden_states,)
 
         return hidden_states, output_states
-
-
 
 
 class CrossAttnUpBlock2D(nn.Module):
@@ -822,7 +990,9 @@ class CrossAttnUpBlock2D(nn.Module):
         self.resnets = nn.ModuleList(resnets)
 
         if add_upsample:
-            self.upsamplers = nn.ModuleList([Upsample2D(out_channels, use_conv=True, out_channels=out_channels)])
+            self.upsamplers = nn.ModuleList(
+                [Upsample2D(out_channels, use_conv=True, out_channels=out_channels)]
+            )
         else:
             self.upsamplers = None
 
@@ -838,15 +1008,22 @@ class CrossAttnUpBlock2D(nn.Module):
         upsample_size: Optional[int] = None,
         attention_mask: Optional[torch.FloatTensor] = None,
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
-        enter_block_number: Optional[int]=None,
+        enter_block_number: Optional[int] = None,
     ):
         prv_f = []
-        lora_scale = cross_attention_kwargs.get("scale", 1.0) if cross_attention_kwargs is not None else 1.0
+        lora_scale = (
+            cross_attention_kwargs.get("scale", 1.0)
+            if cross_attention_kwargs is not None
+            else 1.0
+        )
 
         for i, (resnet, attn) in enumerate(zip(self.resnets, self.attentions)):
             # pop res hidden states
-            
-            if enter_block_number is not None and i < len(self.resnets) - enter_block_number - 1:
+
+            if (
+                enter_block_number is not None
+                and i < len(self.resnets) - enter_block_number - 1
+            ):
                 continue
 
             res_hidden_states = res_hidden_states_tuple[-1]
@@ -866,12 +1043,11 @@ class CrossAttnUpBlock2D(nn.Module):
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                ckpt_kwargs: Dict[str, Any] = {
+                    "use_reentrant": False
+                } if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = torch.utils.checkpoint.checkpoint(
-                    create_custom_forward(resnet),
-                    hidden_states,
-                    temb,
-                    **ckpt_kwargs,
+                    create_custom_forward(resnet), hidden_states, temb, **ckpt_kwargs,
                 )
                 hidden_states = attn(
                     hidden_states,
@@ -894,7 +1070,9 @@ class CrossAttnUpBlock2D(nn.Module):
 
         if self.upsamplers is not None:
             for upsampler in self.upsamplers:
-                hidden_states = upsampler(hidden_states, upsample_size, scale=lora_scale)
+                hidden_states = upsampler(
+                    hidden_states, upsample_size, scale=lora_scale
+                )
 
         return hidden_states, prv_f
 
@@ -941,18 +1119,31 @@ class UpBlock2D(nn.Module):
         self.resnets = nn.ModuleList(resnets)
 
         if add_upsample:
-            self.upsamplers = nn.ModuleList([Upsample2D(out_channels, use_conv=True, out_channels=out_channels)])
+            self.upsamplers = nn.ModuleList(
+                [Upsample2D(out_channels, use_conv=True, out_channels=out_channels)]
+            )
         else:
             self.upsamplers = None
 
         self.gradient_checkpointing = False
 
-    def forward(self, hidden_states, res_hidden_states_tuple, temb=None, upsample_size=None, scale: float = 1.0, enter_block_number: Optional[int]=None,):
+    def forward(
+        self,
+        hidden_states,
+        res_hidden_states_tuple,
+        temb=None,
+        upsample_size=None,
+        scale: float = 1.0,
+        enter_block_number: Optional[int] = None,
+    ):
         prv_f = []
-        
+
         for idx, resnet in enumerate(self.resnets):
 
-            if enter_block_number is not None and idx < len(self.resnets) - enter_block_number - 1:
+            if (
+                enter_block_number is not None
+                and idx < len(self.resnets) - enter_block_number - 1
+            ):
                 continue
 
             # pop res hidden states
@@ -971,7 +1162,10 @@ class UpBlock2D(nn.Module):
 
                 if is_torch_version(">=", "1.11.0"):
                     hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(resnet), hidden_states, temb, use_reentrant=False
+                        create_custom_forward(resnet),
+                        hidden_states,
+                        temb,
+                        use_reentrant=False,
                     )
                 else:
                     hidden_states = torch.utils.checkpoint.checkpoint(

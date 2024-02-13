@@ -1,3 +1,4 @@
+import importlib
 import os
 import types
 import warnings
@@ -21,12 +22,13 @@ class TransformManager:
     def __init__(self, debug_mode=False, tmp_dir="./output"):
         self.debug_mode = debug_mode
         self._torch_to_oflow_cls_map = {}
+        self._oflow_to_torch_cls_map = {}
         self._setup_logger()
         self.mocker = LazyMocker(prefix="", suffix="", tmp_dir=None)
 
     def _setup_logger(self):
         name = "ONEDIFF"
-        level = logging.DEBUG if self.debug_mode else logging.ERROR
+        level = logging.DEBUG if self.debug_mode else logging.WARNING
         logger.configure_logging(name=name, file_name=None, level=level, log_dir=None)
         self.logger = logger
 
@@ -62,17 +64,38 @@ class TransformManager:
     def get_transformed_entity_name(self, entity):
         return self.mocker.get_mock_entity_name(entity)
 
-    def transform_cls(self, full_cls_name: str):
-        """Transform a class name to a mock class ."""
+    def transform_cls(self, cls):
+        """Transform a class to a mock class ."""
+        full_cls_name = cls.__module__ + "." + cls.__qualname__
         mock_full_cls_name = self.get_transformed_entity_name(full_cls_name)
 
+        # transform cache
         if mock_full_cls_name in self._torch_to_oflow_cls_map:
-            use_value = self._torch_to_oflow_cls_map[mock_full_cls_name]
-            return use_value
+            return self._torch_to_oflow_cls_map[mock_full_cls_name]
 
-        mock_cls = self._transform_entity(mock_full_cls_name)
+        # transform
+        if cls.__module__.startswith("torch."):
+            mod_name = cls.__module__.replace("torch.", "oneflow.")
+            mod = importlib.import_module(mod_name)
+            mock_cls = getattr(mod, cls.__name__)
+        else:
+            mock_cls = self._transform_entity(mock_full_cls_name)
+
         self._torch_to_oflow_cls_map[mock_full_cls_name] = mock_cls
+        self._oflow_to_torch_cls_map[mock_full_cls_name] = cls
         return mock_cls
+
+    def reverse_transform_cls(self, cls):
+        full_cls_name = cls.__module__ + "." + cls.__qualname__
+        mock_full_cls_name = self.get_transformed_entity_name(full_cls_name)
+        if mock_full_cls_name in self._oflow_to_torch_cls_map:
+            return self._oflow_to_torch_cls_map[mock_full_cls_name]
+        else:
+            self.logger.info(
+                f"{mock_full_cls_name} not in _oflow_to_torch_cls_map, import it directly."
+            )
+            mod = importlib.import_module(cls.__module__)
+            return getattr(mod, cls.__qualname__)
 
     def transform_func(self, func: types.FunctionType):
         # TODO: support transform function cache

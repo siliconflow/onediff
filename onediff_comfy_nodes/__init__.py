@@ -64,7 +64,7 @@ if _USE_UNET_INT8:
             "Quant8Model": Quant8Model,
             "OneDiffQuantCheckpointLoaderSimple": OneDiffQuantCheckpointLoaderSimple,
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": OneDiffQuantCheckpointLoaderSimpleAdvanced,
-            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": ImageOnlyOneDiffQuantCheckpointLoaderAdvanced, 
+            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
             "QuantKSampler": QuantKSampler,
         }
     )

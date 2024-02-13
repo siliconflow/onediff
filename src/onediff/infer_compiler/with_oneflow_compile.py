@@ -8,7 +8,7 @@ from functools import wraps
 from itertools import chain
 from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
-from .transform.builtin_transform import torch2oflow
+from .transform.builtin_transform import torch2oflow, reverse_proxy_class
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import logger
@@ -23,6 +23,8 @@ class DualModule(torch.nn.Module):
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_oneflow_module", oneflow_module)
         object.__setattr__(self, "_modules", torch_module._modules)
+        object.__setattr__(self, "_parameters", torch_module._parameters)
+        object.__setattr__(self, "_buffers", torch_module._buffers)
 
     @property
     def oneflow_module(self):
@@ -59,10 +61,7 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [
-                    torch_module.named_parameters(),
-                    torch_module.named_buffers(),
-                ]
+                [torch_module.named_parameters(), torch_module.named_buffers(),]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -91,9 +90,8 @@ class DualModule(torch.nn.Module):
             else getattr(self._oneflow_module, name)
         )
         if isinstance(torch_attr, torch.nn.ModuleList):
-            oneflow_attr = (
-                [None] * len(torch_attr) if oneflow_attr is None else oneflow_attr
-            )
+            if oneflow_attr is None:
+                oneflow_attr = flow.nn.ModuleList([None] * len(torch_attr))
             return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
@@ -157,14 +155,24 @@ class DualModuleList(torch.nn.ModuleList):
 
 
 def get_mixed_dual_module(module_cls):
+    if issubclass(module_cls, DualModule) and "MixedDualModule" in module_cls.__name__:
+        return module_cls
+
     class MixedDualModule(DualModule, module_cls):
         def __init__(self, torch_module, oneflow_module):
+            while isinstance(torch_module, DualModule):
+                torch_module = torch_module._torch_module
             DualModule.__init__(self, torch_module, oneflow_module)
 
         def _get_name(self) -> str:
             return f"{self.__class__.__name__}(of {module_cls.__name__})"
 
     return MixedDualModule
+
+
+@torch2oflow.register
+def _(mod: DualModule, verbose=False):
+    return torch2oflow(mod._torch_module, verbose)
 
 
 def handle_deployable_exception(func):
@@ -187,17 +195,14 @@ def handle_deployable_exception(func):
 
 class DeployableModule(torch.nn.Module):
     def __init__(
-        self,
-        torch_module,
-        oneflow_module,
-        use_graph=True,
-        dynamic=True,
-        options={},
+        self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={},
     ):
         torch.nn.Module.__init__(self)
-        object.__setattr__(self, "_deployable_module_model", get_mixed_dual_module(torch_module.__class__)(
-            torch_module, oneflow_module
-        ))
+        object.__setattr__(
+            self,
+            "_deployable_module_model",
+            get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module),
+        )
         object.__setattr__(self, "_modules", torch_module._modules)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
@@ -205,7 +210,6 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
-        self._deployable_module_input_count = None
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
@@ -345,6 +349,32 @@ class OneflowGraph(flow.nn.Graph):
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
         state_dict = self.runtime_state_dict()
+
+        import oneflow.framework.args_tree as args_tree
+
+        def disabled_dataclass(value):
+            return False
+
+        original_is_dataclass = args_tree._is_dataclass
+        args_tree._is_dataclass = disabled_dataclass
+
+        import dataclasses
+
+        def reverse_dataclass(value):
+            if dataclasses.is_dataclass(value):
+                return reverse_proxy_class(type(value))(**value)
+            else:
+                return value
+
+        for name, rsd in state_dict.items():
+            output = state_dict[name]["outputs_original"]
+            out_tree = args_tree.ArgsTree((output, None), False)
+            # dataclass type needs to be reversed to torch type to avoid saving error.
+            out = out_tree.map_leaf(reverse_dataclass)
+            state_dict[name]["outputs_original"] = out[0]
+
+        args_tree._is_dataclass = original_is_dataclass
+
         flow.save(state_dict, file_path)
 
 
@@ -398,11 +428,7 @@ def get_mixed_deployable_module(module_cls):
 
 
 def oneflow_compile(
-    torch_module: torch.nn.Module,
-    *,
-    use_graph=True,
-    dynamic=True,
-    options={},
+    torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, options={},
 ) -> DeployableModule:
     """
     Transform a torch nn.Module to oneflow.nn.Module, then optimize it with oneflow.nn.Graph.

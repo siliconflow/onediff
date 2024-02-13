@@ -7,11 +7,12 @@ from .unet_spatio_temporal_condition import UNetSpatioTemporalConditionOutput
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
+
 class FastUNetSpatioTemporalConditionModel(nn.Module):
     def __init__(self, unet_module):
         super().__init__()
         self.unet_module = unet_module
-    
+
     def forward(
         self,
         sample: torch.FloatTensor,
@@ -82,12 +83,16 @@ class FastUNetSpatioTemporalConditionModel(nn.Module):
         # emb: [batch, channels] -> [batch * frames, channels]
         emb = emb.repeat_interleave(num_frames, dim=0)
         # encoder_hidden_states: [batch, 1, channels] -> [batch * frames, 1, channels]
-        encoder_hidden_states = encoder_hidden_states.repeat_interleave(num_frames, dim=0)
+        encoder_hidden_states = encoder_hidden_states.repeat_interleave(
+            num_frames, dim=0
+        )
 
         # 2. pre-process
         sample = self.unet_module.conv_in(sample)
 
-        image_only_indicator = torch.zeros(batch_size, num_frames, dtype=sample.dtype, device=sample.device)
+        image_only_indicator = torch.zeros(
+            batch_size, num_frames, dtype=sample.dtype, device=sample.device
+        )
 
         # Branch: 4 down_blocks, each with 3 skip connections. Here we ignore the first skip branch, whose computations only has up_blocks but without down_blocks.
         if cache_branch is not None:
@@ -95,31 +100,40 @@ class FastUNetSpatioTemporalConditionModel(nn.Module):
             down_cache_block_idx = cache_branch // each_module_num
             down_cache_module_idx = cache_branch % each_module_num
 
-            up_cache_block_idx = len(self.unet_module.up_blocks) - 1 - down_cache_block_idx
+            up_cache_block_idx = (
+                len(self.unet_module.up_blocks) - 1 - down_cache_block_idx
+            )
             up_cache_module_idx = 1 - down_cache_module_idx
             if down_cache_module_idx == each_module_num - 1:
                 up_cache_block_idx -= 1
                 up_cache_module_idx = 2
-        
+
         # 3. down
         down_block_res_samples = (sample,)
         for block_id, downsample_block in enumerate(self.unet_module.down_blocks):
-            if hasattr(downsample_block, "has_cross_attention") and downsample_block.has_cross_attention:
+            if (
+                hasattr(downsample_block, "has_cross_attention")
+                and downsample_block.has_cross_attention
+            ):
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
                     temb=emb,
                     encoder_hidden_states=encoder_hidden_states,
                     image_only_indicator=image_only_indicator,
-                    exist_module_idx=down_cache_module_idx if down_cache_block_idx == block_id else None
+                    exist_module_idx=down_cache_module_idx
+                    if down_cache_block_idx == block_id
+                    else None,
                 )
             else:
                 sample, res_samples = downsample_block(
                     hidden_states=sample,
                     temb=emb,
                     image_only_indicator=image_only_indicator,
-                    exist_module_idx=down_cache_module_idx if down_cache_block_idx == block_id else None
+                    exist_module_idx=down_cache_module_idx
+                    if down_cache_block_idx == block_id
+                    else None,
                 )
-                
+
             down_block_res_samples += res_samples
             if down_cache_block_idx == block_id:
                 break
@@ -131,23 +145,30 @@ class FastUNetSpatioTemporalConditionModel(nn.Module):
         for i, upsample_block in enumerate(self.unet_module.up_blocks):
             if i < up_cache_block_idx:
                 continue
-            
+
             if i == up_cache_block_idx:
-                trunc_res_samples_len = len(upsample_block.resnets) - up_cache_module_idx
+                trunc_res_samples_len = (
+                    len(upsample_block.resnets) - up_cache_module_idx
+                )
             else:
                 trunc_res_samples_len = len(upsample_block.resnets)
-            
-            res_samples = down_block_res_samples[-trunc_res_samples_len :]
-            down_block_res_samples = down_block_res_samples[: -trunc_res_samples_len]
 
-            if hasattr(upsample_block, "has_cross_attention") and upsample_block.has_cross_attention:
+            res_samples = down_block_res_samples[-trunc_res_samples_len:]
+            down_block_res_samples = down_block_res_samples[:-trunc_res_samples_len]
+
+            if (
+                hasattr(upsample_block, "has_cross_attention")
+                and upsample_block.has_cross_attention
+            ):
                 sample, _ = upsample_block(
                     hidden_states=sample,
                     temb=emb,
                     res_hidden_states_tuple=res_samples,
                     encoder_hidden_states=encoder_hidden_states,
                     image_only_indicator=image_only_indicator,
-                    enter_module_idx=up_cache_module_idx if i == up_cache_block_idx else None
+                    enter_module_idx=up_cache_module_idx
+                    if i == up_cache_block_idx
+                    else None,
                 )
             else:
                 sample, _ = upsample_block(
@@ -155,16 +176,20 @@ class FastUNetSpatioTemporalConditionModel(nn.Module):
                     temb=emb,
                     res_hidden_states_tuple=res_samples,
                     image_only_indicator=image_only_indicator,
-                    enter_module_idx=up_cache_module_idx if i == up_cache_block_idx else None
+                    enter_module_idx=up_cache_module_idx
+                    if i == up_cache_block_idx
+                    else None,
                 )
-        
+
         # 6. post-process
         sample = self.unet_module.conv_norm_out(sample)
         sample = self.unet_module.conv_act(sample)
         sample = self.unet_module.conv_out(sample)
 
         # 7. Reshape back to original shape
-        sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
+        # sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
+        # Rewrite for onediff SVD dynamic shape
+        sample = sample.unflatten(0, shape=(batch_size, -1))
 
         if not return_dict:
             return (sample, cache_features)
