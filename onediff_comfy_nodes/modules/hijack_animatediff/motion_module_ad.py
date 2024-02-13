@@ -19,7 +19,7 @@ VersatileAttention_PT_CLS = (
 
 
 class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
-    def forward(self, hidden_states, encoder_hidden_states=None, attention_mask=None):
+    def forward(self, hidden_states, encoder_hidden_states=None, attention_mask=None, view_options=None):
         batch, channel, height, width = hidden_states.shape
         residual = hidden_states
         scale_mask = self.get_scale_mask(hidden_states)
@@ -40,6 +40,7 @@ class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
                 attention_mask=attention_mask,
                 video_length=self.video_length,
                 scale_mask=scale_mask,
+                view_options=view_options
             )
 
         # output
