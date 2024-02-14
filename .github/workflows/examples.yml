@@ -222,6 +222,8 @@ jobs:
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-2-1
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_turbo.py --compile true --base /share_nfs/hf_models/sdxl-turbo
+      - if: matrix.test-suite == 'diffusers_examples'
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/reuse_compiled_pipeline_components.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
 
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
