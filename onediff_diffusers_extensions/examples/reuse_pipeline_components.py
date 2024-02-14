@@ -14,7 +14,7 @@ from diffusers import (
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
 )
-from onediff.infer_compiler import oneflow_compile
+from onediffx import compile_pipe
 
 
 def get_args():
@@ -32,7 +32,7 @@ def initialize_pipelines(ckpt_path, model_params):
     pipeline = StableDiffusionPipeline.from_pretrained(ckpt_path, **model_params)
 
     pipeline.to("cuda")
-    pipeline.unet = oneflow_compile(pipeline.unet)
+    pipeline = compile_pipe(pipeline)
     img2img_pipe = StableDiffusionImg2ImgPipeline(**pipeline.components)
     inpaint_pipe = StableDiffusionInpaintPipeline(**pipeline.components)
     return pipeline, img2img_pipe, inpaint_pipe
