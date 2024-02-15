@@ -12,9 +12,8 @@ from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler import oneflow_compiler_config
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
-import diffusers
-
-diffusers.logging.set_verbosity_info()
+# import diffusers
+# diffusers.logging.set_verbosity_info()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -94,12 +93,31 @@ image = base(
     output_type=OUTPUT_TYPE,
 ).images
 
+# import numpy as np
+# base_state_dict = base.unet.state_dict()
+# new_state_dict = new_base.unet.state_dict()
+# for k, w in base_state_dict.items():
+#     if k in new_state_dict:
+#         if not np.allclose(w.detach().cpu().numpy(), new_state_dict[k].detach().cpu().numpy(), atol=1e-3):
+#             print(f"Parameter {k} is different.")
+
+w = base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
+new_w = new_base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
+import numpy as np
+assert not np.allclose(w, new_w, atol=1e-3)
+
 # Update the unet and vae
 # load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers. 
 # Reference: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict
 base.unet.load_state_dict(new_base.unet.state_dict())
 base.vae.decoder.load_state_dict(new_base.vae.decoder.state_dict())
 del new_base
+
+print("check whether the weights are updated")
+updated_w = base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
+assert np.allclose(updated_w, new_w, atol=1e-3)
+updated_w_oflow = base.unet.add_embedding.linear_1.oneflow_module.weight.detach().cpu().numpy()
+assert np.allclose(updated_w_oflow, new_w, atol=1e-3)
 
 # Normal SDXL run
 print("Normal SDXL run...")
