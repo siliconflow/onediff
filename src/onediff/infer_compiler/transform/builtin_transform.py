@@ -35,7 +35,10 @@ def singledispatch_proxy(func):
         nonlocal _warning_set
 
         before = first_param.__class__.__name__
-        result = dispatcher(first_param, *args, **kwargs)
+        try:
+            result = dispatcher(first_param, *args, **kwargs)
+        except Exception as e:
+            raise NotImplementedError(f"Transform failed of {type(first_param)}: {e}")
         after = result.__class__.__name__
 
         description = f"{before} transformed to  {after}"
@@ -176,7 +179,6 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return of_obj
     except Exception as e:
         logger.warning(f"Unsupported type: {type(obj)} {e=}")
-        # raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
 
 
@@ -214,7 +216,8 @@ def _(mod: torch.nn.Module, verbose=False):
 
         try:
             return super().__getattribute__(attr)
-        except:
+        except Exception as e:
+            logger.info(f"{type(self)} getattr {attr} failed: {e}")
             if attr in self._modules:
                 return self._modules[attr]
             if attr in self._parameters:
@@ -442,7 +445,10 @@ def _(mod: types.BuiltinFunctionType, verbose=False):
             try:
                 if getattr(torch.nn.functional, mod.__name__) == mod:
                     mod_name = "oneflow.nn.functional"
-            except:
+            except Exception as e:
+                logger.warning(
+                    f"warning when get {mod.__name__} in torch.nn.functional: {e}"
+                )
                 mod_name = mod.__module__.replace("torch", "oneflow")
         if mod_name is not None:
             m = importlib.import_module(mod_name)
