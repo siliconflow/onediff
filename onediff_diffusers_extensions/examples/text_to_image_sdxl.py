@@ -11,6 +11,9 @@ import torch
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
+import diffusers
+
+diffusers.logging.set_verbosity_info()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
