@@ -125,5 +125,6 @@ try:
             "huggingface_hub.inference._text_generation"
         )
 
-except ImportError:
+except Exception as e:
+    logger.warning(f"Pydantic related warning: {e}.")
     pass
