@@ -447,7 +447,9 @@ def _(mod: types.BuiltinFunctionType, verbose=False):
                 if getattr(torch.nn.functional, mod.__name__) == mod:
                     mod_name = "oneflow.nn.functional"
             except Exception as e:
-                logger.warning(f"warning when get {mod.__name__} in torch.nn.functional: {e}")
+                logger.warning(
+                    f"warning when get {mod.__name__} in torch.nn.functional: {e}"
+                )
                 mod_name = mod.__module__.replace("torch", "oneflow")
         if mod_name is not None:
             m = importlib.import_module(mod_name)
