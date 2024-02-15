@@ -568,12 +568,23 @@ class Upsample2D(nn.Module):
             if kernel_size is None:
                 kernel_size = 4
             conv = nn.ConvTranspose2d(
-                channels, self.out_channels, kernel_size=kernel_size, stride=2, padding=padding, bias=bias
+                channels,
+                self.out_channels,
+                kernel_size=kernel_size,
+                stride=2,
+                padding=padding,
+                bias=bias,
             )
         elif use_conv:
             if kernel_size is None:
                 kernel_size = 3
-            conv = conv_cls(self.channels, self.out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
+            conv = conv_cls(
+                self.channels,
+                self.out_channels,
+                kernel_size=kernel_size,
+                padding=padding,
+                bias=bias,
+            )
 
         # TODO(Suraj, Patrick) - clean up after weight dicts are correctly renamed
         if name == "conv":
@@ -590,7 +601,9 @@ class Upsample2D(nn.Module):
         assert hidden_states.shape[1] == self.channels
 
         if self.norm is not None:
-            hidden_states = self.norm(hidden_states.permute(0, 2, 3, 1)).permute(0, 3, 1, 2)
+            hidden_states = self.norm(hidden_states.permute(0, 2, 3, 1)).permute(
+                0, 3, 1, 2
+            )
 
         if self.use_conv_transpose:
             return self.conv(hidden_states)
@@ -610,7 +623,9 @@ class Upsample2D(nn.Module):
         # size and do not make use of `scale_factor=2`
         if self.interpolate:
             if output_size is None:
-                hidden_states = F.interpolate(hidden_states, scale_factor=2.0, mode="nearest")
+                hidden_states = F.interpolate(
+                    hidden_states, scale_factor=2.0, mode="nearest"
+                )
             else:
                 # Rewritten for the switching of uncommon resolutions.
                 # hidden_states = F.interpolate(hidden_states, size=output_size, mode="nearest")
@@ -630,7 +645,10 @@ class Upsample2D(nn.Module):
                 else:
                     hidden_states = self.conv(hidden_states)
             else:
-                if isinstance(self.Conv2d_0, LoRACompatibleConv) and not USE_PEFT_BACKEND:
+                if (
+                    isinstance(self.Conv2d_0, LoRACompatibleConv)
+                    and not USE_PEFT_BACKEND
+                ):
                     hidden_states = self.Conv2d_0(hidden_states, scale)
                 else:
                     hidden_states = self.Conv2d_0(hidden_states)

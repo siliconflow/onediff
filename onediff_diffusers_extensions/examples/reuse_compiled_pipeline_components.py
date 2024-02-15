@@ -33,7 +33,7 @@ def initialize_pipelines(model_id, model_params):
 
     pipeline.to("cuda")
     pipeline = compile_pipe(pipeline)
-    
+
     # Reuse the components of the pipeline to create new pipelines
     # Reference: https://huggingface.co/docs/diffusers/main/en/api/diffusion_pipeline#diffusers.DiffusionPipeline.components
     img2img_pipe = StableDiffusionImg2ImgPipeline(**pipeline.components)
