@@ -179,7 +179,6 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return of_obj
     except Exception as e:
         logger.warning(f"Unsupported type: {type(obj)} {e=}")
-        raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
 
 
