@@ -33,7 +33,7 @@ class DualModule(torch.nn.Module):
 
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
-        logger.debug(f"Convert {id(self._torch_module)=} done!")
+        logger.debug(f"Convert {type(self._torch_module)} done!")
         return self._oneflow_module
 
     @oneflow_module.deleter
