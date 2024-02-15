@@ -11,6 +11,9 @@ import torch
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
+import diffusers
+
+diffusers.logging.set_verbosity_info()
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -57,6 +60,15 @@ base = StableDiffusionXLPipeline.from_pretrained(
     use_safetensors=True,
 )
 base.to("cuda")
+
+new_base = StableDiffusionXLPipeline.from_pretrained(
+    "dataautogpt3/OpenDalleV1.1",
+    scheduler=scheduler,
+    torch_dtype=torch.float16,
+    variant=args.variant,
+    use_safetensors=True,
+)
+new_base.to("cuda")
 
 # Compile unet with oneflow
 if args.compile_unet:
