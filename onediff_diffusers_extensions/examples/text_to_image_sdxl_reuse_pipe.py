@@ -9,6 +9,7 @@ import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compiler_config
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
 import diffusers
@@ -70,6 +71,7 @@ new_base = StableDiffusionXLPipeline.from_pretrained(
 )
 new_base.to("cuda")
 
+oneflow_compiler_config.mlir_enable_inference_optimization = False
 # Compile unet with oneflow
 if args.compile_unet:
     print("Compiling unet with oneflow.")
@@ -91,6 +93,13 @@ image = base(
     num_inference_steps=args.n_steps,
     output_type=OUTPUT_TYPE,
 ).images
+
+# Update the unet and vae
+# load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers. 
+# Reference: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict
+base.unet.load_state_dict(new_base.unet.state_dict())
+base.vae.decoder.load_state_dict(new_base.vae.decoder.state_dict())
+del new_base
 
 # Normal SDXL run
 print("Normal SDXL run...")
