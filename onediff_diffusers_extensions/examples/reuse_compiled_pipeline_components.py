@@ -82,11 +82,6 @@ def inference_inpaint(pipe):
 def main(model_id, model_params):
     text2img, img2img, inpaint = initialize_pipelines(model_id, model_params)
 
-    # Warmup run
-    print("Warmup run")
-    inference_text2img(text2img)
-    # Normal Run
-    print("Normal Run")
     inference_text2img(text2img)
     inference_img2img(img2img)
     inference_inpaint(inpaint)

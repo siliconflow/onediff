@@ -201,7 +201,7 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} cat /app/ComfyUI/onediff_comfyui.log
       - name: Setup OneDiff diffusers extension
-        if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        if: matrix.test-suite == 'diffusers_examples'
         run: |
           docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
