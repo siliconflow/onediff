@@ -20,7 +20,7 @@ def is_need_mock(cls) -> bool:
             return True
         pkgs = requires(main_pkg)
     except Exception as e:
-        logger.warning(f"Error when checking need mock of package {main_pkg}: {e}")
+        logger.info(f"Error when checking need mock of package {main_pkg}: {e}")
         return True
     if pkgs:
         for pkg in pkgs:
