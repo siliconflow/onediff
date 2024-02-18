@@ -7,6 +7,7 @@ from .quantize_utils import setup_onediff_quant, load_calibration_and_quantize_p
 class QuantPipeline:
     @classmethod
     def from_pretrained(
+        self,
         cls,
         pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
         *args,

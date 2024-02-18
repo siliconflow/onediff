@@ -10,7 +10,6 @@ import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import AutoPipelineForText2Image
 
 parser = argparse.ArgumentParser()
@@ -36,13 +35,8 @@ args = parser.parse_args()
 OUTPUT_TYPE = "pil"
 
 # SDXL turbo base: AutoPipelineForText2Image
-scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
 base = AutoPipelineForText2Image.from_pretrained(
-    args.base,
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
 

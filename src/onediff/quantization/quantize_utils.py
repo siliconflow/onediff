@@ -1,3 +1,6 @@
+import os
+
+
 def setup_onediff_quant():
     os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
     os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_QUANTIZATION", "1")

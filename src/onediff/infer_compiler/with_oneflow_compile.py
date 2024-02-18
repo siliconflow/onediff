@@ -8,7 +8,7 @@ from functools import wraps
 from itertools import chain
 from .transform.manager import transform_mgr
 from .transform.custom_transform import set_default_registry
-from .transform.builtin_transform import torch2oflow
+from .transform.builtin_transform import torch2oflow, reverse_proxy_class
 from .utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .utils.args_tree_util import input_output_processor
 from .utils.log_utils import logger
@@ -33,7 +33,7 @@ class DualModule(torch.nn.Module):
 
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
-        logger.debug(f"Convert {id(self._torch_module)=} done!")
+        logger.debug(f"Convert {type(self._torch_module)} done!")
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -333,6 +333,7 @@ class OneflowGraph(flow.nn.Graph):
     def __init__(self, model):
         super().__init__(enable_get_runtime_state_dict=True)
         self.model = model
+        logger.info(f"Building a graph for {model.__class__.__name__} ...")
         # self.config.enable_cudnn_conv_heuristic_search_algo(False)
         self.config.allow_fuse_add_to_output(True)
 
@@ -349,6 +350,32 @@ class OneflowGraph(flow.nn.Graph):
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
         state_dict = self.runtime_state_dict()
+
+        import oneflow.framework.args_tree as args_tree
+
+        def disabled_dataclass(value):
+            return False
+
+        original_is_dataclass = args_tree._is_dataclass
+        args_tree._is_dataclass = disabled_dataclass
+
+        import dataclasses
+
+        def reverse_dataclass(value):
+            if dataclasses.is_dataclass(value):
+                return reverse_proxy_class(type(value))(**value)
+            else:
+                return value
+
+        for name, rsd in state_dict.items():
+            output = state_dict[name]["outputs_original"]
+            out_tree = args_tree.ArgsTree((output, None), False)
+            # dataclass type needs to be reversed to torch type to avoid saving error.
+            out = out_tree.map_leaf(reverse_dataclass)
+            state_dict[name]["outputs_original"] = out[0]
+
+        args_tree._is_dataclass = original_is_dataclass
+
         flow.save(state_dict, file_path)
 
 

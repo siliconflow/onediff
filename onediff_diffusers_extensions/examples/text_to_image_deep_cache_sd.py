@@ -13,9 +13,7 @@ from onediff.schedulers import EulerDiscreteScheduler
 from onediffx.deep_cache import StableDiffusionPipeline
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
-)
+parser.add_argument("--base", type=str, default="runwayml/stable-diffusion-v1-5")
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
     "--prompt",

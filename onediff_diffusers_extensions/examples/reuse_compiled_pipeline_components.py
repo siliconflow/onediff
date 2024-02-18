@@ -1,8 +1,8 @@
 """
-This example shows how to reuse the components of a pipeline to create new pipelines.
+This example shows how to reuse the compiled components of a pipeline to create new pipelines.
 
 Usage:
-    $ CUDA_VISIBLE_DEVICES=7 python reuse_pipeline_components.py --ckpt_path <ckpt_path> 
+    $ python reuse_compiled_pipeline_components.py --model_id <model_id> 
 """
 import PIL
 import argparse
@@ -14,13 +14,13 @@ from diffusers import (
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
 )
-from onediff.infer_compiler import oneflow_compile
+from onediffx import compile_pipe
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--ckpt_path", type=str, default="runwayml/stable-diffusion-v1-5",
+        "--model_id", type=str, default="runwayml/stable-diffusion-v1-5",
     )
     return parser.parse_args()
 
@@ -28,11 +28,14 @@ def get_args():
 args = get_args()
 
 
-def initialize_pipelines(ckpt_path, model_params):
-    pipeline = StableDiffusionPipeline.from_pretrained(ckpt_path, **model_params)
+def initialize_pipelines(model_id, model_params):
+    pipeline = StableDiffusionPipeline.from_pretrained(model_id, **model_params)
 
     pipeline.to("cuda")
-    pipeline.unet = oneflow_compile(pipeline.unet)
+    pipeline = compile_pipe(pipeline)
+
+    # Reuse the components of the pipeline to create new pipelines
+    # Reference: https://huggingface.co/docs/diffusers/main/en/api/diffusion_pipeline#diffusers.DiffusionPipeline.components
     img2img_pipe = StableDiffusionImg2ImgPipeline(**pipeline.components)
     inpaint_pipe = StableDiffusionInpaintPipeline(**pipeline.components)
     return pipeline, img2img_pipe, inpaint_pipe
@@ -76,8 +79,8 @@ def inference_inpaint(pipe):
     result_image.save("inference_inpaint.png")
 
 
-def main(ckpt_path, model_params):
-    text2img, img2img, inpaint = initialize_pipelines(ckpt_path, model_params)
+def main(model_id, model_params):
+    text2img, img2img, inpaint = initialize_pipelines(model_id, model_params)
 
     inference_text2img(text2img)
     inference_img2img(img2img)
@@ -85,6 +88,6 @@ def main(ckpt_path, model_params):
 
 
 if __name__ == "__main__":
-    ckpt_path = args.ckpt_path
+    model_id = args.model_id
     model_params = {"torch_dtype": torch.float16}
-    main(ckpt_path, model_params)
+    main(model_id, model_params)

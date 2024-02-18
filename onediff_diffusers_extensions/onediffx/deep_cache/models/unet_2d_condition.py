@@ -18,6 +18,15 @@ import torch
 import torch.nn as nn
 import torch.utils.checkpoint
 
+import diffusers
+
+if diffusers.__version__ >= "0.26.0":
+    from diffusers.models.embeddings import (
+        GLIGENTextBoundingboxProjection as PositionNet,
+    )
+else:
+    from diffusers.models.embeddings import PositionNet
+
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.loaders import UNet2DConditionLoadersMixin
 from diffusers.utils import BaseOutput, logging
@@ -34,7 +43,6 @@ from diffusers.models.embeddings import (
     ImageHintTimeEmbedding,
     ImageProjection,
     ImageTimeEmbedding,
-    PositionNet,
     TextImageProjection,
     TextImageTimeEmbedding,
     TextTimeEmbedding,
@@ -877,7 +885,10 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         default_overall_up_factor = 2 ** self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        forward_upsample_size = False
+        # forward_upsample_size = False
+        # interpolate through upsample_size
+        forward_upsample_size = True
+
         upsample_size = None
 
         if any(s % default_overall_up_factor != 0 for s in sample.shape[-2:]):
@@ -1171,7 +1182,9 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
-                upsample_size = down_block_res_samples[-1].shape[2:]
+                # To support dynamic switching of special resolutions, pass a like tensor.
+                # upsample_size = down_block_res_samples[-1].shape[2:]
+                upsample_size = down_block_res_samples[-1]
 
             if (
                 hasattr(upsample_block, "has_cross_attention")
