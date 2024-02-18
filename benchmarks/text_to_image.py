@@ -88,15 +88,16 @@ def load_pipe(
             controlnet, torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
-    is_quantized_model = False
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
-        is_quantized_model = True
-        from onediff.quantization import setup_onediff_quant
+        from onediff.quantization import QuantPipeline
 
-        setup_onediff_quant()
-    pipe = pipeline_cls.from_pretrained(
-        model_name, torch_dtype=torch.float16, **extra_kwargs
-    )
+        pipe = QuantPipeline.from_pretrained(
+            pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
+        )
+    else:
+        pipe = pipeline_cls.from_pretrained(
+            model_name, torch_dtype=torch.float16, **extra_kwargs
+        )
     if scheduler is not None:
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
@@ -105,14 +106,6 @@ def load_pipe(
         pipe.fuse_lora()
     pipe.safety_checker = None
     pipe.to(torch.device("cuda"))
-
-    # Replace quantizable modules by QuantModule.
-    if is_quantized_model:
-        from onediff.quantization import load_calibration_and_quantize_pipeline
-
-        load_calibration_and_quantize_pipeline(
-            os.path.join(model_name, "calibrate_info.txt"), pipe
-        )
     return pipe
 
 
