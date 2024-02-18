@@ -17,6 +17,8 @@ class QuantPipeline:
 
         pipe = cls.from_pretrained(pretrained_model_name_or_path, *args, **kwargs)
 
-        load_calibration_and_quantize_pipeline(pretrained_model_name_or_path, pipe)
+        load_calibration_and_quantize_pipeline(
+            os.path.join(str(pretrained_model_name_or_path), "calibrate_info.txt"), pipe
+        )
 
         return pipe
