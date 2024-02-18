@@ -36,10 +36,7 @@ OUTPUT_TYPE = "pil"
 
 # SDXL turbo base: AutoPipelineForText2Image
 base = AutoPipelineForText2Image.from_pretrained(
-    args.base,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
 
