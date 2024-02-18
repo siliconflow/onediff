@@ -11,7 +11,7 @@ from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
-from onediffx.utils.lora import load_and_fuse_lora, unfuse_lora
+from onediffx.lora import load_and_fuse_lora, unfuse_lora
 
 MODEL_ID = "/share_nfs/hf_models/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(
