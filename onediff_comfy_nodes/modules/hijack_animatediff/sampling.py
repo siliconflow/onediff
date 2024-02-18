@@ -1,4 +1,4 @@
-# /home/fengwen/quant/ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/sampling.py
+# /ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/sampling.py
 from einops import rearrange
 from oneflow.nn.functional import group_norm
 import oneflow as flow
