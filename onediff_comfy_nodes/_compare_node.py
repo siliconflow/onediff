@@ -72,11 +72,9 @@ class CompareModel:
         for key, _ in oflow_unet.named_parameters():
             key = key.removeprefix("_deployable_module_model._torch_module.")
             torch_value = torch_unet.get_parameter(key).cuda()
-            oflow_value = (
-                oflow_unet._deployable_module_model._oneflow_module.get_parameter(
-                    key
-                ).cuda()
-            )
+            oflow_value = oflow_unet._deployable_module_model._oneflow_module.get_parameter(
+                key
+            ).cuda()
 
             if not flow.allclose(torch2oflow(torch_value), oflow_value, 1e-4, 1e-4):
                 print(
@@ -148,10 +146,7 @@ class ShowImageDiff:
             subfolder,
             filename_prefix,
         ) = folder_paths.get_save_image_path(
-            filename_prefix,
-            self.output_dir,
-            images1[0].shape[1],
-            images1[0].shape[0],
+            filename_prefix, self.output_dir, images1[0].shape[1], images1[0].shape[0],
         )
         results = list()
         for image1, image2 in zip(images1, images2):

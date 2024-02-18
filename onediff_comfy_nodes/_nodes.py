@@ -32,6 +32,7 @@ from .utils.graph_path import generate_graph_path
 from .modules.hijack_model_management import model_management_hijacker
 from .modules.hijack_nodes import nodes_hijacker
 from .utils.deep_cache_speedup import deep_cache_speedup
+from .utils.onediff_load_utils import onediff_load_quant_checkpoint_advanced
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -57,10 +58,7 @@ class ModelSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"model": ("MODEL",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -93,11 +91,7 @@ class UNETLoaderInt8:
                     if "calibrate_info.txt" in files:
                         paths.append(os.path.relpath(root, start=search_path))
 
-        return {
-            "required": {
-                "model_path": (paths,),
-            }
-        }
+        return {"required": {"model_path": (paths,),}}
 
     RETURN_TYPES = ("MODEL",)
     FUNCTION = "load_unet_int8"
@@ -134,10 +128,7 @@ class ModelGraphLoader:
             if os.path.isfile(os.path.join(unet_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {
-                "model": ("MODEL",),
-                "graph": (sorted(graph_files),),
-            },
+            "required": {"model": ("MODEL",), "graph": (sorted(graph_files),),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -179,10 +170,7 @@ class SVDSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"model": ("MODEL",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -212,10 +200,7 @@ class VaeSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "vae": ("VAE",),
-                "static_mode": (["enable", "disable"],),
-            },
+            "required": {"vae": ("VAE",), "static_mode": (["enable", "disable"],),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -248,10 +233,7 @@ class VaeGraphLoader:
             if os.path.isfile(os.path.join(vae_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {
-                "vae": ("VAE",),
-                "graph": (sorted(graph_files),),
-            },
+            "required": {"vae": ("VAE",), "graph": (sorted(graph_files),),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -364,12 +346,7 @@ class ModuleDeepCacheSpeedup:
                 ),
                 "end_step": (
                     "INT",
-                    {
-                        "default": 1000,
-                        "min": 0,
-                        "max": 1000,
-                        "step": 0.1,
-                    },
+                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
                 ),
             },
         }
@@ -399,6 +376,7 @@ class ModuleDeepCacheSpeedup:
         )
 
 
+import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from comfy.controlnet import ControlLora, ControlNet
 
@@ -434,9 +412,10 @@ class OneDiffControlNetLoader(ControlNetLoader):
             )
             return (controlnet,)
         else:
-            print("\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m")
+            print(
+                "\033[1;31;40m Warning: {type(controlnet)=} is not ControlLora or ControlNet \033[0m"
+            )
             return (controlnet,)
-
 
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
@@ -518,12 +497,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
                 ),
                 "end_step": (
                     "INT",
-                    {
-                        "default": 1000,
-                        "min": 0,
-                        "max": 1000,
-                        "step": 0.1,
-                    },
+                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
                 ),
             }
         }
@@ -671,58 +645,68 @@ class OneDiffQuantCheckpointLoaderSimpleAdvanced(CheckpointLoaderSimple):
     ):
         need_compile = compile == "enable"
 
-        # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-
-        ckpt_name = f"{ckpt_name}_quant_{model_path}"
-        model_path = (
-            Path(folder_paths.models_dir)
-            / ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-            / model_path
+        modelpatcher, vae = onediff_load_quant_checkpoint_advanced(
+            ckpt_name, model_path, need_compile, vae_speedup, modelpatcher, vae
         )
-        graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
 
-        calibrate_info = torch.load(model_path)
+        return modelpatcher, clip, vae
 
-        load_device = model_management.get_torch_device()
-        diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
-        quant_unet = quantize_unet(
-            diffusion_model=diffusion_model,
-            inplace=True,
-            calibrate_info=calibrate_info,
-        )
-        modelpatcher.model.diffusion_model = quant_unet
 
+class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
+    comfy_extras.nodes_video_model.ImageOnlyCheckpointLoader
+):
+    @classmethod
+    def INPUT_TYPES(s):
+        paths = []
+        for search_path in folder_paths.get_folder_paths(
+            ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
+        ):
+            if os.path.exists(search_path):
+                search_path = Path(search_path)
+                paths.extend(
+                    [
+                        os.path.relpath(p, start=search_path)
+                        for p in search_path.glob("*.pt")
+                    ]
+                )
+
+        return {
+            "required": {
+                "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
+                "model_path": (paths,),
+                "compile": (["enable", "disable"],),
+                "vae_speedup": (["disable", "enable"],),
+            }
+        }
+
+    CATEGORY = "OneDiff/Loaders"
+    FUNCTION = "onediff_load_checkpoint"
+
+    def onediff_load_checkpoint(
+        self,
+        ckpt_name,
+        model_path,
+        compile,
+        vae_speedup,
+        output_vae=True,
+        output_clip=True,
+    ):
+        need_compile = compile == "enable"
         if need_compile:
-            # compiled_unet = compoile_unet(
-            #     modelpatcher.model.diffusion_model, graph_file
-            # )
-            # modelpatcher.model.diffusion_model = compiled_unet
-            offload_device = model_management.unet_offload_device()
-            modelpatcher = OneFlowSpeedUpModelPatcher(
-                modelpatcher.model,
-                load_device=model_management.get_torch_device(),
-                offload_device=offload_device,
-                use_graph=True,
-                graph_path=graph_file,
-                graph_device=model_management.get_torch_device(),
+            set_boolean_env_var(
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
             )
 
-        if vae_speedup == "enable":
-            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = oneflow_compile(
-                vae.first_stage_model,
-                use_graph=True,
-                options={
-                    "graph_file": file_path,
-                    "graph_file_device": model_management.get_torch_device(),
-                },
-            )
+        modelpatcher, clip, vae = self.load_checkpoint(
+            ckpt_name, output_vae, output_clip
+        )
+        modelpatcher, vae = onediff_load_quant_checkpoint_advanced(
+            ckpt_name, model_path, need_compile, vae_speedup, modelpatcher, vae
+        )
 
-        # set inplace update
-        modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
 
 

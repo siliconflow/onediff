@@ -1,7 +1,9 @@
 """Convert torch object to oneflow object."""
+
 import os
 import importlib
 import types
+import inspect
 from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -33,7 +35,10 @@ def singledispatch_proxy(func):
         nonlocal _warning_set
 
         before = first_param.__class__.__name__
-        result = dispatcher(first_param, *args, **kwargs)
+        try:
+            result = dispatcher(first_param, *args, **kwargs)
+        except Exception as e:
+            raise NotImplementedError(f"Transform failed of {type(first_param)}: {e}")
         after = result.__class__.__name__
 
         description = f"{before} transformed to  {after}"
@@ -49,14 +54,11 @@ def singledispatch_proxy(func):
 
 
 def proxy_class(cls: type):
-    if cls.__module__.startswith("torch."):
-        mod_name = cls.__module__.replace("torch.", "oneflow.")
-        mod = importlib.import_module(mod_name)
-        return getattr(mod, cls.__name__)
+    return transform_mgr.transform_cls(cls)
 
-    full_qualified_name = cls.__module__ + "." + cls.__qualname__
-    result = transform_mgr.transform_cls(full_qualified_name)
-    return result
+
+def reverse_proxy_class(cls: type):
+    return transform_mgr.reverse_transform_cls(cls)
 
 
 class ProxySubmodule:
@@ -105,7 +107,10 @@ class ProxySubmodule:
         ):
             return flow.Generator()
         elif (
-            isinstance(self._oflow_proxy_submod, (torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d))
+            isinstance(
+                self._oflow_proxy_submod,
+                (torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d),
+            )
             and attribute == "channel_pos"
         ):
             return "channels_first"
@@ -148,11 +153,14 @@ def torch2oflow(mod, *args, **kwargs):
     return default_converter(mod, *args, **kwargs)
 
 
-def default_converter(obj, verbose=False, *, proxy_cls=None):
-    # Higher versions of diffusers might use torch.nn.modules.Linear
-    if obj is torch.nn.Linear:
-        return flow.nn.Linear
+@torch2oflow.register
+def _(mod: type):
+    if not is_need_mock(mod):
+        return mod
+    return proxy_class(mod)
 
+
+def default_converter(obj, verbose=False, *, proxy_cls=None):
     if not is_need_mock(type(obj)):
         return obj
     try:
@@ -162,7 +170,7 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
             for k, _ in obj.__dict__.items():
                 attr = getattr(obj, k)
                 self.__dict__[k] = torch2oflow(attr)
-  
+
         of_obj_cls = type(str(new_obj_cls), (new_obj_cls,), {"__init__": init})
         of_obj = of_obj_cls()
 
@@ -171,14 +179,14 @@ def default_converter(obj, verbose=False, *, proxy_cls=None):
         return of_obj
     except Exception as e:
         logger.warning(f"Unsupported type: {type(obj)} {e=}")
-        # raise NotImplementedError(f"Unsupported type: {obj}")
         return obj
+
 
 @torch2oflow.register
 def _(mod: torch.nn.Module, verbose=False):
     proxy_md = ProxySubmodule(mod)
     new_md_cls = proxy_class(type(mod))
-    
+
     def init(self):
         nonlocal proxy_md
 
@@ -199,7 +207,6 @@ def _(mod: torch.nn.Module, verbose=False):
                 attr = getattr(proxy_md, k)
                 try:
                     self.__dict__[k] = torch2oflow(attr)
-
                 except Exception as e:
                     logger.error(f"convert {type(attr)} failed: {e}")
                     raise NotImplementedError(f"Unsupported type: {type(attr)}")
@@ -209,7 +216,8 @@ def _(mod: torch.nn.Module, verbose=False):
 
         try:
             return super().__getattribute__(attr)
-        except:
+        except Exception as e:
+            logger.info(f"{type(self)} getattr {attr} failed: {e}")
             if attr in self._modules:
                 return self._modules[attr]
             if attr in self._parameters:
@@ -223,7 +231,7 @@ def _(mod: torch.nn.Module, verbose=False):
         str(new_md_cls), (new_md_cls,), {"__init__": init, "__getattr__": proxy_getattr}
     )
     of_mod = of_mod_cls()
-    
+
     if of_mod.training:
         of_mod.training = False
         if verbose:
@@ -244,7 +252,7 @@ def _(mod: torch.nn.Module, verbose=False):
 def _(mod: torch.nn.BatchNorm1d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     of_mod.channel_axis = 1
-    
+
     return of_mod
 
 
@@ -254,7 +262,7 @@ def _(mod: torch.nn.BatchNorm2d, verbose=False):
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
         of_mod.channel_axis = 3
     else:
-        of_mod.channel_axis = 1 
+        of_mod.channel_axis = 1
 
     return of_mod
 
@@ -263,15 +271,15 @@ def _(mod: torch.nn.BatchNorm2d, verbose=False):
 def _(mod: torch.nn.BatchNorm3d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     of_mod.channel_axis = 1
-    
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.MaxPool1d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -279,26 +287,26 @@ def _(mod: torch.nn.MaxPool1d, verbose=False):
 def _(mod: torch.nn.MaxPool2d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
-        of_mod.channel_pos = 'channels_last'
+        of_mod.channel_pos = "channels_last"
     else:
-        of_mod.channel_pos = 'channels_first'
-    
+        of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.MaxPool3d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.AvgPool1d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -306,18 +314,18 @@ def _(mod: torch.nn.AvgPool1d, verbose=False):
 def _(mod: torch.nn.AvgPool2d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
-        of_mod.channel_pos = 'channels_last'
+        of_mod.channel_pos = "channels_last"
     else:
-        of_mod.channel_pos = 'channels_first'
-    
+        of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
 @torch2oflow.register
 def _(mod: torch.nn.AvgPool3d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
-    of_mod.channel_pos = 'channels_first'
-    
+    of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -325,10 +333,10 @@ def _(mod: torch.nn.AvgPool3d, verbose=False):
 def _(mod: torch.nn.AdaptiveAvgPool2d, verbose=False):
     of_mod = torch2oflow.dispatch(torch.nn.Module)(mod, verbose)
     if os.getenv("ONEFLOW_ENABLE_NHWC"):
-        of_mod.channel_pos = 'channels_last'
+        of_mod.channel_pos = "channels_last"
     else:
-        of_mod.channel_pos = 'channels_first'
-    
+        of_mod.channel_pos = "channels_first"
+
     return of_mod
 
 
@@ -350,7 +358,7 @@ def _(mod: torch.nn.Sequential, verbose=False):
         of_mod_list.append(submod)
 
     of_mod_seq = proxy_class(type(mod))(*of_mod_list)
-    
+
     return of_mod_seq
 
 
@@ -419,6 +427,7 @@ def _(mod, verbose=False) -> Union[int, float, str, bool]:
 def _(mod: None, verbose=False):
     return mod
 
+
 @torch2oflow.register
 def _(mod: types.BuiltinFunctionType, verbose=False):
     if hasattr(mod, "__module__"):
@@ -436,7 +445,10 @@ def _(mod: types.BuiltinFunctionType, verbose=False):
             try:
                 if getattr(torch.nn.functional, mod.__name__) == mod:
                     mod_name = "oneflow.nn.functional"
-            except:
+            except Exception as e:
+                logger.warning(
+                    f"warning when get {mod.__name__} in torch.nn.functional: {e}"
+                )
                 mod_name = mod.__module__.replace("torch", "oneflow")
         if mod_name is not None:
             m = importlib.import_module(mod_name)

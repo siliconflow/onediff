@@ -9,6 +9,7 @@ from .unet_2d_condition import UNet2DConditionOutput
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
+
 class FastUNet2DConditionModel(nn.Module):
     def __init__(self, unet_module):
         super().__init__()
@@ -66,7 +67,9 @@ class FastUNet2DConditionModel(nn.Module):
         default_overall_up_factor = 2 ** self.unet_module.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        forward_upsample_size = False
+        # forward_upsample_size = False
+        # interpolate through upsample_size
+        forward_upsample_size = True
         upsample_size = None
 
         if any(s % default_overall_up_factor != 0 for s in sample.shape[-2:]):
@@ -340,7 +343,9 @@ class FastUNet2DConditionModel(nn.Module):
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
-                upsample_size = down_block_res_samples[-1].shape[2:]
+                # To support dynamic switching of special resolutions, pass a like tensor.
+                # upsample_size = down_block_res_samples[-1].shape[2:]
+                upsample_size = down_block_res_samples[-1]
 
             if (
                 hasattr(upsample_block, "has_cross_attention")

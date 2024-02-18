@@ -30,12 +30,14 @@ def init_default_env():
     os.environ.setdefault("ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL", "1")
     # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL", "0")
     # os.environ.setdefault("ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL", "0")
+    # os.environ.setdefault("ONEFLOW_KERNEL_GLU_QUANT_ENABLE_DUAL_GEMM_IMPL", "0")
 
     os.environ.setdefault("ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
     os.environ.setdefault("ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
     os.environ.setdefault("ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT", "1")
     # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", "1")
     # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", "-1")
+    # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_QUANTIZATION", "1")
 
     os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
 
@@ -67,12 +69,14 @@ class OneFlowCompilerConfig:
     kernel_gemm_enable_cutlass_impl: Optional[bool] = None
     kernel_glu_enable_dual_gemm_impl: Optional[bool] = None
     kernel_glu_enable_y_gemm_impl: Optional[bool] = None
+    kernel_glu_quant_enable_dual_gemm_impl: Optional[bool] = None
 
     conv_allow_half_precision_accumulation: Optional[bool] = None
     matmul_allow_half_precision_accumulation: Optional[bool] = None
     linear_embedding_skip_init: Optional[bool] = None
     attention_allow_half_precision_accumulation: Optional[bool] = None
     attention_allow_half_precision_score_accumulation_max_m: Optional[int] = None
+    attention_allow_quantization: Optional[bool] = None
 
     attr2env_var = {
         "run_graph_by_vm": "ONEFLOW_RUN_GRAPH_BY_VM",
@@ -94,6 +98,7 @@ class OneFlowCompilerConfig:
         "kernel_gemm_enable_cutlass_impl": "ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL",
         "kernel_glu_enable_dual_gemm_impl": "ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL",
         "kernel_glu_enable_y_gemm_impl": "ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL",
+        "kernel_glu_quant_enable_dual_gemm_impl": "ONEFLOW_KERNEL_GLU_QUANT_ENABLE_DUAL_GEMM_IMPL",
         "conv_allow_half_precision_accumulation": "ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION",
         "matmul_allow_half_precision_accumulation": "ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION",
         "linear_embedding_skip_init": "ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT",
