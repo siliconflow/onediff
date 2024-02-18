@@ -53,16 +53,21 @@ AnimateDiffFormat = animatediff_pt.animatediff.motion_module_ad.AnimateDiffForma
 # ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_model.py
 ModelTypeSD = animatediff_pt.animatediff.utils_model.ModelTypeSD
 
-_HANDLES = []
+class Handles:
+    def __init__(self):
+        self.handles = []
+    def add(self, obj, key, value):
+        org_attr = getattr(obj, key, None)
+        setattr(obj, key, value)
+        self.handles.append(lambda: setattr(obj, key, org_attr))
 
+    def restore(self):
+        for handle in self.handles:
+            handle()
+        self.handles = []
 
-def add_handles(obj, key, value):
-    global _HANDLES
-    org_attr = getattr(obj, key, None)
-    setattr(obj, key, value)
-    _HANDLES.append(lambda: setattr(obj, key, org_attr))
+handles = Handles()
 
-    
 def inject_functions(orig_func, self, model, params):
 
     ret = orig_func(self, model, params)
@@ -73,22 +78,17 @@ def inject_functions(orig_func, self, model, params):
         if not (info.mm_version == AnimateDiffVersion.V3 or
                 (info.mm_format not in [AnimateDiffFormat.HOTSHOTXL] and info.sd_type == ModelTypeSD.SD1_5 and info.mm_version == AnimateDiffVersion.V2 and params.apply_v2_properly)):
    
-            add_handles(flow.nn.GroupNorm, "forward", groupnorm_mm_factory(params))
+            handles.add(flow.nn.GroupNorm, "forward", groupnorm_mm_factory(params))
             # comfy_of.ops.manual_cast.GroupNorm.forward_comfy_cast_weights = groupnorm_mm_factory(params, manual_cast=True)
-            add_handles(comfy_of.ops.manual_cast.GroupNorm, "forward_comfy_cast_weights", groupnorm_mm_factory(params, manual_cast=True))
+            handles.add(comfy_of.ops.manual_cast.GroupNorm, "forward_comfy_cast_weights", groupnorm_mm_factory(params, manual_cast=True))
           
-
         del info
     return ret
 
 
 def restore_functions(orig_func, *args, **kwargs):
-    global _HANDLES
-
     ret = orig_func(*args, **kwargs)
-    for handle in _HANDLES:
-        handle()
-    _HANDLES = []
+    handles.restore()
     return ret
 
 

@@ -14,6 +14,8 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 
 ### Quick Start
 
+> Recommend running the official example of ComfyUI AnimateDiff Evolved now, and then trying OneDiff acceleration. 
+
 Experiment Workflow for OneDiff Acceleration in ComfyUI-AnimateDiff-Evolved , Replace the "Load Checkpoint" node with "Load Checkpoint - OneDiff" node. 
 As follows:
 ![workflow](https://github.com/siliconflow/onediff/assets/109639975/e94877c1-eb1e-464a-9b9e-731bef02aca3)
