@@ -149,6 +149,8 @@ git clone https://github.com/siliconflow/onediff.git
 cd onediff && python3 -m pip install -e .
 ```
 
+> **_NOTE:_** If you intend to utilize plugins for ComfyUI/StableDiffusion-WebUI, we highly recommend installing OneDiff from the source rather than PyPI. This is necessary as you'll need to manually copy (or create a soft link) for the relevant code into the extension folder of these UIs/Libs.
+
 #### 4. (Optional)Login huggingface-cli
 
 ```
