@@ -8,6 +8,7 @@ from pathlib import Path
 from importlib.metadata import requires
 from .format_utils import MockEntityNameFormatter
 from .dyn_mock_mod import DynamicMockModule
+from ..utils.log_utils import logger
 
 __all__ = ["LazyMocker", "is_need_mock"]
 
@@ -20,6 +21,7 @@ def is_need_mock(cls) -> bool:
             return True
         pkgs = requires(main_pkg)
     except Exception as e:
+        logger.info(f"Error when checking need mock of package {main_pkg}: {e}")
         return True
     if pkgs:
         for pkg in pkgs:

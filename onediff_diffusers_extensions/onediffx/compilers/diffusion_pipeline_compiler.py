@@ -1,4 +1,5 @@
 from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.utils.log_utils import logger
 
 
 def recursive_getattr(obj, attr, default=None):
@@ -42,11 +43,11 @@ def compile_pipe(
     for part in filtered_parts:
         obj = recursive_getattr(pipe, part, None)
         if obj is not None:
-            print(f"Compiling {part}")
+            logger.info(f"Compiling {part}")
             recursive_setattr(pipe, part, oneflow_compile(obj))
 
     if "image_processor" not in ignores:
-        print("Patching image_processor")
+        logger.info("Patching image_processor")
 
         from onediffx.utils.patch_image_processor import (
             patch_image_prcessor as patch_image_prcessor_,
