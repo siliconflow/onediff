@@ -6,7 +6,6 @@ class SimpleModule(nn.Module):
     def __init__(self):
         super(SimpleModule, self).__init__()
 
-        # Define parameters
         self.conv2d = nn.Conv2d(3, 6, 5)
         self.groupnorm = nn.GroupNorm(3, 6)
         self.layer_norm = nn.LayerNorm([24, 6, 24])

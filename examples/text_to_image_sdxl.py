@@ -4,8 +4,17 @@ Compile to oneflow graph example: python examples/text_to_image_sdxl.py
 """
 import os
 import argparse
-
+import nvtx
 import oneflow as flow
+from mywarmupmodule import global_warmup
+import time
+# flow._oneflow_internal.eager.Sync()
+# start_time = time.time()
+# with nvtx.annotate(message="global_warmup", color="blue"):
+#     global_warmup()
+# flow._oneflow_internal.eager.Sync()
+# end_time = time.time()
+# print(f"{end_time-start_time:0.2f}s elapsed: global_warmup")
 import torch
 
 from onediff.infer_compiler import oneflow_compile
@@ -55,8 +64,6 @@ base = StableDiffusionXLPipeline.from_pretrained(
 )
 base.to("cuda")
 
-# Compile unet with oneflow
-import time
 if args.compile_unet:
     print("Compiling unet with oneflow.")
     flow._oneflow_internal.eager.Sync()
@@ -64,16 +71,15 @@ if args.compile_unet:
     base.unet = oneflow_compile(base.unet)
     flow._oneflow_internal.eager.Sync()
     end_time = time.time()
-    print(f"{end_time-start_time}s elapsed: compile")
+    print(f"{end_time-start_time:0.2f}s elapsed: compile")
 
     print("Loading from graph")
     flow._oneflow_internal.eager.Sync()
     start_time = time.time()
-    #import pdb;pdb.set_trace()
     base.unet.load_graph("easy_unet_graph.graph")
     flow._oneflow_internal.eager.Sync()
     end_time = time.time()
-    print(f"{end_time-start_time}s elapsed: unet.load_graph")
+    print(f"{end_time-start_time}s elapsed: base.unet.load_graph")
 
 # Warmup with run
 # Will do compilatioin in the first run
@@ -86,7 +92,64 @@ image = base(
     prompt=args.prompt,
     height=args.height,
     width=args.width,
-    num_inference_steps=args.n_steps,
+    num_inference_steps=5,
+    output_type=OUTPUT_TYPE,
+).images
+flow._oneflow_internal.eager.Sync()
+end_time = time.time()
+print(f"{end_time-start_time}s elapsed: 1st infer")
+
+# Normal SDXL run
+print("Normal SDXL run...")
+
+torch.manual_seed(args.seed)
+
+flow._oneflow_internal.eager.Sync()
+start_time = time.time()
+image = base(
+    prompt=args.prompt,
+    height=args.height,
+    width=args.width,
+    num_inference_steps=5,
+    output_type=OUTPUT_TYPE,
+).images
+flow._oneflow_internal.eager.Sync()
+end_time = time.time()
+print(f"{end_time-start_time}s elapsed: 2nd infer")
+
+image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
+
+##### reload another graph
+print("=====")
+if args.compile_unet:
+    print("Compiling unet with oneflow.")
+    flow._oneflow_internal.eager.Sync()
+    start_time = time.time()
+    base.unet = oneflow_compile(base.unet)
+    flow._oneflow_internal.eager.Sync()
+    end_time = time.time()
+    print(f"{end_time-start_time}s elapsed: compile")
+
+    print("Loading from graph")
+    flow._oneflow_internal.eager.Sync()
+    start_time = time.time()
+    base.unet.load_graph("easy_unet_graph2.graph")
+    flow._oneflow_internal.eager.Sync()
+    end_time = time.time()
+    print(f"{end_time-start_time}s elapsed: base.unet.load_graph2")
+
+# Warmup with run
+# Will do compilatioin in the first run
+print("Warmup with running graphs...")
+torch.manual_seed(args.seed)
+
+flow._oneflow_internal.eager.Sync()
+start_time = time.time()
+image = base(
+    prompt=args.prompt,
+    height=args.height,
+    width=args.width,
+    num_inference_steps=5, #args.n_steps,
     output_type=OUTPUT_TYPE,
 ).images
 flow._oneflow_internal.eager.Sync()
@@ -107,12 +170,10 @@ image = base(
     prompt=args.prompt,
     height=args.height,
     width=args.width,
-    num_inference_steps=args.n_steps,
+    num_inference_steps=5, #args.n_steps,
     output_type=OUTPUT_TYPE,
 ).images
 flow._oneflow_internal.eager.Sync()
 end_time = time.time()
 print(f"{end_time-start_time}s elapsed: 2nd infer")
-
-image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 

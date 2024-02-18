@@ -233,10 +233,11 @@ class DeployableModule(torch.nn.Module):
             size = 9
         flow._oneflow_internal.eager.Sync()
         start_time = time.time()
-        of_module = self._deployable_module_model.oneflow_module
+        #import pdb;pdb.set_trace()
+        of_module = self._deployable_module_model.oneflow_module # about 3.11s
         flow._oneflow_internal.eager.Sync()
         end_time = time.time()
-        print(f"    {end_time-start_time}s elpased: assign of_module time")
+        print(f"    {end_time-start_time:0.2f}s elpased: assign of_module time")
 
         flow._oneflow_internal.eager.Sync()
         start_time = time.time()
@@ -247,7 +248,7 @@ class DeployableModule(torch.nn.Module):
         )
         flow._oneflow_internal.eager.Sync()
         end_time = time.time()
-        print(f"    {end_time-start_time}s elpased: get_oneflow_graph time")
+        print(f"    {end_time-start_time:0.2f}s elpased: get_oneflow_graph time")
         # Enabel debug mode
         if transform_mgr.debug_mode:
             self._deployable_module_dpl_graph.debug(0)
@@ -334,14 +335,15 @@ class DeployableModule(torch.nn.Module):
         dpl_graph = self.get_graph()
         flow._oneflow_internal.eager.Sync()
         end_time = time.time()
-        print(f"  {end_time-start_time}s elpased: dpl_graph time")
+        print(f"  {end_time-start_time:0.2f}s elpased: get_graph() time")
 
         flow._oneflow_internal.eager.Sync()
         start_time = time.time()
+        #import pdb;pdb.set_trace()
         dpl_graph.load_graph(file_path, device, run_warmup)
         flow._oneflow_internal.eager.Sync()
         end_time = time.time()
-        print(f"  {end_time-start_time}s elpased: load_graph time")
+        print(f"  {end_time-start_time:0.2f}s elpased: dlp_graph load_graph() time")
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
@@ -363,10 +365,27 @@ class OneflowGraph(flow.nn.Graph):
 
     @cost_cnt(transform_mgr.debug_mode)
     def load_graph(self, file_path, device=None, run_warmup=True):
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
         state_dict = flow.load(file_path)
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"    {end_time-start_time:0.2f}s elpased: flow.load time")
+
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"    {end_time-start_time:0.2f}s elpased: state2dev time")
+
+        flow._oneflow_internal.eager.Sync()
+        start_time = time.time()
         self.load_runtime_state_dict(state_dict, warmup_with_run=run_warmup)
+        flow._oneflow_internal.eager.Sync()
+        end_time = time.time()
+        print(f"    {end_time-start_time:0.2f}s elpased: self.load_state_dict time")
 
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
