@@ -105,3 +105,4 @@ flow.nn.functional.scaled_dot_product_attention = FakeCuda.scaled_dot_product_at
 F.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
 
 flow.cuda.memory_stats = torch.cuda.memory_stats
+flow.version = torch.version
