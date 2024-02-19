@@ -23,6 +23,7 @@ pipe = DiffusionPipeline.from_pretrained(
     MODEL_ID, variant="fp16", torch_dtype=torch.float16
 ).to("cuda")
 
+# metal and texta LoRA have low ssim
 loras = [
     "/share_nfs/onediff_ci/diffusers/loras/SDXL-Emoji-Lora-r4.safetensors",
     # "/share_nfs/onediff_ci/diffusers/loras/sdxl_metal_lora.safetensors",
@@ -99,9 +100,7 @@ class TestLoRA(unittest.TestCase):
                 curr_image, target_image, channel_axis=-1, data_range=255
             )
             unfuse_lora(pipe)
-            # if ssim <= 0.9:
             print(f"lora {name} ssim {ssim}")
-            #     images_fusion.save(f"{image_file_prefix}/test_sdxl_lora_{image_name}_onediff.png")
             assert ssim > 0.9
     
     def test_lora_switching(test_case):
