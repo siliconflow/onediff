@@ -9,6 +9,7 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 - ComfyUI-AnimateDiff-Evolved:
   - github: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
   - commit: 4b31c0819d361e58f222cee3827079b3a6b6f966 
+
 - OneDiff:
   - github: https://github.com/siliconflow/onediff
 
@@ -23,4 +24,10 @@ As follows:
 Others workflows can be found in the following link:
 - [Sample Workflows](
 https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved?tab=readme-ov-file#samples-download-or-drag-images-of-the-workflows-into-comfyui-to-instantly-load-the-corresponding-workflows)
+
+### Compatibility
+| Functionality      | Supported |
+| ------------------ | --------- |
+| Dynamic Shape      | Yes       |
+| Dynamic Batch Size | No        |
 

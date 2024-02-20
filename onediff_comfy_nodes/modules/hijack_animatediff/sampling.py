@@ -44,9 +44,6 @@ def groupnorm_mm_factory(params, manual_cast=False):
 
 
 
-# ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_motion.py
-GroupNormAD_OF_CLS = animatediff_of.animatediff.utils_motion.GroupNormAD
-GroupNormAD_PT_CLS = animatediff_pt.animatediff.utils_motion.GroupNormAD
 # ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_module_ad.py
 AnimateDiffVersion = animatediff_pt.animatediff.motion_module_ad.AnimateDiffVersion
 AnimateDiffFormat = animatediff_pt.animatediff.motion_module_ad.AnimateDiffFormat
@@ -71,7 +68,7 @@ handles = Handles()
 def inject_functions(orig_func, self, model, params):
 
     ret = orig_func(self, model, params)
-
+    
     if model.motion_models is not None:
         # only apply groupnorm hack if not [v3 or ([not Hotshot] and SD1.5 and v2 and apply_v2_properly)]
         info = model.motion_models[0].model.mm_info

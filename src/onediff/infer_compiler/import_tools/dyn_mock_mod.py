@@ -7,19 +7,10 @@ import importlib
 import inspect
 import os
 import torch
-import logging
 from oneflow.mock_torch import enable
 from oneflow.mock_torch.mock_importer import _importer
 from .import_module_utils import import_module_from_path
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-# create file handler which logs even debug messages
-handler = logging.FileHandler("dyn_mock_mod.log")
-formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
-handler.setFormatter(formatter)
-logger.addHandler(handler)
-
+from ..utils.log_utils import logger
 
 __all__ = ["DynamicMockModule"]
 
@@ -32,7 +23,7 @@ def _get_module(full_name: str):
             module = getattr(module, attr)
         return module
     except Exception as e:
-        logger.debug(f"error: {e}\n")
+        pass
 
 
 def inspect_modules_and_attributes(module_names):
@@ -50,7 +41,7 @@ def inspect_modules_and_attributes(module_names):
                 source_code = inspect.getsource(attr_value)
                 attribute_info[f"{module_name};{attr}"] = (source_file, source_code)
             except Exception as e:
-                logger.debug(f"eror: {e}\n")
+                pass
 
         return attribute_info
 
@@ -64,17 +55,13 @@ def getattr_from_module_name(module, module_name: str):
     # case <function get_additional_models_factory.<locals>.get_additional_models_with_motion at 0x7fd0542cf6d0>
     full_attr_name = module_name.split(" ")[1]
     attrs = full_attr_name.split(".")
-    logger.info(f"attrs: {attrs}")
     sub_module = module
     for attr in attrs:
         if attr == "<locals>":
             if len(signature(sub_module).parameters) == 0:
                 logger.info(f"{full_attr_name=} is a local function without parameters")
-
-                # TODO remove this function use sub_module directly
                 def proxy_func(*args, **kwargs):
                     return sub_module()(*args, **kwargs)
-
                 return proxy_func
             else:
                 logger.warning(
