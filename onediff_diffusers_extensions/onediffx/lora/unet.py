@@ -32,7 +32,6 @@ def load_lora_into_unet(
     *,
     lora_scale: float = 1.0,
     offload_device="cpu",
-    offload_weight="lora",
     use_cache=False,
 ):
     keys = list(state_dict.keys())
@@ -77,7 +76,6 @@ def load_lora_into_unet(
         _pipeline=_pipeline,
         lora_scale=lora_scale,
         offload_device=offload_device,
-        offload_weight=offload_weight,
         use_cache=use_cache,
     )
 
@@ -90,7 +88,6 @@ def _load_attn_procs(
 
     lora_scale = kwargs.pop("lora_scale", 1.0)
     offload_device = kwargs.pop("offload_device", "cpu")
-    offload_weight = kwargs.pop("offload_weight", "lora")
     use_cache = kwargs.pop("use_cache", False)
     _pipeline = kwargs.pop("_pipeline", None)
     network_alphas = kwargs.pop("network_alphas", None)
@@ -165,7 +162,6 @@ def _load_attn_procs(
                     mapped_network_alphas.get(key),
                     rank,
                     offload_device=offload_device,
-                    offload_weight=offload_weight,
                 )
             elif isinstance(attn_processor, (LoRACompatibleLinear, torch.nn.Linear)):
                 linear_fuse_lora(
@@ -175,7 +171,6 @@ def _load_attn_procs(
                     mapped_network_alphas.get(key),
                     rank,
                     offload_device=offload_device,
-                    offload_weight=offload_weight,
                 )
             else:
                 raise ValueError(

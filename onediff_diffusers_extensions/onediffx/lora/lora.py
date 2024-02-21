@@ -9,9 +9,7 @@ from onediff.infer_compiler.utils.log_utils import logger
 
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
-from diffusers.models.lora import (
-    PatchedLoraProjection,
-)
+from diffusers.models.lora import PatchedLoraProjection
 
 
 from .utils import (
@@ -36,7 +34,6 @@ def load_and_fuse_lora(
     *,
     lora_scale: float = 1.0,
     offload_device="cpu",
-    offload_weight="lora",
     use_cache=False,
     **kwargs,
 ) -> None:
@@ -76,7 +73,6 @@ def load_and_fuse_lora(
         self.unet,
         lora_scale=lora_scale,
         offload_device=offload_device,
-        offload_weight=offload_weight,
         use_cache=use_cache,
     )
 
@@ -156,7 +152,9 @@ def load_state_dict_cached(
 
     lora_name = str(lora) + (f"/{weight_name}" if weight_name else "")
     if lora_name in CachedLoRAs:
-        logger.debug(f"[OneDiffX Cached LoRA] get cached lora of name: {str(lora_name)}")
+        logger.debug(
+            f"[OneDiffX Cached LoRA] get cached lora of name: {str(lora_name)}"
+        )
         return CachedLoRAs[lora_name]
 
     state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(lora, **kwargs,)

@@ -13,6 +13,7 @@ else:
 
 _adapter_layer_names = ()
 
+
 def get_adapter_name(self):
     if not hasattr(self, "adapter_names"):
         result = "default_0"
@@ -26,7 +27,7 @@ def get_adapter_name(self):
             if result not in adapter_names:
                 break
     return result
-    
+
 
 def offload_tensor(tensor, device):
     cur_device = tensor.device
@@ -43,11 +44,10 @@ def linear_fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
-    adapter_name = None,
-    fuse = True,
+    adapter_name=None,
+    fuse=True,
     prefix="lora",
     offload_device="cpu",
-    offload_weight="lora",
 ):
     r"""
     This will fuse the LoRA weights in `state_dict` into Linear module.
@@ -67,9 +67,6 @@ def linear_fuse_lora(
             Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
         offload_device (str, optional):
             Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
-        offload_weight (str, optional):
-            Which weights to be offloaded, can be "lora" or "weight". Default is "lora".
-            If set to "weight", the weight of Linear rather than LoRA will be saved for unfusing.
     """
     assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
     if isinstance(self, DualModule):
@@ -86,48 +83,25 @@ def linear_fuse_lora(
 
     if alpha is not None:
         w_up = w_up * (alpha / rank * lora_scale)
-    
+
     adapter_name = adapter_name if adapter_name is not None else get_adapter_name(self)
 
-    if not hasattr(self, "lora_A"):
+    if not hasattr(self, "adapter_names"):
         self.r = {}
         self.lora_alpha = {}
         self.scaling = {}
         self.lora_A = {}
         self.lora_B = {}
-        self.adapter_names = adapter_name
+        self.adapter_names = set()
+        self.active_adapter_names = set()
 
-        # self._disable_adapters = False
-        # self._active_adapter  = "default"
-    
-    else:
-        print(f"lora name {adapter_name} registered")
-        self.r[adapter_name] = rank
-        self.lora_alpha[adapter_name] = alpha
-        self.scaling[adapter_name] = lora_scale
-        self.lora_A[adapter_name] = w_down
-        self.lora_B[adapter_name] = w_up
-        if not isinstance(self.adapter_names, set):
-            self.adapter_names = set([self.adapter_names])
-        self.adapter_names.add(adapter_name)
-        # self._active_adapter = adapter_name
-
-    if offload_weight == "lora":
-        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
-        self.register_buffer(
-            "_lora_down", offload_tensor(state_dict[down_key], offload_device)
-        )
-        self._lora_scale = lora_scale
-
-    elif offload_weight == "weight":
-        self.register_buffer(
-            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
-        )
-
-    else:
-        raise ValueError(
-            f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}"
-        )
+    self.r[adapter_name] = rank
+    self.lora_alpha[adapter_name] = alpha
+    self.scaling[adapter_name] = lora_scale
+    self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
+    self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
+    self.adapter_names.add(adapter_name)
+    self.active_adapter_names.add(adapter_name)
 
     if fuse:
         lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
@@ -137,6 +111,8 @@ def linear_fuse_lora(
 
 def _linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
     assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
+    if not hasattr(self, "adapter_names"):
+        return
     if isinstance(self, DualModule):
         self = self._torch_module
     if isinstance(self, PatchedLoraProjection):
@@ -145,28 +121,22 @@ def _linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
     fused_weight = self.weight.data
     dtype, device = fused_weight.dtype, fused_weight.device
 
-    if (
-        "_lora_orig_weight" in self._buffers
-        and self.get_buffer("_lora_orig_weight") is not None
-    ):
-        unfused_weight = self._lora_orig_weight
-        self._lora_orig_weight = None
+    delta_weight = None
+    for name in self.adapter_names:
+        w_down = self.lora_A[name].to(device=device).float()
+        w_up = self.lora_B[name].to(device).float()
+        if delta_weight is None:
+            delta_weight = (torch.bmm(w_up[None, :], w_down[None, :])[0]).to(
+                device=device, dtype=dtype
+            )
+        else:
+            delta_weight += (torch.bmm(w_up[None, :], w_down[None, :])[0]).to(
+                device=device, dtype=dtype
+            )
+    self.adapter_names.clear()
 
-    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self.get_buffer("_lora_up").to(device=device).float()
-        w_down = self.get_buffer("_lora_down").to(device).float()
-
-        unfused_weight = self.weight.data.float() - (
-            torch.bmm(w_up[None, :], w_down[None, :])[0]
-        )
-        self._lora_up = None
-        self._lora_down = None
-        self._lora_scale = None
-
-    else:
-        return
-
-    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
+    if delta_weight is not None:
+        self.weight.data -= delta_weight
 
 
 def conv_fuse_lora(
@@ -176,11 +146,10 @@ def conv_fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
-    adapter_name = None,
+    adapter_name=None,
     fuse=True,
     prefix="lora",
     offload_device="cpu",
-    offload_weight="lora",
 ) -> None:
     r"""
     This will fuse the LoRA weights in `state_dict` into Conv2d module.
@@ -200,9 +169,6 @@ def conv_fuse_lora(
             Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
         offload_device (str, optional):
             Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
-        offload_weight (str, optional):
-            Which weights to be offloaded, can be "lora" or "weight". Default is "lora".
-            If set to "weight", the weight of Conv2d rather than LoRA will be saved for unfusing.
     """
     assert isinstance(self, torch.nn.Conv2d)
     if isinstance(self, DualModule):
@@ -216,45 +182,23 @@ def conv_fuse_lora(
 
     if alpha is not None:
         w_up = w_up * (alpha / rank * lora_scale)
-    
+
     adapter_name = adapter_name if adapter_name is not None else get_adapter_name(self)
 
-    if not hasattr(self, "lora_A"):
+    if not hasattr(self, "adapter_names"):
         self.r = {}
         self.lora_alpha = {}
         self.scaling = {}
         self.lora_A = {}
         self.lora_B = {}
-        self.adapter_names = adapter_name
+        self.adapter_names = set()
 
-        # self._disable_adapters = False
-        # self._active_adapter  = "default"
-    
-    else:
-        self.r[adapter_name] = rank
-        self.lora_alpha[adapter_name] = alpha
-        self.scaling[adapter_name] = lora_scale
-        self.lora_A[adapter_name] = w_down
-        self.lora_B[adapter_name] = w_up
-        if not isinstance(self.adapter_names, set):
-            self.adapter_names = set([self.adapter_names])
-        self.adapter_names.add(adapter_name)
-        # self._active_adapter = adapter_name
-
-    if offload_weight == "lora":
-        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
-        self.register_buffer(
-            "_lora_down", offload_tensor(state_dict[down_key], offload_device)
-        )
-        self._lora_scale = lora_scale
-    elif offload_weight == "weight":
-        self.register_buffer(
-            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
-        )
-    else:
-        raise ValueError(
-            f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}"
-        )
+    self.r[adapter_name] = rank
+    self.lora_alpha[adapter_name] = alpha
+    self.scaling[adapter_name] = lora_scale
+    self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
+    self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
+    self.adapter_names.add(adapter_name)
 
     if fuse:
         lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
@@ -266,30 +210,27 @@ def conv_fuse_lora(
 
 def _conv_unfuse_lora(self: torch.nn.Conv2d):
     assert isinstance(self, torch.nn.Conv2d)
+    if not hasattr(self, "adapter_names"):
+        return
 
     fused_weight = self.weight.data
     dtype, device = fused_weight.dtype, fused_weight.device
 
-    if (
-        "_lora_orig_weight" in self._buffers
-        and self.get_buffer("_lora_orig_weight") is not None
-    ):
-        unfused_weight = self._lora_orig_weight
-        self._lora_orig_weight = None
+    delta_weight_sum = None
+    for name in self.adapter_names:
+        w_down = self.lora_A[name].to(device=device).float()
+        w_up = self.lora_B[name].to(device).float()
+        delta_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+        if delta_weight_sum is None:
+            delta_weight_sum = delta_weight.reshape((fused_weight.shape)).to(
+                device=device, dtype=dtype
+            )
+        else:
+            delta_weight_sum += delta_weight.reshape((fused_weight.shape)).to(
+                device=device, dtype=dtype
+            )
 
-    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self._lora_up.to(device=device).float()
-        w_down = self._lora_down.to(device).float()
+    self.adapter_names.clear()
 
-        fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-        fusion = fusion.reshape((fused_weight.shape))
-        unfused_weight = fused_weight.float() - fusion
-
-        self._lora_up = None
-        self._lora_down = None
-        self._lora_scale = None
-
-    else:
-        return
-
-    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
+    if delta_weight_sum is not None:
+        self.weight.data -= delta_weight_sum
