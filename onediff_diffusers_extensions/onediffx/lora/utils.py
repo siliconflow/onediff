@@ -1,5 +1,6 @@
 from typing import Dict, Union
 from packaging import version
+from collections import OrderedDict
 
 import torch
 import diffusers
@@ -16,13 +17,14 @@ def get_adapter_name(self):
     if not hasattr(self, "adapter_names"):
         result = "default_0"
     else:
-        if not isinstance(self.adapter_names, list):
-            adapter_names = [adapter_names]
+        if not isinstance(self.adapter_names, set):
+            adapter_names = set([self.adapter_names])
+        else:
+            adapter_names = self.adapter_names
         for i in range(0, 100):
-            if f"default_{i}" not in adapter_names:
-                adapter_names.append(f"default_{i}")
+            result = f"default_{i}"
+            if result not in adapter_names:
                 break
-        result = adapter_names
     return result
     
 
@@ -93,16 +95,21 @@ def linear_fuse_lora(
         self.scaling = {}
         self.lora_A = {}
         self.lora_B = {}
+        self.adapter_names = adapter_name
 
         # self._disable_adapters = False
         # self._active_adapter  = "default"
     
     else:
+        print(f"lora name {adapter_name} registered")
         self.r[adapter_name] = rank
         self.lora_alpha[adapter_name] = alpha
         self.scaling[adapter_name] = lora_scale
         self.lora_A[adapter_name] = w_down
         self.lora_B[adapter_name] = w_up
+        if not isinstance(self.adapter_names, set):
+            self.adapter_names = set([self.adapter_names])
+        self.adapter_names.add(adapter_name)
         # self._active_adapter = adapter_name
 
     if offload_weight == "lora":
@@ -218,6 +225,7 @@ def conv_fuse_lora(
         self.scaling = {}
         self.lora_A = {}
         self.lora_B = {}
+        self.adapter_names = adapter_name
 
         # self._disable_adapters = False
         # self._active_adapter  = "default"
@@ -228,6 +236,9 @@ def conv_fuse_lora(
         self.scaling[adapter_name] = lora_scale
         self.lora_A[adapter_name] = w_down
         self.lora_B[adapter_name] = w_up
+        if not isinstance(self.adapter_names, set):
+            self.adapter_names = set([self.adapter_names])
+        self.adapter_names.add(adapter_name)
         # self._active_adapter = adapter_name
 
     if offload_weight == "lora":
