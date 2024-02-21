@@ -179,7 +179,7 @@ def _load_attn_procs(
                 )
             else:
                 raise ValueError(
-                    f"[OneDiffX _load_attn_procs] Module {key} is not a LoRACompatibleConv or LoRACompatibleLinear module."
+                    f"[OneDiffX _load_attn_procs] Module {key} is not a Conv2d or Linear module."
                 )
     else:
         raise ValueError(

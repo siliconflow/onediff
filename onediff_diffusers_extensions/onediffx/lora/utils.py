@@ -10,6 +10,21 @@ if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
 else:
     from diffusers.models.lora import PatchedLoraProjection
 
+_adapter_layer_names = ()
+
+def get_adapter_name(self):
+    if not hasattr(self, "adapter_names"):
+        result = "default_0"
+    else:
+        if not isinstance(self.adapter_names, list):
+            adapter_names = [adapter_names]
+        for i in range(0, 100):
+            if f"default_{i}" not in adapter_names:
+                adapter_names.append(f"default_{i}")
+                break
+        result = adapter_names
+    return result
+    
 
 def offload_tensor(tensor, device):
     cur_device = tensor.device
@@ -26,6 +41,8 @@ def linear_fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
+    adapter_name = None,
+    fuse = True,
     prefix="lora",
     offload_device="cpu",
     offload_weight="lora",
@@ -67,6 +84,26 @@ def linear_fuse_lora(
 
     if alpha is not None:
         w_up = w_up * (alpha / rank * lora_scale)
+    
+    adapter_name = adapter_name if adapter_name is not None else get_adapter_name(self)
+
+    if not hasattr(self, "lora_A"):
+        self.r = {}
+        self.lora_alpha = {}
+        self.scaling = {}
+        self.lora_A = {}
+        self.lora_B = {}
+
+        # self._disable_adapters = False
+        # self._active_adapter  = "default"
+    
+    else:
+        self.r[adapter_name] = rank
+        self.lora_alpha[adapter_name] = alpha
+        self.scaling[adapter_name] = lora_scale
+        self.lora_A[adapter_name] = w_down
+        self.lora_B[adapter_name] = w_up
+        # self._active_adapter = adapter_name
 
     if offload_weight == "lora":
         self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
@@ -85,9 +122,10 @@ def linear_fuse_lora(
             f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}"
         )
 
-    lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
-    fused_weight = self.weight.data.float() + lora_weight
-    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+    if fuse:
+        lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
+        fused_weight = self.weight.data.float() + lora_weight
+        self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
 def _linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
@@ -131,6 +169,8 @@ def conv_fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
+    adapter_name = None,
+    fuse=True,
     prefix="lora",
     offload_device="cpu",
     offload_weight="lora",
@@ -169,6 +209,26 @@ def conv_fuse_lora(
 
     if alpha is not None:
         w_up = w_up * (alpha / rank * lora_scale)
+    
+    adapter_name = adapter_name if adapter_name is not None else get_adapter_name(self)
+
+    if not hasattr(self, "lora_A"):
+        self.r = {}
+        self.lora_alpha = {}
+        self.scaling = {}
+        self.lora_A = {}
+        self.lora_B = {}
+
+        # self._disable_adapters = False
+        # self._active_adapter  = "default"
+    
+    else:
+        self.r[adapter_name] = rank
+        self.lora_alpha[adapter_name] = alpha
+        self.scaling[adapter_name] = lora_scale
+        self.lora_A[adapter_name] = w_down
+        self.lora_B[adapter_name] = w_up
+        # self._active_adapter = adapter_name
 
     if offload_weight == "lora":
         self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
@@ -185,11 +245,12 @@ def conv_fuse_lora(
             f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}"
         )
 
-    lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-    lora_weight = lora_weight.reshape((self.weight.shape))
+    if fuse:
+        lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+        lora_weight = lora_weight.reshape((self.weight.shape))
 
-    fused_weight = self.weight.data.float() + lora_weight
-    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+        fused_weight = self.weight.data.float() + lora_weight
+        self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
 def _conv_unfuse_lora(self: torch.nn.Conv2d):
