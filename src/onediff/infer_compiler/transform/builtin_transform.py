@@ -217,7 +217,6 @@ def _(mod: torch.nn.Module, verbose=False):
         try:
             return super().__getattribute__(attr)
         except Exception as e:
-            logger.info(f"{type(self)} getattr {attr} failed: {e}")
             if attr in self._modules:
                 return self._modules[attr]
             if attr in self._parameters:
