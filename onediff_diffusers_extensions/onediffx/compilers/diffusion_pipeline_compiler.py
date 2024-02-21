@@ -28,6 +28,10 @@ def compile_pipe(
         "unet",
         "controlnet",
         "fast_unet",  # for deepcache
+        "prior",  # for StableCascadePriorPipeline
+        "decoder",  # for StableCascadeDecoderPipeline
+        # "vqgan.down_blocks",  # for StableCascadeDecoderPipeline
+        # "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
         "vae.decoder",
         "vae.encoder",
     ]
@@ -46,7 +50,7 @@ def compile_pipe(
             logger.info(f"Compiling {part}")
             recursive_setattr(pipe, part, oneflow_compile(obj))
 
-    if "image_processor" not in ignores:
+    if hasattr(pipe, "image_processor") and "image_processor" not in ignores:
         logger.info("Patching image_processor")
 
         from onediffx.utils.patch_image_processor import (
