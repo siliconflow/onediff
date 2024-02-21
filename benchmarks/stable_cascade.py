@@ -222,15 +222,13 @@ def main():
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
 
-        prior_pipe.unet = torch.compile(prior_pipe.unet, mode=mode)
+        prior_pipe.prior = torch.compile(prior_pipe.prior, mode=mode)
         if hasattr(prior_pipe, "controlnet"):
             prior_pipe.controlnet = torch.compile(prior_pipe.controlnet, mode=mode)
-        prior_pipe.vae = torch.compile(prior_pipe.vae, mode=mode)
 
-        decoder_pipe.unet = torch.compile(decoder_pipe.unet, mode=mode)
+        decoder_pipe.decoder = torch.compile(decoder_pipe.decoder, mode=mode)
         if hasattr(decoder_pipe, "controlnet"):
             decoder_pipe.controlnet = torch.compile(decoder_pipe.controlnet, mode=mode)
-        decoder_pipe.vae = torch.compile(decoder_pipe.vae, mode=mode)
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
