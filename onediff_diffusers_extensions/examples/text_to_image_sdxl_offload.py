@@ -12,6 +12,8 @@ from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
 
+from onediff.infer_compiler.utils.cost_util import cost_cnt
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
@@ -76,32 +78,30 @@ image = base(
 ).images
 
 # Normal SDXL run
-print("Normal SDXL run...")
-torch.manual_seed(args.seed)
-image = base(
-    prompt=args.prompt,
-    height=args.height,
-    width=args.width,
-    num_inference_steps=args.n_steps,
-    output_type=OUTPUT_TYPE,
-).images
-image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
+@cost_cnt(True)
+def run():
+    print("Normal SDXL run...")
+    torch.manual_seed(args.seed)
+    image = base(
+        prompt=args.prompt,
+        height=args.height,
+        width=args.width,
+        num_inference_steps=args.n_steps,
+        output_type=OUTPUT_TYPE,
+    ).images
+    image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 
-print("offload graph to CPU")
-# base.unet.offload()
+@cost_cnt(True)
+def offload():
+    print("offload graph to CPU")
+    #base.unet.offload()
 
+@cost_cnt(True)
+def load():
+    print("load graph to GPU")
+    #base.unet.load()
 
-print("load graph to GPU")
-# base.unet.load()
-
-# Normal SDXL run
-print("Normal SDXL run...")
-torch.manual_seed(args.seed)
-image = base(
-    prompt=args.prompt,
-    height=args.height,
-    width=args.width,
-    num_inference_steps=args.n_steps,
-    output_type=OUTPUT_TYPE,
-).images
-image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
+run()
+offload()
+load()
+run()
