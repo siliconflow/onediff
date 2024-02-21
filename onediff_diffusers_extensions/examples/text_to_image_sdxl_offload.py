@@ -88,11 +88,11 @@ image = base(
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 
 print("offload graph to CPU")
-base.unet.offload()
+# base.unet.offload()
 
 
 print("load graph to GPU")
-base.unet.load()
+# base.unet.load()
 
 # Normal SDXL run
 print("Normal SDXL run...")
