@@ -37,7 +37,7 @@ class ConfigurableLogger:
 
         # Create a console formatter and add it to a console handler
         console_formatter = ColorFormatter(
-            fmt="%(levelname)s [%(asctime)s] %(filename)s:%(lineno)d - %(message)s",
+            fmt="%(levelname)s [%(asctime)s] %(pathname)s:%(lineno)d - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
         console_handler = logging.StreamHandler()

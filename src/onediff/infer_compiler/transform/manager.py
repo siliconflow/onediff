@@ -112,9 +112,9 @@ if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)
     warnings.simplefilter("ignore", category=FutureWarning)
 
-try:
-    import pydantic
 
+if importlib.util.find_spec("pydantic") is not None:
+    import pydantic
     if pydantic.VERSION < "2.5.2":
         logger.warning(
             f"Pydantic version {pydantic.VERSION} is too low, please upgrade to 2.5.2 or higher."
@@ -125,6 +125,4 @@ try:
             "huggingface_hub.inference._text_generation"
         )
 
-except Exception as e:
-    logger.warning(f"Pydantic related warning: {e}.")
-    pass
+
