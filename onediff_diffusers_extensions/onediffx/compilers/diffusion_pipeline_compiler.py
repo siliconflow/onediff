@@ -30,8 +30,8 @@ def compile_pipe(
         "fast_unet",  # for deepcache
         "prior",  # for StableCascadePriorPipeline
         "decoder",  # for StableCascadeDecoderPipeline
-        # "vqgan.down_blocks",  # for StableCascadeDecoderPipeline
-        # "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
+        "vqgan.down_blocks",  # for StableCascadeDecoderPipeline
+        "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
         "vae.decoder",
         "vae.encoder",
     ]
