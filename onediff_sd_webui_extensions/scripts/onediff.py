@@ -71,9 +71,12 @@ class UnetCompileCtx(object):
         self._original_model = shared.sd_model.model.diffusion_model
         global compiled_unet
         shared.sd_model.model.diffusion_model = compiled_unet
+        self._original_use_checkpoint = self._original_model.use_checkpoint
+        shared.sd_model.model.diffusion_model.use_checkpoint = False
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         shared.sd_model.model.diffusion_model = self._original_model
+        shared.sd_model.model.diffusion_model.use_checkpoint = self._original_use_checkpoint
         return False
 
 
@@ -115,7 +118,7 @@ class Script(scripts.Script):
         return [ret]
 
     def show(self, is_img2img):
-        return not is_img2img
+        return True
 
     def run(self, p, quantization=False):
         global compiled_unet, compiled_ckpt_name
