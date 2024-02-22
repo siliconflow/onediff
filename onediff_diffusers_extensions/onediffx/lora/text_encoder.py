@@ -218,7 +218,7 @@ def load_lora_into_text_encoder(
                         lora_scale,
                         query_alpha,
                         current_rank,
-                        adapter_names=adapter_name,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
                     fuse_lora(
@@ -227,7 +227,7 @@ def load_lora_into_text_encoder(
                         lora_scale,
                         key_alpha,
                         current_rank,
-                        adapter_names=adapter_name,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
                     fuse_lora(
@@ -236,7 +236,7 @@ def load_lora_into_text_encoder(
                         lora_scale,
                         value_alpha,
                         current_rank,
-                        adapter_names=adapter_name,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
                     fuse_lora(
@@ -245,7 +245,7 @@ def load_lora_into_text_encoder(
                         lora_scale,
                         out_alpha,
                         current_rank,
-                        adapter_names=adapter_name,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
 
@@ -271,7 +271,7 @@ def load_lora_into_text_encoder(
                             lora_scale,
                             fc1_alpha,
                             current_rank_fc1,
-                            adapter_names=adapter_name,
+                            adapter_name=adapter_name,
                             prefix="lora_linear_layer",
                         )
                         fuse_lora(
@@ -280,7 +280,7 @@ def load_lora_into_text_encoder(
                             lora_scale,
                             fc2_alpha,
                             current_rank_fc2,
-                            adapter_names=adapter_name,
+                            adapter_name=adapter_name,
                             prefix="lora_linear_layer",
                         )
 

@@ -74,7 +74,7 @@ def load_lora_into_unet(
         state_dict,
         network_alphas=network_alphas,
         low_cpu_mem_usage=low_cpu_mem_usage,
-        adapter_names=adapter_name,
+        adapter_name=adapter_name,
         _pipeline=_pipeline,
         lora_scale=lora_scale,
         offload_device=offload_device,
@@ -93,7 +93,7 @@ def _load_attn_procs(
     use_cache = kwargs.pop("use_cache", False)
     _pipeline = kwargs.pop("_pipeline", None)
     network_alphas = kwargs.pop("network_alphas", None)
-    adapter_names = kwargs.pop("adapter_names", None)
+    adapter_name = kwargs.pop("adapter_name", None)
     state_dict = pretrained_model_name_or_path_or_dict
 
     is_network_alphas_none = network_alphas is None
@@ -173,7 +173,7 @@ def _load_attn_procs(
                     mapped_network_alphas.get(key),
                     rank,
                     offload_device=offload_device,
-                    adapter_names=adapter_names,
+                    adapter_name=adapter_name,
                 )
             elif is_peft_available() and isinstance(
                 attn_processor,
@@ -186,7 +186,7 @@ def _load_attn_procs(
                     mapped_network_alphas.get(key),
                     rank,
                     offload_device=offload_device,
-                    adapter_names=adapter_names,
+                    adapter_name=adapter_name,
                 )
             else:
                 raise ValueError(

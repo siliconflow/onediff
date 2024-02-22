@@ -66,12 +66,15 @@ def offload_tensor(tensor, device):
         return tensor.to(device)
 
 
-def set_adapter(self, adapter_names, adapter_weights):
-    if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d)):
+def _set_adapter(self, adapter_names, adapter_weights):
+    if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise
+    if isinstance(self, PatchedLoraProjection):
+        self = self.base_layer
     if not hasattr(self, "adapter_names"):
         return
-
+    if adapter_weights is None:
+        adapter_weights = [1.0] * len(adapter_names)
     _unfuse_lora(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device
@@ -81,18 +84,19 @@ def set_adapter(self, adapter_names, adapter_weights):
         if adapter not in self.adapter_names:
             continue
 
-        self.active_adaptive_names.add(adapter_names)
+        self.active_adapter_names.add(adapter)
         w_down = self.lora_A[adapter].float().to(device)
         w_up = self.lora_B[adapter].float().to(device)
         if delta_weight is None:
-            delta_weight = torch.bmm(w_up[None, :], w_down[None, :])[0] * (
+            delta_weight = get_delta_weight(self, w_up, w_down) * (
                 weight / self.scaling[adapter]
             )
         else:
-            delta_weight += torch.bmm(w_up[None, :], w_down[None, :])[0] * (
+            delta_weight += get_delta_weight(self, w_up, w_down) * (
                 weight / self.scaling[adapter]
             )
-        self.weight.data += delta_weight.to(device=device, dtype=dtype)
+        fused_weight = self.weight.data.float() + delta_weight
+        self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
 def fuse_lora(
@@ -102,7 +106,7 @@ def fuse_lora(
     alpha: float = None,
     rank: float = None,
     *,
-    adapter_names=None,
+    adapter_name=None,
     fuse=True,
     prefix="lora",
     offload_device="cpu",
@@ -154,17 +158,15 @@ def fuse_lora(
     if alpha is not None:
         w_up = w_up * (alpha / rank * lora_scale)
 
-    adapter_names = (
-        adapter_names if adapter_names is not None else get_adapter_names(self)
-    )
+    adapter_name = adapter_name if adapter_name is not None else get_adapter_names(self)
 
-    self.r[adapter_names] = rank
-    self.lora_alpha[adapter_names] = alpha
-    self.scaling[adapter_names] = lora_scale
-    self.lora_A[adapter_names] = offload_tensor(w_down, offload_device)
-    self.lora_B[adapter_names] = offload_tensor(w_up, offload_device)
-    self.adapter_names.add(adapter_names)
-    self.active_adapter_names.add(adapter_names)
+    self.r[adapter_name] = rank
+    self.lora_alpha[adapter_name] = alpha
+    self.scaling[adapter_name] = lora_scale
+    self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
+    self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
+    self.adapter_names.add(adapter_name)
+    self.active_adapter_names.add(adapter_name)
 
     if fuse:
         lora_weight = get_delta_weight(self, w_up, w_down)

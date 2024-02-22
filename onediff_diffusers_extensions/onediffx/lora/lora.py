@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union, Dict, Tuple
+from typing import Optional, Union, Dict, Tuple, List
 from collections import OrderedDict, defaultdict
 from packaging import version
 
@@ -12,10 +12,14 @@ from diffusers.loaders import LoraLoaderMixin
 from diffusers.models.lora import PatchedLoraProjection
 
 
-from .utils import _unfuse_lora
+from .utils import _unfuse_lora, _set_adapter
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
 
+from diffusers.utils.import_utils import is_peft_available
+
+if is_peft_available():
+    import peft
 is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse(
     "0.21.0"
 )
@@ -106,12 +110,53 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
     def _unfuse_lora_apply(m: torch.nn.Module):
         if isinstance(m, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d)):
             _unfuse_lora(m)
+        elif is_peft_available() and isinstance(
+            m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+        ):
+            _unfuse_lora(m.base_layer)
 
     pipeline.unet.apply(_unfuse_lora_apply)
     if hasattr(pipeline, "text_encoder"):
         pipeline.text_encoder.apply(_unfuse_lora_apply)
     if hasattr(pipeline, "text_encoder_2"):
         pipeline.text_encoder_2.apply(_unfuse_lora_apply)
+
+
+def set_adapters(
+    self,
+    adapter_names: Union[List[str], str],
+    adapter_weights: Optional[List[float]] = None,
+):
+    if isinstance(adapter_names, str):
+        adapter_names = [adapter_names]
+
+    def set_adapters_apply(m):
+        if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
+            _set_adapter(m, adapter_names, adapter_weights)
+        elif is_peft_available() and isinstance(
+            m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+        ):
+            _set_adapter(m.base_layer, adapter_names, adapter_weights)
+
+    # if not hasattr(self.unet, "adapter_names"):
+    #     self.unet.adapater_names = {}
+    #     self.unet.active_adapater_names = {}
+
+    self.unet.apply(set_adapters_apply)
+
+    if hasattr(self, "text_encoder"):
+        # if not hasattr(self.text_encoder, "adapter_names"):
+        #     self.text_encoder.adapter_names = {}
+        #     self.text_encoder.active_adapter_names = {}
+
+        self.text_encoder.apply(set_adapters_apply)
+
+    if hasattr(self, "text_encoder_2"):
+        # if not hasattr(self.text_encoder2, "adapter_names"):
+        #     self.text_encoder2.adapter_names = {}
+        #     self.text_encoder2.active_adapter_names = {}
+
+        self.text_encoder_2.apply(set_adapters_apply)
 
 
 class LRUCacheDict(OrderedDict):
