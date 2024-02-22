@@ -43,10 +43,6 @@ def load_and_fuse_lora(
         )
 
     self = pipeline
-    if adapter_name is not None:
-        raise ValueError(
-            f"[OneDiffX load_and_fuse_lora] adapter_name != None is not supported"
-        )
 
     if use_cache:
         state_dict, network_alphas = load_state_dict_cached(
@@ -71,6 +67,7 @@ def load_and_fuse_lora(
         state_dict,
         network_alphas,
         self.unet,
+        adapter_name=adapter_name,
         lora_scale=lora_scale,
         offload_device=offload_device,
         use_cache=use_cache,
