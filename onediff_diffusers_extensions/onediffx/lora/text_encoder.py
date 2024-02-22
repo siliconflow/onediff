@@ -14,7 +14,7 @@ from diffusers.utils import is_accelerate_available
 from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT
 from onediff.infer_compiler.utils.log_utils import logger
 
-from .utils import linear_fuse_lora
+from .utils import fuse_lora
 
 USE_PEFT_BACKEND = False
 
@@ -212,7 +212,7 @@ def load_lora_into_text_encoder(
                     else:
                         current_rank = rank
 
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.q_proj,
                         te_lora_grouped_dict.pop(f"{name}.q_proj"),
                         lora_scale,
@@ -221,7 +221,7 @@ def load_lora_into_text_encoder(
                         adapter_names=adapter_name,
                         prefix="lora_linear_layer",
                     )
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.k_proj,
                         te_lora_grouped_dict.pop(f"{name}.k_proj"),
                         lora_scale,
@@ -230,7 +230,7 @@ def load_lora_into_text_encoder(
                         adapter_names=adapter_name,
                         prefix="lora_linear_layer",
                     )
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.v_proj,
                         te_lora_grouped_dict.pop(f"{name}.v_proj"),
                         lora_scale,
@@ -239,7 +239,7 @@ def load_lora_into_text_encoder(
                         adapter_names=adapter_name,
                         prefix="lora_linear_layer",
                     )
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.out_proj,
                         te_lora_grouped_dict.pop(f"{name}.out_proj"),
                         lora_scale,
@@ -265,7 +265,7 @@ def load_lora_into_text_encoder(
                             f"{name}.fc2.lora_linear_layer.up.weight"
                         )
 
-                        linear_fuse_lora(
+                        fuse_lora(
                             mlp_module.fc1,
                             te_lora_grouped_dict.pop(f"{name}.fc1"),
                             lora_scale,
@@ -274,7 +274,7 @@ def load_lora_into_text_encoder(
                             adapter_names=adapter_name,
                             prefix="lora_linear_layer",
                         )
-                        linear_fuse_lora(
+                        fuse_lora(
                             mlp_module.fc2,
                             te_lora_grouped_dict.pop(f"{name}.fc2"),
                             lora_scale,

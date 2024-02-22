@@ -9,10 +9,7 @@ from diffusers.models.lora import (
     LoRACompatibleLinear,
 )
 
-from .utils import (
-    linear_fuse_lora,
-    conv_fuse_lora,
-)
+from .utils import fuse_lora
 
 from diffusers.utils import is_accelerate_available
 
@@ -156,18 +153,8 @@ def _load_attn_procs(
             # or add_{k,v,q,out_proj}_proj_lora layers.
             rank = value_dict["lora.down.weight"].shape[0]
 
-            if isinstance(attn_processor, (LoRACompatibleConv, torch.nn.Conv2d)):
-                conv_fuse_lora(
-                    attn_processor,
-                    value_dict,
-                    lora_scale,
-                    mapped_network_alphas.get(key),
-                    rank,
-                    offload_device=offload_device,
-                    adapter_names=adapter_names,
-                )
-            elif isinstance(attn_processor, (LoRACompatibleLinear, torch.nn.Linear)):
-                linear_fuse_lora(
+            if isinstance(attn_processor, (LoRACompatibleConv, torch.nn.Conv2d, LoRACompatibleLinear, torch.nn.Linear)):
+                fuse_lora(
                     attn_processor,
                     value_dict,
                     lora_scale,
