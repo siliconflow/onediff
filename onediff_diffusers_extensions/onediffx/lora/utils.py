@@ -4,12 +4,16 @@ from collections import OrderedDict
 
 import torch
 import diffusers
+from diffusers.utils.import_utils import is_peft_available
 from onediff.infer_compiler.with_oneflow_compile import DualModule
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
     from diffusers.models.lora import PatchedLoraProjection
+
+if is_peft_available():
+    import peft
 
 _adapter_layer_names = ()
 
@@ -68,10 +72,7 @@ def set_adapter(self, adapter_names, adapter_weights):
     if not hasattr(self, "adapter_names"):
         return
 
-    if isinstance(self, torch.nn.Linear):
-        _linear_unfuse_lora(self)
-    else:
-        _conv_unfuse_lora(self)
+    _unfuse_lora(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device
 
@@ -125,8 +126,16 @@ def fuse_lora(
         offload_device (str, optional):
             Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
     """
-    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d))
-    
+    if not isinstance(self, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d)):
+        if is_peft_available() and isinstance(
+            self, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d)
+        ):
+            self = self.base_layer
+        else:
+            raise TypeError(
+                f"[OneDiffX fuse_lora] Only Linear and Conv2d can fuse lora, but got type {type(self)}"
+            )
+
     if isinstance(self, DualModule):
         self = self._torch_module
     if isinstance(self, PatchedLoraProjection):
@@ -163,11 +172,11 @@ def fuse_lora(
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
-def _linear_unfuse_lora(
-    self: Union[torch.nn.Linear, PatchedLoraProjection],
+def _unfuse_lora(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
     adapter_names: Union[str, List[str]] = None,
 ):
-    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
+    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d))
     if not hasattr(self, "adapter_names"):
         return
     if isinstance(self, DualModule):
@@ -188,48 +197,14 @@ def _linear_unfuse_lora(
         w_down = self.lora_A[name].to(device=device).float()
         w_up = self.lora_B[name].to(device).float()
         if delta_weight is None:
-            delta_weight = (torch.bmm(w_up[None, :], w_down[None, :])[0]).to(
-                device=device, dtype=dtype
+            delta_weight = get_delta_weight(self, w_up, w_down).to(
+                dtype=dtype, device=device
             )
         else:
-            delta_weight += (torch.bmm(w_up[None, :], w_down[None, :])[0]).to(
-                device=device, dtype=dtype
+            delta_weight += get_delta_weight(self, w_up, w_down).to(
+                dtype=dtype, device=device
             )
         self.active_adapter_names.remove(name)
 
     if delta_weight is not None:
         self.weight.data -= delta_weight
-
-
-def _conv_unfuse_lora(
-    self: torch.nn.Conv2d, adapter_names: Union[str, List[str]] = None
-):
-    assert isinstance(self, torch.nn.Conv2d)
-    if not hasattr(self, "adapter_names"):
-        return
-
-    fused_weight = self.weight.data
-    dtype, device = fused_weight.dtype, fused_weight.device
-
-    delta_weight_sum = None
-    if adapter_names is None:
-        adapter_names = self.active_adapter_names.copy()
-
-    for name in adapter_names:
-        if name not in self.active_adapter_names:
-            continue
-        w_down = self.lora_A[name].to(device=device).float()
-        w_up = self.lora_B[name].to(device).float()
-        delta_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-        if delta_weight_sum is None:
-            delta_weight_sum = delta_weight.reshape((fused_weight.shape)).to(
-                device=device, dtype=dtype
-            )
-        else:
-            delta_weight_sum += delta_weight.reshape((fused_weight.shape)).to(
-                device=device, dtype=dtype
-            )
-        self.active_adapter_names.remove(name)
-
-    if delta_weight_sum is not None:
-        self.weight.data -= delta_weight_sum

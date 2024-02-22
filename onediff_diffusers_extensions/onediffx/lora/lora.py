@@ -12,10 +12,7 @@ from diffusers.loaders import LoraLoaderMixin
 from diffusers.models.lora import PatchedLoraProjection
 
 
-from .utils import (
-    _linear_unfuse_lora,
-    _conv_unfuse_lora,
-)
+from .utils import _unfuse_lora
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
 
@@ -106,17 +103,15 @@ def load_and_fuse_lora(
 
 
 def unfuse_lora(pipeline: LoraLoaderMixin):
-    def _unfuse_lora(m: torch.nn.Module):
-        if isinstance(m, (torch.nn.Linear, PatchedLoraProjection)):
-            _linear_unfuse_lora(m)
-        elif isinstance(m, torch.nn.Conv2d):
-            _conv_unfuse_lora(m)
+    def _unfuse_lora_apply(m: torch.nn.Module):
+        if isinstance(m, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d)):
+            _unfuse_lora(m)
 
-    pipeline.unet.apply(_unfuse_lora)
+    pipeline.unet.apply(_unfuse_lora_apply)
     if hasattr(pipeline, "text_encoder"):
-        pipeline.text_encoder.apply(_unfuse_lora)
+        pipeline.text_encoder.apply(_unfuse_lora_apply)
     if hasattr(pipeline, "text_encoder_2"):
-        pipeline.text_encoder_2.apply(_unfuse_lora)
+        pipeline.text_encoder_2.apply(_unfuse_lora_apply)
 
 
 class LRUCacheDict(OrderedDict):

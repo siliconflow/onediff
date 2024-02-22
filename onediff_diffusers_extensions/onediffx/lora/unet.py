@@ -12,6 +12,10 @@ from diffusers.models.lora import (
 from .utils import fuse_lora
 
 from diffusers.utils import is_accelerate_available
+from diffusers.utils.import_utils import is_peft_available
+
+if is_peft_available():
+    import peft
 
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module
@@ -153,7 +157,15 @@ def _load_attn_procs(
             # or add_{k,v,q,out_proj}_proj_lora layers.
             rank = value_dict["lora.down.weight"].shape[0]
 
-            if isinstance(attn_processor, (LoRACompatibleConv, torch.nn.Conv2d, LoRACompatibleLinear, torch.nn.Linear)):
+            if isinstance(
+                attn_processor,
+                (
+                    LoRACompatibleConv,
+                    torch.nn.Conv2d,
+                    LoRACompatibleLinear,
+                    torch.nn.Linear,
+                ),
+            ):
                 fuse_lora(
                     attn_processor,
                     value_dict,
@@ -163,9 +175,22 @@ def _load_attn_procs(
                     offload_device=offload_device,
                     adapter_names=adapter_names,
                 )
+            elif is_peft_available() and isinstance(
+                attn_processor,
+                (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+            ):
+                fuse_lora(
+                    attn_processor.base_layer,
+                    value_dict,
+                    lora_scale,
+                    mapped_network_alphas.get(key),
+                    rank,
+                    offload_device=offload_device,
+                    adapter_names=adapter_names,
+                )
             else:
                 raise ValueError(
-                    f"[OneDiffX _load_attn_procs] Module {key} is not a Conv2d or Linear module."
+                    f"[OneDiffX _load_attn_procs] Module {key} is not a Conv2d or Linear module, got type {type(attn_processor)}"
                 )
     else:
         raise ValueError(
