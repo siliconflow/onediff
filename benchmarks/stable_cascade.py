@@ -225,6 +225,9 @@ def main():
         prior_pipe = compile_pipe(prior_pipe)
         decoder_pipe = compile_pipe(decoder_pipe)
     elif args.compiler in ("compile", "compile-max-autotune"):
+        from patch_stable_cascade import patch_torch_compile
+        patch_torch_compile()
+
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
 
         prior_pipe.prior = torch.compile(prior_pipe.prior, mode=mode)
