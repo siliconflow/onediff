@@ -77,7 +77,7 @@ pipe.scheduler = EulerDiscreteScheduler.from_config(
     timestep_spacing="trailing"
 )
 
-# Compile with oneflow
+# Compile the pipeline
 if args.compile:
     pipe = compile_pipe(pipe,)
 
