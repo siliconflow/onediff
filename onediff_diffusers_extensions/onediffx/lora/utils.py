@@ -89,7 +89,7 @@ def _set_adapter(self, adapter_names, adapter_weights):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise
     if isinstance(self, PatchedLoraProjection):
-        self = self.base_layer
+        self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
         return
     if adapter_weights is None:
@@ -125,7 +125,7 @@ def _delete_adapter(self, adapter_names):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise
     if isinstance(self, PatchedLoraProjection):
-        self = self.base_layer
+        self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
         return
     _unfuse_lora(self)
