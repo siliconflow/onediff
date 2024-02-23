@@ -23,7 +23,6 @@ services:
     security_opt:
       - seccomp=unconfined
     environment:
-      ONEFLOW_RUN_GRAPH_BY_VM: "0"
       HF_HUB_OFFLINE: "1"
       ONEFLOW_MLIR_ENABLE_TIMING: "1"
       ONEFLOW_MLIR_PRINT_STATS: "1"
