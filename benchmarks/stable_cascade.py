@@ -200,6 +200,11 @@ def main():
         dtype=getattr(torch, args.prior_dtype),
     )
 
+    if prior_pipe.dtype == torch.float16:
+        # Dynamic patching would fail with oneflow
+        from patch_stable_cascade import patch_prior_fp16_overflow
+        prior_pipe.prior = patch_prior_fp16_overflow(prior_pipe.prior)
+
     decoder_pipe = load_pipe(
         StableCascadeDecoderPipeline,
         args.decoder_model,
