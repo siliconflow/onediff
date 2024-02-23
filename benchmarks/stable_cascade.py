@@ -334,7 +334,9 @@ def main():
     if args.warmups > 0:
         print("Begin warmup")
         for _ in range(args.warmups):
-            prior_output = prior_pipe(**get_prior_kwarg_inputs())
+            from patch_stable_cascade_of import patch_oneflow_stable_cascade
+            with patch_oneflow_stable_cascade():
+                prior_output = prior_pipe(**get_prior_kwarg_inputs())
             decoder_pipe(
                 image_embeddings=prior_output.image_embeddings.to(
                     dtype=getattr(torch, args.decoder_dtype)
