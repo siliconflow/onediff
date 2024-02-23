@@ -28,6 +28,21 @@ def init_lora_infos(self: torch.nn.Module):
     self.active_adapter_names = set()
 
 
+def delete_lora_infos(self, adapter_names):
+    curr_adapter_names = self.adapter_names.copy()
+    for adapter_name in adapter_names:
+        if adapter_name not in curr_adapter_names:
+            continue
+        self.r.pop(adapter_name)
+        self.lora_alpha.pop(adapter_name)
+        self.scaling.pop(adapter_name)
+        self.lora_A.pop(adapter_name)
+        self.lora_B.pop(adapter_name)
+        self.adapter_names.remove(adapter_name)
+        if adapter_name in self.active_adapter_names:
+            self.active_adapter_names.remove(adapter_name)
+
+
 def get_adapter_names(self):
     if not hasattr(self, "adapter_names"):
         result = "default_0"
@@ -97,6 +112,17 @@ def _set_adapter(self, adapter_names, adapter_weights):
             )
         fused_weight = self.weight.data.float() + delta_weight
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+
+
+def _delete_adapter(self, adapter_names):
+    if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
+        raise
+    if isinstance(self, PatchedLoraProjection):
+        self = self.base_layer
+    if not hasattr(self, "adapter_names"):
+        return
+    _unfuse_lora(self)
+    delete_lora_infos(self, adapter_names)
 
 
 def fuse_lora(

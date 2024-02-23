@@ -12,7 +12,7 @@ from diffusers.loaders import LoraLoaderMixin
 from diffusers.models.lora import PatchedLoraProjection
 
 
-from .utils import _unfuse_lora, _set_adapter
+from .utils import _unfuse_lora, _set_adapter, _delete_adapter
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
 
@@ -123,7 +123,7 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
 
 
 def set_adapters(
-    self,
+    pipeline: LoraLoaderMixin,
     adapter_names: Union[List[str], str],
     adapter_weights: Optional[List[float]] = None,
 ):
@@ -138,25 +138,31 @@ def set_adapters(
         ):
             _set_adapter(m.base_layer, adapter_names, adapter_weights)
 
-    # if not hasattr(self.unet, "adapter_names"):
-    #     self.unet.adapater_names = {}
-    #     self.unet.active_adapater_names = {}
+    pipeline.unet.apply(set_adapters_apply)
+    if hasattr(pipeline, "text_encoder"):
+        pipeline.text_encoder.apply(set_adapters_apply)
+    if hasattr(pipeline, "text_encoder_2"):
+        pipeline.text_encoder_2.apply(set_adapters_apply)
 
-    self.unet.apply(set_adapters_apply)
 
+def delete_adapter(self, adapter_name: str) -> None:
+    adapter_names = adapter_name
+    if isinstance(adapter_names, str):
+        adapter_names = [adapter_names]
+
+    def delete_adapters_apply(m):
+        if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
+            _delete_adapter(m, adapter_names)
+        elif is_peft_available() and isinstance(
+            m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+        ):
+            _delete_adapter(m.base_layer, adapter_names)
+
+    self.unet.apply(delete_adapters_apply)
     if hasattr(self, "text_encoder"):
-        # if not hasattr(self.text_encoder, "adapter_names"):
-        #     self.text_encoder.adapter_names = {}
-        #     self.text_encoder.active_adapter_names = {}
-
-        self.text_encoder.apply(set_adapters_apply)
-
+        self.text_encoder.apply(delete_adapters_apply)
     if hasattr(self, "text_encoder_2"):
-        # if not hasattr(self.text_encoder2, "adapter_names"):
-        #     self.text_encoder2.adapter_names = {}
-        #     self.text_encoder2.active_adapter_names = {}
-
-        self.text_encoder_2.apply(set_adapters_apply)
+        self.text_encoder_2.apply(delete_adapters_apply)
 
 
 class LRUCacheDict(OrderedDict):
