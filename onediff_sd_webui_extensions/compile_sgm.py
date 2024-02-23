@@ -84,5 +84,4 @@ def compile_sgm_unet(unet_model, *, use_graph=True, options={}):
             module.checkpoint = False
         if isinstance(module, ResBlock):
             module.use_checkpoint = False
-    if isinstance(unet_model, UNetModel):
-        return oneflow_compile(unet_model, use_graph=use_graph, options=options)
+    return oneflow_compile(unet_model, use_graph=use_graph, options=options)
