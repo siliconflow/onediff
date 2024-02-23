@@ -9,7 +9,7 @@ from diffusers.models.lora import (
     LoRACompatibleLinear,
 )
 
-from .utils import fuse_lora
+from .utils import fuse_lora, get_adapter_names
 
 from diffusers.utils import is_accelerate_available
 from diffusers.utils.import_utils import is_peft_available
@@ -35,6 +35,21 @@ def load_lora_into_unet(
     offload_device="cpu",
     use_cache=False,
 ):
+    if adapter_name is None:
+        adapter_name = get_adapter_names(unet)
+
+    if hasattr(unet, "adapter_names"):
+        if adapter_name in unet.adapter_names:
+            raise ValueError(
+                f"[OneDiffX load_lora_into_unet] The adapter name {adapter_name} already exists in UNet"
+            )
+        else:
+            unet.adapter_name.add(adapter_name)
+            unet.active_adapter_name[adapter_name] = 1.0
+    else:
+        unet.adapter_name = set([adapter_name])
+        unet.active_adapter_name = {adapter_name: 1.0}
+
     keys = list(state_dict.keys())
     cls = type(self)
 

@@ -25,7 +25,7 @@ def init_lora_infos(self: torch.nn.Module):
     self.lora_A = {}
     self.lora_B = {}
     self.adapter_names = set()
-    self.active_adapter_names = set()
+    self.active_adapter_names = {}
 
 
 def delete_lora_infos(self, adapter_names):
@@ -40,7 +40,7 @@ def delete_lora_infos(self, adapter_names):
         self.lora_B.pop(adapter_name)
         self.adapter_names.remove(adapter_name)
         if adapter_name in self.active_adapter_names:
-            self.active_adapter_names.remove(adapter_name)
+            self.active_adapter_names.pop(adapter_name)
 
 
 def get_adapter_names(self):
@@ -51,7 +51,7 @@ def get_adapter_names(self):
             adapter_names = set([self.adapter_names])
         else:
             adapter_names = self.adapter_names
-        for i in range(0, 100):
+        for i in range(0, 10000):
             result = f"default_{i}"
             if result not in adapter_names:
                 break
@@ -62,7 +62,9 @@ def get_delta_weight(
     self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
     w_up: torch.Tensor,
     w_down: torch.Tensor,
+    weight: float,
 ):
+
     if isinstance(self, (torch.nn.Linear, PatchedLoraProjection)):
         lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
     elif isinstance(self, torch.nn.Conv2d):
@@ -70,6 +72,8 @@ def get_delta_weight(
         lora_weight = lora_weight.reshape((self.weight.shape))
     else:
         raise TypeError
+    if weight != 1.0:
+        lora_weight *= weight
     return lora_weight
 
 
@@ -99,17 +103,20 @@ def _set_adapter(self, adapter_names, adapter_weights):
         if adapter not in self.adapter_names:
             continue
 
-        self.active_adapter_names.add(adapter)
+        self.active_adapter_names[adapter] = weight
         w_down = self.lora_A[adapter].float().to(device)
         w_up = self.lora_B[adapter].float().to(device)
         if delta_weight is None:
-            delta_weight = get_delta_weight(self, w_up, w_down) * (
-                weight / self.scaling[adapter]
+            delta_weight = get_delta_weight(
+                self, w_up, w_down, weight / self.scaling[adapter]
             )
         else:
-            delta_weight += get_delta_weight(self, w_up, w_down) * (
-                weight / self.scaling[adapter]
+            delta_weight += get_delta_weight(
+                self, w_up, w_down, weight / self.scaling[adapter]
             )
+        self.active_adapter_names[adapter] = weight
+
+    if delta_weight is not None:
         fused_weight = self.weight.data.float() + delta_weight
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
@@ -192,10 +199,10 @@ def fuse_lora(
     self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
     self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
     self.adapter_names.add(adapter_name)
-    self.active_adapter_names.add(adapter_name)
+    self.active_adapter_names[adapter_name] = 1.0
 
     if fuse:
-        lora_weight = get_delta_weight(self, w_up, w_down)
+        lora_weight = get_delta_weight(self, w_up, w_down, 1.0)
         fused_weight = self.weight.data.float() + lora_weight
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
@@ -222,17 +229,18 @@ def _unfuse_lora(
     for name in adapter_names:
         if name not in self.active_adapter_names:
             continue
+        weight = self.active_adapter_names[name]
         w_down = self.lora_A[name].to(device=device).float()
         w_up = self.lora_B[name].to(device).float()
         if delta_weight is None:
-            delta_weight = get_delta_weight(self, w_up, w_down).to(
+            delta_weight = get_delta_weight(self, w_up, w_down, weight).to(
                 dtype=dtype, device=device
             )
         else:
-            delta_weight += get_delta_weight(self, w_up, w_down).to(
+            delta_weight += get_delta_weight(self, w_up, w_down, weight).to(
                 dtype=dtype, device=device
             )
-        self.active_adapter_names.remove(name)
+        self.active_adapter_names.pop(name)
 
     if delta_weight is not None:
         self.weight.data -= delta_weight
