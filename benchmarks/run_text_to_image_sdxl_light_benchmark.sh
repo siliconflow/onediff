@@ -79,7 +79,7 @@ benchmark_sd_model_with_one_resolution() {
   host_mem_after=$(echo "${script_output}" | grep -oP '(?<=Host Mem after: )\d+\.\d+')
 
   if [[ ${cpkt_path} =~ lora ]] ; then
-    is_lora=Ture
+    is_lora=True
   else
     is_lora=False
   fi
