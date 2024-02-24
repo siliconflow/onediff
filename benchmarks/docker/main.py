@@ -23,22 +23,13 @@ def parse_args():
     formatted_datetime = datetime.now().strftime("%Y%m%d-%H%M")
 
     parser.add_argument(
-        "-y",
-        "--yaml",
-        type=str,
-        default="config/community-default.yaml",
+        "-y", "--yaml", type=str, default="config/community-default.yaml",
     )
     parser.add_argument(
-        "-i",
-        "--image",
-        type=str,
-        default="onediff",
+        "-i", "--image", type=str, default="onediff",
     )
     parser.add_argument(
-        "-t",
-        "--tag",
-        type=str,
-        default=f"benchmark",
+        "-t", "--tag", type=str, default=f"benchmark",
     )
     parser.add_argument(
         "-o",
@@ -48,17 +39,10 @@ def parse_args():
         help="the output directory of Dockerfile and Docker-compose file",
     )
     parser.add_argument(
-        "-c",
-        "--context",
-        type=str,
-        default=".",
-        help="the path to build context",
+        "-c", "--context", type=str, default=".", help="the path to build context",
     )
     parser.add_argument(
-        "-q",
-        "--quiet",
-        action="store_true",
-        help="quiet mode",
+        "-q", "--quiet", action="store_true", help="quiet mode",
     )
     args = parser.parse_args()
     return args
@@ -93,10 +77,7 @@ if __name__ == "__main__":
 
     envs = image_config.pop("envs", [])
     volumes = image_config.pop(
-        "volumes",
-        [
-            "$BENCHMARK_MODEL_PATH:/benchmark_model:ro",
-        ],
+        "volumes", ["$BENCHMARK_MODEL_PATH:/benchmark_model:ro",],
     )
     compose_file, run_command = gen_docker_compose_yaml(
         f"onediff-benchmark-{version}", image_name, envs, volumes, args.output

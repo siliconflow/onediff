@@ -13,9 +13,7 @@ from onediff.infer_compiler import oneflow_compile
 from diffusers import AutoPipelineForText2Image
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--base", type=str, default="stabilityai/sdxl-turbo"
-)
+parser.add_argument("--base", type=str, default="stabilityai/sdxl-turbo")
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
     "--prompt",
@@ -38,10 +36,7 @@ OUTPUT_TYPE = "pil"
 
 # SDXL turbo base: AutoPipelineForText2Image
 base = AutoPipelineForText2Image.from_pretrained(
-    args.base,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
 

@@ -11,41 +11,42 @@ OneDiff is **an out-of-the-box acceleration library for diffusion models**  (esp
 
 OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
-## Need help or communicate
+## News
+- :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
+- :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
+- :rocket:[InstantID can run 1.8x Faster with OneDiff](https://www.reddit.com/r/StableDiffusion/comments/1al19ek/instantid_can_run_18x_faster_with_onediff/)
+
+## Community & Support
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for business inquiry: contact@siliconflow.com
 - [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
 
-## Easy to use
-- Out-of-the-box acceleration for popular UIs/libs
-  - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
-  - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/examples)
-  - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
-  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
-- Acceleration for state-of-the-art Models
-  - [SDXL](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
-  - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_turbo.py)
-  - [SD 1.5/2.1](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image.py)
-  - [LoRA (and dynamic switching LoRA)](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_lora.py)
-  - [ControlNet](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_controlnet.py)
-  - [LCM](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_lcm_lora_sdxl.py)
-  - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/examples/image_to_video.py)
-  - [DeepCache](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_deep_cache_sdxl.py)
-- Ready for production
-  - [Support Multi-resolution input](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl.py)
-  - Compile and save the compiled result offline, then load it online for serving
-    - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_save_load.py)
-    - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/examples/text_to_image_sdxl_mp_load.py)
-
 ## State-of-the-art performance
 
 <img src="benchmarks/pics/240105_sdxl_e2e_a100.png" width="600" height="400">
 
-## OS and GPU support
-- Linux
-  - If you want to use OneDiff on Windows, please use it under WSL.
-- NVIDIA GPUs
+## Easy to use
+#### Out-of-the-box acceleration for popular UIs/libs
+  - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
+  - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples)
+  - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
+  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
+#### Acceleration for state-of-the-art Models
+  - [SDXL](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
+  - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_turbo.py)
+  - [SD 1.5/2.1](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image.py)
+  - [LoRA (and dynamic switching LoRA)](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_lora.py)
+  - [ControlNet](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_controlnet.py)
+  - [LCM](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_lcm_lora_sdxl.py)
+  - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/image_to_video.py)
+  - [DeepCache](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_deep_cache_sdxl.py)
+  - [InstantID](https://github.com/siliconflow/onediff/blob/main/benchmarks/instant_id.py)
+#### Ready for production
+  - [Support Multi-resolution input](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
+  - Compile and save the compiled result offline, then load it online for serving
+    - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
+    - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
 
 ## OneDiff Online Playground
 [Online Playground](https://github.com/siliconflow/onediff/wiki/OneDiff-Online-Playground)
@@ -71,6 +72,11 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
 | Technical Support for deployment    | High priority support       | Community           |
 | Get the latest technology/feature | Yes | |
+
+## OS and GPU support
+- Linux
+  - If you want to use OneDiff on Windows, please use it under WSL.
+- NVIDIA GPUs
 
 ## OneDiff Installation
 ### Install from source
@@ -142,6 +148,8 @@ python3 -m pip install --pre onediff
 git clone https://github.com/siliconflow/onediff.git
 cd onediff && python3 -m pip install -e .
 ```
+
+> **_NOTE:_** If you intend to utilize plugins for ComfyUI/StableDiffusion-WebUI, we highly recommend installing OneDiff from the source rather than PyPI. This is necessary as you'll need to manually copy (or create a soft link) for the relevant code into the extension folder of these UIs/Libs.
 
 #### 4. (Optional)Login huggingface-cli
 

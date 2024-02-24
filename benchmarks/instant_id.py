@@ -3,7 +3,7 @@ FACE_ANALYSIS_ROOT = None
 MODEL = "wangqixun/YamerMIX_v8"
 VARIANT = None
 CUSTOM_PIPELINE = None
-SCHEDULER = "EulerDiscreteScheduler"
+SCHEDULER = "EulerAncestralDiscreteScheduler"
 LORA = None
 CONTROLNET = "InstantX/InstantID"
 STEPS = 30
@@ -108,12 +108,7 @@ def load_pipe(
         model_name, torch_dtype=torch.float16, **extra_kwargs
     )
     if scheduler is not None:
-        scheduler_cls = getattr(
-            importlib.import_module("onediff.schedulers"), scheduler, None
-        )
-        if scheduler_cls is None:
-            print("No optimized scheduler found, use the plain one.")
-            scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
+        scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
@@ -182,12 +177,14 @@ def main():
         attention_processor_path = os.path.join(
             args.repo, "ip_adapter", "attention_processor.py"
         )
+
         with open(attention_processor_path, "r") as f:
             content = f.read()
 
-        with open(attention_processor_path, "w") as f:
+        if "__call__" in content:
             content = content.replace("__call__", "forward")
-            f.write(content)
+            with open(attention_processor_path, "w") as f:
+                f.write(content)
 
     sys.path.insert(0, args.repo)
 

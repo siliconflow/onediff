@@ -9,6 +9,7 @@ import torch
 
 prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
     parser.add_argument(
