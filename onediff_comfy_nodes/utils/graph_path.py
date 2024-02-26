@@ -15,7 +15,10 @@ def generate_short_sha256(string: str) -> str:
 
 
 def generate_graph_path(ckpt_name, model) -> Path:
-    input_dir = os.getenv("COMFYUI_ONEDIFF_SAVE_GRAPH_DIR", get_input_directory())
+    # get_save_graph_directory
+    default_dir = get_input_directory()
+    input_dir = os.getenv("COMFYUI_ONEDIFF_SAVE_GRAPH_DIR", default_dir)
+
     input_dir = Path(input_dir)
     graph_dir = input_dir / "graphs" / ckpt_name
 
