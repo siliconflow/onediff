@@ -163,8 +163,8 @@ python3 -m pip install huggingface_hub
 - run examples to check it works
 
   ```bash
+  cd onediff_diffusers_extensions
   python3 examples/text_to_image.py
-  python3 examples/text_to_image_dpmsolver.py
   ```
 
 - bump version in these files:
