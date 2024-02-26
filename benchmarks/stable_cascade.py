@@ -48,6 +48,7 @@ import inspect
 import argparse
 import time
 import json
+from contextlib import nullcontext
 import torch
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
@@ -200,9 +201,13 @@ def main():
         dtype=getattr(torch, args.prior_dtype),
     )
 
+    patch_oneflow_prior_fp16_overflow = nullcontext
     if prior_pipe.dtype == torch.float16:
+        if args.compiler == "oneflow":
+            from patch_stable_cascade_of import patch_oneflow_prior_fp16_overflow
         # Dynamic patching would fail with oneflow
         from patch_stable_cascade import patch_prior_fp16_overflow
+
         prior_pipe.prior = patch_prior_fp16_overflow(prior_pipe.prior)
 
     decoder_pipe = load_pipe(
@@ -226,6 +231,7 @@ def main():
         decoder_pipe = compile_pipe(decoder_pipe)
     elif args.compiler in ("compile", "compile-max-autotune"):
         from patch_stable_cascade import patch_torch_compile
+
         patch_torch_compile()
 
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
@@ -334,8 +340,7 @@ def main():
     if args.warmups > 0:
         print("Begin warmup")
         for _ in range(args.warmups):
-            from patch_stable_cascade_of import patch_oneflow_stable_cascade
-            with patch_oneflow_stable_cascade():
+            with patch_oneflow_prior_fp16_overflow():
                 prior_output = prior_pipe(**get_prior_kwarg_inputs())
             decoder_pipe(
                 image_embeddings=prior_output.image_embeddings.to(
@@ -366,7 +371,8 @@ def main():
         decoder_kwarg_inputs["callback"] = decoder_iter_profiler.callback_on_step_end
 
     prior_begin = time.time()
-    prior_output = prior_pipe(**prior_kwarg_inputs)
+    with patch_oneflow_prior_fp16_overflow():
+        prior_output = prior_pipe(**prior_kwarg_inputs)
     prior_end = time.time()
 
     decoder_begin = time.time()

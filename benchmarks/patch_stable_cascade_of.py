@@ -6,16 +6,24 @@ from packaging import version
 import importlib.metadata
 
 from onediff.infer_compiler.transform import transform_mgr
-diffusers_of = transform_mgr.transform_package("diffusers")
-StableCascadeUnet_OF_CLS = diffusers_of.pipelines.stable_cascade.modeling_stable_cascade_common.StableCascadeUnet
 
-ResBlockStageB = diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_diffnext.ResBlockStageB
+diffusers_of = transform_mgr.transform_package("diffusers")
+StableCascadeUnet_OF_CLS = (
+    diffusers_of.pipelines.stable_cascade.modeling_stable_cascade_common.StableCascadeUnet
+)
+
+ResBlockStageB = (
+    diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_diffnext.ResBlockStageB
+)
 # miniconda3/envs/oneflow_pro/lib/python3.10/site-packages/diffusers/pipelines/wuerstchen/modeling_wuerstchen_common.py
 AttnBlock = diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_common.AttnBlock
 # miniconda3/envs/oneflow_pro/lib/python3.10/site-packages/diffusers/pipelines/wuerstchen/modeling_wuerstchen_common.py
-TimestepBlock = diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_common.TimestepBlock
+TimestepBlock = (
+    diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_common.TimestepBlock
+)
 
 num_overflow_up_blocks = 1
+
 
 class StableCascadeUnet_OF(StableCascadeUnet_OF_CLS):
     def of_up_decode(self, level_outputs, r_embed, clip):
@@ -44,7 +52,7 @@ class StableCascadeUnet_OF(StableCascadeUnet_OF_CLS):
                             skip is not None
                             and i >= len(level_outputs) - num_overflow_up_blocks
                         ):
-                            skip = skip.to(torch.bfloat16)                    
+                            skip = skip.to(torch.bfloat16)
                         x = block(x, skip)
                     elif isinstance(block, AttnBlock):
                         x = block(x, clip)
@@ -56,9 +64,18 @@ class StableCascadeUnet_OF(StableCascadeUnet_OF_CLS):
                     x = repmap[j](x)
             x = upscaler(x)
         return x
-   
+
     def forward(
-        self, x, r, clip_text_pooled, clip_text=None, clip_img=None, effnet=None, pixels=None, sca=None, crp=None
+        self,
+        x,
+        r,
+        clip_text_pooled,
+        clip_text=None,
+        clip_img=None,
+        effnet=None,
+        pixels=None,
+        sca=None,
+        crp=None,
     ):
         if pixels is None:
             pixels = x.new_zeros(x.size(0), 3, 8, 8)
@@ -74,40 +91,45 @@ class StableCascadeUnet_OF(StableCascadeUnet_OF_CLS):
                 cond = None
             t_cond = cond or torch.zeros_like(r)
             r_embed = torch.cat([r_embed, self.gen_r_embedding(t_cond)], dim=1)
-        clip = self.gen_c_embeddings(clip_txt_pooled=clip_text_pooled, clip_txt=clip_text, clip_img=clip_img)
+        clip = self.gen_c_embeddings(
+            clip_txt_pooled=clip_text_pooled, clip_txt=clip_text, clip_img=clip_img
+        )
 
         # Model Blocks
         x = self.embedding(x)
         if hasattr(self, "effnet_mapper") and effnet is not None:
             x = x + self.effnet_mapper(
-                nn.functional.interpolate(effnet, size=x.shape[-2:], mode="bilinear", align_corners=True)
+                nn.functional.interpolate(
+                    effnet, size=x.shape[-2:], mode="bilinear", align_corners=True
+                )
             )
         if hasattr(self, "pixels_mapper"):
             x = x + nn.functional.interpolate(
-                self.pixels_mapper(pixels), size=x.shape[-2:], mode="bilinear", align_corners=True
+                self.pixels_mapper(pixels),
+                size=x.shape[-2:],
+                mode="bilinear",
+                align_corners=True,
             )
         level_outputs = self._down_encode(x, r_embed, clip)
         x = self.of_up_decode(level_outputs, r_embed, clip)
 
-        
         return self.clf(x).to(torch.float16)
-       
-
 
 
 # diffusers.pipelines.stable_cascade.modeling_stable_cascade_common.StableCascadeUnet
-from diffusers.pipelines.stable_cascade.modeling_stable_cascade_common import StableCascadeUnet
+from diffusers.pipelines.stable_cascade.modeling_stable_cascade_common import (
+    StableCascadeUnet,
+)
+
 # torch2oflow_class_map.update({StableCascadeUnet: StableCascadeUnetOflow})
 from onediff.infer_compiler.transform import register
 from contextlib import contextmanager
+
+
 @contextmanager
-def patch_oneflow_stable_cascade():
-    torch2oflow_class_map = {
-        StableCascadeUnet: StableCascadeUnet_OF
-    }
+def patch_oneflow_prior_fp16_overflow():
+    torch2oflow_class_map = {StableCascadeUnet: StableCascadeUnet_OF}
     register(torch2oflow_class_map=torch2oflow_class_map)
     yield
-    torch2oflow_class_map = {
-        StableCascadeUnet: StableCascadeUnet_OF_CLS
-    }
+    torch2oflow_class_map = {StableCascadeUnet: StableCascadeUnet_OF_CLS}
     register(torch2oflow_class_map=torch2oflow_class_map)
