@@ -64,7 +64,9 @@ def patch_prior_fp16_overflow(prior, num_overflow_up_blocks=1):
 
     return prior
 
+
 original_pixel_shuffle = torch.nn.functional.pixel_shuffle
+
 
 def pixel_shuffle(input, upscale_factor):
     # https://blog.csdn.net/ONE_SIX_MIX/article/details/103757856
