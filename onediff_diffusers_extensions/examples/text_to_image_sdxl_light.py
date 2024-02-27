@@ -5,9 +5,7 @@ import time
 import torch
 from safetensors.torch import load_file
 from diffusers import StableDiffusionXLPipeline
-from onediffx import compile_pipe, compiler_config
-from onediffx.compilers.diffusion_pipeline_compiler import recursive_getattr
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediffx import compile_pipe, compiler_config, save_pipe, load_pipe
 from onediff.infer_compiler.utils.log_utils import logger
 from huggingface_hub import hf_hub_download
 
@@ -41,72 +39,6 @@ parser.add_argument(
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
     default=True,
 )
-
-PARTS = [
-    "text_encoder",
-    "text_encoder_2",
-    "image_encoder",
-    "unet",
-    "controlnet",
-    "fast_unet",  # for deepcache
-    "vae.decoder",
-    "vae.encoder",
-]
-
-def save_pipe(
-    pipe, dst_dir="cached_pipe", *, ignores=(),
-):
-    if not os.path.exists(dst_dir):
-        os.makedirs(dst_dir)
-    filtered_parts = []
-    for part in PARTS:
-        skip = False
-        for ignore in ignores:
-            if part == ignore or part.startswith(ignore + "."):
-                skip = True
-                break
-        if not skip:
-            filtered_parts.append(part)
-    for part in filtered_parts:
-        obj = recursive_getattr(pipe, part, None)
-        if (
-            obj is not None
-            and isinstance(obj, DeployableModule)
-            and obj._deployable_module_dpl_graph is not None
-            and obj.get_graph().is_compiled
-        ):
-            logger.info(f"Saving {part}")
-            obj.save_graph(os.path.join(dst_dir, part))
-
-
-def load_pipe(
-    pipe, src_dir="cached_pipe", *, ignores=(),
-):
-    if not os.path.exists(src_dir):
-        return
-    filtered_parts = []
-    for part in PARTS:
-        skip = False
-        for ignore in ignores:
-            if part == ignore or part.startswith(ignore + "."):
-                skip = True
-                break
-        if not skip:
-            filtered_parts.append(part)
-    for part in filtered_parts:
-        obj = recursive_getattr(pipe, part, None)
-        if obj is not None and os.path.exists(os.path.join(src_dir, part)):
-            logger.info(f"Loading {part}")
-            obj.load_graph(os.path.join(src_dir, part))
-
-    if "image_processor" not in ignores:
-        logger.info("Patching image_processor")
-
-        from onediffx.utils.patch_image_processor import (
-            patch_image_prcessor as patch_image_prcessor_,
-        )
-
-        patch_image_prcessor_(pipe.image_processor)
 
 
 args = parser.parse_args()
