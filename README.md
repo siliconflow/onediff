@@ -19,7 +19,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ## Community & Support
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
-- Email for business inquiry: contact@siliconflow.com
+- Email for Enterprise Edition or other business inquiries: contact@siliconflow.com
 - [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
 
 ## State-of-the-art performance
