@@ -159,7 +159,7 @@ if pipe.vae.dtype == torch.float16 and pipe.vae.config.force_upcast:
 if args.compile:
     pipe = compile_pipe(pipe,)
     if args.load_graph:
-        print("Loading pipeline...")
+        print("Loading graphs...")
         load_pipe(pipe, args.load_graph_dir)
 
 print("Warmup with running graphs...")
@@ -193,5 +193,5 @@ print(f"e2e ({n_steps} steps) elapsed: {end_t - start_t} s")
 image[0].save(args.saved_image)
 
 if args.save_graph:
-    print("Saving pipeline...")
+    print("Saving graphs...")
     save_pipe(pipe, args.save_graph_dir)
