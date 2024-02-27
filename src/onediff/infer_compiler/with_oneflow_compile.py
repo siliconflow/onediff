@@ -15,6 +15,22 @@ from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
 from .utils.param_utils import parse_device, check_device
 from .utils.graph_management_utils import graph_file_management
+from .utils.module_operations import get_sub_module
+
+
+def synchronize_models(torch_module, oneflow_module):
+    # issue: https://github.com/siliconflow/onediff/issues/675
+    def set_attr(model_of):
+        def __setattr__(self, name, value):
+            setattr(model_of, name, value)
+            super(type(self), self).__setattr__(name, value)
+
+        return __setattr__
+
+    torch_module.__class__.__setattr__ = set_attr(oneflow_module)
+    for name, model in torch_module.named_children():
+        model_of = get_sub_module(oneflow_module, name)
+        model.__class__.__setattr__ = set_attr(model_of)
 
 
 class DualModule(torch.nn.Module):
@@ -34,6 +50,7 @@ class DualModule(torch.nn.Module):
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
         logger.debug(f"Convert {type(self._torch_module)} done!")
+        synchronize_models(self._torch_module, self._oneflow_module)
         return self._oneflow_module
 
     @oneflow_module.deleter
