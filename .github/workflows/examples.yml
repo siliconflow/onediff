@@ -217,9 +217,7 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile_unet False --height 512 --width 512 --run_multiple_resolutions True
       - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_light.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --repo /share_nfs/hf_models/SDXL-Lightning --cpkt sdxl_lightning_4step_unet.safetensors
-      - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions -e HF_HUB_OFFLINE=0 ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_light.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --repo /share_nfs/hf_models/SDXL-Lightning --cpkt sdxl_lightning_4step_lora.safetensors
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_controlnet.py --base=/share_nfs/hf_models/stable-diffusion-v1-5 --controlnet=/share_nfs/hf_models/sd-controlnet-canny --input_image=/share_nfs/hf_models/input_image_vermeer.png
       - if: matrix.test-suite == 'diffusers_examples'
