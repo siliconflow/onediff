@@ -71,7 +71,9 @@ def load_lora_into_text_encoder(
 
     if hasattr(text_encoder, "adapter_names"):
         if adapter_name in text_encoder.adapter_names:
-            raise ValueError(f"[OneDiffX load_lora_into_text_encoder] The adapter name {adapter_name} already exists in text_encoder")
+            raise ValueError(
+                f"[OneDiffX load_lora_into_text_encoder] The adapter name {adapter_name} already exists in text_encoder"
+            )
         else:
             text_encoder.adapter_name.add(adapter_name)
             text_encoder.active_adapter_name[adapter_name] = 1.0

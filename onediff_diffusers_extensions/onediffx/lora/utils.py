@@ -93,7 +93,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
     if not hasattr(self, "adapter_names"):
         return
     if adapter_weights is None:
-        adapter_weights = [1.0] * len(adapter_names)
+        adapter_weights = 1.0
+    if isinstance(adapter_weights, float):
+        adapter_weights = [adapter_weights,] * len(adapter_names)
     _unfuse_lora(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device
@@ -128,7 +130,7 @@ def _delete_adapter(self, adapter_names):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
         return
-    _unfuse_lora(self)
+    _unfuse_lora(self, adapter_names=adapter_names)
     delete_lora_infos(self, adapter_names)
 
 

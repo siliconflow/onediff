@@ -34,7 +34,7 @@ def load_and_fuse_lora(
     adapter_name: Optional[str] = None,
     *,
     lora_scale: float = 1.0,
-    offload_device="cpu",
+    offload_device="cuda",
     use_cache=False,
     **kwargs,
 ) -> None:
@@ -145,8 +145,7 @@ def set_adapters(
         pipeline.text_encoder_2.apply(set_adapters_apply)
 
 
-def delete_adapter(self, adapter_name: str) -> None:
-    adapter_names = adapter_name
+def delete_adapters(self, adapter_names: Union[List[str], str]):
     if isinstance(adapter_names, str):
         adapter_names = [adapter_names]
 
