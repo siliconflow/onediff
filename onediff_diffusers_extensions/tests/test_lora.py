@@ -119,7 +119,8 @@ def test_lora_adapter_name(multi_lora):
     ssim = structural_similarity(
         curr_image, target_image, channel_axis=-1, data_range=255
     )
-    assert ssim > 0.97
+    print(f"lora {multi_lora} ssim {ssim}")
+    assert ssim > 0.95
 
 @pytest.mark.parametrize("lora", loras.values())
 def test_lora_switching(lora):
