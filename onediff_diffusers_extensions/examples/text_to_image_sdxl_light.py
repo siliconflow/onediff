@@ -5,7 +5,7 @@ import time
 import torch
 from safetensors.torch import load_file
 from diffusers import StableDiffusionXLPipeline
-from onediffx import compile_pipe, compiler_config
+from onediffx import compile_pipe, compiler_config, save_pipe, load_pipe
 from huggingface_hub import hf_hub_download
 
 parser = argparse.ArgumentParser()
@@ -25,6 +25,10 @@ parser.add_argument(
     # default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
     default="A girl smiling",
 )
+parser.add_argument("--save_graph", action="store_true")
+parser.add_argument("--load_graph", action="store_true")
+parser.add_argument("--save_graph_dir", type=str, default="cached_pipe")
+parser.add_argument("--load_graph_dir", type=str, default="cached_pipe")
 parser.add_argument("--height", type=int, default=1024)
 parser.add_argument("--width", type=int, default=1024)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-light-out.png")
@@ -34,6 +38,8 @@ parser.add_argument(
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
     default=True,
 )
+
+
 args = parser.parse_args()
 
 OUTPUT_TYPE = "pil"
@@ -77,9 +83,15 @@ pipe.scheduler = EulerDiscreteScheduler.from_config(
     timestep_spacing="trailing"
 )
 
+if pipe.vae.dtype == torch.float16 and pipe.vae.config.force_upcast:
+    pipe.upcast_vae()
+
 # Compile the pipeline
 if args.compile:
     pipe = compile_pipe(pipe,)
+    if args.load_graph:
+        print("Loading graphs...")
+        load_pipe(pipe, args.load_graph_dir)
 
 print("Warmup with running graphs...")
 torch.manual_seed(args.seed)
@@ -110,3 +122,7 @@ end_t = time.time()
 print(f"e2e ({n_steps} steps) elapsed: {end_t - start_t} s")
 
 image[0].save(args.saved_image)
+
+if args.save_graph:
+    print("Saving graphs...")
+    save_pipe(pipe, args.save_graph_dir)
