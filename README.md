@@ -27,12 +27,12 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 <img src="benchmarks/pics/240105_sdxl_e2e_a100.png" width="600" height="400">
 
 ## Easy to use
-- Out-of-the-box acceleration for popular UIs/libs
+#### Out-of-the-box acceleration for popular UIs/libs
   - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples)
   - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
   - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
-- Acceleration for state-of-the-art Models
+#### Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
   - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_turbo.py)
   - [SD 1.5/2.1](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image.py)
@@ -42,7 +42,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/image_to_video.py)
   - [DeepCache](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_deep_cache_sdxl.py)
   - [InstantID](https://github.com/siliconflow/onediff/blob/main/benchmarks/instant_id.py)
-- Ready for production
+#### Ready for production
   - [Support Multi-resolution input](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
   - Compile and save the compiled result offline, then load it online for serving
     - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
@@ -163,8 +163,8 @@ python3 -m pip install huggingface_hub
 - run examples to check it works
 
   ```bash
+  cd onediff_diffusers_extensions
   python3 examples/text_to_image.py
-  python3 examples/text_to_image_dpmsolver.py
   ```
 
 - bump version in these files:

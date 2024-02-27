@@ -12,10 +12,15 @@ from diffusers.models.attention_processor import (
     AttnProcessor2_0,
 )
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
-from diffusers.models.unet_2d_condition import UNet2DConditionModel
-from diffusers.models.unet_2d_blocks import AttnUpBlock2D, CrossAttnUpBlock2D, UpBlock2D
-from diffusers.models.resnet import Upsample2D
-from diffusers.models.transformer_2d import Transformer2DModel
+
+if diffusers_version < version.parse("0.26.00"):
+    from diffusers.models.unet_2d_condition import UNet2DConditionModel
+    from diffusers.models.unet_2d_blocks import AttnUpBlock2D, CrossAttnUpBlock2D, UpBlock2D
+    from diffusers.models.transformer_2d import Transformer2DModel
+else:
+    from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel
+    from diffusers.models.unets.unet_2d_blocks import AttnUpBlock2D, CrossAttnUpBlock2D, UpBlock2D
+    from diffusers.models.transformers.transformer_2d import Transformer2DModel
 
 if diffusers_version >= version.parse("0.25.00"):
     from diffusers.models.upsampling import Upsample2D
