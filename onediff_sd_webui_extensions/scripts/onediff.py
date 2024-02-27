@@ -115,7 +115,7 @@ class Script(scripts.Script):
         return [ret]
 
     def show(self, is_img2img):
-        return not is_img2img
+        return True
 
     def run(self, p, quantization=False):
         global compiled_unet, compiled_ckpt_name
