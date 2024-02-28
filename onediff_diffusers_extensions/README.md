@@ -55,7 +55,6 @@ pipe.to("cuda")
 pipe = compile_pipe(pipe)
 
 save_pipe(pipe, dst_dir="cached_pipe")
-
 ```
 
 ### Load compiled pipeline with `load_pipe`
@@ -73,7 +72,6 @@ pipe.to("cuda")
 pipe = compile_pipe(pipe)
 
 load_pipe(pipe, src_dir="cached_pipe")
-
 ```
 
 ## DeepCache speedup
