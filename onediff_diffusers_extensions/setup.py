@@ -12,7 +12,7 @@ setup(
     python_requires=">=3.7.0",
     install_requires=[
         "transformers>=4.27.1",
-        "diffusers>=0.24.0,<=0.25.1",
+        "diffusers>=0.24.0,<=0.26.2",
         "accelerate",
         "torch",
         "onefx",
