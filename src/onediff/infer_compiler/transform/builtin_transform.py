@@ -15,7 +15,7 @@ from .manager import transform_mgr
 from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
-from functools import singledispatch
+from ..utils.basic_type_proxy import basic_type_proxy
 
 __all__ = [
     "proxy_class",
@@ -419,7 +419,7 @@ def _(mod: set, verbose=False) -> set:
 @torch2oflow.register(str)
 @torch2oflow.register(bool)
 def _(mod, verbose=False) -> Union[int, float, str, bool]:
-    return mod
+    return basic_type_proxy(mod)
 
 
 @torch2oflow.register

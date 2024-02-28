@@ -20,17 +20,24 @@ from .utils.module_operations import get_sub_module
 
 def synchronize_models(torch_module, oneflow_module):
     # issue: https://github.com/siliconflow/onediff/issues/675
-    def set_attr(model_of):
+    def set_attr(torch_cls, model_of):
         def __setattr__(self, name, value):
-            setattr(model_of, name, value)
-            super(type(self), self).__setattr__(name, value)
+            v = torch2oflow(value)
+            if isinstance(v, (flow.Tensor, int, float, str)):
+                obj = getattr(model_of, name)
+                obj.copy_(v)
+            else:
+                setattr(model_of, name, v)
+            super(torch_cls, self).__setattr__(name, value)
 
         return __setattr__
 
-    torch_module.__class__.__setattr__ = set_attr(oneflow_module)
-    for name, model in torch_module.named_children():
+    torch_module_cls = torch_module.__class__
+    torch_module_cls.__setattr__ = set_attr(torch_module_cls, oneflow_module)
+    for name, sub_module in torch_module.named_children():
         model_of = get_sub_module(oneflow_module, name)
-        model.__class__.__setattr__ = set_attr(model_of)
+        torch_module_cls = sub_module.__class__
+        torch_module_cls.__setattr__ = set_attr(torch_module_cls, model_of)
 
 
 class DualModule(torch.nn.Module):
@@ -120,13 +127,13 @@ class DualModule(torch.nn.Module):
         if name in ["_torch_module", "_oneflow_module"]:
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
-            if self._oneflow_module is not None:
-                v = torch2oflow(value)
-                if isinstance(v, flow.Tensor):
-                    obj = getattr(self._oneflow_module, name)
-                    obj.copy_(v)
-                else:
-                    setattr(self._oneflow_module, name, v)
+            # if self._oneflow_module is not None:
+            #     v = torch2oflow(value)
+            #     if isinstance(v, flow.Tensor):
+            #         obj = getattr(self._oneflow_module, name)
+            #         obj.copy_(v)
+            #     else:
+            #         setattr(self._oneflow_module, name, v)
             setattr(self._torch_module, name, value)
 
     def extra_repr(self) -> str:
@@ -155,7 +162,7 @@ class DualModuleList(torch.nn.ModuleList):
     def __setitem__(self, idx: int, module: DualModule):
         idx = self._get_abs_string_index(idx)
         setattr(self._torch_modules, str(idx), module._torch_module)
-        setattr(self._oneflow_modules, str(idx), module._oneflow_module)
+        # setattr(self._oneflow_modules, str(idx), module._oneflow_module)
         return setattr(self, str(idx), module)
 
     def __setattr__(self, key, value):
@@ -163,11 +170,11 @@ class DualModuleList(torch.nn.ModuleList):
             return object.__setattr__(self, key, value)
         if isinstance(value, DualModule):
             setattr(self._torch_modules, key, value._torch_module)
-            setattr(self._oneflow_modules, key, value._oneflow_module)
+            # setattr(self._oneflow_modules, key, value._oneflow_module)
         else:
             setattr(self._torch_modules, key, value)
-            value = torch2oflow(value)
-            setattr(self._oneflow_modules, key, value)
+            # value = torch2oflow(value)
+            # setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
 
 
