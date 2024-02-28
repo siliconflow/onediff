@@ -56,8 +56,8 @@ pipe = compile_pipe(pipe)
 
 save_pipe(pipe, dst_dir="cached_pipe")
 
-
 ```
+
 ### Load compiled pipeline with `load_pipe`
 ```python
 from diffusers import StableDiffusionXLPipeline
