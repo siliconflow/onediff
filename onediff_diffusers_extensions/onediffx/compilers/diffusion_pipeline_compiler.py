@@ -67,7 +67,7 @@ def compile_pipe(
 
 
 def save_pipe(
-    pipe, dst_dir="cached_pipe", *, ignores=(), overwrite=True
+    pipe, dir="cached_pipe", *, ignores=(), overwrite=True
 ):
     if not os.path.exists(dst_dir):
         os.makedirs(dst_dir)
@@ -88,7 +88,7 @@ def save_pipe(
 
 
 def load_pipe(
-    pipe, src_dir="cached_pipe", *, ignores=(),
+    pipe, dir="cached_pipe", *, ignores=(),
 ):
     if not os.path.exists(src_dir):
         return
