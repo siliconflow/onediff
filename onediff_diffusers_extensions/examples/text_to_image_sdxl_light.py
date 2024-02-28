@@ -12,12 +12,8 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
 )
-parser.add_argument(
-    "--repo", type=str, default="ByteDance/SDXL-Lightning"
-)
-parser.add_argument(
-    "--cpkt", type=str, default="sdxl_lightning_4step_unet.safetensors"
-)
+parser.add_argument("--repo", type=str, default="ByteDance/SDXL-Lightning")
+parser.add_argument("--cpkt", type=str, default="sdxl_lightning_4step_unet.safetensors")
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
     "--prompt",
@@ -31,12 +27,12 @@ parser.add_argument("--save_graph_dir", type=str, default="cached_pipe")
 parser.add_argument("--load_graph_dir", type=str, default="cached_pipe")
 parser.add_argument("--height", type=int, default=1024)
 parser.add_argument("--width", type=int, default=1024)
-parser.add_argument("--saved_image", type=str, required=False, default="sdxl-light-out.png")
+parser.add_argument(
+    "--saved_image", type=str, required=False, default="sdxl-light-out.png"
+)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
-    "--compile",
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=True,
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True,
 )
 
 
@@ -52,12 +48,10 @@ if args.compile:
     from onediff.schedulers import EulerDiscreteScheduler
 else:
     from diffusers import EulerDiscreteScheduler
- 
+
 if is_lora_cpkt:
     pipe = StableDiffusionXLPipeline.from_pretrained(
-        args.base,
-        torch_dtype=torch.float16,
-        variant="fp16"
+        args.base, torch_dtype=torch.float16, variant="fp16"
     ).to("cuda")
     if os.path.isfile(os.path.join(args.repo, args.cpkt)):
         pipe.load_lora_weights(os.path.join(args.repo, args.cpkt))
@@ -66,21 +60,24 @@ if is_lora_cpkt:
     pipe.fuse_lora()
 else:
     from diffusers import UNet2DConditionModel
-    unet = UNet2DConditionModel.from_config(args.base, subfolder="unet").to("cuda", torch.float16)
+
+    unet = UNet2DConditionModel.from_config(args.base, subfolder="unet").to(
+        "cuda", torch.float16
+    )
     if os.path.isfile(os.path.join(args.repo, args.cpkt)):
-        unet.load_state_dict(load_file(os.path.join(args.repo, args.cpkt), device="cuda"))
+        unet.load_state_dict(
+            load_file(os.path.join(args.repo, args.cpkt), device="cuda")
+        )
     else:
-        unet.load_state_dict(load_file(hf_hub_download(args.repo, args.cpkt), device="cuda")) 
+        unet.load_state_dict(
+            load_file(hf_hub_download(args.repo, args.cpkt), device="cuda")
+        )
     pipe = StableDiffusionXLPipeline.from_pretrained(
-        args.base,
-        unet=unet,
-        torch_dtype=torch.float16,
-        variant="fp16"
+        args.base, unet=unet, torch_dtype=torch.float16, variant="fp16"
     ).to("cuda")
 
 pipe.scheduler = EulerDiscreteScheduler.from_config(
-    pipe.scheduler.config,
-    timestep_spacing="trailing"
+    pipe.scheduler.config, timestep_spacing="trailing"
 )
 
 if pipe.vae.dtype == torch.float16 and pipe.vae.config.force_upcast:
