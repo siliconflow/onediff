@@ -26,7 +26,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ### SDXL
 - Model stabilityai/stable-diffusion-xl-base-1.0;
 - Image size 1024*1024, batch size 1, steps 30;
-- NVIDIA A100 80G SXM;
+- NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_sdxl.png" height="400">
 
