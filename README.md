@@ -23,8 +23,19 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 - [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
 
 ## State-of-the-art performance
+### SDXL
+- Model stabilityai/stable-diffusion-xl-base-1.0;
+- Image size 1024*1024, batch size 1, steps 30;
+- NVIDIA A100 80G SXM 
 
-<img src="benchmarks/pics/240105_sdxl_e2e_a100.png" width="600" height="400">
+<img src="imgs/0_12_sdxl.png" height="400">
+
+### SVD
+- Model stabilityai/stable-video-diffusion-img2vid-xt;
+- Image size 576*1024, batch size 1, steps 25, decoder chunk size 5;
+- NVIDIA A100 80G SXM;
+
+<img src="imgs/0_12_svd.png" height="400">
 
 ## Easy to use
 #### Out-of-the-box acceleration for popular UIs/libs
