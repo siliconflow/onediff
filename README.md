@@ -33,7 +33,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ### SVD
 - Model stabilityai/stable-video-diffusion-img2vid-xt;
 - Image size 576*1024, batch size 1, steps 25, decoder chunk size 5;
-- NVIDIA A100 80G SXM;
+- NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_svd.png" height="400">
 
