@@ -176,7 +176,7 @@ def load_and_fuse_lora(
 
         for key, value_dict in lora_grouped_dict.items():
             if isinstance(self.unet, DeployableModule):
-                attn_processor = self.unet._torch_module
+                attn_processor = self.unet
             else:
                 attn_processor = self.unet
             for sub_key in key.split("."):
