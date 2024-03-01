@@ -12,7 +12,7 @@ from ..infer_compiler.utils.module_operations import modify_sub_module
 from ..infer_compiler.transform.manager import transform_mgr
 
 
-__all__ = ["quantize_model", "varify_can_use_quantization"]
+__all__ = ["quantize_model", "unquantize_model", "varify_can_use_quantization"]
 
 
 def varify_can_use_quantization():
@@ -89,7 +89,6 @@ def quantize_model(
                 static=False,
                 nbits=bits,
             )
-
             modify_sub_module(model, sub_module_name, sub_mod)
 
     if quantize_conv:
@@ -109,4 +108,29 @@ def quantize_model(
         + f"Time: {time.time() - start_time:.4f}s \n"
     )
 
+    return model
+
+def unquantize_model(
+    model,
+):
+    from onediff_quant.utils import  symm_dequantize_sub_module, find_quantizable_modules
+    from onediff_quant.utils import  get_dequantize_module
+    from onediff_quant.models import QuantModuleBase
+
+    if varify_can_use_quantization() is False:
+        return model
+
+    def apply_quantization_to_modules(quantizable_modules):
+        for sub_module_name, sub_mod in quantizable_modules.items():
+            scale = torch.tensor(sub_mod.weight_scale, device=sub_mod.weight.device)
+            symm_dequantize_sub_module(model, sub_module_name, scale)
+
+            sub_mod = get_dequantize_module(sub_mod)
+            modify_sub_module(model, sub_module_name, sub_mod)
+
+    quantized_modules = find_quantizable_modules(
+        model, 
+        module_cls=[QuantModuleBase]
+    )
+    apply_quantization_to_modules(quantized_modules)
     return model
