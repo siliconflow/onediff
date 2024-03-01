@@ -30,12 +30,16 @@ class ParameterUpdateController:
             return
         self._synced = True
 
-        def _sync_torch_to_oneflow(model_pt, model_of):
+        def _sync_torch_to_oneflow(model_pt, model_of, sub_module_name=""):
             org_setattr = model_pt.__class__.__setattr__
             def new_setattr(ins, name, value):
-                nonlocal org_setattr
+                nonlocal org_setattr, sub_module_name, self
                 try:
-                    print(f"Set {type(model_of)}.{name} = {type(value)}")
+                    org_model_pt = get_sub_module(self.dual_module._torch_module, sub_module_name)
+                    logger.error(f"Original set {(org_model_pt is ins)=}")
+                    if org_model_pt is not ins:
+                        import pdb; pdb.set_trace()
+                    
                     v = torch2oflow(value)
                     if isinstance(v, flow.Tensor):
                         obj = getattr(model_of, name)
@@ -44,6 +48,7 @@ class ParameterUpdateController:
                         if isinstance(v, (int, float, bool)) and model_of.__dict__[name] != v:
                             logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{name} = {type(v)}")
                         model_of.__dict__[name] = v
+
                         # TODO fix the graph cache issue
                         # if self.dual_module._deployable_module_use_graph:
                         #     self.dual_module.clear_graph_cache()
@@ -51,7 +56,8 @@ class ParameterUpdateController:
                         #     graph_file = compiled_options.get("graph_file", None)
                         #     if graph_file is not None:
                         #         # Update the graph file name to avoid the conflict 
-                        #         compiled_options['graph_file'] = f'{name}-{value}_{graph_file}'     
+                        #         compiled_options['graph_file'] = f'{name}-{value}_{graph_file}'
+                        import pdb; pdb.set_trace()     
                 except Exception as e:
                     print(f'Error: {e}')
 
@@ -67,7 +73,7 @@ class ParameterUpdateController:
         _sync_torch_to_oneflow(torch_model, oneflow_model)
         for name, model in torch_model.named_children():
             model_of = get_sub_module(oneflow_model, name)
-            _sync_torch_to_oneflow(model, model_of)
+            _sync_torch_to_oneflow(model, model_of, name)
        
     def disable_sync(self):
         if not self._synced or self.dual_module._oneflow_module is None:
@@ -201,7 +207,6 @@ class DualModule(OneFlowCompiledModel):
             else:
                 self._torch_module.to(*args, **kwargs)
 
-    
     def to(self, *args, **kwargs):
         if self._deployable_module_dpl_graph is None:
             self._to(*args, **kwargs)
