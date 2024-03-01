@@ -145,6 +145,7 @@ While there is an example demonstrating OpenPose ControlNet, it's important to n
 [ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
 
 ### SVD
+> doc link: [SVD](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/SVD)
 
 This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD.
 
