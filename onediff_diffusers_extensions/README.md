@@ -342,7 +342,12 @@ We tested the performance of `set_adapters`, still using the five LoRA models me
         pipe.unet = oneflow_compile(pipe.unet)
         ...
         ```
-    
+### Optimization
+- When not using the PEFT backend, diffusers will replace the module corresponding to LoRA with the LoRACompatible module, incurring additional parameter initialization time overhead. In OneDiffX, the LoRA parameters are directly fused into the model, bypassing the step of replacing the module, thereby reducing the time overhead.
+
+- When using the PEFT backend, PEFT will also replace the module corresponding to LoRA with the corresponding BaseTunerLayer. Similar to diffusers, this increases the time overhead. OneDiffX also bypasses this step by directly operating on the original model.
+
+- While traversing the submodules of the model, we observed that the `getattr` time overhead of OneDiff's `DeployableModule` is high. Because the parameters of DeployableModule share the same address as the PyTorch module it wraps, we choose to traverse `DeployableModule._torch_module`, greatly improving traversal efficiency.
 
 ## Quantization
 
