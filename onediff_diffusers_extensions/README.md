@@ -4,6 +4,16 @@ OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration 
 
 - [Install and Setup](#install-and-setup)
 - [Compile, save and load pipeline](#compile-save-and-load-pipeline)
+- Acceleration for state-of-the-art Models
+  - [SDXL](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
+  - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_turbo.py)
+  - [SD 1.5/2.1](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image.py)
+  - [LoRA (and dynamic switching LoRA)](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_lora.py)
+  - [ControlNet](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_controlnet.py)
+  - [LCM](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_lcm.py) and [LCM LoRA](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_lcm_lora_sdxl.py)
+  - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/image_to_video.py)
+  - [DeepCache](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_deep_cache_sdxl.py)
+  - [InstantID](https://github.com/siliconflow/onediff/blob/main/benchmarks/instant_id.py)
 - [DeepCache Speedup](#deepcache-speedup)
     - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediffx)
     - [Stable Diffusion 1.5](#run-stable-diffusion-15-with-onediffx)
