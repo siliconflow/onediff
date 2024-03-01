@@ -178,7 +178,7 @@ jobs:
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
-          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --port 8188 > /app/ComfyUI/onediff_comfyui.log 2>&1"
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
