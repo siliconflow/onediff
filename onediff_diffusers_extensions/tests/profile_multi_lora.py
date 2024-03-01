@@ -9,7 +9,7 @@ from diffusers.utils.constants import USE_PEFT_BACKEND
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.utils import TensorInplaceAssign
-from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_adapters
+from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters
 
 if not USE_PEFT_BACKEND:
     raise RuntimeError("The profile if for PEFT APIs, please make sure you have installed peft>=0.6.0 and transformers >= 4.34.0")
@@ -66,7 +66,7 @@ for lora in loras:
 set_adapter_time = []
 for i, multi_lora in enumerate(multi_loras):
     with TimerContextManager("set_adapter", multi_lora):
-        set_adapters(pipe, multi_lora, [0.5] * len(multi_lora))
+        set_and_fuse_adapters(pipe, multi_lora, [0.5] * len(multi_lora))
         unfuse_lora(pipe)
     set_adapter_time.append(_time)
 

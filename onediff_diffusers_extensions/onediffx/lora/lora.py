@@ -122,7 +122,7 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
         pipeline.text_encoder_2.apply(_unfuse_lora_apply)
 
 
-def set_adapters(
+def set_and_fuse_adapters(
     pipeline: LoraLoaderMixin,
     adapter_names: Union[List[str], str],
     adapter_weights: Optional[List[float]] = None,

@@ -12,7 +12,7 @@ from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
-from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_adapters
+from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters
 
 HEIGHT = 1024
 WIDTH = 1024
@@ -101,7 +101,7 @@ for name, lora in loras.items():
 
 @pytest.mark.parametrize("multi_lora", multi_loras)
 def test_lora_adapter_name(multi_lora):
-    set_adapters(pipe, multi_lora, [0.5, ] * len(multi_lora))
+    set_and_fuse_adapters(pipe, multi_lora, [0.5, ] * len(multi_lora))
     images_fusion = pipe(
         "a cat",
         generator=torch.manual_seed(0),

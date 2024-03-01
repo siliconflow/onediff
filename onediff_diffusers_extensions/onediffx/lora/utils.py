@@ -1,3 +1,4 @@
+import os
 from typing import Dict, Union, List
 from packaging import version
 from collections import OrderedDict
@@ -71,7 +72,7 @@ def get_delta_weight(
         lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
         lora_weight = lora_weight.reshape((self.weight.shape))
     else:
-        raise TypeError
+        raise TypeError(f"[OneDiffX get_delta_weight] Expect type Linear or Conv2d, got {type(self)}")
     if weight != 1.0:
         lora_weight *= weight
     return lora_weight
@@ -87,7 +88,7 @@ def offload_tensor(tensor, device):
 
 def _set_adapter(self, adapter_names, adapter_weights):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
-        raise
+        raise TypeError(f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}")
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
@@ -125,7 +126,7 @@ def _set_adapter(self, adapter_names, adapter_weights):
 
 def _delete_adapter(self, adapter_names):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
-        raise
+        raise TypeError(f"[OneDiffX _delete_adapter] Expect type Linear or Conv2d, got {type(self)}")
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
