@@ -7,20 +7,27 @@
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
-OneDiff is **an out-of-the-box acceleration library for diffusion models**  (especially for HF diffusers, ComfyUI, and Stable Diffusion web UI).
-
 OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
+
+OneDiff is a Python package that provides two high-level features:
+- PyTorch Module compilation tools and strong optimized GPU Kernels for diffusion models
+- Out-of-the-box acceleration for popular UIs/libs
+  - [OneDiff for HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions)
+  - [OneDiff for ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
+  - [OneDiff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
 ## News
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
 - :rocket:[InstantID can run 1.8x Faster with OneDiff](https://www.reddit.com/r/StableDiffusion/comments/1al19ek/instantid_can_run_18x_faster_with_onediff/)
 
+## Roadmap
+[OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
+
 ## Community & Support
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for Enterprise Edition or other business inquiries: contact@siliconflow.com
-- [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
 
 ## State-of-the-art performance
 
@@ -28,10 +35,9 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 
 ## Easy to use
 #### Out-of-the-box acceleration for popular UIs/libs
-  - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples)
+  - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions)
   - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
-  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
 #### Acceleration for state-of-the-art Models
   - [SDXL](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
   - [SDXL Turbo](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_turbo.py)
@@ -42,14 +48,18 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
   - [Stable Video Diffusion](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/image_to_video.py)
   - [DeepCache](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_deep_cache_sdxl.py)
   - [InstantID](https://github.com/siliconflow/onediff/blob/main/benchmarks/instant_id.py)
+
 #### Ready for production
+  - [Acceleration with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
   - [Support Multi-resolution input](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
   - Compile and save the compiled result offline, then load it online for serving
     - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
     - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
 
-## OneDiff Online Playground
-[Online Playground](https://github.com/siliconflow/onediff/wiki/OneDiff-Online-Playground)
+
+  - [HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions)
+  - [ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
+  - [Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
 ## OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can 
