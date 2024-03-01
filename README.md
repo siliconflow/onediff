@@ -8,7 +8,7 @@
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
 
-OneDiff provides an out-of-the-box acceleration for diffusion models:
+OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
 - PyTorch Module compilation tools and strong optimized GPU Kernels for diffusion models
 - Out-of-the-box acceleration for popular UIs/libs
   - [OneDiff for HF diffusers 🤗](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions)
