@@ -196,6 +196,8 @@ jobs:
 
           run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json"
           run_comfy_test "workflows/sdxl-control-lora-speedup.json"
+          run_comfy_test "workflows/workflows/sdxl-unet-speedup-graph-saver.json"
+
       - name: Show ComfyUI Log
         if: matrix.test-suite == 'comfy'
         run: |
