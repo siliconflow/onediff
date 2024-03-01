@@ -41,4 +41,4 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: ./onediff_diffusers_extensions
+          packages_dir: ./onediff_diffusers_extensions/dist
