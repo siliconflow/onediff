@@ -22,8 +22,14 @@ jobs:
         id: date
         run: |
           sed -i '1d' "src/onediff/__init__.py"
+          sed -i '1d' "onediff_diffusers_extensions/onediffx/__init__.py"
           formatted_date=$(date +'%Y%m%d%H%M')
+<<<<<<< HEAD
           echo "__version__ = \"0.12.1${formatted_date}\"" >> src/onediff/__init__.py
+=======
+          echo "__version__ = \"0.12.1.dev${formatted_date}\"" >> src/onediff/__init__.py
+          echo "__version__ = \"0.12.1.dev${formatted_date}\"" >> onediff_diffusers_extensions/onediffx/__init__.py
+>>>>>>> d3a5629f515e3dda2f9c46ea9907668714f2f642
       - run: cat src/onediff/__init__.py
       - run: python3 -m pip install build
       - run: python3 -m build
@@ -32,3 +38,11 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+      - run: python3 -m build
+        working-directory: ./onediff_diffusers_extensions
+      - name: Publish extension
+        uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN_ONEDIFF_X }}
+          packages_dir: ./onediff_diffusers_extensions/dist
