@@ -17,8 +17,7 @@ __all__ = ["quantize_model", "varify_can_use_quantization"]
 
 def varify_can_use_quantization():
     if not is_quantization_enabled():
-        message = get_support_message()
-        logger.warn(message)
+        logger.warning(f"OneDiff Quantization can't be used.")
         return False
     return True
 

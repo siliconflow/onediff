@@ -3,7 +3,7 @@
 OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration utilities, such as DeepCache.
 
 - [Install and Setup](#install-and-setup)
-- [compile_pipe](#compile_pipe)
+- [Compile, save and load pipeline](#compile-save-and-load-pipeline)
 - [DeepCache Speedup](#deepcache-speedup)
     - [Stable Diffusion XL](#run-stable-diffusion-xl-with-onediffx)
     - [Stable Diffusion 1.5](#run-stable-diffusion-15-with-onediffx)
@@ -21,9 +21,9 @@ OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration 
     git clone https://github.com/siliconflow/onediff.git
     cd onediff_diffusers_extensions && python3 -m pip install -e .
     ```
-## compile_pipe
-Compile diffusers pipeline with `compile_pipe`.
-```
+## Compile, save and load pipeline
+### Compile diffusers pipeline with `compile_pipe`.
+```python
 import torch
 from diffusers import StableDiffusionXLPipeline
 
@@ -38,6 +38,40 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
 pipe.to("cuda")
 
 pipe = compile_pipe(pipe)
+```
+
+### Save compiled pipeline with `save_pipe`
+```python
+from diffusers import StableDiffusionXLPipeline
+from onediffx import compile_pipe, save_pipe
+pipe = StableDiffusionXLPipeline.from_pretrained(
+    "stabilityai/stable-diffusion-xl-base-1.0",
+    torch_dtype=torch.float16,
+    variant="fp16",
+    use_safetensors=True
+)
+pipe.to("cuda")
+
+pipe = compile_pipe(pipe)
+
+save_pipe(pipe, dir="cached_pipe")
+```
+
+### Load compiled pipeline with `load_pipe`
+```python
+from diffusers import StableDiffusionXLPipeline
+from onediffx import compile_pipe, load_pipe
+pipe = StableDiffusionXLPipeline.from_pretrained(
+    "stabilityai/stable-diffusion-xl-base-1.0",
+    torch_dtype=torch.float16,
+    variant="fp16",
+    use_safetensors=True
+)
+pipe.to("cuda")
+
+pipe = compile_pipe(pipe)
+
+load_pipe(pipe, dir="cached_pipe")
 ```
 
 ## DeepCache speedup
