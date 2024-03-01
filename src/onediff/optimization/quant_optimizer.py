@@ -110,11 +110,10 @@ def quantize_model(
 
     return model
 
-def unquantize_model(
-    model,
-):
-    from onediff_quant.utils import  symm_dequantize_sub_module, find_quantizable_modules
-    from onediff_quant.utils import  get_dequantize_module
+
+def unquantize_model(model):
+    from onediff_quant.utils import symm_dequantize_sub_module, find_quantizable_modules
+    from onediff_quant.utils import get_dequantize_module
     from onediff_quant.models import QuantModuleBase
 
     if varify_can_use_quantization() is False:
@@ -128,9 +127,6 @@ def unquantize_model(
             sub_mod = get_dequantize_module(sub_mod)
             modify_sub_module(model, sub_module_name, sub_mod)
 
-    quantized_modules = find_quantizable_modules(
-        model, 
-        module_cls=[QuantModuleBase]
-    )
+    quantized_modules = find_quantizable_modules(model, module_cls=[QuantModuleBase])
     apply_quantization_to_modules(quantized_modules)
     return model
