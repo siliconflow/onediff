@@ -12,10 +12,10 @@ from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
-from onediffx.lora import load_and_fuse_lora, unfuse_lora
+from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters
 
-HEIGHT = 768
-WIDTH = 512
+HEIGHT = 1024
+WIDTH = 1024
 NUM_STEPS = 30
 
 MODEL_ID = "/share_nfs/hf_models/stable-diffusion-xl-base-1.0"
@@ -32,15 +32,12 @@ loras = [
 ]
 loras = {x: safetensors.torch.load_file(x) for x in loras}
 loras_to_load = loras.copy()
-# metal and texta LoRA have low ssim
-loras_to_load.pop("/share_nfs/onediff_ci/diffusers/loras/sdxl_metal_lora.safetensors")
-loras_to_load.pop("/share_nfs/onediff_ci/diffusers/loras/texta.safetensors")
 
 image_file_prefix = "/share_nfs/onediff_ci/diffusers/images"
 
 # create target images if not exist
 target_images_list = [
-    f"{image_file_prefix}/test_sdxl_lora_{str(Path(name).stem)}.png" for name in loras
+    f"{image_file_prefix}/test_sdxl_lora_{str(Path(name).stem)}_{HEIGHT}_{WIDTH}.png" for name in loras
 ]
 if not all(Path(x).exists() for x in target_images_list):
     print("Didn't find target images, try to generate...")
@@ -55,7 +52,7 @@ if not all(Path(x).exists() for x in target_images_list):
             generator=torch.manual_seed(0),
         ).images[0]
         pipe.unfuse_lora()
-        image.save(f"{image_file_prefix}/test_sdxl_lora_{str(Path(name).stem)}.png")
+        image.save(f"{image_file_prefix}/test_sdxl_lora_{str(Path(name).stem)}_{HEIGHT}_{WIDTH}.png")
     torch.cuda.empty_cache()
 
 
@@ -87,29 +84,43 @@ def check_param(pipe, original_weights: Dict[str, List[Tuple[str, torch.Tensor]]
             return torch.allclose(current_weight, weight)
 
 
-@pytest.mark.parametrize("name, lora", loras_to_load.items())
-def test_lora_loading(name, lora):
-    generator = torch.manual_seed(0)
-    load_and_fuse_lora(pipe, lora.copy())
+
+multi_loras = []
+for lora in loras:
+    lora = Path(lora).stem
+    if len(multi_loras) == 0:
+        multi_loras.append([lora])
+    else:
+        multi_loras.append(multi_loras[-1] + [lora])
+
+for name, lora in loras.items():
+    load_and_fuse_lora(
+        pipe, lora.copy(), adapter_name=Path(name).stem,
+    )
+    unfuse_lora(pipe)
+
+@pytest.mark.parametrize("multi_lora", multi_loras)
+def test_lora_adapter_name(multi_lora):
+    set_and_fuse_adapters(pipe, multi_lora, [0.5, ] * len(multi_lora))
     images_fusion = pipe(
         "a cat",
-        generator=generator,
-        height=HEIGHT,
-        width=WIDTH,
-        num_inference_steps=NUM_STEPS,
+        generator=torch.manual_seed(0),
+        height=1024,
+        width=1024,
+        num_inference_steps=30,
     ).images[0]
-    image_name = name.split("/")[-1].split(".")[0]
+
+    image_name = "_".join(multi_lora)
     target_image = np.array(
-        Image.open(f"{image_file_prefix}/test_sdxl_lora_{image_name}.png")
+        Image.open(f"{image_file_prefix}/multi_lora_{image_name}.png")
     )
+    images_fusion.save(f"multi_lora_{image_name}.png")
     curr_image = np.array(images_fusion)
     ssim = structural_similarity(
         curr_image, target_image, channel_axis=-1, data_range=255
     )
-    unfuse_lora(pipe)
-    print(f"lora {name} ssim {ssim}")
-    assert ssim > 0.9
-
+    print(f"lora {multi_lora} ssim {ssim}")
+    assert ssim > 0.95
 
 @pytest.mark.parametrize("lora", loras.values())
 def test_lora_switching(lora):
@@ -120,3 +131,24 @@ def test_lora_switching(lora):
     )
     unfuse_lora(pipe)
     assert check_param(pipe, original_weights)
+
+@pytest.mark.parametrize("name, lora", loras_to_load.items())
+def test_lora_loading(name, lora):
+    load_and_fuse_lora(pipe, lora.copy())
+    images_fusion = pipe(
+        "a cat",
+        generator=torch.manual_seed(0),
+        height=HEIGHT,
+        width=WIDTH,
+        num_inference_steps=NUM_STEPS,
+    ).images[0]
+    target_image = np.array(
+        Image.open(f"{image_file_prefix}/test_sdxl_lora_{str(Path(name).stem)}_{HEIGHT}_{WIDTH}.png")
+    )
+    curr_image = np.array(images_fusion)
+    ssim = structural_similarity(
+        curr_image, target_image, channel_axis=-1, data_range=255
+    )
+    unfuse_lora(pipe)
+    print(f"lora {name} ssim {ssim}")
+    assert ssim > 0.97

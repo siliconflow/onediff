@@ -190,6 +190,9 @@ export_to_video(deepcache_output, "generated.mp4", fps=7)
 OneDiff provides a more efficient implementation of loading LoRA, by invoking `load_and_fuse_lora` you can load and fuse LoRA to pipeline, and by invoking `unfuse_lora` you can restore the weight of base model.
 
 ### API
+
+#### `onediffx.lora.load_and_fuse_lora`
+
 `onediffx.lora.load_and_fuse_lora(pipeline: LoraLoaderMixin, pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, *, lora_scale: float = 1.0, offload_device="cpu", offload_weight="lora", use_cache=False, **kwargs)`:
 - pipeline (`LoraLoaderMixin`): The pipeline that will load and fuse LoRA weight.
 
@@ -213,11 +216,29 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 
 - kwargs(`dict`, *optional*) — See [lora_state_dict()](https://huggingface.co/docs/diffusers/v0.25.1/en/api/loaders/lora#diffusers.loaders.LoraLoaderMixin.lora_state_dict)
 
-  
+#### `onediffx.lora.unfuse_lora`
 
 `onediffx.lora.unfuse_lora(pipeline: LoraLoaderMixin) -> None`:
 
 - pipeline (`LoraLoaderMixin`): The pipeline that will unfuse LoRA weight.
+
+#### `onediffx.lora.set_and_fuse_adapters`
+
+`onediffx.lora.set_and_fuse_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str], adapter_weights: Optional[List[float]] = None)`
+
+Set the LoRA layers of `adapter_name` for the unet and text-encoder(s) with related `adapter_weights`.
+
+- pipeline (`LoraLoaderMixin`): The pipeline that will set adapters.
+- adapter_names(`str` or `List[str]`): The adapter name(s) of LoRA(s) to be set for the pipeline, must appear in the `adapter_name` parameter of the `load_and_fuse_lora` function, otherwise it will be ignored.
+- adapter_weights(`float` or `List[float]`, optional): The weight(s) of adapter(s), if is None, it will be set to 1.0.
+
+#### `onediffx.lora.delete_adapters``
+
+`onediffx.lora.delete_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str])`
+
+Deletes the LoRA layers of `adapter_name` for the unet and text-encoder(s).
+
+- adapter_names (`str` or `List[str]`): The names of the adapter to delete. Can be a single string or a list of strings
 
 ### Example
 
@@ -225,35 +246,78 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 import torch
 from diffusers import DiffusionPipeline
 from onediffx import compile_pipe
-from onediffx.lora import load_and_fuse_lora, unfuse_lora
+from onediffx.lora import load_and_fuse_lora, set_and_fuse_adapters, delete_adapters
 
 MODEL_ID = "stabilityai/stable-diffusion-xl-base-1.0"
 pipe = DiffusionPipeline.from_pretrained(MODEL_ID, variant="fp16", torch_dtype=torch.float16).to("cuda")
-
-LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
-LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
-
 pipe = compile_pipe(pipe)
 
 # use onediff load_and_fuse_lora
-load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
+LORA_MODEL_ID = "Norod78/SDXL-YarnArtStyle-LoRA"
+LORA_FILENAME = "SDXL_Yarn_Art_Style.safetensors"
+load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0, adapter_name="SDXL_Yarn_Art_Style")
 images_fusion = pipe(
-    "masterpiece, best quality, mountain",
+    "a cat",
     height=1024,
     width=1024,
+    generator=torch.manual_seed(0),
     num_inference_steps=30,
 ).images[0]
-images_fusion.save("test_sdxl_lora.png")
+images_fusion.save("test_sdxl_lora_SDXL_Yarn_Art_Style.png")
 
-# before loading another LoRA, you need to
-# unload LoRA weights and restore base model
-unfuse_lora(pipe)
-load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0)
+# load another LoRA, now the pipe has two LoRA models
+LORA_MODEL_ID = "ostris/watercolor_style_lora_sdxl"
+LORA_FILENAME = "watercolor_v1_sdxl.safetensors"
+load_and_fuse_lora(pipe, LORA_MODEL_ID, weight_name=LORA_FILENAME, lora_scale=1.0, adapter_name="watercolor")
+images_fusion = pipe(
+    "a cat",
+    height=1024,
+    width=1024,
+    generator=torch.manual_seed(0),
+    num_inference_steps=30,
+).images[0]
+images_fusion.save("test_sdxl_lora_SDXL_Yarn_Art_Style_watercolor.png")
+
+# set LoRA 'SDXL_Yarn_Art_Style' with strength = 0.5, now the pipe has only LoRA 'SDXL_Yarn_Art_Style' with strength = 0.5
+set_and_fuse_adapters(pipe, adapter_names="SDXL_Yarn_Art_Style", adapter_weights=0.5)
+images_fusion = pipe(
+    "a cat",
+    height=1024,
+    width=1024,
+    generator=torch.manual_seed(0),
+    num_inference_steps=30,
+).images[0]
+images_fusion.save("test_sdxl_lora_SDXL_Yarn_Art_Style_05.png")
+
+# set LoRA 'SDXL_Yarn_Art_Style' with strength = 0.8 and watercolor with strength = 0.2, now the pipe has 2 LoRAs
+set_and_fuse_adapters(pipe, adapter_names=["SDXL_Yarn_Art_Style", "watercolor"], adapter_weights=[0.8, 0.2])
+images_fusion = pipe(
+    "a cat",
+    height=1024,
+    width=1024,
+    generator=torch.manual_seed(0),
+    num_inference_steps=30,
+).images[0]
+images_fusion.save("test_sdxl_lora_SDXL_Yarn_Art_Style_08_watercolor_02.png")
+
+# delete lora 'SDXL_Yarn_Art_Style', now pipe has only 'watercolor' with strength = 0.8 left
+delete_adapters(pipe, "SDXL_Yarn_Art_Style")
+images_fusion = pipe(
+    "a cat",
+    height=1024,
+    width=1024,
+    generator=torch.manual_seed(0),
+    num_inference_steps=30,
+).images[0]
+images_fusion.save("test_sdxl_lora_watercolor_02.png")
+
 ```
 
 ### Benchmark
 
-We choose 5 LoRAs to profile loading and switching speed of 3 different APIs
+We choose 5 LoRAs to profile loading speed of 3 different APIs and switching speed of 2 different APIs, and test with and without using the PEFT backend separately. The results are shown below.
+
+#### LoRA loading
 
 1. `load_lora_weight`, which has high loading performance but low inference performance
 
@@ -261,24 +325,63 @@ We choose 5 LoRAs to profile loading and switching speed of 3 different APIs
 
 3. `onediffx.lora.load_and_fuse_lora`, which has high loading performance and high inference performance
 
+**Without PEFT backend**
 
-The results are shown below
-
-| LoRA name                               | size | load_lora_weight | load_lora_weight + fuse_lora | **onediffx load_and_fuse_lora** | src link                                                                |
+| LoRA name                               | size | HF load_lora_weight | HF load_lora_weight + fuse_lora | **OneDiffX load_and_fuse_lora** | src link                                                                |
 |-----------------------------------------|------|------------------|------------------------------|---------------------------------|-------------------------------------------------------------------------|
-| SDXL-Emoji-Lora-r4.safetensors          | 28M  | 1.69 s           | 2.34 s                       | **0.78 s**                      | [Link](https://novita.ai/model/SDXL-Emoji-Lora-r4_160282)               |
-| sdxl_metal_lora.safetensors             | 23M  | 0.97 s           | 1.73 s                       | **0.19 s**                      |                                                                         |
-| simple_drawing_xl_b1-000012.safetensors | 55M  | 1.67 s           | 2.57 s                       | **0.77 s**                      | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)           |
-| texta.safetensors                       | 270M | 1.72 s           | 2.86 s                       | **0.97 s**                      | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
-| watercolor_v1_sdxl_lora.safetensors     | 12M  | 1.54 s           | 2.01 s                       | **0.35 s**                      |                                                                         |
+| SDXL-Emoji-Lora-r4          | 28M  | 1.69 s           | 2.34 s                       | **0.78 s**                      | [Link](https://novita.ai/model/SDXL-Emoji-Lora-r4_160282)               |
+| sdxl_metal_lora             | 23M  | 0.97 s           | 1.73 s                       | **0.19 s**                      |                                                                         |
+| simple_drawing_xl_b1-000012 | 55M  | 1.67 s           | 2.57 s                       | **0.77 s**                      | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)           |
+| texta                       | 270M | 1.72 s           | 2.86 s                       | **0.97 s**                      | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
+| watercolor_v1_sdxl_lora     | 12M  | 1.54 s           | 2.01 s                       | **0.35 s**                      |                                                                         |
 
+**With PEFT backend**
+
+| LoRA name                   | size   | HF load_lora_weights   | HF load_lora_weights + fuse_lora   | **OneDiffX load_and_fuse_lora**   | src link                                                                |
+|:----------------------------|:-------|:--------------------|:--------------------------------|:--------------------------------|:------------------------------------------------------------------------|
+| SDXL-Emoji-Lora-r4          | 28M    | 5.25 s              | 6.21 s                          | **0.78 s**                        | [Link](https://novita.ai/model/SDXL-Emoji-Lora-r4_160282)               |
+| sdxl_metal_lora             | 23M    | 2.44 s              | 3.80 s                          | **0.24 s**                        |                                                                         |
+| simple_drawing_xl_b1-000012 | 55M    | 4.09 s              | 5.79 s                          | **0.81 s**                        | [Link](https://civitai.com/models/177820/sdxl-simple-drawing)           |
+| texta                       | 270M   | 109.13 s            | 109.71 s                        | **1.07 s**                        | [Link](https://civitai.com/models/221240/texta-generate-text-with-sdxl) |
+| watercolor_v1_sdxl_lora     | 12M    | 3.08 s              | 4.04 s                          | **0.40 s**                        |                                                                         |
+
+#### LoRA switching
+
+We tested the performance of `set_adapters`, still using the five LoRA models mentioned above. The numbers 1-5 represent the five models 'SDXL-Emoji-Lora-r4', 'sdxl_metal_lora', 'simple_drawing_xl_b1-000012', 'texta', 'watercolor_v1_sdxl_lora'.
+
+1. PEFT `set_adapters + fuse_lora`
+
+2. OneDiffX `set_and_fuse_adapters`, which has the same effect as PEFT `set_adapters + fuse_lora`
+
+
+| LoRA names      | PEFT set_adapters + fuse_lora   | OneDiffX set_and_fuse_adapters   |
+|:----------------|:-------------------------------|:-----------------------|
+| [1]             | 0.47 s                         | 0.28 s                 |
+| [1, 2]          | 0.52 s                         | 0.34 s                 |
+| [1, 2, 3]       | 0.71 s                         | 0.55 s                 |
+| [1, 2, 3, 4]    | 2.02 s                         | 0.73 s                 |
+| [1, 2, 3, 4, 5] | 1.00 s                         | 0.80 s                 |
 
 ### Note
 
-1. OneDiff extensions for LoRA is currently not supported for PEFT, and only supports diffusers of at least version 0.21.0.
+1. OneDiff extensions for LoRA is currently only supported for limited PEFT APIs, and only supports diffusers of at least version 0.21.0.
 
-2. Diffusers (without PEFT) are limited to loading only one LoRA. Consequently, onediffx is also restricted to loading a single LoRA. We are currently developing onediffx that are compatible with PEFT, enabling onediffx to load multiple LoRAs.
+2. If your LoRA model only contains the weights of the Linear module, you can directly use OneDiffX without any modifications. But if your LoRA model includes the weights of the Conv module (such as LyCORIS), you need to disable constant folding optimization by above methods (which may cause a performance drop of around 4.4%), otherwise the weights of the Conv module may not be loaded into the model.
+    - Set the env var `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0
+    - Set compiler_config.mlir_enable_inference_optimization to 0 before invoking `oneflow_compile` as the code below
+        ```
+        from onediffx import compiler_config
+        compiler_config.mlir_enable_inference_optimization = 0
+        ...
+        pipe.unet = oneflow_compile(pipe.unet)
+        ...
+        ```
+### Optimization
+- When not using the PEFT backend, diffusers will replace the module corresponding to LoRA with the LoRACompatible module, incurring additional parameter initialization time overhead. In OneDiffX, the LoRA parameters are directly fused into the model, bypassing the step of replacing the module, thereby reducing the time overhead.
 
+- When using the PEFT backend, PEFT will also replace the module corresponding to LoRA with the corresponding BaseTunerLayer. Similar to diffusers, this increases the time overhead. OneDiffX also bypasses this step by directly operating on the original model.
+
+- While traversing the submodules of the model, we observed that the `getattr` time overhead of OneDiff's `DeployableModule` is high. Because the parameters of DeployableModule share the same address as the PyTorch module it wraps, we choose to traverse `DeployableModule._torch_module`, greatly improving traversal efficiency.
 
 ## Quantization
 
