@@ -13,7 +13,7 @@ from ..utils.module_operations import get_sub_module
 from ..utils.param_utils import parse_device, check_device
 from ..utils.graph_management_utils import graph_file_management
 from ..transform.manager import transform_mgr
-from ..transform.builtin_transform import torch2oflow
+from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
 
 __all__ = ["compiler", "OneFlowCompiledModel", "DualModule"]
 
@@ -111,7 +111,7 @@ class OneFlowCompiledModel:
 
 class DualModule(OneFlowCompiledModel):
     def __init__(self, torch_module, use_graph=True, dynamic=True, options={}):
-        super().__init__(torch_module,None,None, use_graph, dynamic, options, None, False, True)
+        super().__init__(torch_module, None, None, use_graph, dynamic, options, None, False, True)
 
     @property
     def oneflow_module(self):
