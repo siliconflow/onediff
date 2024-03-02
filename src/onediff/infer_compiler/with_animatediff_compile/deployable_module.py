@@ -1,8 +1,9 @@
 import torch 
+
 class DeployableModule:
     __attrs = ["_deployed_original_module", "_deployed_compiled_model"]
 
-    def __init__(self, original_module: torch.nn.Module, compiled_model):
+    def __init__(self, original_module: torch.nn.Module, compiled_model=None):
         assert compiled_model is not None, "Compiled model is None"
         self._deployed_original_module = original_module
         self._deployed_compiled_model = compiled_model

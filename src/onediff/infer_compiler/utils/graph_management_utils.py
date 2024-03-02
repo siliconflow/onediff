@@ -77,9 +77,13 @@ def graph_file_management(func):
 
             except Exception as e:
                 logger.error(f"Failed to save graph file: {graph_file}! {e}")
-        handle_graph_loading()
-        ret = func(self, *args, **kwargs)
-        handle_graph_saving()
+        
+        if self._deployable_module_use_graph:
+            handle_graph_loading()
+            ret = func(self, *args, **kwargs)
+            handle_graph_saving()
+        else:
+            ret = func(self, *args, **kwargs)
 
         return ret
 

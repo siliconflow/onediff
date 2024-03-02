@@ -24,49 +24,50 @@ class ParameterUpdateController:
         self.sync_with_oneflow_only = sync_with_oneflow_only
         self._synced = False
         self._handles = []
-
+    
+    def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any):
+        v = torch2oflow(value)
+        if not self.dual_module._deployable_module_use_graph:
+            model_of.__dict__[key] = v
+        elif isinstance(v, flow.Tensor):
+            model_of.__dict__[key].copy_(v)
+        elif isinstance(v, (int, float, bool, str)):
+            if model_of.__dict__[key] == v:
+                return
+            logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
+            model_of.__dict__[key] = v
+            self.dual_module.clear_graph_cache()
+            compiled_options = self.dual_module._deployable_module_options
+            graph_file = compiled_options.get("graph_file", None)
+            if graph_file is not None:
+                # Update the graph file name to avoid the conflict 
+                compiled_options['graph_file'] = f'{key}-{value}_{graph_file}'
+        else:
+            logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
+            
     def enable_sync(self):
         if self._synced or self.dual_module._oneflow_module is None:
             return
-        self._synced = True
-
+        logger.info(f"{'-'*20} Enable sync {'-'*20}")
         def _sync_torch_to_oneflow(model_pt, model_of, sub_module_name=""):
             org_setattr = model_pt.__class__.__setattr__
             def new_setattr(ins, name, value):
                 nonlocal org_setattr, sub_module_name, self
-                try:
-                    org_model_pt = get_sub_module(self.dual_module._torch_module, sub_module_name)
-                    logger.error(f"Original set {(org_model_pt is ins)=}")
-                    if org_model_pt is not ins:
-                        import pdb; pdb.set_trace()
-                    
-                    v = torch2oflow(value)
-                    if isinstance(v, flow.Tensor):
-                        obj = getattr(model_of, name)
-                        obj.copy_(v)
-                    else:
-                        if isinstance(v, (int, float, bool)) and model_of.__dict__[name] != v:
-                            logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{name} = {type(v)}")
-                        model_of.__dict__[name] = v
-
-                        # TODO fix the graph cache issue
-                        # if self.dual_module._deployable_module_use_graph:
-                        #     self.dual_module.clear_graph_cache()
-                        #     compiled_options = self.dual_module._deployable_module_options
-                        #     graph_file = compiled_options.get("graph_file", None)
-                        #     if graph_file is not None:
-                        #         # Update the graph file name to avoid the conflict 
-                        #         compiled_options['graph_file'] = f'{name}-{value}_{graph_file}'
-                        import pdb; pdb.set_trace()     
-                except Exception as e:
-                    print(f'Error: {e}')
-
-                return org_setattr(ins, name, value)
+                org_model_pt = get_sub_module(self.dual_module._torch_module, sub_module_name)
+                if org_model_pt is not ins:
+                    # restore the original __setattr__ method
+                    org_setattr(ins, name, value)
+                    ins.__class__.__setattr__ = org_setattr
+                else:
+                    self.parameter_update(model_of, name, value)
+                    if not self.sync_with_oneflow_only:
+                        org_setattr(ins, name, value)               
             
             model_pt.__class__.__setattr__ = new_setattr
             def restore():
                 nonlocal org_setattr
                 model_pt.__class__.__setattr__ = org_setattr
+            
             self._handles.append(restore)
             
         torch_model, oneflow_model = self.dual_module._torch_module, self.dual_module._oneflow_module
@@ -78,6 +79,7 @@ class ParameterUpdateController:
     def disable_sync(self):
         if not self._synced or self.dual_module._oneflow_module is None:
             return
+        logger.info(f"{'-'*20} Disable sync {'-'*20}")
         self._synced = False
         for handle in self._handles:
             handle()
@@ -162,6 +164,7 @@ class DualModule(OneFlowCompiledModel):
                 output = self.oneflow_module.apply_model(
                     *args, **kwargs
                 )
+
         return output
 
     @input_output_processor
