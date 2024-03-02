@@ -121,7 +121,7 @@ class DualModule(OneFlowCompiledModel):
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
         logger.debug(f"Convert {type(self._torch_module)} done!")
-        sync_with_oneflow_only = self._deployable_module_options.get("sync_with_oneflow_only", False)
+        sync_with_oneflow_only = self._deployable_module_options.get("sync_with_oneflow_only", True)
         self._parameter_update_controller = ParameterUpdateController(self, sync_with_oneflow_only)
         self._parameter_update_controller.enable_sync()
         return self._oneflow_module
