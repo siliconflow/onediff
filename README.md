@@ -25,7 +25,7 @@ The Full introduction of OneDiff:
 <!-- toc -->
 - [More About OneDiff](#more-about-onediff)
   - [State-of-the-art performance](#state-of-the-art-performance)
-  - [Acceleration for production](#acceleration-for-production)
+  - [Acceleration for production environment](#acceleration-for-production-environment)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
   - [Roadmap](#roadmap)
@@ -76,7 +76,7 @@ OneDiff support the acceleratioin for SOTA models.
 
 
 
-### Acceleration for production
+### Acceleration for production environment
 #### PyTorch Module compilation
 - [compilation with oneflow_compile](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl.py)
 #### Avoid compilation time for new input shape
