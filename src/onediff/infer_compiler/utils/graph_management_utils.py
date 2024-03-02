@@ -26,7 +26,7 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
     args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
     count = len([v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)])
 
-    model = deployable_module._deployable_module_model.oneflow_module
+    model = deployable_module.oneflow_module
 
     cache_key = calculate_model_hash(model) + "_" + flow.__version__
     return f"{file_path}_{count}_{cache_key}.graph"
@@ -34,7 +34,7 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
 
 def graph_file_management(func):
     @wraps(func)
-    def wrapper(self: "DeployableModule", *args, **kwargs):
+    def wrapper(self, *args, **kwargs):
         compile_options = getattr(self, "_deployable_module_options", {})
         graph_file = compile_options.get("graph_file", None)
         is_first_load = (
@@ -77,10 +77,13 @@ def graph_file_management(func):
 
             except Exception as e:
                 logger.error(f"Failed to save graph file: {graph_file}! {e}")
-
-        handle_graph_loading()
-        ret = func(self, *args, **kwargs)
-        handle_graph_saving()
+        
+        if self._deployable_module_use_graph:
+            handle_graph_loading()
+            ret = func(self, *args, **kwargs)
+            handle_graph_saving()
+        else:
+            ret = func(self, *args, **kwargs)
 
         return ret
 

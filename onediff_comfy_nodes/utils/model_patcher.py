@@ -9,7 +9,7 @@ from register_comfy import DeepCacheUNet, FastDeepCacheUNet
 def state_dict_hook(module, state_dict, prefix, local_metadata):
     new_state_dict = type(state_dict)()
     for k, v in state_dict.items():
-        # diffusion_model._deployable_module_model._torch_module.out.2.weight => diffusion_model.out.2.weight
+        # diffusion_model._torch_module.out.2.weight => diffusion_model.out.2.weight
         if k.startswith("diffusion_model._deployable_module_model"):
             x = k.split(".")
             new_k = ".".join(x[:1] + x[3:])
@@ -93,7 +93,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         except:
             pass
 
-        torch_model = self.model.diffusion_model._deployable_module_model._torch_module
+        torch_model = self.model.diffusion_model._torch_module
         for name, module in torch_model.named_modules():
             if isinstance(module, CrossAttention) and hasattr(module, "to_qkv"):
                 # TODO(): support bias

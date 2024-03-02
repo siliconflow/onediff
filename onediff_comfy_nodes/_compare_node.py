@@ -58,7 +58,7 @@ class CompareModel:
         torch_unet = torch_model.model.diffusion_model
         oflow_unet = oneflow_model.model.diffusion_model
 
-        if oflow_unet._deployable_module_model._oneflow_module is None:
+        if oflow_unet._oneflow_module is None:
             torch_model.unpatch_model("cuda")
             oneflow_model.unpatch_model("cuda")
             print(
@@ -72,7 +72,7 @@ class CompareModel:
         for key, _ in oflow_unet.named_parameters():
             key = key.removeprefix("_deployable_module_model._torch_module.")
             torch_value = torch_unet.get_parameter(key).cuda()
-            oflow_value = oflow_unet._deployable_module_model._oneflow_module.get_parameter(
+            oflow_value = oflow_unet._oneflow_module.get_parameter(
                 key
             ).cuda()
 
