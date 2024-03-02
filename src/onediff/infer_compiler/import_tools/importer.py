@@ -15,7 +15,7 @@ __all__ = ["import_module_from_path", "LazyMocker", "is_need_mock"]
 def is_need_mock(cls) -> bool:
     assert isinstance(cls, (type, str))
     main_pkg = cls.__module__.split(".")[0]
-    no_need_mock = ["path", "collections"]
+
     try:
         if main_pkg == "torch":
             return True
