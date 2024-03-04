@@ -52,12 +52,7 @@ class ParameterUpdateController:
 
             def new_setattr(ins, name, value):
                 nonlocal org_setattr, sub_module_name, self
-                if "video_length" in name:
-                    logger.info(f'{"-"*20} {name} = {value} {"-"*20} {model_of.__dict__[name]=}')
                 self.parameter_update(model_of, name, value)
-                    # # clear id_map when the sub module is changed
-                    # self.id_map.clear()
-                    # ins.__class__.__setattr__ = org_setattr
                 org_setattr(ins, name, value)                
             
             model_pt.__class__.__setattr__ = new_setattr
