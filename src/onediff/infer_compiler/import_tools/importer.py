@@ -110,6 +110,17 @@ class LazyMocker:
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
+        if attrs[0] == '__main__':
+            import __main__
+            main_path = __main__.__file__
+            main_path_parent = Path(main_path).parent
+            if str(main_path_parent) not in sys.path:
+                sys.path.append(str(main_path_parent))
+            main_name = Path(main_path).stem
+            mock_main = DynamicMockModule.from_package(main_name, verbose=False)
+            for name in attrs[1:]:
+                mock_main = getattr(mock_main, name)
+            return mock_main
         
         # add package path to sys.path to avoid mock error
         self.add_mocked_package(attrs[0])

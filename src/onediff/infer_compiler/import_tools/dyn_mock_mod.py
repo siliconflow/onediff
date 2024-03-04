@@ -182,7 +182,7 @@ class DynamicMockModule(ModuleType):
             org_delete_list = deepcopy(_importer.delete_list)
 
         # Update obj_entity inplace
-        # _update_module([fullname] + org_delete_list, self._main_pkg_enable)
+        _update_module([fullname] + org_delete_list, self._main_pkg_enable)
 
         if ismodule(obj_entity):
             return DynamicMockModule(self._pkg_name, obj_entity, self._main_pkg_enable)

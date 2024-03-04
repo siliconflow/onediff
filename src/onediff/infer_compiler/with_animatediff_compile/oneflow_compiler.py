@@ -34,7 +34,7 @@ class ParameterUpdateController:
         elif isinstance(v, flow.Tensor):
             model_of.__dict__[key].copy_(v)
         elif isinstance(v, (int, float, bool, str)) and model_of.__dict__[key] != v:
-            logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
+            logger.warning(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}")
             model_of.__dict__[key] = v
             self.dual_module.clear_graph_cache()
             compiled_options = self.dual_module._deployable_module_options
