@@ -19,12 +19,12 @@ class TransformManager:
         `tmp_dir`: The temp dir to store mock files.
     """
 
-    def __init__(self, debug_mode=False, tmp_dir="./output"):
+    def __init__(self, debug_mode=False, tmp_dir="/home/fengwen/quant/auto_test"):
         self.debug_mode = debug_mode
         self._torch_to_oflow_cls_map = {}
         self._oflow_to_torch_cls_map = {}
         self._setup_logger()
-        self.mocker = LazyMocker(prefix="", suffix="", tmp_dir=None)
+        self.mocker = LazyMocker(prefix="", suffix="", tmp_dir=tmp_dir)
 
     def _setup_logger(self):
         name = "ONEDIFF"
@@ -106,7 +106,7 @@ class TransformManager:
 
 
 debug_mode = os.getenv("ONEDIFF_DEBUG", "0") == "1"
-transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir=None)
+transform_mgr = TransformManager(debug_mode=debug_mode, tmp_dir="/home/fengwen/quant/auto_test")
 
 if not transform_mgr.debug_mode:
     warnings.simplefilter("ignore", category=UserWarning)

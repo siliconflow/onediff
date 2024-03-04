@@ -20,8 +20,6 @@ def is_need_mock(cls) -> bool:
     try:
         if main_pkg == "torch":
             return True
-        if main_pkg in no_need_mock:
-            return False
         pkgs = requires(main_pkg)
     except Exception as e:
         # logger.info(f"Error when checking need mock of package {main_pkg}: {e}")

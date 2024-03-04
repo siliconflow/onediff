@@ -15,7 +15,7 @@ from ..utils.graph_management_utils import graph_file_management
 from ..transform.manager import transform_mgr
 from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
 
-__all__ = ["compiler", "OneFlowCompiledModel", "DualModule"]
+__all__ = ["OneFlowCompiledModel", "DualModule"]
 
 class ParameterUpdateController:  
     """Sync the parameter update between torch and oneflow module. """
@@ -27,23 +27,21 @@ class ParameterUpdateController:
     
     def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any):
         v = torch2oflow(value)
+        if "video_length" in key:
+            logger.info(f'{"-"*20} {key} = {v} {"-"*20} {model_of.__dict__[key]=}')
         if not self.dual_module._deployable_module_use_graph:
-            model_of.__dict__[key] = v
+            setattr(model_of, key, v)
         elif isinstance(v, flow.Tensor):
             model_of.__dict__[key].copy_(v)
-        elif isinstance(v, (int, float, bool, str)):
-            if model_of.__dict__[key] == v:
-                return
+        elif isinstance(v, (int, float, bool, str)) and model_of.__dict__[key] != v:
             logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
             model_of.__dict__[key] = v
             self.dual_module.clear_graph_cache()
             compiled_options = self.dual_module._deployable_module_options
-            graph_file = compiled_options.get("graph_file", None)
-            if graph_file is not None:
-                # Update the graph file name to avoid the conflict 
-                compiled_options['graph_file'] = f'{key}-{value}_{graph_file}'
+            compiled_options['graph_file'] = None
         else:
-            logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
+            pass
+            # logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
             
     def enable_sync(self):
         if self._synced or self.dual_module._oneflow_module is None:
@@ -51,17 +49,16 @@ class ParameterUpdateController:
         logger.info(f"{'-'*20} Enable sync {'-'*20}")
         def _sync_torch_to_oneflow(model_pt, model_of, sub_module_name=""):
             org_setattr = model_pt.__class__.__setattr__
+
             def new_setattr(ins, name, value):
                 nonlocal org_setattr, sub_module_name, self
-                org_model_pt = get_sub_module(self.dual_module._torch_module, sub_module_name)
-                if org_model_pt is not ins:
-                    # restore the original __setattr__ method
-                    org_setattr(ins, name, value)
-                    ins.__class__.__setattr__ = org_setattr
-                else:
-                    self.parameter_update(model_of, name, value)
-                    if not self.sync_with_oneflow_only:
-                        org_setattr(ins, name, value)               
+                if "video_length" in name:
+                    logger.info(f'{"-"*20} {name} = {value} {"-"*20} {model_of.__dict__[name]=}')
+                self.parameter_update(model_of, name, value)
+                    # # clear id_map when the sub module is changed
+                    # self.id_map.clear()
+                    # ins.__class__.__setattr__ = org_setattr
+                org_setattr(ins, name, value)                
             
             model_pt.__class__.__setattr__ = new_setattr
             def restore():
@@ -70,11 +67,12 @@ class ParameterUpdateController:
             
             self._handles.append(restore)
             
-        torch_model, oneflow_model = self.dual_module._torch_module, self.dual_module._oneflow_module
-        _sync_torch_to_oneflow(torch_model, oneflow_model)
-        for name, model in torch_model.named_children():
+        torch_model, oneflow_model = self.dual_module.get_modules()
+        self.id_map = {} # map the id of torch module to oneflow module
+        for name, layer in torch_model.named_modules():
             model_of = get_sub_module(oneflow_model, name)
-            _sync_torch_to_oneflow(model, model_of, name)
+            self.id_map[id(layer)] = id(model_of)
+            _sync_torch_to_oneflow(layer, model_of, name)
        
     def disable_sync(self):
         if not self._synced or self.dual_module._oneflow_module is None:
@@ -113,6 +111,8 @@ class DualModule(OneFlowCompiledModel):
     def __init__(self, torch_module, use_graph=True, dynamic=True, options={}):
         super().__init__(torch_module, None, None, use_graph, dynamic, options, None, False, True)
 
+    def get_modules(self):
+        return self._torch_module, self._oneflow_module
     @property
     def oneflow_module(self):
         if self._oneflow_module is not None:
@@ -121,8 +121,7 @@ class DualModule(OneFlowCompiledModel):
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
         logger.debug(f"Convert {type(self._torch_module)} done!")
-        sync_with_oneflow_only = self._deployable_module_options.get("sync_with_oneflow_only", True)
-        self._parameter_update_controller = ParameterUpdateController(self, sync_with_oneflow_only)
+        self._parameter_update_controller = ParameterUpdateController(self, False)
         self._parameter_update_controller.enable_sync()
         return self._oneflow_module
 
@@ -151,6 +150,9 @@ class DualModule(OneFlowCompiledModel):
         if self._deployable_module_dpl_graph is not None:
             self._deployable_module_dpl_graph = None
             self._load_graph_first_run = True
+            
+    def disable_graph_file(self):
+        self._deployable_module_options['graph_file'] = None
 
     @input_output_processor
     @graph_file_management

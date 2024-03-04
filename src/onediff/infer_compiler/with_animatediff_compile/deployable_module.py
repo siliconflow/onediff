@@ -12,6 +12,9 @@ class DeployableModule:
     def __class__(self):
         return self._deployed_original_module.__class__
     
+    def disalbe_graph_file(self):
+        self._deployed_compiled_model.disable_graph_file()
+        
     def enable_parameter_update(self):
         updater = self._deployed_compiled_model._parameter_update_controller
         if updater is not None:

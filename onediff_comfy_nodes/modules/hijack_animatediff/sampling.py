@@ -91,7 +91,11 @@ def restore_functions(orig_func, *args, **kwargs):
 
 def cond_func(orig_func, self, model, *args, **kwargs):
     diff_model = model.model.diffusion_model
-    return isinstance(diff_model, DeployableModule)
+    if isinstance(diff_model, DeployableModule):
+        diff_model.disalbe_graph_file()
+        return True
+    else:
+        return False
 
 
 animatediff_hijacker.register(
