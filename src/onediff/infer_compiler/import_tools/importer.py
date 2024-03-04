@@ -15,12 +15,13 @@ __all__ = ["import_module_from_path", "LazyMocker", "is_need_mock"]
 def is_need_mock(cls) -> bool:
     assert isinstance(cls, (type, str))
     main_pkg = cls.__module__.split(".")[0]
+
     try:
         if main_pkg == "torch":
             return True
         pkgs = requires(main_pkg)
     except Exception as e:
-        logger.info(f"Error when checking need mock of package {main_pkg}: {e}")
+        # logger.info(f"Error when checking need mock of package {main_pkg}: {e}")
         return True
     if pkgs:
         for pkg in pkgs:
