@@ -70,9 +70,9 @@ OneDiff support the acceleratioin for SOTA models.
 |           | SVD DeepCache               | stable       | beta       | stable    | beta       |           |            |
 
 **Note: Enterprise Edition contains all the functionality in Community Edition.**
-* stable: release for public usage, and has long-term support; 
-* beta: release for professional usage, and has long-term support; 
-* alpha: early release for expert usage, and is **under active development**; 
+* stable: release for public usage, and has long-term support;
+* beta: release for professional usage, and has long-term support;
+* alpha: early release for expert usage, and is **under active development**;
 
 
 
@@ -87,7 +87,7 @@ Compile and save the compiled result offline, then load it online for serving
 - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
 
 ### OneDiff Enterprise Edition
-If you need **Enterprise-level Support** for your system or business, you can 
+If you need **Enterprise-level Support** for your system or business, you can
 - subscribe Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
 - or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
@@ -129,7 +129,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
   ```bash
   # For CN users
-  python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
+  python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
   ```
 
 
@@ -146,7 +146,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
   ```bash
   # For CN users
-  python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
+  python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
   ```
 
 
@@ -159,7 +159,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
   ```bash
   # For CN users
-  python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
+  python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
   ```
 
 
