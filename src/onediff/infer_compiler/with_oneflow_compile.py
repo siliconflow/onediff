@@ -350,7 +350,37 @@ class OneflowGraph(flow.nn.Graph):
 
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path):
-        flow.save(self.graph_state_dict, file_path)
+        if hasattr(self, "graph_state_dict"):
+            flow.save(self.graph_state_dict, file_path)
+        else:
+            state_dict = self.runtime_state_dict()
+
+            import oneflow.framework.args_tree as args_tree
+
+            def disabled_dataclass(value):
+                return False
+
+            original_is_dataclass = args_tree._is_dataclass
+            args_tree._is_dataclass = disabled_dataclass
+
+            import dataclasses
+
+            def reverse_dataclass(value):
+                if dataclasses.is_dataclass(value):
+                    return reverse_proxy_class(type(value))(**value)
+                else:
+                    return value
+
+            for name, rsd in state_dict.items():
+                output = state_dict[name]["outputs_original"]
+                out_tree = args_tree.ArgsTree((output, None), False)
+                # dataclass type needs to be reversed to torch type to avoid saving error.
+                out = out_tree.map_leaf(reverse_dataclass)
+                state_dict[name]["outputs_original"] = out[0]
+
+            args_tree._is_dataclass = original_is_dataclass
+
+            flow.save(state_dict, file_path)
 
 
 def get_oneflow_graph(model, size=9, dynamic_graph=True):
