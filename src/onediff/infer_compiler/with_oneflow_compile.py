@@ -352,35 +352,36 @@ class OneflowGraph(flow.nn.Graph):
     def save_graph(self, file_path):
         if hasattr(self, "graph_state_dict"):
             flow.save(self.graph_state_dict, file_path)
-        else:
-            state_dict = self.runtime_state_dict()
+            return
 
-            import oneflow.framework.args_tree as args_tree
+        state_dict = self.runtime_state_dict()
 
-            def disabled_dataclass(value):
-                return False
+        import oneflow.framework.args_tree as args_tree
 
-            original_is_dataclass = args_tree._is_dataclass
-            args_tree._is_dataclass = disabled_dataclass
+        def disabled_dataclass(value):
+            return False
 
-            import dataclasses
+        original_is_dataclass = args_tree._is_dataclass
+        args_tree._is_dataclass = disabled_dataclass
 
-            def reverse_dataclass(value):
-                if dataclasses.is_dataclass(value):
-                    return reverse_proxy_class(type(value))(**value)
-                else:
-                    return value
+        import dataclasses
 
-            for name, rsd in state_dict.items():
-                output = state_dict[name]["outputs_original"]
-                out_tree = args_tree.ArgsTree((output, None), False)
-                # dataclass type needs to be reversed to torch type to avoid saving error.
-                out = out_tree.map_leaf(reverse_dataclass)
-                state_dict[name]["outputs_original"] = out[0]
+        def reverse_dataclass(value):
+            if dataclasses.is_dataclass(value):
+                return reverse_proxy_class(type(value))(**value)
+            else:
+                return value
 
-            args_tree._is_dataclass = original_is_dataclass
+        for name, rsd in state_dict.items():
+            output = state_dict[name]["outputs_original"]
+            out_tree = args_tree.ArgsTree((output, None), False)
+            # dataclass type needs to be reversed to torch type to avoid saving error.
+            out = out_tree.map_leaf(reverse_dataclass)
+            state_dict[name]["outputs_original"] = out[0]
 
-            flow.save(state_dict, file_path)
+        args_tree._is_dataclass = original_is_dataclass
+
+        flow.save(state_dict, file_path)
 
 
 def get_oneflow_graph(model, size=9, dynamic_graph=True):
