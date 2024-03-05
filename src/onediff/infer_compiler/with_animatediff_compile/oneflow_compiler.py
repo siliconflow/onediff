@@ -1,5 +1,5 @@
 import types
-import torch 
+import torch
 from dataclasses import dataclass
 from typing import Any, Dict
 import oneflow as flow
@@ -17,61 +17,73 @@ from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
 
 __all__ = ["OneFlowCompiledModel", "DualModule"]
 
-class ParameterUpdateController:  
+
+class ParameterUpdateController:
     """Sync the parameter update between torch and oneflow module. """
+
     def __init__(self, dual_module: "DualModule", sync_with_oneflow_only=False):
         self.dual_module = dual_module
         self.sync_with_oneflow_only = sync_with_oneflow_only
+        self.safe_module_id_map = {}
         self._synced = False
         self._handles = []
-    
+
     def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any):
         # filter the training status
         if key == "training":
             model_of.__dict__[key] = value
             return
-        
+
         v = torch2oflow(value)
         if not self.dual_module._deployable_module_use_graph:
             setattr(model_of, key, v)
         elif isinstance(v, flow.Tensor):
             model_of.__dict__[key].copy_(v)
         elif isinstance(v, (int, float, bool, str)) and model_of.__dict__[key] != v:
-            logger.warning(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}")
+            logger.warning(
+                f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
+            )
             model_of.__dict__[key] = v
             self.dual_module.clear_graph_cache()
             compiled_options = self.dual_module._deployable_module_options
-            compiled_options['graph_file'] = None
+            compiled_options["graph_file"] = None
         else:
             pass
             # logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
-            
+
     def enable_sync(self):
         if self._synced or self.dual_module._oneflow_module is None:
             return
         logger.info(f"{'-'*20} Enable sync {'-'*20}")
+
         def _sync_torch_to_oneflow(model_pt, model_of, sub_module_name=""):
             org_setattr = model_pt.__class__.__setattr__
 
             def new_setattr(ins, name, value):
                 nonlocal org_setattr, sub_module_name, self
-                self.parameter_update(model_of, name, value)
-                org_setattr(ins, name, value)                
-            
+
+                if id(model_of) == self.safe_module_id_map.get(id(ins), None):
+                    self.parameter_update(model_of, name, value)
+
+                org_setattr(ins, name, value)
+
             model_pt.__class__.__setattr__ = new_setattr
+
             def restore():
                 nonlocal org_setattr
                 model_pt.__class__.__setattr__ = org_setattr
-            
+
             self._handles.append(restore)
-            
+
         torch_model, oneflow_model = self.dual_module.get_modules()
-        self.id_map = {} # map the id of torch module to oneflow module
+        self.safe_module_id_map.clear()
         for name, layer in torch_model.named_modules():
             model_of = get_sub_module(oneflow_model, name)
-            self.id_map[id(layer)] = id(model_of)
+            key = id(layer)
+            model_of_id = id(model_of)
+            self.safe_module_id_map.setdefault(key, model_of_id)
             _sync_torch_to_oneflow(layer, model_of, name)
-       
+
     def disable_sync(self):
         if not self._synced or self.dual_module._oneflow_module is None:
             return
@@ -83,14 +95,14 @@ class ParameterUpdateController:
 
     def is_synced(self):
         return self._synced
-    
+
     def __enter__(self):
         self.enable_sync()
         return self
-    
+
     def __exit__(self, exc_type, exc_value, exc_tb):
         self.disable_sync()
- 
+
 
 @dataclass
 class OneFlowCompiledModel:
@@ -107,10 +119,13 @@ class OneFlowCompiledModel:
 
 class DualModule(OneFlowCompiledModel):
     def __init__(self, torch_module, use_graph=True, dynamic=True, options={}):
-        super().__init__(torch_module, None, None, use_graph, dynamic, options, None, False, True)
+        super().__init__(
+            torch_module, None, None, use_graph, dynamic, options, None, False, True
+        )
 
     def get_modules(self):
         return self._torch_module, self._oneflow_module
+
     @property
     def oneflow_module(self):
         if self._oneflow_module is not None:
@@ -131,9 +146,7 @@ class DualModule(OneFlowCompiledModel):
         else:
             size = 9
         self._deployable_module_dpl_graph = get_oneflow_graph(
-            self.oneflow_module,
-            size,
-            self._deployable_module_enable_dynamic,
+            self.oneflow_module, size, self._deployable_module_enable_dynamic,
         )
         # Enabel debug mode
         if transform_mgr.debug_mode:
@@ -148,9 +161,9 @@ class DualModule(OneFlowCompiledModel):
         if self._deployable_module_dpl_graph is not None:
             self._deployable_module_dpl_graph = None
             self._load_graph_first_run = True
-            
+
     def disable_graph_file(self):
-        self._deployable_module_options['graph_file'] = None
+        self._deployable_module_options["graph_file"] = None
 
     @input_output_processor
     @graph_file_management
@@ -161,9 +174,7 @@ class DualModule(OneFlowCompiledModel):
                 output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self.oneflow_module.apply_model(
-                    *args, **kwargs
-                )
+                output = self.oneflow_module.apply_model(*args, **kwargs)
 
         return output
 
@@ -193,9 +204,7 @@ class DualModule(OneFlowCompiledModel):
                 output = dpl_graph(*args, **kwargs)
         else:
             with oneflow_exec_mode():
-                output = self.oneflow_module.decode(
-                    *args, **kwargs
-                )
+                output = self.oneflow_module.decode(*args, **kwargs)
         return output
 
     def _to(self, *args, **kwargs):
@@ -214,7 +223,7 @@ class DualModule(OneFlowCompiledModel):
         if self._deployable_module_dpl_graph is None:
             self._to(*args, **kwargs)
             return self
-        
+
         target_device = parse_device(args, kwargs)
         if (
             target_device is not None
@@ -227,7 +236,7 @@ class DualModule(OneFlowCompiledModel):
                 )
         self._to(*args, **kwargs)
         return self
-    
+
     def _torch_module_to_with_check(self, *args, **kwargs):
         def _align_tensor(torch_module, oneflow_module):
             oneflow_tensor_list = set(
@@ -258,7 +267,7 @@ class DualModule(OneFlowCompiledModel):
 
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
-    
+
 
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
