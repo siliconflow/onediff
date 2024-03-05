@@ -59,15 +59,15 @@ def getattr_from_module_name(module, module_name: str):
     for attr in attrs:
         if attr == "<locals>":
             if len(signature(sub_module).parameters) == 0:
-                logger.info(f"{full_attr_name=} is a local function without parameters")
+                # logger.info(f"{full_attr_name=} is a local function without parameters")
                 def proxy_func(*args, **kwargs):
                     return sub_module()(*args, **kwargs)
                 return proxy_func
             else:
-                logger.warning(
-                    f"Not support {module_name} with parameters Module: {module}"
-                )
-                return None
+                # logger.warning(
+                #     f"Not support {module_name} with parameters Module: {module}"
+                # )
+                raise RuntimeError(f"Not support {module_name} with parameters Module: {module}")
         sub_module = getattr(sub_module, attr)
     return sub_module
 

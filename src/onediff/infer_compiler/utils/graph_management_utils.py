@@ -37,10 +37,10 @@ def graph_file_management(func):
     def wrapper(self, *args, **kwargs):
         compile_options = getattr(self, "_deployable_module_options", {})
         graph_file = compile_options.get("graph_file", None)
+        
         is_first_load = (
             getattr(self, "_load_graph_first_run", True) and graph_file is not None
         )
-
         if is_first_load:
             graph_file = generate_graph_file_name(
                 graph_file, self, args=args, kwargs=kwargs
@@ -66,7 +66,6 @@ def graph_file_management(func):
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
                 return
-
             try:
                 parent_dir = os.path.dirname(graph_file)
                 if parent_dir != "":

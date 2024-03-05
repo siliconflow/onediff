@@ -121,4 +121,14 @@ register(
         TemporalTransformer3DModel_PT_CLS: TemporalTransformer3DModel_OF
     }
 )
+
+# import torch as torch_pt
+# from onediff.infer_compiler.transform import torch2oflow
+
+# @torch2oflow.register(TemporalTransformer3DModel_PT_CLS)
+# def _(mod, verbose=False):
+#     of_mod = torch2oflow.dispatch(torch_pt.nn.Module)(mod, verbose) 
+#     of_mod.video_length = torch.tensor(mod.video_length)
+#     return of_mod
+
 register(torch2oflow_class_map={VersatileAttention_PT_CLS: VersatileAttention_OF})

@@ -27,6 +27,7 @@ def oneflow_compile(
     set_default_registry()
     if isinstance(torch_module, DeployableModule):
         return torch_module
+    
     compiled_model = DualModule(torch_module, use_graph, dynamic, options)
     out =  DeployableModule(torch_module, compiled_model)
     assert isinstance(out, torch_module.__class__)

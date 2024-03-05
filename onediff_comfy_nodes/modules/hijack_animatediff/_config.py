@@ -8,6 +8,7 @@ from onediff.infer_compiler.transform import transform_mgr
 from onediff.infer_compiler.import_tools import DynamicModuleLoader
 from onediff.infer_compiler.utils.log_utils import logger
 COMFYUI_ROOT = os.getenv("COMFYUI_ROOT")
+os.environ["USE_COMFYUI_ANIMATEDIFF_EVOLVED"] = "1"
 pkg_name = "ComfyUI-AnimateDiff-Evolved"
 animatediff_root = os.path.join(COMFYUI_ROOT, "custom_nodes", pkg_name)
 load_animatediff_package = True

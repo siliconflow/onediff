@@ -1,3 +1,4 @@
+import os 
 import types
 import torch
 from dataclasses import dataclass
@@ -18,6 +19,8 @@ from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
 __all__ = ["OneFlowCompiledModel", "DualModule"]
 
 
+
+
 class ParameterUpdateController:
     """Sync the parameter update between torch and oneflow module. """
 
@@ -30,27 +33,33 @@ class ParameterUpdateController:
 
     def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any):
         # filter the training status
-        if key == "training":
+        if key == "training" or value is None:
             model_of.__dict__[key] = value
             return
-
+        
         v = torch2oflow(value)
         if not self.dual_module._deployable_module_use_graph:
             setattr(model_of, key, v)
         elif isinstance(v, flow.Tensor):
             model_of.__dict__[key].copy_(v)
-        elif isinstance(v, (int, float, bool, str)) and model_of.__dict__[key] != v:
-            logger.warning(
-                f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
-            )
-            model_of.__dict__[key] = v
-            self.dual_module.clear_graph_cache()
-            compiled_options = self.dual_module._deployable_module_options
-            compiled_options["graph_file"] = None
-        else:
-            pass
-            # logger.error(f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {type(v)}")
+        elif isinstance(v, (int, float, bool, str)):
+            if model_of.__dict__[key] == v:
+                return 
+            try:
+                model_of.__dict__[key].copy_(v)
+            except Exception as e:
+                model_of.__dict__[key] = v 
+                # logger.warning(
+                #     f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
+                # )
+                self.dual_module.clear_graph_cache()
 
+            print(os.getenv("USE_COMFYUI_ANIMATEDIFF_EVOLVED", "0"),  key == "video_length")
+            if key == "video_length" and os.getenv("USE_COMFYUI_ANIMATEDIFF_EVOLVED", "0") == "1":
+                self.dual_module.set_graph_file(f'{key}={value}')
+        else:
+            raise RuntimeError(f"Unsupported operation: Cannot set {type(model_of)}.{key} to {type(v)}")
+        
     def enable_sync(self):
         if self._synced or self.dual_module._oneflow_module is None:
             return
@@ -122,9 +131,16 @@ class DualModule(OneFlowCompiledModel):
         super().__init__(
             torch_module, None, None, use_graph, dynamic, options, None, False, True
         )
-
+        self.pre_call_hooks = []
+        
     def get_modules(self):
         return self._torch_module, self._oneflow_module
+    
+    def set_graph_file(self, value):
+        compiled_options = self._deployable_module_options
+        compiled_options["graph_file"] = value
+        print(f'graph_file', value)
+        
 
     @property
     def oneflow_module(self):
@@ -177,12 +193,13 @@ class DualModule(OneFlowCompiledModel):
                 output = self.oneflow_module.apply_model(*args, **kwargs)
 
         return output
-
+    
     @input_output_processor
     @graph_file_management
     def __call__(self, *args, **kwargs):
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
+            
             with oneflow_exec_mode():
                 output = dpl_graph(*args, **kwargs)
         else:
