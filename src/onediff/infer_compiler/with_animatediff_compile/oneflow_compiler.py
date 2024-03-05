@@ -26,9 +26,12 @@ class ParameterUpdateController:
         self._handles = []
     
     def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any):
+        # filter the training status
+        if key == "training":
+            model_of.__dict__[key] = value
+            return
+        
         v = torch2oflow(value)
-        if "video_length" in key:
-            logger.info(f'{"-"*20} {key} = {v} {"-"*20} {model_of.__dict__[key]=}')
         if not self.dual_module._deployable_module_use_graph:
             setattr(model_of, key, v)
         elif isinstance(v, flow.Tensor):
