@@ -50,8 +50,7 @@ __all__ = [
     "ModuleDeepCacheSpeedup",
 ]
 
-if not args.dont_upcast_attention:
-    os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
 class ModelSpeedup:
