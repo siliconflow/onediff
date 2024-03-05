@@ -343,7 +343,7 @@ class OneflowGraph(flow.nn.Graph):
     @cost_cnt(transform_mgr.debug_mode)
     def load_graph(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
-        self.graph_state_dict = state_dict # for used for OneflowGraph.save_graph
+        self.graph_state_dict = state_dict # used for OneflowGraph.save_graph
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
         self.load_runtime_state_dict(state_dict, warmup_with_run=run_warmup)
