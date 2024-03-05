@@ -50,7 +50,8 @@ __all__ = [
     "ModuleDeepCacheSpeedup",
 ]
 
-os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
+if not args.dont_upcast_attention:
+    os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
 class ModelSpeedup:
