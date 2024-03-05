@@ -67,36 +67,37 @@ def compile_pipe(
 
 
 def save_pipe(
-    pipe, dir="cached_pipe", *, ignores=(), overwrite=True
+    pipe, dst_dir="cached_pipe", *, ignores=(), overwrite=True
 ):
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    if not os.path.exists(dst_dir):
+        os.makedirs(dst_dir)
     filtered_parts = _filter_parts(ignores=ignores)
     for part in filtered_parts:
         obj = _recursive_getattr(pipe, part, None)
         if (
             obj is not None
             and isinstance(obj, DeployableModule)
+            and obj._deployable_module_dpl_graph is not None
             and obj.get_graph().is_compiled
         ):
-            if not overwrite and os.path.isfile(os.path.join(dir, part)):
+            if not overwrite and os.path.isfile(os.path.join(dst_dir, part)):
                 logger.info(f"Compiled graph already exists for {part}, not overwriting it.")
                 continue
             logger.info(f"Saving {part}")
-            obj.save_graph(os.path.join(dir, part))
+            obj.save_graph(os.path.join(dst_dir, part))
 
 
 def load_pipe(
-    pipe, dir="cached_pipe", *, ignores=(),
+    pipe, src_dir="cached_pipe", *, ignores=(),
 ):
-    if not os.path.exists(dir):
+    if not os.path.exists(src_dir):
         return
     filtered_parts = _filter_parts(ignores=ignores)
     for part in filtered_parts:
         obj = _recursive_getattr(pipe, part, None)
-        if obj is not None and os.path.exists(os.path.join(dir, part)):
+        if obj is not None and os.path.exists(os.path.join(src_dir, part)):
             logger.info(f"Loading {part}")
-            obj.load_graph(os.path.join(dir, part))
+            obj.load_graph(os.path.join(src_dir, part))
 
     if "image_processor" not in ignores:
         logger.info("Patching image_processor")
