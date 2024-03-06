@@ -16,6 +16,8 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [SD-1.5](#SD-1.5)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
+- [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
+    - [SD-1.5](#sd)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
@@ -175,7 +177,7 @@ If you are using the official weight of StableDiffusionXL, just tick the **Model
 
 <img src="./imgs/Enterprise_Tutorial_WebUI.png">
 
-### SD 
+### SD-1.5
 
 #### Scripts
 
