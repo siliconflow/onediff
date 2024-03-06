@@ -205,6 +205,7 @@ The meaning of each parameter is as follows:
 `--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to sd, the model will be saved in the format of StableDiffusion single file.
 
 After obtaining the quantized model, you can use it directly in the StableDiffusion WebUI.
+> Note: When you are using a quantized model, you should not tick the **Model Quantization(int8) Speed Up** option.
 
 
 ## Diffusers with OneDiff Enterprise
