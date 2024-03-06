@@ -62,7 +62,8 @@ class ParameterUpdateController:
                 new_file_path = os.path.join(file_dir, file_name)
                 self.dual_module.set_graph_file(new_file_path)
         else:
-            raise RuntimeError(
+            self.dual_module.clear_oneflow_module()
+            logger.warning(
                 f"Unsupported operation: Cannot set {type(model_of)}.{key} to {type(v)}"
             )
 
@@ -79,6 +80,8 @@ class ParameterUpdateController:
 
                 if id(model_of) == self.safe_module_id_map.get(id(ins), None):
                     self.parameter_update(model_of, name, value)
+                else:
+                    ins.__class__.__setattr__ = org_setattr
 
                 org_setattr(ins, name, value)
 
@@ -185,6 +188,11 @@ class DualModule(OneFlowCompiledModel):
         if self._deployable_module_dpl_graph is not None:
             self._deployable_module_dpl_graph = None
             self._load_graph_first_run = True
+
+    def clear_oneflow_module(self):
+        self.clear_graph_cache()
+        if self._oneflow_module is not None:
+            self._oneflow_module = None
 
     def disable_graph_file(self):
         self._deployable_module_options["graph_file"] = None
