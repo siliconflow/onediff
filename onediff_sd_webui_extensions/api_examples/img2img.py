@@ -14,7 +14,7 @@ import json
 import time
 import os
 
-webui_server_url = 'http://127.0.0.1:54321'
+webui_server_url = 'http://127.0.0.1:7860'
 
 out_dir = 'api_out'
 out_dir_i2i = os.path.join(out_dir, 'img2img')
@@ -54,20 +54,6 @@ def call_img2img_api(**payload):
 
 
 if __name__ == '__main__':
-    payload = {
-        # "prompt": "masterpiece, (best quality:1.1), 1girl <lora:lora_model:1>",  # extra networks also in prompts
-        "prompt": "masterpiece, (best quality:1.1), 1girl",
-        "negative_prompt": "",
-        "seed": 1,
-        "steps": 20,
-        "width": 512,
-        "height": 512,
-        "cfg_scale": 7,
-        "sampler_name": "DPM++ 2M Karras",
-        "n_iter": 1,
-        "batch_size": 1,
-    }
-
     img_path = str(Path(__file__).parent / "cat.png")
     init_images = [
         encode_file_to_base64(img_path),
