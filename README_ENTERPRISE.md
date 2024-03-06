@@ -169,6 +169,44 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
   - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
 
 
+## Stable Diffusion WebUI with OneDiff Enterprise
+
+If you are using the official weight of StableDiffusionXL, just tick the **Model Quantization(int8) Speed Up** option.
+
+<img src="./imgs/Enterprise_Tutorial_WebUI.png">
+
+### SD 
+
+#### Scripts
+
+Run quantize-sd-fast.py by command to get quantized model:
+
+```python3
+python3 quantize-sd-fast.py \
+  --model /share_nfs/hf_models/stable-diffusion-v1-5 \
+  --quant_model ./quant_model \
+  --full_quant_info_dir /data/home/wangyi/temp \
+  --height 512 --width 512 \
+  --use_safetensors
+```
+
+The meaning of each parameter is as follows:
+
+`--model` Specifies the path of the model to be quantified
+
+`--quant_model` Specifies the path to save the quantized model
+
+`--full_quant_info_dir` specifies the path to save the model quantization parameters
+
+`--height --width` Specify the size of the output image when quantizing
+
+`--use_safetensors` If specified, the quantized model will be saved as safetensors
+
+`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to sd, the model will be saved in the format of StableDiffusion single file.
+
+After obtaining the quantized model, you can use it directly in the StableDiffusion WebUI.
+
+
 ## Diffusers with OneDiff Enterprise
 
 ### SDXL
