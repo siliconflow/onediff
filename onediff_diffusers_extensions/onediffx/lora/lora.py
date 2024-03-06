@@ -74,6 +74,7 @@ def load_and_fuse_lora(
         use_cache=use_cache,
     )
 
+
     # load lora weights into text encoder
     text_encoder_state_dict = {
         k: v for k, v in state_dict.items() if "text_encoder." in k

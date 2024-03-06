@@ -19,6 +19,8 @@ def is_need_mock(cls) -> bool:
     try:
         if main_pkg == "torch":
             return True
+        if main_pkg in no_need_mock:
+            return False
         pkgs = requires(main_pkg)
     except Exception as e:
         # logger.info(f"Error when checking need mock of package {main_pkg}: {e}")
@@ -105,7 +107,7 @@ class LazyMocker:
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
-
+        
         # add package path to sys.path to avoid mock error
         self.add_mocked_package(attrs[0])
 

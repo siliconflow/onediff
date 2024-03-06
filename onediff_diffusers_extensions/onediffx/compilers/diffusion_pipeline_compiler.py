@@ -77,7 +77,6 @@ def save_pipe(
         if (
             obj is not None
             and isinstance(obj, DeployableModule)
-            and obj._deployable_module_dpl_graph is not None
             and obj.get_graph().is_compiled
         ):
             if not overwrite and os.path.isfile(os.path.join(dir, part)):
