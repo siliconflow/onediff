@@ -17,7 +17,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [SDXL](#SDXL)
     - [SVD](#SVD)
 - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
-    - [SD-1.5](#sd)
+    - [SD-1.5](#SD-1.5)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
@@ -186,22 +186,30 @@ Run quantize-sd-fast.py by command to get quantized model:
 ```python3
 python3 quantize-sd-fast.py \
   --model /path/to/your/sd/model \
-  --quant_model /path/to/save/quantized/model \
-  --height 512 --width 512 \
-  --use_safetensors
+  --quantized_model /path/to/save/quantized/model \
+  --height 512 \
+  --width 512 \
+  --conv_ssim_threshold 0.985 \
+  --linear_ssim_threshold 0.991 \
+  --linear_compute_density_threshold 900 \
+  --format sd
 ```
 
 The meaning of each parameter is as follows:
 
 `--model` Specifies the path of the model to be quantified
 
-`--quant_model` Specifies the path to save the quantized model
+`--quantized_model` Specifies the path to save the quantized model
 
 `--height --width` Specify the size of the output image when quantizing
 
-`--use_safetensors` If specified, the quantized model will be saved as safetensors
+`--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization
 
-`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to sd, the model will be saved in the format of StableDiffusion single file.
+`--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization
+
+`--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized
+
+`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to 'sd', the model will be saved in the format of Stable Diffusion single safetensors
 
 After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model, and now you can load the quantized model in Stable Diffusion WebUI.
 
