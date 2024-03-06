@@ -11,7 +11,7 @@ class QuantPipeline:
     def from_quantized(
         self,
         cls,
-        pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
+        quantized_model_name_or_path: Optional[Union[str, os.PathLike]],
         *args,
         **kwargs
     ):
