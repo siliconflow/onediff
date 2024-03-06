@@ -16,6 +16,8 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [SD-1.5](#SD-1.5)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
+- [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
+    - [SD-1.5](#sd)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
@@ -167,6 +169,45 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 
   - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)
   - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
+
+
+## Stable Diffusion WebUI with OneDiff Enterprise
+
+If you are using the official weight of StableDiffusionXL, just tick the **Model Quantization(int8) Speed Up** option.
+
+<img src="./imgs/Enterprise_Tutorial_WebUI.png">
+
+### SD-1.5
+
+#### Scripts
+
+Run quantize-sd-fast.py by command to get quantized model:
+
+```python3
+python3 quantize-sd-fast.py \
+  --model /path/to/your/sd/model \
+  --quant_model /path/to/save/quantized/model \
+  --height 512 --width 512 \
+  --use_safetensors
+```
+
+The meaning of each parameter is as follows:
+
+`--model` Specifies the path of the model to be quantified
+
+`--quant_model` Specifies the path to save the quantized model
+
+`--height --width` Specify the size of the output image when quantizing
+
+`--use_safetensors` If specified, the quantized model will be saved as safetensors
+
+`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to sd, the model will be saved in the format of StableDiffusion single file.
+
+After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model, and now you can load the quantized model in Stable Diffusion WebUI.
+
+<img src="./imgs/Enterprise_Tutorial_WebUI_Script.png">
+
+> Note: When you are using a quantized model, you should **not** tick the **Model Quantization(int8) Speed Up** option.
 
 
 ## Diffusers with OneDiff Enterprise
