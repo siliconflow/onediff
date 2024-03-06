@@ -207,7 +207,7 @@ After the script has finished running, you will obtain the quantized model named
 
 <img src="./imgs/Enterprise_Tutorial_WebUI_Script.png">
 
-> Note: When you are using a quantized model, you should not tick the **Model Quantization(int8) Speed Up** option.
+> Note: When you are using a quantized model, you should **not** tick the **Model Quantization(int8) Speed Up** option.
 
 
 ## Diffusers with OneDiff Enterprise
