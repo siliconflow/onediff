@@ -47,9 +47,9 @@ class ParameterUpdateController:
                 model_of.__dict__[key].copy_(v)
             except Exception as e:
                 model_of.__dict__[key] = v
-                # logger.warning(
-                #     f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
-                # )
+                logger.warning(
+                    f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
+                )
                 self.dual_module.clear_graph_cache()
 
             if (
@@ -62,6 +62,7 @@ class ParameterUpdateController:
                 new_file_path = os.path.join(file_dir, file_name)
                 self.dual_module.set_graph_file(new_file_path)
         else:
+            self.disable_sync()
             self.dual_module.clear_oneflow_module()
             logger.warning(
                 f"Unsupported operation: Cannot set {type(model_of)}.{key} to {type(v)}"
@@ -70,6 +71,8 @@ class ParameterUpdateController:
     def enable_sync(self):
         if self._synced or self.dual_module._oneflow_module is None:
             return
+        self._synced = True
+        
         logger.info(f"{'-'*20} Enable sync {'-'*20}")
 
         def _sync_torch_to_oneflow(model_pt, model_of, sub_module_name=""):
@@ -103,7 +106,7 @@ class ParameterUpdateController:
             _sync_torch_to_oneflow(layer, model_of, name)
 
     def disable_sync(self):
-        if not self._synced or self.dual_module._oneflow_module is None:
+        if not self._synced:
             return
         logger.info(f"{'-'*20} Disable sync {'-'*20}")
         self._synced = False
@@ -186,13 +189,19 @@ class DualModule(OneFlowCompiledModel):
 
     def clear_graph_cache(self):
         if self._deployable_module_dpl_graph is not None:
-            self._deployable_module_dpl_graph = None
+            del self._deployable_module_dpl_graph
             self._load_graph_first_run = True
+            self._deployable_module_dpl_graph = None
+            torch.cuda.empty_cache()
+            flow.cuda.empty_cache()
 
     def clear_oneflow_module(self):
         self.clear_graph_cache()
         if self._oneflow_module is not None:
+            del self._oneflow_module
             self._oneflow_module = None
+            torch.cuda.empty_cache()
+            flow.cuda.empty_cache()
 
     def disable_graph_file(self):
         self._deployable_module_options["graph_file"] = None
