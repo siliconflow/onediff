@@ -8,7 +8,7 @@ from onediff.quantization import QuantPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--model", type=str, default="/ssd/home/hanbinbin/stable-diffusion-xl-base-1.0"
+    "--model", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
 )
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument("--quantized_model", type=str, required=True)
