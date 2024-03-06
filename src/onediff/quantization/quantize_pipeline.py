@@ -79,3 +79,16 @@ class QuantPipeline:
         pipe.quantize = partial(quantize_pipeline, pipe)
         pipe.save_quantized = partial(save_quantized, pipe)
         return pipe
+
+    @classmethod
+    def from_single_file(
+        self,
+        cls,
+        pretrained_model_name_or_path: Optional[Union[str, os.PathLike]],
+        *args,
+        **kwargs
+    ):
+        pipe = cls.from_single_file(pretrained_model_name_or_path, *args, **kwargs)
+        pipe.quantize = partial(quantize_pipeline, pipe)
+        pipe.save_quantized = partial(save_quantized, pipe)
+        return pipe
