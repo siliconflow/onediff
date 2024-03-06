@@ -17,7 +17,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [SDXL](#SDXL)
     - [SVD](#SVD)
 - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
-    - [SD-1.5](#sd)
+    - [SD-1.5](#SD-1.5)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
