@@ -38,9 +38,15 @@ def graph_file_management(func):
         compile_options = getattr(self, "_deployable_module_options", {})
         graph_file = compile_options.get("graph_file", None)
         
+        if os.getenv("USE_COMFYUI_ANIMATEDIFF_EVOLVED", "0") == "1":
+            # The potential removal stems from the support for dynamic batch size.
+            graph_file = graph_file if "video_length" in str(graph_file) else None 
+            
+
         is_first_load = (
             getattr(self, "_load_graph_first_run", True) and graph_file is not None
         )
+        
         if is_first_load:
             graph_file = generate_graph_file_name(
                 graph_file, self, args=args, kwargs=kwargs
@@ -77,7 +83,7 @@ def graph_file_management(func):
             except Exception as e:
                 logger.error(f"Failed to save graph file: {graph_file}! {e}")
         
-        if self._deployable_module_use_graph:
+        if self._deployable_module_use_graph and is_first_load:
             handle_graph_loading()
             ret = func(self, *args, **kwargs)
             handle_graph_saving()
