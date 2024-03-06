@@ -203,7 +203,9 @@ The meaning of each parameter is as follows:
 
 `--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to sd, the model will be saved in the format of StableDiffusion single file.
 
-After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model.
+After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model, and now you can load the quantized model in Stable Diffusion WebUI.
+
+<img src="./imgs/Enterprise_Tutorial_WebUI_Script.png">
 
 > Note: When you are using a quantized model, you should not tick the **Model Quantization(int8) Speed Up** option.
 
