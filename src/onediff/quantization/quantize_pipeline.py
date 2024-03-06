@@ -34,9 +34,9 @@ class QuantPipeline:
           ```
         """
         setup_onediff_quant()
-        pipe = cls.from_pretrained(pretrained_model_name_or_path, *args, **kwargs)
+        pipe = cls.from_pretrained(quantized_model_name_or_path, *args, **kwargs)
         load_calibration_and_quantize_pipeline(
-            os.path.join(str(pretrained_model_name_or_path), "calibrate_info.txt"), pipe
+            os.path.join(str(quantized_model_name_or_path), "calibrate_info.txt"), pipe
         )
         return pipe
 
