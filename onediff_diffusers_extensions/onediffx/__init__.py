@@ -1,3 +1,4 @@
+__version__ = "0.13.0.dev"
 from onediff.infer_compiler.oneflow_compiler_config import (
     oneflow_compiler_config as compiler_config,
 )

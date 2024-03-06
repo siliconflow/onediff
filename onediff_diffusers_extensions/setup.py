@@ -1,8 +1,18 @@
 from setuptools import find_packages, setup
 
+
+def get_version():
+    variables = {}
+    with open("onediffx/__init__.py", "r") as f:
+        for line in f:
+            if line.startswith("__version__"):
+                exec(line, variables)
+    return variables["__version__"]
+
+
 setup(
     name="onediffx",
-    version="0.1.0",
+    version=get_version(),
     description="onediff extensions for diffusers",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
@@ -12,7 +22,7 @@ setup(
     python_requires=">=3.7.0",
     install_requires=[
         "transformers>=4.27.1",
-        "diffusers>=0.24.0,<=0.25.1",
+        "diffusers>=0.24.0,<=0.26.2",
         "accelerate",
         "torch",
         "onefx",
@@ -30,4 +40,6 @@ setup(
         "Programming Language :: Python :: 3.10",
         "Topic :: Scientific/Engineering :: Artificial Intelligence",
     ],
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
 )
