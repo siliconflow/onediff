@@ -7,7 +7,8 @@ from sd_webui_onediff_utils import (
     timestep_embedding,
 )
 from sgm.modules.attention import CrossAttention, SpatialTransformer
-from sgm.modules.diffusionmodules.openaimodel import UNetModel
+from sgm.modules.diffusionmodules.openaimodel import UNetModel, ResBlock
+from sgm.modules.attention import BasicTransformerBlock
 from sgm.modules.diffusionmodules.util import GroupNorm32
 
 __all__ = ["compile_sgm_unet"]
@@ -76,5 +77,11 @@ register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
 def compile_sgm_unet(unet_model, *, use_graph=True, options={}):
-    if isinstance(unet_model, UNetModel):
-        return oneflow_compile(unet_model, use_graph=use_graph, options=options)
+    if not isinstance(unet_model, UNetModel):
+        return
+    for module in unet_model.modules():
+        if isinstance(module, BasicTransformerBlock):
+            module.checkpoint = False
+        if isinstance(module, ResBlock):
+            module.use_checkpoint = False
+    return oneflow_compile(unet_model, use_graph=use_graph, options=options)

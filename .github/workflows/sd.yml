@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - enable-docker-hub-cache
+      - "img/*"
   schedule:
     # every 6 hours
     - cron: "0 */6 * * *"
