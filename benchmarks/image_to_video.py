@@ -107,7 +107,7 @@ def load_pipe(
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
-        pipe = QuantPipeline.from_pretrained(
+        pipe = QuantPipeline.from_quantized(
             pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
         )
     else:

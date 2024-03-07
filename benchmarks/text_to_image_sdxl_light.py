@@ -1,24 +1,18 @@
-MODEL = "runwayml/stable-diffusion-v1-5"
+MODEL = "stabilityai/stable-diffusion-xl-base-1.0"
+REPO = "ByteDance/SDXL-Lightning"
+CPKT = "sdxl_lightning_4step_unet.safetensors"
 VARIANT = None
 CUSTOM_PIPELINE = None
-SCHEDULER = "EulerAncestralDiscreteScheduler"
-LORA = None
 CONTROLNET = None
-STEPS = 30
-PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
+PROMPT = "A girl smiling"
 NEGATIVE_PROMPT = None
 SEED = None
 WARMUPS = 3
 BATCH = 1
-HEIGHT = None
-WIDTH = None
-INPUT_IMAGE = None
-CONTROL_IMAGE = None
+HEIGHT = 1024
+WIDTH = 1024
 OUTPUT_IMAGE = None
 EXTRA_CALL_KWARGS = None
-CACHE_INTERVAL = 3
-CACHE_LAYER_ID = 0
-CACHE_BLOCK_ID = 0
 
 import os
 import importlib
@@ -33,16 +27,22 @@ from diffusers.utils import load_image
 import oneflow as flow
 from onediffx import compile_pipe
 
+from huggingface_hub import hf_hub_download
+from safetensors.torch import load_file
+
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default=MODEL)
+    parser.add_argument(
+        "--repo", type=str, default=REPO
+    )
+    parser.add_argument(
+        "--cpkt", type=str, default=CPKT
+    )
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
-    parser.add_argument("--scheduler", type=str, default=SCHEDULER)
-    parser.add_argument("--lora", type=str, default=LORA)
     parser.add_argument("--controlnet", type=str, default=CONTROLNET)
-    parser.add_argument("--steps", type=int, default=STEPS)
     parser.add_argument("--prompt", type=str, default=PROMPT)
     parser.add_argument("--negative-prompt", type=str, default=NEGATIVE_PROMPT)
     parser.add_argument("--seed", type=int, default=SEED)
@@ -50,14 +50,8 @@ def parse_args():
     parser.add_argument("--batch", type=int, default=BATCH)
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
-    parser.add_argument("--cache_interval", type=int, default=CACHE_INTERVAL)
-    parser.add_argument("--cache_layer_id", type=int, default=CACHE_LAYER_ID)
-    parser.add_argument("--cache_block_id", type=int, default=CACHE_BLOCK_ID)
     parser.add_argument("--extra-call-kwargs", type=str, default=EXTRA_CALL_KWARGS)
-    parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
-    parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
-    parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
         "--compiler",
         type=str,
@@ -67,15 +61,22 @@ def parse_args():
     return parser.parse_args()
 
 
-def load_pipe(
-    pipeline_cls,
+def load_and_compile_pipe(
     model_name,
+    repo_name,
+    cpkt_name,
+    compile_type,
     variant=None,
     custom_pipeline=None,
-    scheduler=None,
-    lora=None,
     controlnet=None,
 ):
+    from diffusers import StableDiffusionXLPipeline
+
+    if compile_type == "oneflow":
+        from onediff.schedulers import EulerDiscreteScheduler
+    else:
+        from diffusers import EulerDiscreteScheduler
+
     extra_kwargs = {}
     if custom_pipeline is not None:
         extra_kwargs["custom_pipeline"] = custom_pipeline
@@ -90,22 +91,62 @@ def load_pipe(
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
-
-        pipe = QuantPipeline.from_quantized(
-            pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
-        )
+        raise TypeError("Quantizatble SDXL-LIGHT is not supported!")
+        # pipe = QuantPipeline.from_quantized(
+        #     pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
+        # )
     else:
-        pipe = pipeline_cls.from_pretrained(
+        is_lora_cpkt = "lora" in cpkt_name
+        pipe = StableDiffusionXLPipeline.from_pretrained(
             model_name, torch_dtype=torch.float16, **extra_kwargs
         )
-    if scheduler is not None:
-        scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
-        pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
-    if lora is not None:
-        pipe.load_lora_weights(lora)
-        pipe.fuse_lora()
+
+        if is_lora_cpkt:
+            pipe = StableDiffusionXLPipeline.from_pretrained(
+                model_name,
+                torch_dtype=torch.float16,
+                **extra_kwargs
+            ).to("cuda")
+            if os.path.isfile(os.path.join(repo_name, cpkt_name)):
+                pipe.load_lora_weights(os.path.join(repo_name, cpkt_name))
+            else:
+                pipe.load_lora_weights(hf_hub_download(repo_name, cpkt_name))
+            pipe.fuse_lora()
+        else:
+            from diffusers import UNet2DConditionModel
+            unet = UNet2DConditionModel.from_config(model_name, subfolder="unet").to("cuda", torch.float16)
+            if os.path.isfile(os.path.join(repo_name, cpkt_name)):
+                unet.load_state_dict(load_file(os.path.join(repo_name, cpkt_name), device="cuda"))
+            else:
+                from huggingface_hub import hf_hub_download
+                unet.load_state_dict(load_file(hf_hub_download(repo_name, cpkt_name), device="cuda")) 
+            pipe = StableDiffusionXLPipeline.from_pretrained(
+                model_name,
+                unet=unet,
+                torch_dtype=torch.float16,
+                **extra_kwargs
+            ).to("cuda")
+
+    pipe.scheduler = EulerDiscreteScheduler.from_config(
+        pipe.scheduler.config,
+        timestep_spacing="trailing"
+    )
     pipe.safety_checker = None
     pipe.to(torch.device("cuda"))
+
+    if compile_type == "none":
+        pass
+    elif compile_type == "oneflow":
+        pipe = compile_pipe(pipe)
+    elif compile_type in ("compile", "compile-max-autotune"):
+        mode = "max-autotune" if compile_type == "compile-max-autotune" else None
+        pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "controlnet"):
+            pipe.controlnet = torch.compile(pipe.controlnet, mode=mode)
+        pipe.vae = torch.compile(pipe.vae, mode=mode)
+    else:
+        raise ValueError(f"Unknown compiler: {compile_type}")
+
     return pipe
 
 
@@ -137,60 +178,25 @@ class IterationProfiler:
 
 def main():
     args = parse_args()
-    if args.input_image is None:
-        if args.deepcache:
-            from onediffx.deep_cache import StableDiffusionXLPipeline as pipeline_cls
-        else:
-            from diffusers import AutoPipelineForText2Image as pipeline_cls
-    else:
-        from diffusers import AutoPipelineForImage2Image as pipeline_cls
 
-    pipe = load_pipe(
-        pipeline_cls,
+    pipe = load_and_compile_pipe(
         args.model,
+        args.repo,
+        args.cpkt,
+        args.compiler,
         variant=args.variant,
         custom_pipeline=args.custom_pipeline,
-        scheduler=args.scheduler,
-        lora=args.lora,
         controlnet=args.controlnet,
     )
 
+    height = args.height
+    width = args.width
     height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
     width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
 
-    if args.compiler == "none":
-        pass
-    elif args.compiler == "oneflow":
-        pipe = compile_pipe(pipe)
-    elif args.compiler in ("compile", "compile-max-autotune"):
-        mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
-        pipe.unet = torch.compile(pipe.unet, mode=mode)
-        if hasattr(pipe, "controlnet"):
-            pipe.controlnet = torch.compile(pipe.controlnet, mode=mode)
-        pipe.vae = torch.compile(pipe.vae, mode=mode)
-    else:
-        raise ValueError(f"Unknown compiler: {args.compiler}")
+    n_steps = int(args.cpkt[len("sdxl_lightning_") : len("sdxl_lightning_") + 1])
 
-    if args.input_image is None:
-        input_image = None
-    else:
-        input_image = load_image(args.input_image)
-        input_image = input_image.resize((width, height), Image.LANCZOS)
-
-    if args.control_image is None:
-        if args.controlnet is None:
-            control_image = None
-        else:
-            control_image = Image.new("RGB", (width, height))
-            draw = ImageDraw.Draw(control_image)
-            draw.ellipse(
-                (args.width // 4, height // 4, args.width // 4 * 3, height // 4 * 3),
-                fill=(255, 255, 255),
-            )
-            del draw
-    else:
-        control_image = load_image(args.control_image)
-        control_image = control_image.resize((width, height), Image.LANCZOS)
+    
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(
@@ -198,7 +204,7 @@ def main():
             negative_prompt=args.negative_prompt,
             height=height,
             width=width,
-            num_inference_steps=args.steps,
+            num_inference_steps=n_steps,
             num_images_per_prompt=args.batch,
             generator=None
             if args.seed is None
@@ -209,17 +215,6 @@ def main():
                 else json.loads(args.extra_call_kwargs)
             ),
         )
-        if input_image is not None:
-            kwarg_inputs["image"] = input_image
-        if control_image is not None:
-            if input_image is None:
-                kwarg_inputs["image"] = control_image
-            else:
-                kwarg_inputs["control_image"] = control_image
-        if args.deepcache:
-            kwarg_inputs["cache_interval"] = args.cache_interval
-            kwarg_inputs["cache_layer_id"] = args.cache_layer_id
-            kwarg_inputs["cache_block_id"] = args.cache_block_id
         return kwarg_inputs
 
     # NOTE: Warm it up.
@@ -234,10 +229,12 @@ def main():
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
     kwarg_inputs = get_kwarg_inputs()
-    iter_profiler = IterationProfiler()
+    iter_profiler = None
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
+        iter_profiler = IterationProfiler()
         kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
     elif "callback" in inspect.signature(pipe).parameters:
+        iter_profiler = IterationProfiler()
         kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_images = pipe(**kwarg_inputs).images
