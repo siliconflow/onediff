@@ -8,28 +8,28 @@ __all__ = ["OneDiffControlLora"]
 
 
 def set_attr_of(obj, attr, value):
-    # def _set_attr_of(obj, attr, value):
-    #     obj = obj._oneflow_module
-    #     value = flow.utils.tensor.from_torch(value)
-    #     attrs = attr.split(".")
-    #     for name in attrs[:-1]:
-    #         obj = getattr(obj, name)
-    #     prev = getattr(obj, attrs[-1])
-    #     prev.copy_(value)
+    def _set_attr_of(obj, attr, value):
+        obj = obj._deployable_module_model._oneflow_module
+        value = flow.utils.tensor.from_torch(value)
+        attrs = attr.split(".")
+        for name in attrs[:-1]:
+            obj = getattr(obj, name)
+        prev = getattr(obj, attrs[-1])
+        prev.copy_(value)
 
-    # exist_oneflow_module = (
-    #     getattr(obj, "_oneflow_module", None) is not None
-    # )
+    exist_oneflow_module = (
+        getattr(obj._deployable_module_model, "_oneflow_module", None) is not None
+    )
 
-    # if exist_oneflow_module:
-    #     _set_attr_of(obj, attr, value)
-    # else:
-    attrs = attr.split(".")
-    for name in attrs[:-1]:
-        obj = getattr(obj, name)
-    prev = getattr(obj, attrs[-1])
-    setattr(obj, attrs[-1], torch.nn.Parameter(value, requires_grad=False))
-    del prev
+    if exist_oneflow_module:
+        _set_attr_of(obj, attr, value)
+    else:
+        attrs = attr.split(".")
+        for name in attrs[:-1]:
+            obj = getattr(obj, name)
+        prev = getattr(obj, attrs[-1])
+        setattr(obj, attrs[-1], torch.nn.Parameter(value, requires_grad=False))
+        del prev
 
 
 class OneDiffControlLora(ControlLora):

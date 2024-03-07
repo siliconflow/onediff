@@ -162,7 +162,7 @@ def _load_attn_procs(
 
         for key, value_dict in lora_grouped_dict.items():
             if isinstance(self, DeployableModule):
-                attn_processor = self
+                attn_processor = self._torch_module
             else:
                 attn_processor = self
             for sub_key in key.split("."):

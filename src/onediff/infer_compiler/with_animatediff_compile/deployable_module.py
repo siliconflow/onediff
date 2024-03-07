@@ -9,6 +9,15 @@ class DeployableModule:
         self._deployed_original_module = original_module
         self._deployed_compiled_model = compiled_model
 
+    
+    @property # Keep compatibility with previous changes.
+    def _deployable_module_model(self):
+        return self._deployed_compiled_model
+    
+    @property # Keep compatibility with previous changes.
+    def _torch_module(self):
+        return self._deployed_original_module
+
     @property
     def __class__(self):
         return self._deployed_original_module.__class__

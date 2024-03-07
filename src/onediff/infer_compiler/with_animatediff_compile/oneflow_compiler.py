@@ -156,6 +156,10 @@ class DualModule(OneFlowCompiledModel):
         compiled_options = self._deployable_module_options
         compiled_options["graph_file"] = file_path
 
+    @property # Keep compatibility with previous changes.
+    def _deployable_module_model(self):
+        return self
+
     @property
     def oneflow_module(self):
         if self._oneflow_module is not None:
