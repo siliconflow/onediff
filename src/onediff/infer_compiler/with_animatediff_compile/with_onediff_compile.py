@@ -1,4 +1,4 @@
-import torch 
+import torch
 from .deployable_module import DeployableModule
 from .oneflow_compiler import DualModule
 from ..transform.custom_transform import set_default_registry
@@ -21,15 +21,14 @@ def oneflow_compile(
         - 'size' which config the cache size when cache is enabled. Note that after onediff v0.12, cache is default disabled.
         - 'graph_file' (None) generates a compilation cache file. If the file exists, loading occurs; if not, the compilation result is saved after the first run.
         - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
-        - 'sync_with_oneflow_only' (True) only sync with oneflow, default True. If set False, the parameters will be synced with oneflow and torch module.
     """
 
     set_default_registry()
     if isinstance(torch_module, DeployableModule):
         return torch_module
-    
+
     compiled_model = DualModule(torch_module, use_graph, dynamic, options)
-    out =  DeployableModule(torch_module, compiled_model)
+    out = DeployableModule(torch_module, compiled_model)
     assert isinstance(out, torch_module.__class__)
     assert out.state_dict().keys() == torch_module.state_dict().keys()
     return out

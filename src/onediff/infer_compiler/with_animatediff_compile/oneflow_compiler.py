@@ -29,7 +29,8 @@ class ParameterUpdateController:
         self._synced = False
         self._handles = []
 
-    def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any):
+    def parameter_update(self, model_of: flow.nn.Module, key: str, value: Any) -> None:
+        """ Update the parameters of the given model with the specified key-value pair."""
         # filter the training status
         if key == "training" or value is None:
             model_of.__dict__[key] = value
@@ -43,15 +44,12 @@ class ParameterUpdateController:
         elif isinstance(v, (int, float, bool, str)):
             if model_of.__dict__[key] == v:
                 return
-            try:
-                model_of.__dict__[key].copy_(v)
-            except Exception as e:
-                model_of.__dict__[key] = v
-                logger.warning(
-                    f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
-                )
-                self.dual_module.clear_graph_cache()
 
+            model_of.__dict__[key] = v
+            logger.warning(
+                f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
+            )
+            self.dual_module.clear_graph_cache()
             if (
                 key == "video_length"
                 and os.getenv("USE_COMFYUI_ANIMATEDIFF_EVOLVED", "0") == "1"
@@ -69,10 +67,17 @@ class ParameterUpdateController:
             )
 
     def enable_sync(self):
+        """
+        Enable synchronization between PyTorch and OneFlow models.
+
+        This method synchronizes the parameters of the PyTorch model with the corresponding parameters
+        in the OneFlow model. It replaces the `__setattr__` method of each PyTorch module with a custom
+        implementation that updates the corresponding OneFlow module whenever a parameter is set.
+        """
         if self._synced or self.dual_module._oneflow_module is None:
             return
         self._synced = True
-        
+
         logger.info(f"{'-'*20} Enable sync {'-'*20}")
 
         def _sync_torch_to_oneflow(model_pt, model_of, sub_module_name=""):
@@ -156,7 +161,7 @@ class DualModule(OneFlowCompiledModel):
         compiled_options = self._deployable_module_options
         compiled_options["graph_file"] = file_path
 
-    @property # Keep compatibility with previous changes.
+    @property  # Keep compatibility with previous changes.
     def _deployable_module_model(self):
         return self
 
