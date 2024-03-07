@@ -187,7 +187,7 @@ def main():
         from diffusers import StableCascadeDecoderPipeline, StableCascadePriorPipeline
     except ImportError:
         raise ImportError(
-            "Please install `diffusers` from this branch while the PR is WIP: `pip install git+https://github.com/kashif/diffusers.git@wuerstchen-v3`"
+            "Please install `diffusers` from this branch while the PR is WIP: `pip install --upgrade git+https://github.com/kashif/diffusers.git@a3dc21385b7386beb3dab3a9845962ede6765887`"
         )
 
     prior_pipe = load_pipe(
