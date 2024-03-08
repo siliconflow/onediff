@@ -101,7 +101,7 @@ class ParameterUpdateController:
                 if id(model_of) == self.safe_module_id_map.get(id(ins), None):
                     self.parameter_update(model_of, name, value)
                 else:
-                    ins.__class__.__setattr__ = org_setattr
+                    self.disable_sync()
 
                 org_setattr(ins, name, value)
 
@@ -175,6 +175,7 @@ class DualModule(OneFlowCompiledModel):
             return
         compiled_options = self._deployable_module_options
         compiled_options["graph_file"] = file_path
+        self.clear_oneflow_module()
 
     @property  # Keep compatibility with previous changes.
     def _deployable_module_model(self):
