@@ -37,9 +37,9 @@ from .utils.onediff_load_utils import onediff_load_quant_checkpoint_advanced
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
-
+from .modules.hijack_samplers import samplers_hijack
 from .modules.hijack_animatediff import animatediff_hijacker
-
+samplers_hijack.hijack()
 animatediff_hijacker.hijack()
 
 
