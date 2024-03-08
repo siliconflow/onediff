@@ -59,15 +59,19 @@ def getattr_from_module_name(module, module_name: str):
     for attr in attrs:
         if attr == "<locals>":
             if len(signature(sub_module).parameters) == 0:
-                # logger.info(f"{full_attr_name=} is a local function without parameters")
+                logger.info(f"{full_attr_name=} is a local function without parameters")
+
                 def proxy_func(*args, **kwargs):
                     return sub_module()(*args, **kwargs)
+
                 return proxy_func
             else:
                 # logger.warning(
                 #     f"Not support {module_name} with parameters Module: {module}"
                 # )
-                raise RuntimeError(f"Not support {module_name} with parameters Module: {module}")
+                raise RuntimeError(
+                    f"Not support {module_name} with parameters Module: {module}"
+                )
         sub_module = getattr(sub_module, attr)
     return sub_module
 
@@ -114,10 +118,7 @@ def _update_module(full_names, main_pkg_enable_context):
 
 class DynamicMockModule(ModuleType):
     def __init__(
-        self,
-        pkg_name: str,
-        obj_entity: ModuleType,
-        main_pkg_enable: callable,
+        self, pkg_name: str, obj_entity: ModuleType, main_pkg_enable: callable,
     ):
         self._pkg_name = pkg_name
         self._obj_entity = obj_entity  # ModuleType or _LazyModule

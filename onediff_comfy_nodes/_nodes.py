@@ -4,7 +4,8 @@ from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from onediff.infer_compiler.utils import set_boolean_env_var
 from onediff.optimization.quant_optimizer import quantize_model
-
+from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 import os
 import re
@@ -383,7 +384,6 @@ class ModuleDeepCacheSpeedup:
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from comfy.controlnet import ControlLora, ControlNet
-
 from .modules.onediff_controlnet import OneDiffControlLora
 
 
@@ -714,6 +714,117 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
         return modelpatcher, clip, vae
 
 
+class BatchSizePatcher:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "latent_image": ("LATENT", ),
+            },
+        }
+
+    RETURN_TYPES = ("MODEL",)
+    CATEGORY = "OneDiff/Tools"
+    FUNCTION = "set_cache_filename"
+
+    def set_cache_filename(self, model, latent_image):
+        diff_model = model.model.diffusion_model
+        batch_size = latent_image["samples"].shape[0]
+        if isinstance(diff_model, DeployableModule):
+            file_path = diff_model.get_graph_file()
+            file_dir = os.path.dirname(file_path)
+            file_name = os.path.basename(file_path)
+            names = file_name.split("_")
+            key , is_replace = "bs=", False
+            for i, name in enumerate(names):
+                if key in name:
+                    names[i] = f"{key}{batch_size}"
+                    is_replace = True
+            if not is_replace:
+                names = [f"{key}{batch_size}"] + names
+
+            new_file_name = "_".join(names)
+            new_file_path = os.path.join(file_dir, new_file_name)
+            
+            diff_model.set_graph_file(new_file_path)
+        else:
+            print(f"Warning: model is not a {DeployableModule}")
+        return (model,)
+
+
+class VaeSpeedupV2:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "vae": ("VAE",),
+                "dynamic": (["enable", "disable"],),
+                "backend": (["onediff", "torch.compile"],),
+            },
+        }
+
+    RETURN_TYPES = ("VAE",)
+    FUNCTION = "speedup"
+    CATEGORY = "OneDiff/Components"
+
+    def speedup(self, vae, dynamic, backend):
+        dynamic = dynamic == "enable"
+        new_vae = copy.deepcopy(
+            vae
+        )  # Loading/offloading will not cause an increase in VRAM.
+        if backend == "onediff":
+            new_vae.first_stage_model = oneflow_compile(
+                new_vae.first_stage_model, use_graph=True, dynamic=dynamic
+            )
+            return (new_vae,)
+        elif backend == "torch.compile":
+            new_vae.first_stage_model = torch.compile(
+                new_vae.first_stage_model, dynamic=dynamic
+            )
+        else:
+            raise ValueError(f"Unsupported backend: {backend}")
+        return (new_vae,)
+
+class OneDiffFastQuantUnet:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "compute_density_threshold": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 100000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "quantize_conv": (["enable", "disable"],),
+                "quantize_linear": (["enable", "disable"],)
+            }
+        }
+
+    RETURN_TYPES = ("MODEL",)
+    CATEGORY = "OneDiff/Tools"
+    FUNCTION = "onediff_load_checkpoint"
+
+    def onediff_load_checkpoint(
+        self, model,  compute_density_threshold = 0 , 
+        quantize_conv = "enable", quantize_linear = "enable"
+    ):
+        diff_model = model.model.diffusion_model
+        if isinstance(diff_model, DeployableModule):
+            diff_model.quantize(quantize_conv=(quantize_conv=="enable"), 
+                                quantize_linear=(quantize_linear=="enable"),
+                                compute_density_threshold=compute_density_threshold)
+        else:
+            print(f"Warning: model is not a {DeployableModule}")
+        return (model,)
+
+    
 if _USE_UNET_INT8:
     from .utils.quant_ksampler_tools import (
         KSampleQuantumBase,

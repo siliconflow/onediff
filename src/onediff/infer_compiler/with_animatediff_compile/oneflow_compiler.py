@@ -1,4 +1,3 @@
-import os
 import types
 import torch
 from dataclasses import dataclass
@@ -15,8 +14,33 @@ from ..utils.param_utils import parse_device, check_device
 from ..utils.graph_management_utils import graph_file_management
 from ..transform.manager import transform_mgr
 from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
+from ...optimization.quant_optimizer import quantize_model
+import os
 
 __all__ = ["OneFlowCompiledModel", "DualModule"]
+
+
+@dataclass
+class QuantizationConfig:
+    # https://github.com/siliconflow/sd-team/issues/193#issuecomment-1893290387
+    bits: int = 8
+    inplace: bool = True
+    quantize_conv: bool = True
+    quantize_linear: bool = True
+    compute_density_threshold: int = 900
+    conv_mse_threshold: float = 0.1
+    linear_mse_threshold: float = 0.1
+    calibrate_info: Dict[str, Any] = None
+    use_quantization: bool = False
+    cache_dir: str = "."
+
+    def save_calibrate_info(self, calibrate_info, file_name):
+        file_path = os.path.join(self.cache_dir, file_name)
+        torch.save(calibrate_info, file_path)
+
+    def load_calibrate_info(self, file_name):
+        file_path = os.path.join(self.cache_dir, file_name)
+        return torch.load(file_path)
 
 
 class ParameterUpdateController:
@@ -44,24 +68,12 @@ class ParameterUpdateController:
         elif isinstance(v, (int, float, bool, str)):
             if model_of.__dict__[key] == v:
                 return
-
             model_of.__dict__[key] = v
             logger.warning(
                 f"Only support oneflow.Tensor now. set {type(model_of)}.{key} = {v=}"
             )
-            self.dual_module.clear_graph_cache()
-            if (
-                key == "video_length"
-                and os.getenv("USE_COMFYUI_ANIMATEDIFF_EVOLVED", "0") == "1"
-            ):
-                file_path = self.dual_module.get_graph_file()
-                file_dir = os.path.dirname(file_path)
-                file_name = f"{key}={value}"
-                new_file_path = os.path.join(file_dir, file_name)
-                self.dual_module.set_graph_file(new_file_path)
         else:
-            self.disable_sync()
-            self.dual_module.clear_oneflow_module()
+            model_of.__dict__[key] = v
             logger.warning(
                 f"Unsupported operation: Cannot set {type(model_of)}.{key} to {type(v)}"
             )
@@ -148,7 +160,7 @@ class DualModule(OneFlowCompiledModel):
         super().__init__(
             torch_module, None, None, use_graph, dynamic, options, None, False, True
         )
-        self.pre_call_hooks = []
+        self.quantization_config = QuantizationConfig()
 
     def get_modules(self):
         return self._torch_module, self._oneflow_module
@@ -157,7 +169,10 @@ class DualModule(OneFlowCompiledModel):
         compiled_options = self._deployable_module_options
         return compiled_options.get("graph_file", None)
 
-    def set_graph_file(self, file_path: str):
+    def set_graph_file(self, file_path: str) -> None:
+        old_file_path = self.get_graph_file()
+        if old_file_path == file_path:
+            return
         compiled_options = self._deployable_module_options
         compiled_options["graph_file"] = file_path
 
@@ -171,7 +186,21 @@ class DualModule(OneFlowCompiledModel):
             return self._oneflow_module
 
         logger.debug(f"Convert {type(self._torch_module)} ...")
-        self._oneflow_module = torch2oflow(self._torch_module)
+        if self.quantization_config.use_quantization:
+            conf = self.quantization_config
+            torch_module = quantize_model(
+                self._torch_module,
+                bits=conf.bits,
+                quantize_conv=conf.quantize_conv,
+                quantize_linear=conf.quantize_linear,
+                inplace=conf.inplace,
+                calibrate_info=conf.calibrate_info,
+            )
+            conf.use_quantization = False
+        else:
+            torch_module = self._torch_module
+
+        self._oneflow_module = torch2oflow(torch_module)
         logger.debug(f"Convert {type(self._torch_module)} done!")
         self._parameter_update_controller = ParameterUpdateController(self, False)
         self._parameter_update_controller.enable_sync()
@@ -367,7 +396,6 @@ class OneflowGraph(flow.nn.Graph):
             state_dict[name]["outputs_original"] = out[0]
 
         args_tree._is_dataclass = original_is_dataclass
-
         flow.save(state_dict, file_path)
 
 
