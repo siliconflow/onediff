@@ -72,7 +72,6 @@ def compile_unet(
         from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
         for sub_module_name, sub_calibrate_info in calibrate_info.items():
-            print(sub_module_name)
             replace_sub_module_with_quantizable_module(
                 unet_model,
                 sub_module_name,
