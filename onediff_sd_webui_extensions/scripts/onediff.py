@@ -1,8 +1,10 @@
 import os
 import warnings
 import gradio as gr
+from pathlib import Path
 import modules.scripts as scripts
 import modules.shared as shared
+from modules.sd_models import select_checkpoint
 from modules.processing import process_images
 
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
@@ -10,6 +12,7 @@ from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
 
+from onediff.quantization import setup_onediff_quant
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -48,6 +51,38 @@ def compile_unet(
 
     if quantization:
         unet_model = quantize_model(unet_model, inplace=False)
+
+    # For offline quantized models
+    elif (Path(select_checkpoint().filename).parent / "sd_calibrate_info.txt").exists():
+        setup_onediff_quant()
+
+        calibration_path = (
+            Path(select_checkpoint().filename).parent / "sd_calibrate_info.txt"
+        )
+        calibrate_info = {}
+        with open(calibration_path, "r") as f:
+            for line in f.readlines():
+                line = line.strip()
+                items = line.split(" ")
+                calibrate_info[items[0]] = [
+                    float(items[1]),
+                    int(items[2]),
+                    [float(x) for x in items[3].split(",")],
+                ]
+        from onediff_quant.utils import replace_sub_module_with_quantizable_module
+
+        for sub_module_name, sub_calibrate_info in calibrate_info.items():
+            print(sub_module_name)
+            replace_sub_module_with_quantizable_module(
+                unet_model,
+                sub_module_name,
+                sub_calibrate_info,
+                fake_quant=False,
+                static=False,
+                nbits=8,
+                convert_quant_module_fn=lambda x: x,
+                original_module_name=None,
+            )
 
     if isinstance(unet_model, UNetModelLDM):
         return compile_ldm_unet(unet_model, use_graph=use_graph, options=options)
