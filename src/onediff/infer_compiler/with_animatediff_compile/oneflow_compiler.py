@@ -17,7 +17,7 @@ from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
 from ...optimization.quant_optimizer import quantize_model
 import os
 
-__all__ = ["OneFlowCompiledModel", "DualModule"]
+__all__ = ["OneFlowCompiledModel", "DualModule", "QuantizationConfig"]
 
 
 @dataclass
