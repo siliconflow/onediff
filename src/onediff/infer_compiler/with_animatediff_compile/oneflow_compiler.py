@@ -1,10 +1,12 @@
 import types
 import torch
+import json
 from dataclasses import dataclass
-from typing import Any, Dict
+from typing import Any, Dict, Union
 import oneflow as flow
 from itertools import chain
 from oneflow.utils.tensor import to_torch
+from .quantization_module import QuantizationConfig
 from ..utils.log_utils import logger
 from ..utils.cost_util import cost_cnt
 from ..utils.args_tree_util import input_output_processor
@@ -15,32 +17,8 @@ from ..utils.graph_management_utils import graph_file_management
 from ..transform.manager import transform_mgr
 from ..transform.builtin_transform import reverse_proxy_class, torch2oflow
 from ...optimization.quant_optimizer import quantize_model
-import os
 
-__all__ = ["OneFlowCompiledModel", "DualModule", "QuantizationConfig"]
-
-
-@dataclass
-class QuantizationConfig:
-    # https://github.com/siliconflow/sd-team/issues/193#issuecomment-1893290387
-    bits: int = 8
-    inplace: bool = True
-    quantize_conv: bool = True
-    quantize_linear: bool = True
-    compute_density_threshold: int = 900
-    conv_mse_threshold: float = 0.1
-    linear_mse_threshold: float = 0.1
-    calibrate_info: Dict[str, Any] = None
-    use_quantization: bool = False
-    cache_dir: str = "."
-
-    def save_calibrate_info(self, calibrate_info, file_name):
-        file_path = os.path.join(self.cache_dir, file_name)
-        torch.save(calibrate_info, file_path)
-
-    def load_calibrate_info(self, file_name):
-        file_path = os.path.join(self.cache_dir, file_name)
-        return torch.load(file_path)
+__all__ = ["OneFlowCompiledModel", "DualModule"]
 
 
 class ParameterUpdateController:
