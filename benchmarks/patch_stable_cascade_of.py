@@ -15,9 +15,7 @@ StableCascadeUnet_OF_CLS = (
 ResBlockStageB = (
     diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_diffnext.ResBlockStageB
 )
-# miniconda3/envs/oneflow_pro/lib/python3.10/site-packages/diffusers/pipelines/wuerstchen/modeling_wuerstchen_common.py
 AttnBlock = diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_common.AttnBlock
-# miniconda3/envs/oneflow_pro/lib/python3.10/site-packages/diffusers/pipelines/wuerstchen/modeling_wuerstchen_common.py
 TimestepBlock = (
     diffusers_of.pipelines.wuerstchen.modeling_wuerstchen_common.TimestepBlock
 )
