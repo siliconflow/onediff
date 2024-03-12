@@ -44,7 +44,13 @@ class DeepCacheUNet(Module):
         num_video_frames = c_dict.get(
             "num_video_frames", self.unet_module.default_num_video_frames
         )
-        image_only_indicator = kwargs.get("image_only_indicator", None)
+        
+        default_image_only_indicator = getattr(
+            self.unet_module, "default_image_only_indicator", None
+        )
+        image_only_indicator = c_dict.get(
+            "image_only_indicator", default_image_only_indicator
+        )
 
         time_context = kwargs.get("time_context", None)
 
@@ -174,7 +180,13 @@ class FastDeepCacheUNet(Module):
         num_video_frames = c_dict.get(
             "num_video_frames", self.unet_module.default_num_video_frames
         )
-        image_only_indicator = kwargs.get("image_only_indicator", None)
+
+        default_image_only_indicator = getattr(
+            self.unet_module, "default_image_only_indicator", None
+        )
+        image_only_indicator = c_dict.get(
+            "image_only_indicator", default_image_only_indicator
+        )
 
         time_context = kwargs.get("time_context", None)
 
