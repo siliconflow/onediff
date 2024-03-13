@@ -885,8 +885,6 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
         default_overall_up_factor = 2 ** self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
-        # forward_upsample_size = False
-        # interpolate through upsample_size
         forward_upsample_size = True
 
         upsample_size = None
@@ -1182,9 +1180,7 @@ class UNet2DConditionModel(ModelMixin, ConfigMixin, UNet2DConditionLoadersMixin)
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
-                # To support dynamic switching of special resolutions, pass a like tensor.
-                # upsample_size = down_block_res_samples[-1].shape[2:]
-                upsample_size = down_block_res_samples[-1]
+                upsample_size = down_block_res_samples[-1].shape[2:]
 
             if (
                 hasattr(upsample_block, "has_cross_attention")

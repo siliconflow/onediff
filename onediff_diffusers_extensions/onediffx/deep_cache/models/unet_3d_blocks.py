@@ -14,8 +14,8 @@ from diffusers.models.resnet import (
     ResnetBlock2D,
     SpatioTemporalResBlock,
     TemporalConvLayer,
+    Upsample2D,
 )
-from .unet_2d_blocks import Upsample2D
 from diffusers.models.transformer_2d import Transformer2DModel
 from diffusers.models.transformer_temporal import (
     TransformerSpatioTemporalModel,
