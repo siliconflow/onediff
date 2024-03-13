@@ -152,6 +152,7 @@ class CostsQuantizationCalibrator(QuantizationCalibratorInterface):
         self.model = model
         self.config = config
         self.costs_file_name = f"costs_calibrate_info_{cache_key}.json"
+        self.plot_calibrate_info_file_name = f"costs_calibrate_info_{cache_key}.html"
 
     def calibrate(self, *args: Any, **kwargs: Any) -> Dict[str, Dict[str, float]]:
         costs_calibrate_info = self.compute_quantization_costs(*args, **kwargs)
@@ -164,9 +165,10 @@ class CostsQuantizationCalibrator(QuantizationCalibratorInterface):
             ):
                 filtered_costs_calibrate_info[key] = value
 
-        if self.config.plot_calibrate_info:
+        if self.config.plot_calibrate_info and self.config.cache_dir is not None:
+            file_path = os.path.join(self.config.cache_dir, self.plot_calibrate_info_file_name)
             self.plot_calibrate_info(
-                f"{self.costs_file_name}.html", list(costs_calibrate_info.items())
+                file_path, list(costs_calibrate_info.items())
             )
             logger.info("Save Costs Calibrate Info to %s.html", self.costs_file_name)
 
