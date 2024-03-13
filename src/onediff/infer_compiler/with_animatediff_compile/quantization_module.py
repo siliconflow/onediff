@@ -129,7 +129,6 @@ def find_peaks(lst):
     return peaks
 
 
-
 class DefaultQuantizationCalibrator(QuantizationCalibratorInterface):
     def __init__(self, model: torch.nn.Module, config: QuantizationConfig):
         self.model = model
@@ -141,7 +140,7 @@ class DefaultQuantizationCalibrator(QuantizationCalibratorInterface):
             for name, layer in self.model.named_modules()
             if self.config.is_quantizable(layer)
         }
-    
+
     def plot_calibrate_info(self, *args: Any, **kwargs: Any):
         pass
 
@@ -152,7 +151,7 @@ class CostsQuantizationCalibrator(QuantizationCalibratorInterface):
     ):
         self.model = model
         self.config = config
-        self.costs_file_name = f"{type(self).__name__}{cache_key}.json"
+        self.costs_file_name = f"costs_calibrate_info_{cache_key}.json"
 
     def calibrate(self, *args: Any, **kwargs: Any) -> Dict[str, Dict[str, float]]:
         costs_calibrate_info = self.compute_quantization_costs(*args, **kwargs)
@@ -228,14 +227,10 @@ class QuantizationMetricsCalculator(CostsQuantizationCalibrator):
     ):
         super().__init__(model, config, cache_key)
         self.indicator_combination = indicator_combination
-        self.linears_file_name = (
-            f"{type(self).__name__}_linear_layers_calibrate_info{cache_key}.json"
-        )
-        self.convs_file_name = (
-            f"{type(self).__name__}_conv_layers_calibrate_info{cache_key}.json"
-        )
+        self.linears_file_name = f"linear_layers_calibrate_info{cache_key}.json"
+        self.convs_file_name = f"conv_layers_calibrate_info{cache_key}.json"
         self.plot_calibrate_info_file_name = (
-            f"{type(self).__name__}_conv_linear_calibrate_info{cache_key}.html"
+            f"conv_linear_calibrate_info{cache_key}.html"
         )
 
     def calibrate_linear_layers(
@@ -493,7 +488,7 @@ def create_quantization_calculator(
     cache_key: str,
     quality_level: int = 4,
 ):
-  
+
     if quality_level == 4:
         return QuantizationMetricsCalculator(
             model=model, config=config, cache_key=cache_key, indicator_combination="100"
@@ -543,10 +538,21 @@ class QuantizationModule:
             quality_level=config.quality_level,
         )
         out = calculator.calibrate(*args, **kwargs)
-        config.calibrate_info = out        
-        linear_names = [name for name,_ in out.items() if isinstance(get_sub_module(self.torch_model, name), nn.Linear)]
-        conv_names = [name for name,_ in out.items() if isinstance(get_sub_module(self.torch_model, name), nn.Conv2d)]
-        config.save_calibrate_info(f'{config.quality_level=}.json', calibrate_info={
-            'linear_names_length': len(linear_names),
-            'conv_names_length': len(conv_names),
-        })
+        config.calibrate_info = out
+        linear_names = [
+            name
+            for name, _ in out.items()
+            if isinstance(get_sub_module(self.torch_model, name), nn.Linear)
+        ]
+        conv_names = [
+            name
+            for name, _ in out.items()
+            if isinstance(get_sub_module(self.torch_model, name), nn.Conv2d)
+        ]
+        config.save_calibrate_info(
+            f"{config.quality_level=}.json",
+            calibrate_info={
+                "linear_names_length": len(linear_names),
+                "conv_names_length": len(conv_names),
+            },
+        )
