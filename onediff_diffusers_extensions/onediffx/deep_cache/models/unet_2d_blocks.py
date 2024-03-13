@@ -14,62 +14,10 @@
 from typing import Any, Dict, Optional, Tuple
 
 import types
-
-import numpy as np
 import torch
-import torch.nn.functional as F
-from torch import nn
 
 import diffusers
 from diffusers.utils import is_torch_version, logging
-from diffusers.models.activations import get_activation
-
-if diffusers.__version__ >= "0.22.0":
-    from diffusers.models.normalization import AdaGroupNorm
-else:
-    from diffusers.models.attention import AdaGroupNorm
-from diffusers.models.attention_processor import (
-    Attention,
-    AttnAddedKVProcessor,
-    AttnAddedKVProcessor2_0,
-)
-from diffusers.models.dual_transformer_2d import DualTransformer2DModel
-from diffusers.models.resnet import (
-    Downsample2D,
-    FirDownsample2D,
-    FirUpsample2D,
-    KDownsample2D,
-    KUpsample2D,
-    ResnetBlock2D,
-    Upsample2D,
-)
-from diffusers.models.transformer_2d import Transformer2DModel
-
-if diffusers.__version__ >= "0.26.0":
-    from diffusers.models.unets.unet_2d_blocks import DownEncoderBlock2D
-else:
-    from diffusers.models.unet_2d_blocks import DownEncoderBlock2D
-
-from diffusers.models.unet_2d_blocks import (
-    ResnetDownsampleBlock2D,
-    AttnDownBlock2D,
-    SimpleCrossAttnDownBlock2D,
-    SkipDownBlock2D,
-    AttnSkipDownBlock2D,
-    AttnDownEncoderBlock2D,
-    KDownBlock2D,
-    KAttentionBlock,
-    KCrossAttnDownBlock2D,
-    ResnetUpsampleBlock2D,
-    SimpleCrossAttnUpBlock2D,
-    AttnUpBlock2D,
-    SkipUpBlock2D,
-    AttnSkipUpBlock2D,
-    UpDecoderBlock2D,
-    AttnUpDecoderBlock2D,
-    KUpBlock2D,
-    KCrossAttnUpBlock2D,
-)
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
@@ -86,6 +34,7 @@ class CrossAttnDownBlock2D(diffusers.models.unet_2d_blocks.CrossAttnDownBlock2D)
         exist_block_number=None,
         additional_residuals=None,
     ):
+        # print("exist_block_number:", exist_block_number)
         output_states = ()
 
         lora_scale = (
@@ -157,6 +106,7 @@ class DownBlock2D(diffusers.models.unet_2d_blocks.DownBlock2D):
     def forward(
         self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,
     ):
+        # print("exist_block_number:", exist_block_number)
         output_states = ()
 
         for resnet in self.resnets:
@@ -211,6 +161,7 @@ class CrossAttnUpBlock2D(diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D):
         encoder_attention_mask: Optional[torch.FloatTensor] = None,
         enter_block_number: Optional[int] = None,
     ):
+        # print("enter_block_number:", enter_block_number)
         prv_f = []
         lora_scale = (
             cross_attention_kwargs.get("scale", 1.0)
@@ -288,6 +239,7 @@ class UpBlock2D(diffusers.models.unet_2d_blocks.UpBlock2D):
         scale: float = 1.0,
         enter_block_number: Optional[int] = None,
     ):
+        # print("enter_block_number:", enter_block_number)
         prv_f = []
 
         for idx, resnet in enumerate(self.resnets):
