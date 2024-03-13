@@ -1,11 +1,15 @@
+import os
+import argparse
 from PIL import Image
 
-
-import argparse
-from onediff.infer_compiler import oneflow_compile
-from diffusers import StableDiffusionImg2ImgPipeline
 import oneflow as flow
 import torch
+
+from onediff.infer_compiler import oneflow_compile
+from diffusers import StableDiffusionImg2ImgPipeline
+
+# Use the environment variable to avoid float16 overflow issues.
+os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 prompt = "sea,beach,the waves crashed on the sand,blue sky whit white cloud"
 
@@ -28,6 +32,7 @@ pipe = StableDiffusionImg2ImgPipeline.from_pretrained(
 
 pipe = pipe.to("cuda")
 pipe.unet = oneflow_compile(pipe.unet)
+pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
 
 
 img = Image.new("RGB", (512, 512), "#1f80f0")
