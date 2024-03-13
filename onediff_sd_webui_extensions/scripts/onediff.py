@@ -2,6 +2,7 @@ import os
 import warnings
 import gradio as gr
 from pathlib import Path
+from typing import Union, Dict
 import modules.scripts as scripts
 import modules.shared as shared
 from modules.sd_models import select_checkpoint
@@ -12,7 +13,7 @@ from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
 
-from onediff.quantization import setup_onediff_quant
+from onediff.infer_compiler.utils.log_utils import logger
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -43,57 +44,44 @@ def is_compiled(ckpt_name):
     return compiled_unet is not None and compiled_ckpt_name == ckpt_name
 
 
+def get_calibrate_info(filename: str) -> Union[None, Dict]:
+    calibration_path = Path(select_checkpoint().filename).parent / filename
+    if not calibration_path.exists():
+        return None
+
+    logger.info(f"Got calibrate info at {str(calibration_path)}")
+    calibrate_info = {}
+    with open(calibration_path, "r") as f:
+        for line in f.readlines():
+            line = line.strip()
+            items = line.split(" ")
+            calibrate_info[items[0]] = [
+                float(items[1]),
+                int(items[2]),
+                [float(x) for x in items[3].split(",")],
+            ]
+    return calibrate_info
+
+
 def compile_unet(
     unet_model, quantization=False, *, use_graph=True, options={},
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
 
-    if quantization:
-        unet_model = quantize_model(unet_model, inplace=False)
-
-    # For offline quantized models
-    elif (Path(select_checkpoint().filename).parent / "sd_calibrate_info.txt").exists():
-        setup_onediff_quant()
-
-        calibration_path = (
-            Path(select_checkpoint().filename).parent / "sd_calibrate_info.txt"
-        )
-        calibrate_info = {}
-        with open(calibration_path, "r") as f:
-            for line in f.readlines():
-                line = line.strip()
-                items = line.split(" ")
-                calibrate_info[items[0]] = [
-                    float(items[1]),
-                    int(items[2]),
-                    [float(x) for x in items[3].split(",")],
-                ]
-        from onediff_quant.utils import replace_sub_module_with_quantizable_module
-
-        for sub_module_name, sub_calibrate_info in calibrate_info.items():
-            print(sub_module_name)
-            replace_sub_module_with_quantizable_module(
-                unet_model,
-                sub_module_name,
-                sub_calibrate_info,
-                fake_quant=False,
-                static=False,
-                nbits=8,
-                convert_quant_module_fn=lambda x: x,
-                original_module_name=None,
-            )
-
     if isinstance(unet_model, UNetModelLDM):
-        return compile_ldm_unet(unet_model, use_graph=use_graph, options=options)
+        compiled_unet = compile_ldm_unet(unet_model, use_graph=use_graph, options=options)
     elif isinstance(unet_model, UNetModelSGM):
-        return compile_sgm_unet(unet_model, use_graph=use_graph, options=options)
+        compiled_unet = compile_sgm_unet(unet_model, use_graph=use_graph, options=options)
     else:
         warnings.warn(
             f"Unsupported model type: {type(unet_model)} for compilation , skip",
             RuntimeWarning,
         )
-        return unet_model
+    if quantization:
+        calibrate_info = get_calibrate_info("sd_calibrate_info.txt")
+        compiled_unet = quantize_model(compiled_unet, inplace=False, calibrate_info=calibrate_info)
+    return compiled_unet
 
 
 class UnetCompileCtx(object):
