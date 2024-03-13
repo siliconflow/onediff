@@ -78,6 +78,7 @@ def compile_unet(
             f"Unsupported model type: {type(unet_model)} for compilation , skip",
             RuntimeWarning,
         )
+        compiled_unet = unet_model
     if quantization:
         calibrate_info = get_calibrate_info("sd_calibrate_info.txt")
         compiled_unet = quantize_model(compiled_unet, inplace=False, calibrate_info=calibrate_info)
