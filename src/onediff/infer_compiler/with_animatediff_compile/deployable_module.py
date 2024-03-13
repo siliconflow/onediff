@@ -7,8 +7,6 @@ from .oneflow_compiler import DualModule
 from .quantization_module import QuantizationConfig, QuantizationModule
 from ..utils.log_utils import logger
 from ..utils.version_util import is_community_version
-from ..utils.graph_management_utils import calculate_model_hash
-from ...optimization.quant_optimizer import quantize_sub_module
 
 
 class DeployableModule:
@@ -35,11 +33,13 @@ class DeployableModule:
         quantize_conv=True,
         quantize_linear=True,
         bits=8,
-        compute_density_threshold=10,
+        quality_level=2,
+        compute_density_threshold=0,
         *,
         inplace=True,
         calibrate_info=None,
-        cache_dir="./run_quant",
+        cache_dir=None,
+        plot_calibrate_info=True,
     ):
         if is_community_version():
             logger.warning("quantize is not supported in community version")
@@ -52,10 +52,12 @@ class DeployableModule:
                 "quantize_linear": quantize_linear,
                 "bits": bits,
                 "inplace": inplace,
+                "quality_level": quality_level,
                 "compute_density_threshold": compute_density_threshold,
                 "calibrate_info": calibrate_info,
                 "use_quantization": True,
                 "cache_dir": cache_dir,
+                "plot_calibrate_info": plot_calibrate_info,
             }
         )
         if not os.path.exists(cache_dir):
