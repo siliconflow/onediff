@@ -45,7 +45,7 @@ class QuantizationConfig:
     quantize_linear: bool = True
     quality_level: int = 6
     plot_calibrate_info: bool = False
-    compute_density_threshold: int = 0
+    compute_density_threshold: int = 10
     calibrate_info: Dict[str, Any] = None
     use_quantization: bool = False
     cache_dir: str = None
@@ -103,8 +103,8 @@ class Pipe:
 
 def unwrap_one(obj: Union[Tuple[Any], Any]) -> Any:
     if isinstance(obj, (tuple, list)):
-        assert len(obj) == 1
-        return obj[0]
+        obj = [x.flatten() for x in obj]
+        return torch.cat(obj)
     else:
         return obj
 
@@ -129,12 +129,6 @@ def find_peaks(lst):
     return peaks
 
 
-def replace_suffix(file_name, suffix, new_suffix):
-    if file_name.endswith(suffix):
-        file_name = file_name[: len(file_name) - len(suffix)] + new_suffix
-        return file_name
-    return file_name + new_suffix
-
 
 class DefaultQuantizationCalibrator(QuantizationCalibratorInterface):
     def __init__(self, model: torch.nn.Module, config: QuantizationConfig):
@@ -147,6 +141,9 @@ class DefaultQuantizationCalibrator(QuantizationCalibratorInterface):
             for name, layer in self.model.named_modules()
             if self.config.is_quantizable(layer)
         }
+    
+    def plot_calibrate_info(self, *args: Any, **kwargs: Any):
+        pass
 
 
 class CostsQuantizationCalibrator(QuantizationCalibratorInterface):
@@ -169,7 +166,7 @@ class CostsQuantizationCalibrator(QuantizationCalibratorInterface):
                 filtered_costs_calibrate_info[key] = value
 
         if self.config.plot_calibrate_info:
-            self.plot_costs_calibrate_info(
+            self.plot_calibrate_info(
                 f"{self.costs_file_name}.html", list(costs_calibrate_info.items())
             )
             logger.info("Save Costs Calibrate Info to %s.html", self.costs_file_name)
@@ -376,13 +373,13 @@ class QuantizationMetricsCalculator(CostsQuantizationCalibrator):
         indexs = []
         if self.indicator_combination[0] == "1":
             indexs += find_peaks(mae_lst)
-            print(f"{len(find_peaks(mae_lst))=}")
+            # print(f"{len(find_peaks(mae_lst))=}")
         if self.indicator_combination[1] == "1":
             indexs += find_peaks(mse_lst)
-            print(f"{len(find_peaks(mse_lst))=}")
+            # print(f"{len(find_peaks(mse_lst))=}")
         if self.indicator_combination[2] == "1":
             indexs += find_peaks(max_diff_lst)
-            print(f"{len(find_peaks(max_diff_lst))=}")
+            # print(f"{len(find_peaks(max_diff_lst))=}")
         """
         sd_v1-5
         # len(find_peaks(mae_lst))=81
@@ -493,27 +490,16 @@ def create_quantization_calculator(
     model: torch.nn.Module,
     config: QuantizationConfig,
     cache_key: str,
-    quality_level: int = 7,
+    quality_level: int = 4,
 ):
-    if quality_level == 7:
-        return QuantizationMetricsCalculator(
-            model=model, config=config, cache_key=cache_key, indicator_combination="111"
-        )
-    elif quality_level == 6:
+  
+    if quality_level == 4:
         return QuantizationMetricsCalculator(
             model=model, config=config, cache_key=cache_key, indicator_combination="100"
         )
-    elif quality_level == 5:
-        return QuantizationMetricsCalculator(
-            model=model, config=config, cache_key=cache_key, indicator_combination="011"
-        )
-    elif quality_level == 4:
-        return QuantizationMetricsCalculator(
-            model=model, config=config, cache_key=cache_key, indicator_combination="010"
-        )
     elif quality_level == 3:
         return QuantizationMetricsCalculator(
-            model=model, config=config, cache_key=cache_key, indicator_combination="001"
+            model=model, config=config, cache_key=cache_key, indicator_combination="010"
         )
     elif quality_level == 2:
         return SubQuantizationPercentileCalculator(
@@ -557,5 +543,10 @@ class QuantizationModule:
             quality_level=config.quality_level,
         )
         out = calculator.calibrate(*args, **kwargs)
-        config.calibrate_info = out
-        config.save_quantization_config("quantization_config.json")
+        config.calibrate_info = out        
+        linear_names = [name for name,_ in out.items() if isinstance(get_sub_module(self.torch_model, name), nn.Linear)]
+        conv_names = [name for name,_ in out.items() if isinstance(get_sub_module(self.torch_model, name), nn.Conv2d)]
+        config.save_calibrate_info(f'{config.quality_level=}.json', calibrate_info={
+            'linear_names_length': len(linear_names),
+            'conv_names_length': len(conv_names),
+        })

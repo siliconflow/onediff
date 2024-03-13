@@ -622,7 +622,7 @@ class Upsample2D(nn.Module):
         # if `output_size` is passed we force the interpolation output
         # size and do not make use of `scale_factor=2`
         if self.interpolate:
-            if output_size is None:
+            if output_size is None or str(hidden_states.dtype).startswith("torch."):
                 hidden_states = F.interpolate(
                     hidden_states, scale_factor=2.0, mode="nearest"
                 )
