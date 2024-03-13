@@ -251,7 +251,7 @@ class QuantizationMetricsCalculator(CostsQuantizationCalibrator):
         calibrate_info: Dict[str, Dict[str, float]] = config.load_calibrate_info(
             self.linears_file_name
         )
-        if len(calibrate_info) == 0 and config.quantize_conv:
+        if len(calibrate_info) == 0 and config.quantize_linear:
             standard_output = unwrap_one(pipe(*args, **kwargs))
             calibrate_info = self._calibrate_modules(
                 file_name=self.linears_file_name,
@@ -355,6 +355,7 @@ class QuantizationMetricsCalculator(CostsQuantizationCalibrator):
             for name, layer in self.model.named_modules()
             if config.is_quantizable(layer)
         ]
+
         mae_lst, mse_lst, max_diff_lst = [], [], []
         linear_conv_names_lst = []
 
@@ -510,7 +511,6 @@ def create_quantization_calculator(
             conv_percentage=0.9,
             linear_percentage=0.9,
         )
-
     elif quality_level == 1:
         return CostsQuantizationCalibrator(model, config, cache_key)
 
