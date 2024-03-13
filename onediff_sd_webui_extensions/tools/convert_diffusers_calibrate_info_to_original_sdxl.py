@@ -25,6 +25,11 @@ unet_conversion_map = [
     ("out.0.bias", "conv_norm_out.bias"),
     ("out.2.weight", "conv_out.weight"),
     ("out.2.bias", "conv_out.bias"),
+    # the following are for sdxl
+    ("label_emb.0.0.weight", "add_embedding.linear_1.weight"),
+    ("label_emb.0.0.bias", "add_embedding.linear_1.bias"),
+    ("label_emb.0.2.weight", "add_embedding.linear_2.weight"),
+    ("label_emb.0.2.bias", "add_embedding.linear_2.bias"),
 ]
 
 unet_conversion_map_resnet = [
@@ -40,7 +45,7 @@ unet_conversion_map_resnet = [
 unet_conversion_map_layer = []
 # hardcoded number of downblocks and resnets/attentions...
 # would need smarter logic for other networks.
-for i in range(4):
+for i in range(3):
     # loop over downblocks/upblocks
 
     for j in range(2):
@@ -49,22 +54,21 @@ for i in range(4):
         sd_down_res_prefix = f"input_blocks.{3*i + j + 1}.0."
         unet_conversion_map_layer.append((sd_down_res_prefix, hf_down_res_prefix))
 
-        if i < 3:
-            # no attention layers in down_blocks.3
+        if i > 0:
             hf_down_atn_prefix = f"down_blocks.{i}.attentions.{j}."
             sd_down_atn_prefix = f"input_blocks.{3*i + j + 1}.1."
             unet_conversion_map_layer.append((sd_down_atn_prefix, hf_down_atn_prefix))
 
-    for j in range(3):
+    for j in range(4):
         # loop over resnets/attentions for upblocks
         hf_up_res_prefix = f"up_blocks.{i}.resnets.{j}."
         sd_up_res_prefix = f"output_blocks.{3*i + j}.0."
         unet_conversion_map_layer.append((sd_up_res_prefix, hf_up_res_prefix))
 
-        if i > 0:
+        if i < 2:
             # no attention layers in up_blocks.0
             hf_up_atn_prefix = f"up_blocks.{i}.attentions.{j}."
-            sd_up_atn_prefix = f"output_blocks.{3*i + j}.1."
+            sd_up_atn_prefix = f"output_blocks.{3 * i + j}.1."
             unet_conversion_map_layer.append((sd_up_atn_prefix, hf_up_atn_prefix))
 
     if i < 3:
@@ -77,35 +81,35 @@ for i in range(4):
         hf_upsample_prefix = f"up_blocks.{i}.upsamplers.0."
         sd_upsample_prefix = f"output_blocks.{3*i + 2}.{1 if i == 0 else 2}."
         unet_conversion_map_layer.append((sd_upsample_prefix, hf_upsample_prefix))
+unet_conversion_map_layer.append(("output_blocks.2.2.conv.", "output_blocks.2.1.conv."))
 
 hf_mid_atn_prefix = "mid_block.attentions.0."
 sd_mid_atn_prefix = "middle_block.1."
 unet_conversion_map_layer.append((sd_mid_atn_prefix, hf_mid_atn_prefix))
-
 for j in range(2):
     hf_mid_res_prefix = f"mid_block.resnets.{j}."
     sd_mid_res_prefix = f"middle_block.{2*j}."
     unet_conversion_map_layer.append((sd_mid_res_prefix, hf_mid_res_prefix))
 
 
-# def convert_unet_state_dict(unet_state_dict):
-#     # buyer beware: this is a *brittle* function,
-#     # and correct output requires that all of these pieces interact in
-#     # the exact order in which I have arranged them.
-#     mapping = {k: k for k in unet_state_dict.keys()}
-#     for sd_name, hf_name in unet_conversion_map:
-#         mapping[hf_name] = sd_name
-#     for k, v in mapping.items():
-#         if "resnets" in k:
-#             for sd_part, hf_part in unet_conversion_map_resnet:
-#                 v = v.replace(hf_part, sd_part)
-#             mapping[k] = v
-#     for k, v in mapping.items():
-#         for sd_part, hf_part in unet_conversion_map_layer:
-#             v = v.replace(hf_part, sd_part)
-#         mapping[k] = v
-#     new_state_dict = {v: unet_state_dict[k] for k, v in mapping.items()}
-#     return new_state_dict
+def convert_unet_state_dict(unet_state_dict):
+    # buyer beware: this is a *brittle* function,
+    # and correct output requires that all of these pieces interact in
+    # the exact order in which I have arranged them.
+    mapping = {k: k for k in unet_state_dict.keys()}
+    for sd_name, hf_name in unet_conversion_map:
+        mapping[hf_name] = sd_name
+    for k, v in mapping.items():
+        if "resnets" in k:
+            for sd_part, hf_part in unet_conversion_map_resnet:
+                v = v.replace(hf_part, sd_part)
+            mapping[k] = v
+    for k, v in mapping.items():
+        for sd_part, hf_part in unet_conversion_map_layer:
+            v = v.replace(hf_part, sd_part)
+        mapping[k] = v
+    new_state_dict = {sd_name: unet_state_dict[hf_name] for hf_name, sd_name in mapping.items()}
+    return new_state_dict
 
 
 # # ================#
@@ -152,18 +156,11 @@ for j in range(2):
 # vae_conversion_map_attn = [
 #     # (stable-diffusion, HF Diffusers)
 #     ("norm.", "group_norm."),
-#     ("q.", "query."),
-#     ("k.", "key."),
-#     ("v.", "value."),
-#     ("proj_out.", "proj_attn."),
-# ]
-
-# # This is probably not the most ideal solution, but it does work.
-# vae_extra_conversion_map = [
-#     ("to_q", "q"),
-#     ("to_k", "k"),
-#     ("to_v", "v"),
-#     ("to_out.0", "proj_out"),
+#     # the following are for SDXL
+#     ("q.", "to_q."),
+#     ("k.", "to_k."),
+#     ("v.", "to_v."),
+#     ("proj_out.", "to_out.0."),
 # ]
 
 
@@ -188,20 +185,11 @@ for j in range(2):
 #             mapping[k] = v
 #     new_state_dict = {v: vae_state_dict[k] for k, v in mapping.items()}
 #     weights_to_convert = ["q", "k", "v", "proj_out"]
-#     keys_to_rename = {}
 #     for k, v in new_state_dict.items():
 #         for weight_name in weights_to_convert:
 #             if f"mid.attn_1.{weight_name}.weight" in k:
 #                 print(f"Reshaping {k} for SD format")
 #                 new_state_dict[k] = reshape_weight_for_sd(v)
-#         for weight_name, real_weight_name in vae_extra_conversion_map:
-#             if f"mid.attn_1.{weight_name}.weight" in k or f"mid.attn_1.{weight_name}.bias" in k:
-#                 keys_to_rename[k] = k.replace(weight_name, real_weight_name)
-#     for k, v in keys_to_rename.items():
-#         if k in new_state_dict:
-#             print(f"Renaming {k} to {v}")
-#             new_state_dict[v] = reshape_weight_for_sd(new_state_dict[k])
-#             del new_state_dict[k]
 #     return new_state_dict
 
 
@@ -212,15 +200,15 @@ for j in range(2):
 
 # textenc_conversion_lst = [
 #     # (stable-diffusion, HF Diffusers)
-#     ("resblocks.", "text_model.encoder.layers."),
+#     ("transformer.resblocks.", "text_model.encoder.layers."),
 #     ("ln_1", "layer_norm1"),
 #     ("ln_2", "layer_norm2"),
 #     (".c_fc.", ".fc1."),
 #     (".c_proj.", ".fc2."),
 #     (".attn", ".self_attn"),
-#     ("ln_final.", "transformer.text_model.final_layer_norm."),
-#     ("token_embedding.weight", "transformer.text_model.embeddings.token_embedding.weight"),
-#     ("positional_embedding", "transformer.text_model.embeddings.position_embedding.weight"),
+#     ("ln_final.", "text_model.final_layer_norm."),
+#     ("token_embedding.weight", "text_model.embeddings.token_embedding.weight"),
+#     ("positional_embedding", "text_model.embeddings.position_embedding.weight"),
 # ]
 # protected = {re.escape(x[1]): x[0] for x in textenc_conversion_lst}
 # textenc_pattern = re.compile("|".join(protected.keys()))
@@ -229,7 +217,7 @@ for j in range(2):
 # code2idx = {"q": 0, "k": 1, "v": 2}
 
 
-# def convert_text_enc_state_dict_v20(text_enc_dict):
+# def convert_openclip_text_enc_state_dict(text_enc_dict):
 #     new_state_dict = {}
 #     capture_qkv_weight = {}
 #     capture_qkv_bias = {}
@@ -276,7 +264,7 @@ for j in range(2):
 #     return new_state_dict
 
 
-# def convert_text_enc_state_dict(text_enc_dict):
+# def convert_openai_text_enc_state_dict(text_enc_dict):
 #     return text_enc_dict
 
 
@@ -300,6 +288,7 @@ for j in range(2):
 #     unet_path = osp.join(args.model_path, "unet", "diffusion_pytorch_model.safetensors")
 #     vae_path = osp.join(args.model_path, "vae", "diffusion_pytorch_model.safetensors")
 #     text_enc_path = osp.join(args.model_path, "text_encoder", "model.safetensors")
+#     text_enc_2_path = osp.join(args.model_path, "text_encoder_2", "model.safetensors")
 
 #     # Load models from safetensors if it exists, if it doesn't pytorch
 #     if osp.exists(unet_path):
@@ -320,6 +309,12 @@ for j in range(2):
 #         text_enc_path = osp.join(args.model_path, "text_encoder", "pytorch_model.bin")
 #         text_enc_dict = torch.load(text_enc_path, map_location="cpu")
 
+#     if osp.exists(text_enc_2_path):
+#         text_enc_2_dict = load_file(text_enc_2_path, device="cpu")
+#     else:
+#         text_enc_2_path = osp.join(args.model_path, "text_encoder_2", "pytorch_model.bin")
+#         text_enc_2_dict = torch.load(text_enc_2_path, map_location="cpu")
+
 #     # Convert the UNet model
 #     unet_state_dict = convert_unet_state_dict(unet_state_dict)
 #     unet_state_dict = {"model.diffusion_model." + k: v for k, v in unet_state_dict.items()}
@@ -328,20 +323,22 @@ for j in range(2):
 #     vae_state_dict = convert_vae_state_dict(vae_state_dict)
 #     vae_state_dict = {"first_stage_model." + k: v for k, v in vae_state_dict.items()}
 
-#     # Easiest way to identify v2.0 model seems to be that the text encoder (OpenCLIP) is deeper
-#     is_v20_model = "text_model.encoder.layers.22.layer_norm2.bias" in text_enc_dict
+#     # Convert text encoder 1
+#     text_enc_dict = convert_openai_text_enc_state_dict(text_enc_dict)
+#     text_enc_dict = {"conditioner.embedders.0.transformer." + k: v for k, v in text_enc_dict.items()}
 
-#     if is_v20_model:
-#         # Need to add the tag 'transformer' in advance so we can knock it out from the final layer-norm
-#         text_enc_dict = {"transformer." + k: v for k, v in text_enc_dict.items()}
-#         text_enc_dict = convert_text_enc_state_dict_v20(text_enc_dict)
-#         text_enc_dict = {"cond_stage_model.model." + k: v for k, v in text_enc_dict.items()}
-#     else:
-#         text_enc_dict = convert_text_enc_state_dict(text_enc_dict)
-#         text_enc_dict = {"cond_stage_model.transformer." + k: v for k, v in text_enc_dict.items()}
+#     # Convert text encoder 2
+#     text_enc_2_dict = convert_openclip_text_enc_state_dict(text_enc_2_dict)
+#     text_enc_2_dict = {"conditioner.embedders.1.model." + k: v for k, v in text_enc_2_dict.items()}
+#     # We call the `.T.contiguous()` to match what's done in
+#     # https://github.com/huggingface/diffusers/blob/84905ca7287876b925b6bf8e9bb92fec21c78764/src/diffusers/loaders/single_file_utils.py#L1085
+#     text_enc_2_dict["conditioner.embedders.1.model.text_projection"] = text_enc_2_dict.pop(
+#         "conditioner.embedders.1.model.text_projection.weight"
+#     ).T.contiguous()
 
 #     # Put together new checkpoint
-#     state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict}
+#     state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict, **text_enc_2_dict}
+
 #     if args.half:
 #         state_dict = {k: v.half() for k, v in state_dict.items()}
 
@@ -358,9 +355,10 @@ def convert_unet_calibrate_dict(state_dict) -> str:
     remove_suffix = lambda x: x.removesuffix(".weight").removesuffix(".bias").removesuffix(".")
 
     for sd_name, hf_name in unet_conversion_map:
-        sd_name, hf_name = remove_suffix(sd_name), remove_suffix(hf_name)
-        if hf_name in mapping:
-            mapping[hf_name] = sd_name
+        for sd_part, hf_part in unet_conversion_map_layer:
+            sd_part, hf_part = remove_suffix(sd_part), remove_suffix(hf_part)
+            if hf_name in mapping:
+                mapping[hf_name] = sd_name
     for k, v in mapping.items():
         if "resnets" in k:
             for sd_part, hf_part in unet_conversion_map_resnet:
@@ -373,6 +371,8 @@ def convert_unet_calibrate_dict(state_dict) -> str:
             v = v.replace(hf_part, sd_part)
         mapping[k] = v
     new_state_dict = {v: state_dict[k] for k, v in mapping.items()}
+    if not len(set(new_state_dict.keys()) & set(state_dict.keys())) == 0:
+        print(set(new_state_dict.keys()) & set(state_dict.keys()))
     return new_state_dict
 
 def convert_calibrate_info(calibration_path, dst_path):
