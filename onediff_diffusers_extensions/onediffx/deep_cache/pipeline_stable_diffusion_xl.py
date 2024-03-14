@@ -11,9 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
-import inspect
-import os
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import importlib.metadata
@@ -23,32 +20,16 @@ import torch
 from transformers import CLIPTextModel, CLIPTextModelWithProjection, CLIPTokenizer
 
 from diffusers.image_processor import VaeImageProcessor
-from diffusers.loaders import (
-    FromSingleFileMixin,
-    LoraLoaderMixin,
-    TextualInversionLoaderMixin,
-)
 from diffusers.models import AutoencoderKL
-from diffusers.models.attention_processor import (
-    AttnProcessor2_0,
-    LoRAAttnProcessor2_0,
-    LoRAXFormersAttnProcessor,
-    XFormersAttnProcessor,
-)
-from diffusers.models.lora import adjust_lora_scale_text_encoder
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers.utils import (
-    is_accelerate_available,
-    is_accelerate_version,
     is_invisible_watermark_available,
     logging,
-    replace_example_docstring,
 )
-from diffusers.utils.torch_utils import randn_tensor
-from diffusers.pipelines.pipeline_utils import DiffusionPipeline
 from diffusers.pipelines.stable_diffusion_xl import StableDiffusionXLPipelineOutput
 
-from diffusers import StableDiffusionXLPipeline as OrgStableDiffusionXLPipeline
+from diffusers import StableDiffusionXLPipeline as DiffusersStableDiffusionXLPipeline
+from diffusers.pipelines.stable_diffusion_xl.pipeline_stable_diffusion_xl import rescale_noise_cfg
 
 from .models.unet_2d_condition import UNet2DConditionModel
 from .models.fast_unet_2d_condition import FastUNet2DConditionModel
@@ -67,42 +48,6 @@ if is_invisible_watermark_available():
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
-EXAMPLE_DOC_STRING = """
-    Examples:
-        ```py
-        >>> import torch
-        >>> from diffusers import StableDiffusionXLPipeline
-
-        >>> pipe = StableDiffusionXLPipeline.from_pretrained(
-        ...     "stabilityai/stable-diffusion-xl-base-1.0", torch_dtype=torch.float16
-        ... )
-        >>> pipe = pipe.to("cuda")
-
-        >>> prompt = "a photo of an astronaut riding a horse on mars"
-        >>> image = pipe(prompt).images[0]
-        ```
-"""
-
-
-# Copied from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion.rescale_noise_cfg
-def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
-    """
-    Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
-    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
-    """
-    std_text = noise_pred_text.std(
-        dim=list(range(1, noise_pred_text.ndim)), keepdim=True
-    )
-    std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)
-    # rescale the results from guidance (fixes overexposure)
-    noise_pred_rescaled = noise_cfg * (std_text / std_cfg)
-    # mix with the original results from guidance by factor guidance_rescale to avoid "plain looking" images
-    noise_cfg = (
-        guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
-    )
-    return noise_cfg
-
-
 def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
     while pow > 1:
         # Generate linearly spaced values between 0 and a max value
@@ -120,53 +65,8 @@ def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
     return indices, pow
 
 
-class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion XL.
-
-    This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods the
-    library implements for all the pipelines (such as downloading or saving, running on a particular device, etc.)
-
-    In addition the pipeline inherits the following loading methods:
-        - *LoRA*: [`StableDiffusionXLPipeline.load_lora_weights`]
-        - *Ckpt*: [`loaders.FromSingleFileMixin.from_single_file`]
-
-    as well as the following saving methods:
-        - *LoRA*: [`loaders.StableDiffusionXLPipeline.save_lora_weights`]
-
-    Args:
-        vae ([`AutoencoderKL`]):
-            Variational Auto-Encoder (VAE) Model to encode and decode images to and from latent representations.
-        text_encoder ([`CLIPTextModel`]):
-            Frozen text-encoder. Stable Diffusion XL uses the text portion of
-            [CLIP](https://huggingface.co/docs/transformers/model_doc/clip#transformers.CLIPTextModel), specifically
-            the [clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14) variant.
-        text_encoder_2 ([` CLIPTextModelWithProjection`]):
-            Second frozen text-encoder. Stable Diffusion XL uses the text and pool portion of
-            [CLIP](https://huggingface.co/docs/transformers/model_doc/clip#transformers.CLIPTextModelWithProjection),
-            specifically the
-            [laion/CLIP-ViT-bigG-14-laion2B-39B-b160k](https://huggingface.co/laion/CLIP-ViT-bigG-14-laion2B-39B-b160k)
-            variant.
-        tokenizer (`CLIPTokenizer`):
-            Tokenizer of class
-            [CLIPTokenizer](https://huggingface.co/docs/transformers/v4.21.0/en/model_doc/clip#transformers.CLIPTokenizer).
-        tokenizer_2 (`CLIPTokenizer`):
-            Second Tokenizer of class
-            [CLIPTokenizer](https://huggingface.co/docs/transformers/v4.21.0/en/model_doc/clip#transformers.CLIPTokenizer).
-        unet ([`UNet2DConditionModel`]): Conditional U-Net architecture to denoise the encoded image latents.
-        scheduler ([`SchedulerMixin`]):
-            A scheduler to be used in combination with `unet` to denoise the encoded image latents. Can be one of
-            [`DDIMScheduler`], [`LMSDiscreteScheduler`], or [`PNDMScheduler`].
-        force_zeros_for_empty_prompt (`bool`, *optional*, defaults to `"True"`):
-            Whether the negative prompt embeddings shall be forced to always be set to 0. Also see the config of
-            `stabilityai/stable-diffusion-xl-base-1-0`.
-        add_watermarker (`bool`, *optional*):
-            Whether to use the [invisible_watermark library](https://github.com/ShieldMnt/invisible-watermark/) to
-            watermark output images. If not defined, it will default to True if the package is installed, otherwise no
-            watermarker will be used.
-    """
+class StableDiffusionXLPipeline(DiffusersStableDiffusionXLPipeline):
     model_cpu_offload_seq = "text_encoder->text_encoder_2->unet->vae"
-
     def __init__(
         self,
         vae: AutoencoderKL,
@@ -179,8 +79,6 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
         force_zeros_for_empty_prompt: bool = True,
         add_watermarker: Optional[bool] = None,
     ):
-        # super().__init__()
-
         self.register_modules(
             vae=vae,
             text_encoder=text_encoder,
@@ -222,7 +120,6 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
         self.vae_upcasted = True
 
     @torch.no_grad()
-    @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
         prompt: Union[str, List[str]] = None,
@@ -261,133 +158,6 @@ class StableDiffusionXLPipeline(OrgStableDiffusionXLPipeline):
         pow: float = None,
         center: int = None,
     ):
-        r"""
-        Function invoked when calling the pipeline for generation.
-
-        Args:
-            prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts to guide the image generation. If not defined, one has to pass `prompt_embeds`.
-                instead.
-            prompt_2 (`str` or `List[str]`, *optional*):
-                The prompt or prompts to be sent to the `tokenizer_2` and `text_encoder_2`. If not defined, `prompt` is
-                used in both text-encoders
-            height (`int`, *optional*, defaults to self.unet.config.sample_size * self.vae_scale_factor):
-                The height in pixels of the generated image. This is set to 1024 by default for the best results.
-                Anything below 512 pixels won't work well for
-                [stabilityai/stable-diffusion-xl-base-1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
-                and checkpoints that are not specifically fine-tuned on low resolutions.
-            width (`int`, *optional*, defaults to self.unet.config.sample_size * self.vae_scale_factor):
-                The width in pixels of the generated image. This is set to 1024 by default for the best results.
-                Anything below 512 pixels won't work well for
-                [stabilityai/stable-diffusion-xl-base-1.0](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
-                and checkpoints that are not specifically fine-tuned on low resolutions.
-            num_inference_steps (`int`, *optional*, defaults to 50):
-                The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference.
-            denoising_end (`float`, *optional*):
-                When specified, determines the fraction (between 0.0 and 1.0) of the total denoising process to be
-                completed before it is intentionally prematurely terminated. As a result, the returned sample will
-                still retain a substantial amount of noise as determined by the discrete timesteps selected by the
-                scheduler. The denoising_end parameter should ideally be utilized when this pipeline forms a part of a
-                "Mixture of Denoisers" multi-pipeline setup, as elaborated in [**Refining the Image
-                Output**](https://huggingface.co/docs/diffusers/api/pipelines/stable_diffusion/stable_diffusion_xl#refining-the-image-output)
-            guidance_scale (`float`, *optional*, defaults to 5.0):
-                Guidance scale as defined in [Classifier-Free Diffusion Guidance](https://arxiv.org/abs/2207.12598).
-                `guidance_scale` is defined as `w` of equation 2. of [Imagen
-                Paper](https://arxiv.org/pdf/2205.11487.pdf). Guidance scale is enabled by setting `guidance_scale >
-                1`. Higher guidance scale encourages to generate images that are closely linked to the text `prompt`,
-                usually at the expense of lower image quality.
-            negative_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts not to guide the image generation. If not defined, one has to pass
-                `negative_prompt_embeds` instead. Ignored when not using guidance (i.e., ignored if `guidance_scale` is
-                less than `1`).
-            negative_prompt_2 (`str` or `List[str]`, *optional*):
-                The prompt or prompts not to guide the image generation to be sent to `tokenizer_2` and
-                `text_encoder_2`. If not defined, `negative_prompt` is used in both text-encoders
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) in the DDIM paper: https://arxiv.org/abs/2010.02502. Only applies to
-                [`schedulers.DDIMScheduler`], will be ignored for others.
-            generator (`torch.Generator` or `List[torch.Generator]`, *optional*):
-                One or a list of [torch generator(s)](https://pytorch.org/docs/stable/generated/torch.Generator.html)
-                to make generation deterministic.
-            latents (`torch.FloatTensor`, *optional*):
-                Pre-generated noisy latents, sampled from a Gaussian distribution, to be used as inputs for image
-                generation. Can be used to tweak the same generation with different prompts. If not provided, a latents
-                tensor will ge generated by sampling using the supplied random `generator`.
-            prompt_embeds (`torch.FloatTensor`, *optional*):
-                Pre-generated text embeddings. Can be used to easily tweak text inputs, *e.g.* prompt weighting. If not
-                provided, text embeddings will be generated from `prompt` input argument.
-            negative_prompt_embeds (`torch.FloatTensor`, *optional*):
-                Pre-generated negative text embeddings. Can be used to easily tweak text inputs, *e.g.* prompt
-                weighting. If not provided, negative_prompt_embeds will be generated from `negative_prompt` input
-                argument.
-            pooled_prompt_embeds (`torch.FloatTensor`, *optional*):
-                Pre-generated pooled text embeddings. Can be used to easily tweak text inputs, *e.g.* prompt weighting.
-                If not provided, pooled text embeddings will be generated from `prompt` input argument.
-            negative_pooled_prompt_embeds (`torch.FloatTensor`, *optional*):
-                Pre-generated negative pooled text embeddings. Can be used to easily tweak text inputs, *e.g.* prompt
-                weighting. If not provided, pooled negative_prompt_embeds will be generated from `negative_prompt`
-                input argument.
-            output_type (`str`, *optional*, defaults to `"pil"`):
-                The output format of the generate image. Choose between
-                [PIL](https://pillow.readthedocs.io/en/stable/): `PIL.Image.Image` or `np.array`.
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] instead
-                of a plain tuple.
-            callback (`Callable`, *optional*):
-                A function that will be called every `callback_steps` steps during inference. The function will be
-                called with the following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
-            callback_steps (`int`, *optional*, defaults to 1):
-                The frequency at which the `callback` function will be called. If not specified, the callback will be
-                called at every step.
-            cross_attention_kwargs (`dict`, *optional*):
-                A kwargs dictionary that if specified is passed along to the `AttentionProcessor` as defined under
-                `self.processor` in
-                [diffusers.models.attention_processor](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
-            guidance_rescale (`float`, *optional*, defaults to 0.7):
-                Guidance rescale factor proposed by [Common Diffusion Noise Schedules and Sample Steps are
-                Flawed](https://arxiv.org/pdf/2305.08891.pdf) `guidance_scale` is defined as `φ` in equation 16. of
-                [Common Diffusion Noise Schedules and Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf).
-                Guidance rescale factor should fix overexposure when using zero terminal SNR.
-            original_size (`Tuple[int]`, *optional*, defaults to (1024, 1024)):
-                If `original_size` is not the same as `target_size` the image will appear to be down- or upsampled.
-                `original_size` defaults to `(width, height)` if not specified. Part of SDXL's micro-conditioning as
-                explained in section 2.2 of
-                [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952).
-            crops_coords_top_left (`Tuple[int]`, *optional*, defaults to (0, 0)):
-                `crops_coords_top_left` can be used to generate an image that appears to be "cropped" from the position
-                `crops_coords_top_left` downwards. Favorable, well-centered images are usually achieved by setting
-                `crops_coords_top_left` to (0, 0). Part of SDXL's micro-conditioning as explained in section 2.2 of
-                [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952).
-            target_size (`Tuple[int]`, *optional*, defaults to (1024, 1024)):
-                For most cases, `target_size` should be set to the desired height and width of the generated image. If
-                not specified it will default to `(width, height)`. Part of SDXL's micro-conditioning as explained in
-                section 2.2 of [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952).
-            negative_original_size (`Tuple[int]`, *optional*, defaults to (1024, 1024)):
-                To negatively condition the generation process based on a specific image resolution. Part of SDXL's
-                micro-conditioning as explained in section 2.2 of
-                [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952). For more
-                information, refer to this issue thread: https://github.com/huggingface/diffusers/issues/4208.
-            negative_crops_coords_top_left (`Tuple[int]`, *optional*, defaults to (0, 0)):
-                To negatively condition the generation process based on a specific crop coordinates. Part of SDXL's
-                micro-conditioning as explained in section 2.2 of
-                [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952). For more
-                information, refer to this issue thread: https://github.com/huggingface/diffusers/issues/4208.
-            negative_target_size (`Tuple[int]`, *optional*, defaults to (1024, 1024)):
-                To negatively condition the generation process based on a target image resolution. It should be as same
-                as the `target_size` for most cases. Part of SDXL's micro-conditioning as explained in section 2.2 of
-                [https://huggingface.co/papers/2307.01952](https://huggingface.co/papers/2307.01952). For more
-                information, refer to this issue thread: https://github.com/huggingface/diffusers/issues/4208.
-
-        Examples:
-
-        Returns:
-            [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] or `tuple`:
-            [`~pipelines.stable_diffusion_xl.StableDiffusionXLPipelineOutput`] if `return_dict` is True, otherwise a
-            `tuple`. When returning a tuple, the first element is a list with the generated images.
-        """
         # 0. Default height and width to unet
         height = height or self.default_sample_size * self.vae_scale_factor
         width = width or self.default_sample_size * self.vae_scale_factor

@@ -11,8 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import time
-import inspect
 from typing import Any, Callable, Dict, List, Optional, Union
 
 import torch
@@ -22,27 +20,20 @@ from transformers import CLIPImageProcessor, CLIPTextModel, CLIPTokenizer
 
 from diffusers.configuration_utils import FrozenDict
 from diffusers.image_processor import VaeImageProcessor
-from diffusers.loaders import (
-    FromSingleFileMixin,
-    LoraLoaderMixin,
-    TextualInversionLoaderMixin,
-)
 from diffusers.models import AutoencoderKL
-from diffusers.models.lora import adjust_lora_scale_text_encoder
 from diffusers.schedulers import KarrasDiffusionSchedulers
 from diffusers.utils import (
     deprecate,
     logging,
-    replace_example_docstring,
 )
-from diffusers.utils.torch_utils import randn_tensor
 
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker,
 )
 
-from diffusers import StableDiffusionPipeline as OrgStableDiffusionPipeline
+from diffusers import StableDiffusionPipeline as DiffusersStableDiffusionPipeline
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import rescale_noise_cfg
 
 from .models.unet_2d_condition import UNet2DConditionModel
 from .models.fast_unet_2d_condition import FastUNet2DConditionModel
@@ -54,20 +45,6 @@ from .models.pipeline_utils import enable_deep_cache_pipeline
 enable_deep_cache_pipeline()
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
-
-EXAMPLE_DOC_STRING = """
-    Examples:
-        ```py
-        >>> import torch
-        >>> from diffusers import StableDiffusionPipeline
-
-        >>> pipe = StableDiffusionPipeline.from_pretrained("runwayml/stable-diffusion-v1-5", torch_dtype=torch.float16)
-        >>> pipe = pipe.to("cuda")
-
-        >>> prompt = "a photo of an astronaut riding a horse on mars"
-        >>> image = pipe(prompt).images[0]
-        ```
-"""
 
 
 def sample_from_quad(total_numbers, n_samples, pow=1.2):
@@ -103,57 +80,7 @@ def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
         )
     return indices, pow
 
-
-def rescale_noise_cfg(noise_cfg, noise_pred_text, guidance_rescale=0.0):
-    """
-    Rescale `noise_cfg` according to `guidance_rescale`. Based on findings of [Common Diffusion Noise Schedules and
-    Sample Steps are Flawed](https://arxiv.org/pdf/2305.08891.pdf). See Section 3.4
-    """
-    std_text = noise_pred_text.std(
-        dim=list(range(1, noise_pred_text.ndim)), keepdim=True
-    )
-    std_cfg = noise_cfg.std(dim=list(range(1, noise_cfg.ndim)), keepdim=True)
-    # rescale the results from guidance (fixes overexposure)
-    noise_pred_rescaled = noise_cfg * (std_text / std_cfg)
-    # mix with the original results from guidance by factor guidance_rescale to avoid "plain looking" images
-    noise_cfg = (
-        guidance_rescale * noise_pred_rescaled + (1 - guidance_rescale) * noise_cfg
-    )
-    return noise_cfg
-
-
-class StableDiffusionPipeline(OrgStableDiffusionPipeline):
-    r"""
-    Pipeline for text-to-image generation using Stable Diffusion.
-
-    This model inherits from [`DiffusionPipeline`]. Check the superclass documentation for the generic methods
-    implemented for all pipelines (downloading, saving, running on a particular device, etc.).
-
-    The pipeline also inherits the following loading methods:
-        - [`~loaders.TextualInversionLoaderMixin.load_textual_inversion`] for loading textual inversion embeddings
-        - [`~loaders.LoraLoaderMixin.load_lora_weights`] for loading LoRA weights
-        - [`~loaders.LoraLoaderMixin.save_lora_weights`] for saving LoRA weights
-        - [`~loaders.FromSingleFileMixin.from_single_file`] for loading `.ckpt` files
-
-    Args:
-        vae ([`AutoencoderKL`]):
-            Variational Auto-Encoder (VAE) model to encode and decode images to and from latent representations.
-        text_encoder ([`~transformers.CLIPTextModel`]):
-            Frozen text-encoder ([clip-vit-large-patch14](https://huggingface.co/openai/clip-vit-large-patch14)).
-        tokenizer ([`~transformers.CLIPTokenizer`]):
-            A `CLIPTokenizer` to tokenize text.
-        unet ([`UNet2DConditionModel`]):
-            A `UNet2DConditionModel` to denoise the encoded image latents.
-        scheduler ([`SchedulerMixin`]):
-            A scheduler to be used in combination with `unet` to denoise the encoded image latents. Can be one of
-            [`DDIMScheduler`], [`LMSDiscreteScheduler`], or [`PNDMScheduler`].
-        safety_checker ([`StableDiffusionSafetyChecker`]):
-            Classification module that estimates whether generated images could be considered offensive or harmful.
-            Please refer to the [model card](https://huggingface.co/runwayml/stable-diffusion-v1-5) for more details
-            about a model's potential harms.
-        feature_extractor ([`~transformers.CLIPImageProcessor`]):
-            A `CLIPImageProcessor` to extract features from generated images; used as inputs to the `safety_checker`.
-    """
+class StableDiffusionPipeline(DiffusersStableDiffusionPipeline):
     model_cpu_offload_seq = "text_encoder->unet->vae"
     _optional_components = ["safety_checker", "feature_extractor"]
     _exclude_from_cpu_offload = ["safety_checker"]
@@ -266,7 +193,6 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
         self.fast_unet = FastUNet2DConditionModel(self.unet)
 
     @torch.no_grad()
-    @replace_example_docstring(EXAMPLE_DOC_STRING)
     def __call__(
         self,
         prompt: Union[str, List[str]] = None,
@@ -295,71 +221,6 @@ class StableDiffusionPipeline(OrgStableDiffusionPipeline):
         center: int = None,
         output_all_sequence: bool = False,
     ):
-        r"""
-        The call function to the pipeline for generation.
-
-        Args:
-            prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts to guide image generation. If not defined, you need to pass `prompt_embeds`.
-            height (`int`, *optional*, defaults to `self.unet.config.sample_size * self.vae_scale_factor`):
-                The height in pixels of the generated image.
-            width (`int`, *optional*, defaults to `self.unet.config.sample_size * self.vae_scale_factor`):
-                The width in pixels of the generated image.
-            num_inference_steps (`int`, *optional*, defaults to 50):
-                The number of denoising steps. More denoising steps usually lead to a higher quality image at the
-                expense of slower inference.
-            guidance_scale (`float`, *optional*, defaults to 7.5):
-                A higher guidance scale value encourages the model to generate images closely linked to the text
-                `prompt` at the expense of lower image quality. Guidance scale is enabled when `guidance_scale > 1`.
-            negative_prompt (`str` or `List[str]`, *optional*):
-                The prompt or prompts to guide what to not include in image generation. If not defined, you need to
-                pass `negative_prompt_embeds` instead. Ignored when not using guidance (`guidance_scale < 1`).
-            num_images_per_prompt (`int`, *optional*, defaults to 1):
-                The number of images to generate per prompt.
-            eta (`float`, *optional*, defaults to 0.0):
-                Corresponds to parameter eta (η) from the [DDIM](https://arxiv.org/abs/2010.02502) paper. Only applies
-                to the [`~schedulers.DDIMScheduler`], and is ignored in other schedulers.
-            generator (`torch.Generator` or `List[torch.Generator]`, *optional*):
-                A [`torch.Generator`](https://pytorch.org/docs/stable/generated/torch.Generator.html) to make
-                generation deterministic.
-            latents (`torch.FloatTensor`, *optional*):
-                Pre-generated noisy latents sampled from a Gaussian distribution, to be used as inputs for image
-                generation. Can be used to tweak the same generation with different prompts. If not provided, a latents
-                tensor is generated by sampling using the supplied random `generator`.
-            prompt_embeds (`torch.FloatTensor`, *optional*):
-                Pre-generated text embeddings. Can be used to easily tweak text inputs (prompt weighting). If not
-                provided, text embeddings are generated from the `prompt` input argument.
-            negative_prompt_embeds (`torch.FloatTensor`, *optional*):
-                Pre-generated negative text embeddings. Can be used to easily tweak text inputs (prompt weighting). If
-                not provided, `negative_prompt_embeds` are generated from the `negative_prompt` input argument.
-            output_type (`str`, *optional*, defaults to `"pil"`):
-                The output format of the generated image. Choose between `PIL.Image` or `np.array`.
-            return_dict (`bool`, *optional*, defaults to `True`):
-                Whether or not to return a [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] instead of a
-                plain tuple.
-            callback (`Callable`, *optional*):
-                A function that calls every `callback_steps` steps during inference. The function is called with the
-                following arguments: `callback(step: int, timestep: int, latents: torch.FloatTensor)`.
-            callback_steps (`int`, *optional*, defaults to 1):
-                The frequency at which the `callback` function is called. If not specified, the callback is called at
-                every step.
-            cross_attention_kwargs (`dict`, *optional*):
-                A kwargs dictionary that if specified is passed along to the [`AttentionProcessor`] as defined in
-                [`self.processor`](https://github.com/huggingface/diffusers/blob/main/src/diffusers/models/attention_processor.py).
-            guidance_rescale (`float`, *optional*, defaults to 0.7):
-                Guidance rescale factor from [Common Diffusion Noise Schedules and Sample Steps are
-                Flawed](https://arxiv.org/pdf/2305.08891.pdf). Guidance rescale factor should fix overexposure when
-                using zero terminal SNR.
-
-        Examples:
-
-        Returns:
-            [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] or `tuple`:
-                If `return_dict` is `True`, [`~pipelines.stable_diffusion.StableDiffusionPipelineOutput`] is returned,
-                otherwise a `tuple` is returned where the first element is a list with the generated images and the
-                second element is a list of `bool`s indicating whether the corresponding generated image contains
-                "not-safe-for-work" (nsfw) content.
-        """
         # 0. Default height and width to unet
         height = height or self.unet.config.sample_size * self.vae_scale_factor
         width = width or self.unet.config.sample_size * self.vae_scale_factor
