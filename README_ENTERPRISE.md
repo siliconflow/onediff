@@ -173,49 +173,79 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 
 ## Stable Diffusion WebUI with OneDiff Enterprise
 
-If you are using the official weight of StableDiffusionXL, just tick the **Model Quantization(int8) Speed Up** option.
+We provide two types of quantization methods, one is online quantization and the other is offline quantization.
+
+Online quantization will quantize all Conv2d and Linear modules. Its advantages are as follows:
+
+- Easy to use. The only thing to do is just ticking the **Model Quantization(int8) Speed Up** option
+- Fast. It can finish the quantification in a few seconds
+
+Offline quantization requires you to manually run the quantization script we provide to obtain a quantized model, which can then be used in the WebUI. Its advantages are as follows:
+
+- Better Image quality. It can find and quantify modules with high computational costs but little impact on image quality, in order to achieve the best balance between computational costs and image quality.
+
+### Online Quantization
+
+Select *onediff_diffusion_model* in scripts, and a checkbox labeled *Model Quantization(int8) Speed Up* will appear below (as shown in the figure). By ticking this checkbox, you can use the online quantization function.
 
 <img src="./imgs/Enterprise_Tutorial_WebUI.png">
 
-### SD-1.5
+> Note: If you can't see the checkbox and instead see a message with the content *Hints: Enterprise function is not supported on your system*, it means that you do not have installed the onediff enterprise correctly. Please follow the instructions in the [Install OneDiff Enterprise](#install-onediff-enterprise) to install it.
 
-#### Scripts
+### Offline Quantization
 
-Run quantize-sd-fast.py by command to get quantized model:
-
-```python3
-python3 quantize-sd-fast.py \
-  --model /path/to/your/sd/model \
+Enter the directory where OneDiff is installed and run script by command
+```python
+python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
+  --model /path/to/your/model \
   --quantized_model /path/to/save/quantized/model \
   --height 512 \
   --width 512 \
-  --conv_ssim_threshold 0.985 \
+  --conv_ssim_threshold 0.991 \
   --linear_ssim_threshold 0.991 \
-  --linear_compute_density_threshold 900 \
-  --format sd
+  --conv_compute_density_threshold 0 \
+  --linear_compute_density_threshold 0 \
+  --save_as_float true \
+  --cache_dir /path/to/save/quantized/cache
 ```
 
 The meaning of each parameter is as follows:
 
-`--model` Specifies the path of the model to be quantified
+`--model` Specifies the path of the model to be quantified, can be a diffusers format model (which is a folder containing unet, vae, text_encoder and etc.) or a single safetensors file
 
 `--quantized_model` Specifies the path to save the quantized model
 
-`--height --width` Specify the size of the output image when quantizing
+`--height --width` Specify the height and width of the output image which are the most commonly used height and width in your WebUI usage
 
-`--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization
+`--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization
+`--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized
+`--conv_compute_density_threshold` The conv modules whose computational density is higher than the threshold will be quantized. Default to 900
 
-`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to 'sd', the model will be saved in the format of Stable Diffusion single safetensors
+`--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized. Default to 300
 
-After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model, and now you can load the quantized model in Stable Diffusion WebUI.
 
-<img src="./imgs/Enterprise_Tutorial_WebUI_Script.png">
+After you got the quantized model, run this command to convert the quantized model from diffusers format to safetensors for loading by the WebUI.
 
-> Note: When you are using a quantized model, you should **not** tick the **Model Quantization(int8) Speed Up** option.
+```python
+python3 onediff_sd_webui_extensions/tools/convert_diffusers_to_original_stable_diffusion.py \
+  --model_path /path/to/quantized/model/folder \
+  --checkpoint_path /path/to/quantized/model/folder/safetensors_file \
+  --use_safetensors
+```
+
+and convert the calibrate info for quantized model by running the command
+
+```python
+python3 /data/home/wangyi/workspace/onediff/onediff_sd_webui_extensions/tools/convert_diffusers_calibrate_info_to_original_stable_diffusion.py \
+  --src /path/to/quantized/model/folder/calibrate_info.txt \
+  --dst /path/to/quantized/model/folder/sd_calibrate_info.txt
+```
+
+Then you can use the offline quantized model in WebUI.
+
+> Note: Make sure that the safetensors file and the sd_cali.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
 
 
 ## Diffusers with OneDiff Enterprise
