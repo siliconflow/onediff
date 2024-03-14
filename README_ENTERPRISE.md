@@ -207,7 +207,8 @@ python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
   --conv_compute_density_threshold 0 \
   --linear_compute_density_threshold 0 \
   --save_as_float true \
-  --cache_dir /path/to/save/quantized/cache
+  --cache_dir /path/to/save/quantized/cache \
+  --format sd
 ```
 
 The meaning of each parameter is as follows:
@@ -226,27 +227,22 @@ The meaning of each parameter is as follows:
 
 `--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized. Default to 300
 
+`--save_as_float` If save model with floating point weights. If set to true, the weight of quantized modules will be saved as floating point dtype, otherwise int dtype.
 
-After you got the quantized model, run this command to convert the quantized model from diffusers format to safetensors for loading by the WebUI.
+`--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
 
-```python
-python3 onediff_sd_webui_extensions/tools/convert_diffusers_to_original_stable_diffusion.py \
-  --model_path /path/to/quantized/model/folder \
-  --checkpoint_path /path/to/quantized/model/folder/safetensors_file \
-  --use_safetensors
-```
+`--format` Specifies the format of saved model. If set as "sd", the calibrate_info will be saved as sd_calibrate_info.txt which can be loaded by WebUI, and the model will be saved as a single safetensors named "quantized_model.safetensors" in the folder specified by `--quantized_model`
 
-and convert the calibrate info for quantized model by running the command
-
-```python
-python3 /data/home/wangyi/workspace/onediff/onediff_sd_webui_extensions/tools/convert_diffusers_calibrate_info_to_original_stable_diffusion.py \
-  --src /path/to/quantized/model/folder/calibrate_info.txt \
-  --dst /path/to/quantized/model/folder/sd_calibrate_info.txt
-```
 
 Then you can use the offline quantized model in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
 
-> Note: Make sure that the safetensors file and the sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
+> Note:
+> - Make sure that the safetensors file and the sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
+>
+> - When you set conv_ssim_threshold and linear_ssim_threshold to a too high value, the number of quantized modules will be very few, and you will obtain too low acceleration benefits.
+>
+> - When you set conv_ssim_threshold and linear_ssim_threshold to a too low value, the number of quantized modules will be very large, and you will obtain a higher acceleration benefits, but the quality of generated image may decrease significantly
+
 
 
 ## Diffusers with OneDiff Enterprise
