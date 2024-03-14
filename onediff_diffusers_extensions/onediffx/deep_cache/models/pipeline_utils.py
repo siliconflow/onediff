@@ -1,49 +1,96 @@
 import os
-import diffusers
 
 import importlib
+from packaging import version
+import importlib.metadata
 
-def get_class_obj_and_candidates(
-    library_name,
-    class_name,
-    importable_classes,
-    pipelines,
-    is_pipeline_module,
-    component_name=None,
-    cache_dir=None,
-):
-    """Simple helper method to retrieve class object of module as well as potential parent class objects"""
-    component_folder = os.path.join(cache_dir, component_name)
+diffusers_0220_v = version.parse("0.22.0")
+diffusers_0240_v = version.parse("0.24.0")
+diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
-    if is_pipeline_module:
-        pipeline_module = getattr(pipelines, library_name)
+import diffusers
 
-        class_obj = getattr(pipeline_module, class_name)
-        class_candidates = {c: class_obj for c in importable_classes.keys()}
-    elif os.path.isfile(os.path.join(component_folder, library_name + ".py")):
-        # load custom component
-        class_obj = get_class_from_dynamic_module(
-            component_folder, module_file=library_name + ".py", class_name=class_name
-        )
-        class_candidates = {c: class_obj for c in importable_classes.keys()}
-    else:
-        # else we just import it from the library.
-        if class_name == "UNet2DConditionModel":
-            library_name = "onediffx.deep_cache.models.unet_2d_condition"
+if diffusers_version < diffusers_0220_v:
 
-        if class_name == "UNetSpatioTemporalConditionModel":
-            assert diffusers_version >= version.parse("0.24.0"), (
-                "SVD not support in diffusers-" + diffusers_version
+    def get_class_obj_and_candidates(
+        library_name, class_name, importable_classes, pipelines, is_pipeline_module
+    ):
+        """Simple helper method to retrieve class object of module as well as potential parent class objects"""
+        if is_pipeline_module:
+            pipeline_module = getattr(pipelines, library_name)
+
+            class_obj = getattr(pipeline_module, class_name)
+            class_candidates = {c: class_obj for c in importable_classes.keys()}
+        else:
+            if class_name == "UNet2DConditionModel":
+                library_name = "onediffx.deep_cache.models.unet_2d_condition"
+
+            if class_name == "UNetSpatioTemporalConditionModel":
+                assert diffusers_version >= diffusers_0240_v, (
+                    "SVD not support in diffusers-" + str(diffusers_version)
+                )
+                library_name = (
+                    "onediffx.deep_cache.models.unet_spatio_temporal_condition"
+                )
+
+            # else we just import it from the library.
+            library = importlib.import_module(library_name)
+
+            class_obj = getattr(library, class_name)
+            class_candidates = {
+                c: getattr(library, c, None) for c in importable_classes.keys()
+            }
+
+        return class_obj, class_candidates
+
+
+else:
+
+    def get_class_obj_and_candidates(
+        library_name,
+        class_name,
+        importable_classes,
+        pipelines,
+        is_pipeline_module,
+        component_name=None,
+        cache_dir=None,
+    ):
+        """Simple helper method to retrieve class object of module as well as potential parent class objects"""
+        component_folder = os.path.join(cache_dir, component_name)
+
+        if is_pipeline_module:
+            pipeline_module = getattr(pipelines, library_name)
+
+            class_obj = getattr(pipeline_module, class_name)
+            class_candidates = {c: class_obj for c in importable_classes.keys()}
+        elif os.path.isfile(os.path.join(component_folder, library_name + ".py")):
+            # load custom component
+            class_obj = get_class_from_dynamic_module(
+                component_folder,
+                module_file=library_name + ".py",
+                class_name=class_name,
             )
-            library_name = "onediffx.deep_cache.models.unet_spatio_temporal_condition"
+            class_candidates = {c: class_obj for c in importable_classes.keys()}
+        else:
+            # else we just import it from the library.
+            if class_name == "UNet2DConditionModel":
+                library_name = "onediffx.deep_cache.models.unet_2d_condition"
 
-        library = importlib.import_module(library_name)
-        class_obj = getattr(library, class_name)
-        class_candidates = {
-            c: getattr(library, c, None) for c in importable_classes.keys()
-        }
+            if class_name == "UNetSpatioTemporalConditionModel":
+                assert diffusers_version >= diffusers_0240_v, (
+                    "SVD not support in diffusers-" + str(diffusers_version)
+                )
+                library_name = (
+                    "onediffx.deep_cache.models.unet_spatio_temporal_condition"
+                )
 
-    return class_obj, class_candidates
+            library = importlib.import_module(library_name)
+            class_obj = getattr(library, class_name)
+            class_candidates = {
+                c: getattr(library, c, None) for c in importable_classes.keys()
+            }
+
+        return class_obj, class_candidates
 
 
 ORIGIN_DIFFUDION_PIPELINE = None
@@ -66,8 +113,12 @@ def enable_deep_cache_pipeline():
         assert ORIGIN_2D_GET_UP_BLOCK is None
         assert ORIGIN_3D_GET_DOWN_BLOCK is None
         assert ORIGIN_3D_GET_UP_BLOCK is None
-        ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES = diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates
-        diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = get_class_obj_and_candidates
+        ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES = (
+            diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates
+        )
+        diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
+            get_class_obj_and_candidates
+        )
 
         from .unet_2d_blocks import get_down_block as get_2d_down_block
 
@@ -108,7 +159,9 @@ def disable_deep_cache_pipeline():
         assert ORIGIN_3D_GET_DOWN_BLOCK is None
         assert ORIGIN_3D_GET_UP_BLOCK is None
         return
-    diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
+    diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
+        ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
+    )
     diffusers.models.unet_2d_condition.get_down_block = ORIGIN_2D_GET_DOWN_BLOCK
     diffusers.models.unet_2d_condition.get_up_block = ORIGIN_2D_GET_UP_BLOCK
 
