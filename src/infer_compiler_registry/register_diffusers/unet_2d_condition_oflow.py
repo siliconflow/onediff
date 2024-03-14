@@ -434,8 +434,7 @@ class UNet2DConditionModel(
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
                 # To support dynamic switching of special resolutions, pass a like tensor.
-                # upsample_size = down_block_res_samples[-1].shape[2:]
-                upsample_size = down_block_res_samples[-1]
+                upsample_size = down_block_res_samples[-1].shape[2:]
 
             output_like = None
             if not is_final_block:

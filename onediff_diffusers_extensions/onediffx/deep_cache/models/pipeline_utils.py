@@ -804,19 +804,38 @@ def from_pretrained(
 
 
 ORIGIN_DIFFUDION_PIPELINE = None
+ORIGIN_GET_DOWN_BLOCK = None
+ORIGIN_GET_UP_BLOCK = None
 
 
 def enable_deep_cache_pipeline():
     global ORIGIN_DIFFUDION_PIPELINE
+    global ORIGIN_GET_DOWN_BLOCK
+    global ORIGIN_GET_UP_BLOCK
     if ORIGIN_DIFFUDION_PIPELINE is None:
+        assert ORIGIN_GET_DOWN_BLOCK is None
+        assert ORIGIN_GET_UP_BLOCK is None
         ORIGIN_DIFFUDION_PIPELINE = diffusers.DiffusionPipeline.from_pretrained
         diffusers.DiffusionPipeline.from_pretrained = classmethod(from_pretrained)
+        from .unet_2d_blocks import get_down_block, get_up_block
+        ORIGIN_GET_DOWN_BLOCK = diffusers.models.unet_2d_condition.get_down_block
+        diffusers.models.unet_2d_condition.get_down_block = get_down_block
+
+        ORIGIN_GET_UP_BLOCK = diffusers.models.unet_2d_condition.get_up_block
+        diffusers.models.unet_2d_condition.get_up_block = get_up_block
 
 
 def disable_deep_cache_pipeline():
+    global ORIGIN_DIFFUDION_PIPELINE
+    global ORIGIN_GET_DOWN_BLOCK
+    global ORIGIN_GET_UP_BLOCK
     if ORIGIN_DIFFUDION_PIPELINE is None:
+        assert ORIGIN_GET_DOWN_BLOCK is None
+        assert ORIGIN_GET_UP_BLOCK is None
         return
     diffusers.DiffusionPipeline.from_pretrained = ORIGIN_DIFFUDION_PIPELINE
+    diffusers.models.unet_2d_condition.get_down_block = ORIGIN_GET_DOWN_BLOCK
+    diffusers.models.unet_2d_condition.get_up_block = ORIGIN_GET_UP_BLOCK
 
 
 __all__ = [
