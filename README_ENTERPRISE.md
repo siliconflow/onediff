@@ -187,7 +187,7 @@ Offline quantization requires you to manually run the quantization script we pro
 
 ### Online Quantization
 
-Select *onediff_diffusion_model* in scripts, and a checkbox labeled *Model Quantization(int8) Speed Up* will appear below (as shown in the figure). By ticking this checkbox, you can use the online quantization function.
+Select *onediff_diffusion_model* in script, and a checkbox labeled *Model Quantization(int8) Speed Up* will appear below (as shown in the figure). By ticking this checkbox, you can use the online quantization function.
 
 <img src="./imgs/Enterprise_Tutorial_WebUI.png">
 
@@ -244,7 +244,7 @@ python3 /data/home/wangyi/workspace/onediff/onediff_sd_webui_extensions/tools/co
   --dst /path/to/quantized/model/folder/sd_calibrate_info.txt
 ```
 
-Then you can use the offline quantized model in WebUI.
+Then you can use the offline quantized model in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
 
 > Note: Make sure that the safetensors file and the sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
 
