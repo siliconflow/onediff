@@ -17,7 +17,8 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [SDXL](#SDXL)
     - [SVD](#SVD)
 - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
-    - [SD-1.5](#SD-1.5)
+    - [Online Quantization](#online-quantization)
+    - [Offline Quantization](#offline-quantization)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
@@ -245,7 +246,7 @@ python3 /data/home/wangyi/workspace/onediff/onediff_sd_webui_extensions/tools/co
 
 Then you can use the offline quantized model in WebUI.
 
-> Note: Make sure that the safetensors file and the sd_cali.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
+> Note: Make sure that the safetensors file and the sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
 
 
 ## Diffusers with OneDiff Enterprise
