@@ -70,9 +70,13 @@ def compile_unet(
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
 
     if isinstance(unet_model, UNetModelLDM):
-        compiled_unet = compile_ldm_unet(unet_model, use_graph=use_graph, options=options)
+        compiled_unet = compile_ldm_unet(
+            unet_model, use_graph=use_graph, options=options
+        )
     elif isinstance(unet_model, UNetModelSGM):
-        compiled_unet = compile_sgm_unet(unet_model, use_graph=use_graph, options=options)
+        compiled_unet = compile_sgm_unet(
+            unet_model, use_graph=use_graph, options=options
+        )
     else:
         warnings.warn(
             f"Unsupported model type: {type(unet_model)} for compilation , skip",
@@ -81,7 +85,9 @@ def compile_unet(
         compiled_unet = unet_model
     if quantization:
         calibrate_info = get_calibrate_info("sd_calibrate_info.txt")
-        compiled_unet = quantize_model(compiled_unet, inplace=False, calibrate_info=calibrate_info)
+        compiled_unet = quantize_model(
+            compiled_unet, inplace=False, calibrate_info=calibrate_info
+        )
     return compiled_unet
 
 

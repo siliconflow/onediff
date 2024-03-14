@@ -198,7 +198,10 @@ def convert_vae_state_dict(vae_state_dict):
                 print(f"Reshaping {k} for SD format")
                 new_state_dict[k] = reshape_weight_for_sd(v)
         for weight_name, real_weight_name in vae_extra_conversion_map:
-            if f"mid.attn_1.{weight_name}.weight" in k or f"mid.attn_1.{weight_name}.bias" in k:
+            if (
+                f"mid.attn_1.{weight_name}.weight" in k
+                or f"mid.attn_1.{weight_name}.bias" in k
+            ):
                 keys_to_rename[k] = k.replace(weight_name, real_weight_name)
     for k, v in keys_to_rename.items():
         if k in new_state_dict:
@@ -222,8 +225,14 @@ textenc_conversion_lst = [
     (".c_proj.", ".fc2."),
     (".attn", ".self_attn"),
     ("ln_final.", "transformer.text_model.final_layer_norm."),
-    ("token_embedding.weight", "transformer.text_model.embeddings.token_embedding.weight"),
-    ("positional_embedding", "transformer.text_model.embeddings.position_embedding.weight"),
+    (
+        "token_embedding.weight",
+        "transformer.text_model.embeddings.token_embedding.weight",
+    ),
+    (
+        "positional_embedding",
+        "transformer.text_model.embeddings.position_embedding.weight",
+    ),
 ]
 protected = {re.escape(x[1]): x[0] for x in textenc_conversion_lst}
 textenc_pattern = re.compile("|".join(protected.keys()))
@@ -261,19 +270,29 @@ def convert_text_enc_state_dict_v20(text_enc_dict):
             capture_qkv_bias[k_pre][code2idx[k_code]] = v
             continue
 
-        relabelled_key = textenc_pattern.sub(lambda m: protected[re.escape(m.group(0))], k)
+        relabelled_key = textenc_pattern.sub(
+            lambda m: protected[re.escape(m.group(0))], k
+        )
         new_state_dict[relabelled_key] = v
 
     for k_pre, tensors in capture_qkv_weight.items():
         if None in tensors:
-            raise Exception("CORRUPTED MODEL: one of the q-k-v values for the text encoder was missing")
-        relabelled_key = textenc_pattern.sub(lambda m: protected[re.escape(m.group(0))], k_pre)
+            raise Exception(
+                "CORRUPTED MODEL: one of the q-k-v values for the text encoder was missing"
+            )
+        relabelled_key = textenc_pattern.sub(
+            lambda m: protected[re.escape(m.group(0))], k_pre
+        )
         new_state_dict[relabelled_key + ".in_proj_weight"] = torch.cat(tensors)
 
     for k_pre, tensors in capture_qkv_bias.items():
         if None in tensors:
-            raise Exception("CORRUPTED MODEL: one of the q-k-v values for the text encoder was missing")
-        relabelled_key = textenc_pattern.sub(lambda m: protected[re.escape(m.group(0))], k_pre)
+            raise Exception(
+                "CORRUPTED MODEL: one of the q-k-v values for the text encoder was missing"
+            )
+        relabelled_key = textenc_pattern.sub(
+            lambda m: protected[re.escape(m.group(0))], k_pre
+        )
         new_state_dict[relabelled_key + ".in_proj_bias"] = torch.cat(tensors)
 
     return new_state_dict
@@ -354,6 +373,7 @@ def convert_text_enc_state_dict(text_enc_dict):
 #         state_dict = {"state_dict": state_dict}
 #         torch.save(state_dict, args.checkpoint_path)
 
+
 def get_unet_state_dict(model_path):
     unet_path = osp.join(model_path, "unet", "diffusion_pytorch_model.safetensors")
     if osp.exists(unet_path):
@@ -364,8 +384,11 @@ def get_unet_state_dict(model_path):
 
     # Convert the UNet model
     unet_state_dict = convert_unet_state_dict(unet_state_dict)
-    unet_state_dict = {"model.diffusion_model." + k: v for k, v in unet_state_dict.items()}
+    unet_state_dict = {
+        "model.diffusion_model." + k: v for k, v in unet_state_dict.items()
+    }
     return unet_state_dict
+
 
 def get_vae_state_dict(model_path):
     vae_path = osp.join(model_path, "vae", "diffusion_pytorch_model.safetensors")
@@ -379,6 +402,7 @@ def get_vae_state_dict(model_path):
     vae_state_dict = convert_vae_state_dict(vae_state_dict)
     vae_state_dict = {"first_stage_model." + k: v for k, v in vae_state_dict.items()}
     return vae_state_dict
+
 
 def get_text_enc_state_dict(model_path):
     text_enc_path = osp.join(model_path, "text_encoder", "model.safetensors")
@@ -395,12 +419,17 @@ def get_text_enc_state_dict(model_path):
         # Need to add the tag 'transformer' in advance so we can knock it out from the final layer-norm
         text_enc_dict = {"transformer." + k: v for k, v in text_enc_dict.items()}
         text_enc_dict = convert_text_enc_state_dict_v20(text_enc_dict)
-        text_enc_dict = {"cond_stage_model.model." + k: v for k, v in text_enc_dict.items()}
+        text_enc_dict = {
+            "cond_stage_model.model." + k: v for k, v in text_enc_dict.items()
+        }
     else:
         text_enc_dict = convert_text_enc_state_dict(text_enc_dict)
-        text_enc_dict = {"cond_stage_model.transformer." + k: v for k, v in text_enc_dict.items()}
-    
+        text_enc_dict = {
+            "cond_stage_model.transformer." + k: v for k, v in text_enc_dict.items()
+        }
+
     return text_enc_dict
+
 
 def convert_sd(model_path, checkpoint_path, *, half=False, use_safetensors=True):
     # Put together new checkpoint
@@ -417,9 +446,12 @@ def convert_sd(model_path, checkpoint_path, *, half=False, use_safetensors=True)
         state_dict = {"state_dict": state_dict}
         torch.save(state_dict, checkpoint_path)
 
+
 def convert_unet_calibrate_dict(state_dict) -> str:
     mapping = {k: k for k in state_dict}
-    remove_suffix = lambda x: x.removesuffix(".weight").removesuffix(".bias").removesuffix(".")
+    remove_suffix = (
+        lambda x: x.removesuffix(".weight").removesuffix(".bias").removesuffix(".")
+    )
 
     for sd_name, hf_name in unet_conversion_map:
         sd_name, hf_name = remove_suffix(sd_name), remove_suffix(hf_name)
@@ -439,13 +471,14 @@ def convert_unet_calibrate_dict(state_dict) -> str:
     new_state_dict = {v: state_dict[k] for k, v in mapping.items()}
     return new_state_dict
 
+
 def convert_unet_calibrate_info_sd(calibration_path, dst_path):
     calibrate_info = {}
     with open(calibration_path, "r") as f:
         for line in f.readlines():
             line = line.strip()
             items = line.split(" ")
-            calibrate_info[items[0]] = " ".join(items[1: ])
+            calibrate_info[items[0]] = " ".join(items[1:])
     dst_info = convert_unet_calibrate_dict(calibrate_info)
     with open(dst_path, "w") as f:
         for name, info in dst_info.items():
