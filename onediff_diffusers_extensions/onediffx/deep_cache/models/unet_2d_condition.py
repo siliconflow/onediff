@@ -457,9 +457,9 @@ class UNet2DConditionModel(diffusers.models.unet_2d_condition.UNet2DConditionMod
             # if we have not reached the final block and need to forward the
             # upsample size, we do it here
             if not is_final_block and forward_upsample_size:
-                # To support dynamic switching of special resolutions, pass a like tensor.
                 upsample_size = down_block_res_samples[-1].shape[2:]
 
+            # To support dynamic switching of special resolutions, pass a like tensor.
             output_like = None
             if not is_final_block:
                 output_like = down_block_res_samples[-1]
