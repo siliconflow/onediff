@@ -188,7 +188,7 @@ def main():
         pipe.unet = torch.compile(pipe.unet)
         if hasattr(pipe, "controlnet"):
             pipe.controlnet = torch.compile(pipe.controlnet)
-        # model.vae = torch.compile(model.vae)
+        pipe.vae = torch.compile(pipe.vae)
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
@@ -249,12 +249,10 @@ def main():
             print("End warmup")
 
         kwarg_inputs = get_kwarg_inputs()
-        iter_profiler = None
+        iter_profiler = IterationProfiler()
         if "callback_on_step_end" in inspect.signature(pipe).parameters:
-            iter_profiler = IterationProfiler()
             kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
         elif "callback" in inspect.signature(pipe).parameters:
-            iter_profiler = IterationProfiler()
             kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
         begin = time.time()
         output_frames = pipe(**kwarg_inputs).frames
