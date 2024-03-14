@@ -375,20 +375,9 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
-_dtype_map = {
-    "torch.float16": flow.float16,
-    "torch.float32": flow.float32,
-    "torch.double": flow.double,
-    "torch.int8": flow.int8,
-    "torch.int32": flow.int32,
-    "torch.int64": flow.int64,
-    "torch.uint8": flow.uint8,
-}
-
-
 @torch2oflow.register
 def _(mod: torch.dtype, verbose=False) -> flow.dtype:
-    return _dtype_map[str(mod)]
+    return getattr(flow, mod.__str__().replace("torch.", ""))
 
 
 @torch2oflow.register
