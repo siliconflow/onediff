@@ -62,10 +62,12 @@ parser.add_argument(
 )
 parser.add_argument("--seed", type=int, default=111)
 parser.add_argument("--cache_dir", type=str, default=None)
+parser.add_argument("--format", type=str, default="diffusers")
 args = parser.parse_args()
 
 pipeline_cls = AutoPipelineForText2Image if args.input_image is None else AutoPipelineForImage2Image
 is_safetensors_model = Path(args.model).is_file and Path(args.model).suffix == ".safetensors"
+is_sdxl = False
 
 if is_safetensors_model:
     try: # check if safetensors is SDXL
@@ -77,6 +79,7 @@ if is_safetensors_model:
             variant=args.variant,
             use_safetensors=True,
         )
+        is_sdxl = True
     except:
         pipeline_cls = StableDiffusionPipeline if args.input_image is None else StableDiffusionImg2ImgPipeline
         pipe = QuantPipeline.from_single_file(
@@ -86,6 +89,7 @@ if is_safetensors_model:
             variant=args.variant,
             use_safetensors=True,
         )
+        is_sdxl = False
 
 else:
     pipe = QuantPipeline.from_pretrained(
@@ -128,3 +132,16 @@ pipe.save_quantized(args.quantized_model, safe_serialization=True)
 end_time = time.time()
 
 print(f"Quantize module time: {end_time - start_time}s")
+
+if args.format == "sd":
+    import sys
+    from pathlib import Path
+    sys.path.append(str(Path(__file__).parent.parent / "utils"))
+    from convert_diffusers_to_sd import convert_sd, convert_unet_calibrate_info_sd
+    from convert_diffusers_to_sdxl import convert_sdxl, convert_unet_calibrate_info_sdxl
+    if is_sdxl:
+        convert_sdxl(args.quantized_model, args.quantized_model + "/quantized_model.safetensors")
+        convert_unet_calibrate_info_sdxl(args.quantized_model + "/calibrate_info.txt", args.quantized_model + "/sd_calibrate_info.txt")
+    else:
+        convert_sd(args.quantized_model, args.quantized_model + "/quantized_model.safetensors")
+        convert_unet_calibrate_info_sd(args.quantized_model + "/calibrate_info.txt", args.quantized_model + "/sd_calibrate_info.txt")
