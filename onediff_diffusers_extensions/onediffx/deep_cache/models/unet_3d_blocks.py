@@ -13,17 +13,34 @@ from diffusers.utils import is_torch_version
 
 
 if diffusers_version >= diffusers_0260_v:
-    from diffusers.models.unets.unet_3d_blocks import DownBlockSpatioTemporal as DiffusersDownBlockSpatioTemporal
-    from diffusers.models.unets.unet_3d_blocks import CrossAttnDownBlockSpatioTemporal as DiffusersCrossAttnDownBlockSpatioTemporal
-    from diffusers.models.unets.unet_3d_blocks import UpBlockSpatioTemporal as DiffusersUpBlockSpatioTemporal
-    from diffusers.models.unets.unet_3d_blocks import CrossAttnUpBlockSpatioTemporal as DiffusersCrossAttnUpBlockSpatioTemporal
+    from diffusers.models.unets.unet_3d_blocks import (
+        DownBlockSpatioTemporal as DiffusersDownBlockSpatioTemporal,
+    )
+    from diffusers.models.unets.unet_3d_blocks import (
+        CrossAttnDownBlockSpatioTemporal as DiffusersCrossAttnDownBlockSpatioTemporal,
+    )
+    from diffusers.models.unets.unet_3d_blocks import (
+        UpBlockSpatioTemporal as DiffusersUpBlockSpatioTemporal,
+    )
+    from diffusers.models.unets.unet_3d_blocks import (
+        CrossAttnUpBlockSpatioTemporal as DiffusersCrossAttnUpBlockSpatioTemporal,
+    )
     from diffusers.models.unets.unet_3d_blocks import UNetMidBlockSpatioTemporal
 else:
-    from diffusers.models.unet_3d_blocks import DownBlockSpatioTemporal as DiffusersDownBlockSpatioTemporal
-    from diffusers.models.unet_3d_blocks import CrossAttnDownBlockSpatioTemporal as DiffusersCrossAttnDownBlockSpatioTemporal
-    from diffusers.models.unet_3d_blocks import UpBlockSpatioTemporal as DiffusersUpBlockSpatioTemporal
-    from diffusers.models.unet_3d_blocks import CrossAttnUpBlockSpatioTemporal as DiffusersCrossAttnUpBlockSpatioTemporal
+    from diffusers.models.unet_3d_blocks import (
+        DownBlockSpatioTemporal as DiffusersDownBlockSpatioTemporal,
+    )
+    from diffusers.models.unet_3d_blocks import (
+        CrossAttnDownBlockSpatioTemporal as DiffusersCrossAttnDownBlockSpatioTemporal,
+    )
+    from diffusers.models.unet_3d_blocks import (
+        UpBlockSpatioTemporal as DiffusersUpBlockSpatioTemporal,
+    )
+    from diffusers.models.unet_3d_blocks import (
+        CrossAttnUpBlockSpatioTemporal as DiffusersCrossAttnUpBlockSpatioTemporal,
+    )
     from diffusers.models.unet_3d_blocks import UNetMidBlockSpatioTemporal
+
 
 class DownBlockSpatioTemporal(DiffusersDownBlockSpatioTemporal):
     def forward(
@@ -33,7 +50,7 @@ class DownBlockSpatioTemporal(DiffusersDownBlockSpatioTemporal):
         image_only_indicator: Optional[torch.Tensor] = None,
         exist_module_idx: Optional[int] = None,
     ) -> Tuple[torch.FloatTensor, Tuple[torch.FloatTensor, ...]]:
-        print("exist_module_idx:", exist_module_idx)
+        # print("exist_module_idx:", exist_module_idx)
         output_states = ()
         for resnet in self.resnets:
             if self.training and self.gradient_checkpointing:
@@ -90,7 +107,7 @@ class CrossAttnDownBlockSpatioTemporal(DiffusersCrossAttnDownBlockSpatioTemporal
         image_only_indicator: Optional[torch.Tensor] = None,
         exist_module_idx: Optional[int] = None,
     ) -> Tuple[torch.FloatTensor, Tuple[torch.FloatTensor, ...]]:
-        print("exist_module_idx:", exist_module_idx)
+        # print("exist_module_idx:", exist_module_idx)
         output_states = ()
 
         blocks = list(zip(self.resnets, self.attentions))
@@ -159,7 +176,7 @@ class UpBlockSpatioTemporal(DiffusersUpBlockSpatioTemporal):
         image_only_indicator: Optional[torch.Tensor] = None,
         enter_module_idx: Optional[int] = None,
     ) -> torch.FloatTensor:
-        print("enter_module_idx:", enter_module_idx)
+        # print("enter_module_idx:", enter_module_idx)
         prv_f = []
         for idx, resnet in enumerate(self.resnets):
             if enter_module_idx is not None and idx < enter_module_idx:
@@ -216,7 +233,7 @@ class CrossAttnUpBlockSpatioTemporal(DiffusersCrossAttnUpBlockSpatioTemporal):
         image_only_indicator: Optional[torch.Tensor] = None,
         enter_module_idx: Optional[int] = None,
     ) -> torch.FloatTensor:
-        print("enter_module_idx:", enter_module_idx)
+        # print("enter_module_idx:", enter_module_idx)
         prv_f = []
         for idx, (resnet, attn) in enumerate(zip(self.resnets, self.attentions)):
             if enter_module_idx is not None and idx < enter_module_idx:
@@ -272,11 +289,12 @@ class CrossAttnUpBlockSpatioTemporal(DiffusersCrossAttnUpBlockSpatioTemporal):
 
         return hidden_states, prv_f
 
+
 update_cls = {
-  "DownBlockSpatioTemporal": DownBlockSpatioTemporal,
-  "CrossAttnDownBlockSpatioTemporal": CrossAttnDownBlockSpatioTemporal,
-  "UpBlockSpatioTemporal": UpBlockSpatioTemporal,
-  "CrossAttnUpBlockSpatioTemporal": CrossAttnUpBlockSpatioTemporal,
+    "DownBlockSpatioTemporal": DownBlockSpatioTemporal,
+    "CrossAttnDownBlockSpatioTemporal": CrossAttnDownBlockSpatioTemporal,
+    "UpBlockSpatioTemporal": UpBlockSpatioTemporal,
+    "CrossAttnUpBlockSpatioTemporal": CrossAttnUpBlockSpatioTemporal,
 }
 
 if diffusers_version >= diffusers_0260_v:
@@ -286,11 +304,15 @@ else:
     src_get_down_block = diffusers.models.unet_3d_blocks.get_down_block
     src_get_up_block = diffusers.models.unet_3d_blocks.get_up_block
 
-down_globals = {k : v for k, v in src_get_down_block.__globals__.items()}
+down_globals = {k: v for k, v in src_get_down_block.__globals__.items()}
 down_globals.update(update_cls)
-get_down_block = types.FunctionType(src_get_down_block.__code__, down_globals, argdefs=src_get_down_block.__defaults__)
+get_down_block = types.FunctionType(
+    src_get_down_block.__code__, down_globals, argdefs=src_get_down_block.__defaults__
+)
 
 
-up_globals = {k : v for k, v in src_get_up_block.__globals__.items()}
+up_globals = {k: v for k, v in src_get_up_block.__globals__.items()}
 up_globals.update(update_cls)
-get_up_block = types.FunctionType(src_get_up_block.__code__, up_globals, argdefs=src_get_up_block.__defaults__)
+get_up_block = types.FunctionType(
+    src_get_up_block.__code__, up_globals, argdefs=src_get_up_block.__defaults__
+)
