@@ -6,6 +6,7 @@ import importlib.metadata
 
 diffusers_0220_v = version.parse("0.22.0")
 diffusers_0240_v = version.parse("0.24.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import diffusers
@@ -101,6 +102,14 @@ ORIGIN_2D_GET_UP_BLOCK = None
 ORIGIN_3D_GET_DOWN_BLOCK = None
 ORIGIN_3D_GET_UP_BLOCK = None
 
+if diffusers_version >= diffusers_0260_v:
+    from diffusers.models.unets import unet_2d_condition as diffusers_unet_2d_condition
+    from diffusers.models.unets import unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition
+else:
+    from diffusers.models import unet_2d_condition as diffusers_unet_unet_2d_condition
+    if diffusers_version >= diffusers_0240_v:
+        from diffusers.models import unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition
+
 
 def enable_deep_cache_pipeline():
     global ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
@@ -123,30 +132,30 @@ def enable_deep_cache_pipeline():
 
         from .unet_2d_blocks import get_down_block as get_2d_down_block
 
-        ORIGIN_2D_GET_DOWN_BLOCK = diffusers.models.unet_2d_condition.get_down_block
-        diffusers.models.unet_2d_condition.get_down_block = get_2d_down_block
+        ORIGIN_2D_GET_DOWN_BLOCK = diffusers_unet_2d_condition.get_down_block
+        diffusers_unet_2d_condition.get_down_block = get_2d_down_block
 
         from .unet_2d_blocks import get_up_block as get_2d_up_block
 
-        ORIGIN_2D_GET_UP_BLOCK = diffusers.models.unet_2d_condition.get_up_block
-        diffusers.models.unet_2d_condition.get_up_block = get_2d_up_block
+        ORIGIN_2D_GET_UP_BLOCK = diffusers_unet_2d_condition.get_up_block
+        diffusers_unet_2d_condition.get_up_block = get_2d_up_block
 
         if diffusers_version >= diffusers_0240_v:
             from .unet_3d_blocks import get_down_block as get_3d_down_block
 
             ORIGIN_3D_GET_DOWN_BLOCK = (
-                diffusers.models.unet_spatio_temporal_condition.get_down_block
+                diffusers_unet_spatio_temporal_condition.get_down_block
             )
-            diffusers.models.unet_spatio_temporal_condition.get_down_block = (
+            diffusers_unet_spatio_temporal_condition.get_down_block = (
                 get_3d_down_block
             )
 
             from .unet_3d_blocks import get_up_block as get_3d_up_block
 
             ORIGIN_3D_GET_UP_BLOCK = (
-                diffusers.models.unet_spatio_temporal_condition.get_up_block
+                diffusers_unet_spatio_temporal_condition.get_up_block
             )
-            diffusers.models.unet_spatio_temporal_condition.get_up_block = get_3d_up_block
+            diffusers_unet_spatio_temporal_condition.get_up_block = get_3d_up_block
 
 
 def disable_deep_cache_pipeline():
@@ -165,11 +174,11 @@ def disable_deep_cache_pipeline():
     diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
         ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
     )
-    diffusers.models.unet_2d_condition.get_down_block = ORIGIN_2D_GET_DOWN_BLOCK
-    diffusers.models.unet_2d_condition.get_up_block = ORIGIN_2D_GET_UP_BLOCK
+    diffusers_unet_2d_condition.get_down_block = ORIGIN_2D_GET_DOWN_BLOCK
+    diffusers_unet_2d_condition.get_up_block = ORIGIN_2D_GET_UP_BLOCK
     if diffusers_version >= diffusers_0240_v:
-        diffusers.models.unet_spatio_temporal_condition.get_down_block = ORIGIN_3D_GET_DOWN_BLOCK
-        diffusers.models.unet_spatio_temporal_condition.get_up_block = ORIGIN_3D_GET_UP_BLOCK
+        diffusers_unet_spatio_temporal_condition.get_down_block = ORIGIN_3D_GET_DOWN_BLOCK
+        diffusers_unet_spatio_temporal_condition.get_up_block = ORIGIN_3D_GET_UP_BLOCK
 
 
 __all__ = [

@@ -19,6 +19,7 @@ import importlib.metadata
 from oneflow.nn.graph.proxy import ProxyModule
 
 diffusers_0210_v = version.parse("0.21.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import torch
@@ -26,6 +27,11 @@ import diffusers
 
 from diffusers.utils import BaseOutput, logging
 from diffusers.models.modeling_utils import ModelMixin
+
+if diffusers_version >= diffusers_0260_v:
+    from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel as DiffusersUNet2DConditionModel 
+else:
+    from diffusers.models.unet_2d_condition import UNet2DConditionModel as DiffusersUNet2DConditionModel
 
 try:
     USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
@@ -50,7 +56,7 @@ class UNet2DConditionOutput(BaseOutput):
     sample: torch.FloatTensor = None
 
 
-class UNet2DConditionModel(diffusers.models.unet_2d_condition.UNet2DConditionModel):
+class UNet2DConditionModel(DiffusersUNet2DConditionModel):
     def forward(
         self,
         sample: torch.FloatTensor,

@@ -20,16 +20,28 @@ from packaging import version
 import importlib.metadata
 
 diffusers_0210_v = version.parse("0.21.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import diffusers
 from diffusers.utils import is_torch_version, logging
 
+if diffusers_version >= diffusers_0260_v:
+    from diffusers.models.unets.unet_2d_blocks import CrossAttnDownBlock2D as DiffusersCrossAttnDownBlock2D
+    from diffusers.models.unets.unet_2d_blocks import DownBlock2D as DiffusersDownBlock2D
+    from diffusers.models.unets.unet_2d_blocks import CrossAttnUpBlock2D as DiffusersCrossAttnUpBlock2D
+    from diffusers.models.unets.unet_2d_blocks import UpBlock2D as DiffusersUpBlock2D
+else:
+    from diffusers.models.unet_2d_blocks import CrossAttnDownBlock2D as DiffusersCrossAttnDownBlock2D
+    from diffusers.models.unet_2d_blocks import DownBlock2D as DiffusersDownBlock2D
+    from diffusers.models.unet_2d_blocks import CrossAttnUpBlock2D as DiffusersCrossAttnUpBlock2D
+    from diffusers.models.unet_2d_blocks import UpBlock2D as DiffusersUpBlock2D
+
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
 if diffusers_version >= diffusers_0210_v:
-    class CrossAttnDownBlock2D(diffusers.models.unet_2d_blocks.CrossAttnDownBlock2D):
+    class CrossAttnDownBlock2D(DiffusersCrossAttnDownBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -109,7 +121,7 @@ if diffusers_version >= diffusers_0210_v:
             return hidden_states, output_states
 
 
-    class DownBlock2D(diffusers.models.unet_2d_blocks.DownBlock2D):
+    class DownBlock2D(DiffusersDownBlock2D):
         def forward(
             self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,
         ):
@@ -155,7 +167,7 @@ if diffusers_version >= diffusers_0210_v:
             return hidden_states, output_states
 
 
-    class CrossAttnUpBlock2D(diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D):
+    class CrossAttnUpBlock2D(DiffusersCrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -237,7 +249,7 @@ if diffusers_version >= diffusers_0210_v:
             return hidden_states, prv_f
 
 
-    class UpBlock2D(diffusers.models.unet_2d_blocks.UpBlock2D):
+    class UpBlock2D(DiffusersUpBlock2D):
         def forward(
             self,
             hidden_states,
@@ -294,7 +306,7 @@ if diffusers_version >= diffusers_0210_v:
             return hidden_states, prv_f
 else:
 
-    class CrossAttnDownBlock2D(diffusers.models.unet_2d_blocks.CrossAttnDownBlock2D):
+    class CrossAttnDownBlock2D(DiffusersCrossAttnDownBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -368,7 +380,7 @@ else:
             return hidden_states, output_states
 
 
-    class DownBlock2D(diffusers.models.unet_2d_blocks.DownBlock2D):
+    class DownBlock2D(DiffusersDownBlock2D):
         def forward(
             self, hidden_states, temb=None, exist_block_number=None,
         ):
@@ -414,7 +426,7 @@ else:
             return hidden_states, output_states
 
 
-    class CrossAttnUpBlock2D(diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D):
+    class CrossAttnUpBlock2D(DiffusersCrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -491,7 +503,7 @@ else:
             return hidden_states, prv_f
 
 
-    class UpBlock2D(diffusers.models.unet_2d_blocks.UpBlock2D):
+    class UpBlock2D(DiffusersUpBlock2D):
         def forward(
             self,
             hidden_states,
@@ -554,13 +566,18 @@ update_cls = {
   "UpBlock2D": UpBlock2D,
 }
 
-src_get_down_block = diffusers.models.unet_2d_blocks.get_down_block
+if diffusers_version >= diffusers_0260_v:
+    src_get_down_block = diffusers.models.unets.unet_2d_blocks.get_down_block
+    src_get_up_block = diffusers.models.unets.unet_2d_blocks.get_up_block
+else:
+    src_get_down_block = diffusers.models.unet_2d_blocks.get_down_block
+    src_get_up_block = diffusers.models.unet_2d_blocks.get_up_block
+
 down_globals = {k : v for k, v in src_get_down_block.__globals__.items()}
 down_globals.update(update_cls)
-
 get_down_block = types.FunctionType(src_get_down_block.__code__, down_globals, argdefs=src_get_down_block.__defaults__)
 
-src_get_up_block = diffusers.models.unet_2d_blocks.get_up_block
+
 up_globals = {k : v for k, v in src_get_up_block.__globals__.items()}
 up_globals.update(update_cls)
 get_up_block = types.FunctionType(src_get_up_block.__code__, up_globals, argdefs=src_get_up_block.__defaults__)
