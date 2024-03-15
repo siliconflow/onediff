@@ -14,10 +14,10 @@ import json
 import time
 import os
 
-webui_server_url = 'http://127.0.0.1:7860'
+webui_server_url = "http://127.0.0.1:7860"
 
-out_dir = 'api_out'
-out_dir_i2i = os.path.join(out_dir, 'img2img')
+out_dir = "api_out"
+out_dir_i2i = os.path.join(out_dir, "img2img")
 os.makedirs(out_dir_i2i, exist_ok=True)
 
 
@@ -26,8 +26,8 @@ def timestamp():
 
 
 def encode_file_to_base64(path):
-    with open(path, 'rb') as file:
-        return base64.b64encode(file.read()).decode('utf-8')
+    with open(path, "rb") as file:
+        return base64.b64encode(file.read()).decode("utf-8")
 
 
 def decode_and_save_base64(base64_str, save_path):
@@ -36,24 +36,24 @@ def decode_and_save_base64(base64_str, save_path):
 
 
 def call_api(api_endpoint, **payload):
-    data = json.dumps(payload).encode('utf-8')
+    data = json.dumps(payload).encode("utf-8")
     request = urllib.request.Request(
-        f'{webui_server_url}/{api_endpoint}',
-        headers={'Content-Type': 'application/json'},
+        f"{webui_server_url}/{api_endpoint}",
+        headers={"Content-Type": "application/json"},
         data=data,
     )
     response = urllib.request.urlopen(request)
-    return json.loads(response.read().decode('utf-8'))
+    return json.loads(response.read().decode("utf-8"))
 
 
 def call_img2img_api(**payload):
-    response = call_api('sdapi/v1/img2img', **payload)
-    for index, image in enumerate(response.get('images')):
-        save_path = os.path.join(out_dir_i2i, f'img2img-{timestamp()}-{index}.png')
+    response = call_api("sdapi/v1/img2img", **payload)
+    for index, image in enumerate(response.get("images")):
+        save_path = os.path.join(out_dir_i2i, f"img2img-{timestamp()}-{index}.png")
         decode_and_save_base64(image, save_path)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     img_path = str(Path(__file__).parent / "cat.png")
     init_images = [
         encode_file_to_base64(img_path),
