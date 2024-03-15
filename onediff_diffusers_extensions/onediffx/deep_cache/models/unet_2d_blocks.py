@@ -15,6 +15,7 @@ from typing import Any, Dict, Optional, Tuple
 
 import types
 import torch
+from oneflow.nn.graph.proxy import ProxyModule
 
 from packaging import version
 import importlib.metadata
@@ -27,21 +28,15 @@ import diffusers
 from diffusers.utils import is_torch_version, logging
 
 if diffusers_version >= diffusers_0260_v:
-    from diffusers.models.unets.unet_2d_blocks import CrossAttnDownBlock2D as DiffusersCrossAttnDownBlock2D
-    from diffusers.models.unets.unet_2d_blocks import DownBlock2D as DiffusersDownBlock2D
-    from diffusers.models.unets.unet_2d_blocks import CrossAttnUpBlock2D as DiffusersCrossAttnUpBlock2D
-    from diffusers.models.unets.unet_2d_blocks import UpBlock2D as DiffusersUpBlock2D
+    from diffusers.models.unets import unet_2d_blocks as diffusers_unet_2d_blocks
 else:
-    from diffusers.models.unet_2d_blocks import CrossAttnDownBlock2D as DiffusersCrossAttnDownBlock2D
-    from diffusers.models.unet_2d_blocks import DownBlock2D as DiffusersDownBlock2D
-    from diffusers.models.unet_2d_blocks import CrossAttnUpBlock2D as DiffusersCrossAttnUpBlock2D
-    from diffusers.models.unet_2d_blocks import UpBlock2D as DiffusersUpBlock2D
+    from diffusers.models import unet_2d_blocks as diffusers_unet_2d_blocks
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
 if diffusers_version >= diffusers_0210_v:
-    class CrossAttnDownBlock2D(DiffusersCrossAttnDownBlock2D):
+    class CrossAttnDownBlock2D(diffusers_unet_2d_blocks.CrossAttnDownBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -53,7 +48,7 @@ if diffusers_version >= diffusers_0210_v:
             exist_block_number=None,
             additional_residuals=None,
         ):
-            # print("exist_block_number:", exist_block_number)
+            # print("exist_block_number:", exist_block_number, type(self))
             output_states = ()
 
             lora_scale = (
@@ -121,11 +116,11 @@ if diffusers_version >= diffusers_0210_v:
             return hidden_states, output_states
 
 
-    class DownBlock2D(DiffusersDownBlock2D):
+    class DownBlock2D(diffusers_unet_2d_blocks.DownBlock2D):
         def forward(
             self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,
         ):
-            # print("exist_block_number:", exist_block_number)
+            # print("exist_block_number:", exist_block_number, type(self))
             output_states = ()
 
             for resnet in self.resnets:
@@ -167,7 +162,7 @@ if diffusers_version >= diffusers_0210_v:
             return hidden_states, output_states
 
 
-    class CrossAttnUpBlock2D(DiffusersCrossAttnUpBlock2D):
+    class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -181,7 +176,7 @@ if diffusers_version >= diffusers_0210_v:
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
             enter_block_number: Optional[int] = None,
         ):
-            # print("enter_block_number:", enter_block_number)
+            # print("enter_block_number:", enter_block_number, type(self))
             prv_f = []
             lora_scale = (
                 cross_attention_kwargs.get("scale", 1.0)
@@ -242,14 +237,19 @@ if diffusers_version >= diffusers_0210_v:
 
             if self.upsamplers is not None:
                 for upsampler in self.upsamplers:
-                    hidden_states = upsampler(
-                        hidden_states, upsample_size, scale=lora_scale
-                    )
+                    if isinstance(self, ProxyModule):
+                        hidden_states = upsampler(
+                            hidden_states, upsample_size, output_like=output_like, scale=lora_scale
+                        )
+                    else:
+                        hidden_states = upsampler(
+                            hidden_states, upsample_size, scale=lora_scale
+                        )
 
             return hidden_states, prv_f
 
 
-    class UpBlock2D(DiffusersUpBlock2D):
+    class UpBlock2D(diffusers_unet_2d_blocks.UpBlock2D):
         def forward(
             self,
             hidden_states,
@@ -260,7 +260,7 @@ if diffusers_version >= diffusers_0210_v:
             scale: float = 1.0,
             enter_block_number: Optional[int] = None,
         ):
-            # print("enter_block_number:", enter_block_number)
+            # print("enter_block_number:", enter_block_number, type(self))
             prv_f = []
 
             for idx, resnet in enumerate(self.resnets):
@@ -301,12 +301,15 @@ if diffusers_version >= diffusers_0210_v:
 
             if self.upsamplers is not None:
                 for upsampler in self.upsamplers:
-                    hidden_states = upsampler(hidden_states, upsample_size, scale=scale,)
+                    if isinstance(self, ProxyModule):
+                        hidden_states = upsampler(hidden_states, upsample_size, scale=scale, output_like=output_like,)
+                    else:
+                        hidden_states = upsampler(hidden_states, upsample_size, scale=scale,)
 
             return hidden_states, prv_f
 else:
 
-    class CrossAttnDownBlock2D(DiffusersCrossAttnDownBlock2D):
+    class CrossAttnDownBlock2D(diffusers_unet_2d_blocks.CrossAttnDownBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -318,7 +321,7 @@ else:
             exist_block_number=None,
             additional_residuals=None,
         ):
-            # print("exist_block_number:", exist_block_number)
+            # print("exist_block_number:", exist_block_number, type(self))
             output_states = ()
 
             blocks = list(zip(self.resnets, self.attentions))
@@ -380,11 +383,11 @@ else:
             return hidden_states, output_states
 
 
-    class DownBlock2D(DiffusersDownBlock2D):
+    class DownBlock2D(diffusers_unet_2d_blocks.DownBlock2D):
         def forward(
             self, hidden_states, temb=None, exist_block_number=None,
         ):
-            # print("exist_block_number:", exist_block_number)
+            # print("exist_block_number:", exist_block_number, type(self))
             output_states = ()
 
             for resnet in self.resnets:
@@ -426,7 +429,7 @@ else:
             return hidden_states, output_states
 
 
-    class CrossAttnUpBlock2D(DiffusersCrossAttnUpBlock2D):
+    class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -440,7 +443,7 @@ else:
             encoder_attention_mask: Optional[torch.FloatTensor] = None,
             enter_block_number: Optional[int] = None,
         ):
-            # print("enter_block_number:", enter_block_number)
+            # print("enter_block_number:", enter_block_number, type(self))
             prv_f = []
 
             for i, (resnet, attn) in enumerate(zip(self.resnets, self.attentions)):
@@ -496,14 +499,19 @@ else:
 
             if self.upsamplers is not None:
                 for upsampler in self.upsamplers:
-                    hidden_states = upsampler(
-                        hidden_states, upsample_size
-                    )
+                    if isinstance(self, ProxyModule):
+                        hidden_states = upsampler(
+                            hidden_states, upsample_size, output_like
+                        )
+                    else:
+                        hidden_states = upsampler(
+                            hidden_states, upsample_size
+                        )
 
             return hidden_states, prv_f
 
 
-    class UpBlock2D(DiffusersUpBlock2D):
+    class UpBlock2D(diffusers_unet_2d_blocks.UpBlock2D):
         def forward(
             self,
             hidden_states,
@@ -513,7 +521,7 @@ else:
             output_like=None,
             enter_block_number: Optional[int] = None,
         ):
-            # print("enter_block_number:", enter_block_number)
+            # print("enter_block_number:", enter_block_number, type(self))
             prv_f = []
 
             for idx, resnet in enumerate(self.resnets):
@@ -554,7 +562,10 @@ else:
 
             if self.upsamplers is not None:
                 for upsampler in self.upsamplers:
-                    hidden_states = upsampler(hidden_states, upsample_size)
+                    if isinstance(self, ProxyModule):
+                        hidden_states = upsampler(hidden_states, upsample_size, output_like)
+                    else:
+                        hidden_states = upsampler(hidden_states, upsample_size)
 
             return hidden_states, prv_f
 

@@ -13,36 +13,12 @@ from diffusers.utils import is_torch_version
 
 
 if diffusers_version >= diffusers_0260_v:
-    from diffusers.models.unets.unet_3d_blocks import (
-        DownBlockSpatioTemporal as DiffusersDownBlockSpatioTemporal,
-    )
-    from diffusers.models.unets.unet_3d_blocks import (
-        CrossAttnDownBlockSpatioTemporal as DiffusersCrossAttnDownBlockSpatioTemporal,
-    )
-    from diffusers.models.unets.unet_3d_blocks import (
-        UpBlockSpatioTemporal as DiffusersUpBlockSpatioTemporal,
-    )
-    from diffusers.models.unets.unet_3d_blocks import (
-        CrossAttnUpBlockSpatioTemporal as DiffusersCrossAttnUpBlockSpatioTemporal,
-    )
-    from diffusers.models.unets.unet_3d_blocks import UNetMidBlockSpatioTemporal
+    from diffusers.models.unets import unet_3d_blocks as diffusers_unet_3d_blocks
 else:
-    from diffusers.models.unet_3d_blocks import (
-        DownBlockSpatioTemporal as DiffusersDownBlockSpatioTemporal,
-    )
-    from diffusers.models.unet_3d_blocks import (
-        CrossAttnDownBlockSpatioTemporal as DiffusersCrossAttnDownBlockSpatioTemporal,
-    )
-    from diffusers.models.unet_3d_blocks import (
-        UpBlockSpatioTemporal as DiffusersUpBlockSpatioTemporal,
-    )
-    from diffusers.models.unet_3d_blocks import (
-        CrossAttnUpBlockSpatioTemporal as DiffusersCrossAttnUpBlockSpatioTemporal,
-    )
-    from diffusers.models.unet_3d_blocks import UNetMidBlockSpatioTemporal
+    from diffusers.models import unet_3d_blocks as diffusers_unet_3d_blocks
 
 
-class DownBlockSpatioTemporal(DiffusersDownBlockSpatioTemporal):
+class DownBlockSpatioTemporal(diffusers_unet_3d_blocks.DownBlockSpatioTemporal):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
@@ -98,7 +74,7 @@ class DownBlockSpatioTemporal(DiffusersDownBlockSpatioTemporal):
         return hidden_states, output_states
 
 
-class CrossAttnDownBlockSpatioTemporal(DiffusersCrossAttnDownBlockSpatioTemporal):
+class CrossAttnDownBlockSpatioTemporal(diffusers_unet_3d_blocks.CrossAttnDownBlockSpatioTemporal):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
@@ -167,7 +143,7 @@ class CrossAttnDownBlockSpatioTemporal(DiffusersCrossAttnDownBlockSpatioTemporal
         return hidden_states, output_states
 
 
-class UpBlockSpatioTemporal(DiffusersUpBlockSpatioTemporal):
+class UpBlockSpatioTemporal(diffusers_unet_3d_blocks.UpBlockSpatioTemporal):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
@@ -223,7 +199,7 @@ class UpBlockSpatioTemporal(DiffusersUpBlockSpatioTemporal):
         return hidden_states, prv_f
 
 
-class CrossAttnUpBlockSpatioTemporal(DiffusersCrossAttnUpBlockSpatioTemporal):
+class CrossAttnUpBlockSpatioTemporal(diffusers_unet_3d_blocks.CrossAttnUpBlockSpatioTemporal):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
