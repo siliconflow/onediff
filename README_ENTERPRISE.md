@@ -207,15 +207,14 @@ python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
   --conv_compute_density_threshold 0 \
   --linear_compute_density_threshold 0 \
   --save_as_float true \
-  --cache_dir /path/to/save/quantized/cache \
-  --format sd
+  --cache_dir /path/to/save/quantized/cache
 ```
 
 The meaning of each parameter is as follows:
 
 `--model` Specifies the path of the model to be quantified, can be a diffusers format model (which is a folder containing unet, vae, text_encoder and etc.) or a single safetensors file
 
-`--quantized_model` Specifies the path to save the quantized model
+`--quantized_model` Specifies the path to save the quantized model. If a single safetensors is specified by `--model`, a quantized model of safetensors named `quantized_model.safetensors` will be saved in the folder
 
 `--height --width` Specify the height and width of the output image which are the most commonly used height and width in your WebUI usage
 
@@ -230,9 +229,6 @@ The meaning of each parameter is as follows:
 `--save_as_float` If save model with floating point weights. If set to true, the weight of quantized modules will be saved as floating point dtype, otherwise int dtype.
 
 `--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
-
-`--format` Specifies the format of saved model. If set as "sd", the calibrate_info will be saved as sd_calibrate_info.txt which can be loaded by WebUI, and the model will be saved as a single safetensors named "quantized_model.safetensors" in the folder specified by `--quantized_model`
-
 
 Then you can use the offline quantized model in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
 
