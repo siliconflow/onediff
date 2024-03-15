@@ -88,7 +88,6 @@ image = base(
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 
-# Should have no compilation for these new input shape
 print("Test run with multiple resolutions...")
 if args.run_multiple_resolutions:
     sizes = [960, 720, 896, 768]
