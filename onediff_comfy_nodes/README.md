@@ -49,6 +49,7 @@ Updated on January 23, 2024. Device: RTX 3090
     - [ControlNet](#controlnet)
     - [SVD](#svd)
     - [DeepCache](#deepcache)
+    - [InstantID](#instantid)
   - [Contact](#contact)
 
 
@@ -145,6 +146,7 @@ While there is an example demonstrating OpenPose ControlNet, it's important to n
 [ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
 
 ### SVD
+> doc link: [SVD](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/SVD)
 
 This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD.
 
@@ -161,6 +163,10 @@ Here are the example of applying DeepCache to SD and SVD models.
 [Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
 
 [Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
+
+### InstantID
+
+> [doc link](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ComfyUI_InstantID_OneDiff.md)
 
 ## Contact
 

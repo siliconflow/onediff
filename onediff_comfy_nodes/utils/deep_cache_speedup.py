@@ -35,7 +35,7 @@ def deep_cache_speedup(
     def apply_model(model_function, kwargs):
         if isinstance(model_patcher.model, SVD_img2vid):
             set_boolean_env_var(
-                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", False
             )
         nonlocal current_t, current_step, cache_h
 

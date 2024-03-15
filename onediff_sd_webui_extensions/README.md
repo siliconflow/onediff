@@ -33,7 +33,7 @@ Run the commands below to install Sable Diffusion WebUI and OneDiff extensions.
 ```bash
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 git clone https://github.com/siliconflow/onediff.git
-cp -r onediff/onediff_sd_webui_extensions stable-diffusion-webui/extensions/
+ln -s "$(pwd)/onediff/onediff_sd_webui_extensions" "$(pwd)/stable-diffusion-webui/extensions/onediff_sd_webui_extensions"
 cd stable-diffusion-webui && git checkout 4afaaf8  # The tested git commit id is 4afaaf8.
 
 # Install all of stable-diffusion-webui's dependencies.

@@ -1,1 +1,3 @@
-from .scheduling_euler_discrete import EulerDiscreteScheduler
+import diffusers
+
+EulerDiscreteScheduler = diffusers.EulerDiscreteScheduler
