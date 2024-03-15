@@ -7,7 +7,7 @@ import argparse
 
 import torch
 
-from onediff.infer_compiler import oneflow_compile
+from onediffx import compile_pipe, compiler_config
 from onediff.schedulers import EulerDiscreteScheduler
 
 from onediffx.deep_cache import StableDiffusionXLPipeline
@@ -32,7 +32,7 @@ parser.add_argument(
     "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True,
 )
 parser.add_argument(
-    "--use_multiple_resolutions",
+    "--run_multiple_resolutions",
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
     default=False,
 )
@@ -55,33 +55,26 @@ base.to("cuda")
 # Compile unet with oneflow
 if args.compile:
     print("Compiling unet with oneflow.")
-    base.unet = oneflow_compile(base.unet)
-    base.fast_unet = oneflow_compile(base.fast_unet)
-    base.vae.decoder = oneflow_compile(base.vae.decoder)
+    base = compile_pipe(base)
 
 
-# Define multiple resolutions for warmup
-resolutions = (
-    [(512, 512), (256, 256),]
-    if args.use_multiple_resolutions
-    else [(args.height, args.width)]
-)
-
-# Warmup with chosen resolutions
-for resolution in resolutions:
-    for i in range(args.warmup):
-        image = base(
-            prompt=args.prompt,
-            height=resolution[0],
-            width=resolution[1],
-            num_inference_steps=args.n_steps,
-            output_type=OUTPUT_TYPE,
-            cache_interval=3,
-            cache_layer_id=0,
-            cache_block_id=0,
-        ).images
+# Warmup with run
+# Will do compilatioin in the first run
+print("Warmup with running graphs...")
+torch.manual_seed(args.seed)
+image = base(
+    prompt=args.prompt,
+    height=args.height,
+    width=args.width,
+    num_inference_steps=args.n_steps,
+    output_type=OUTPUT_TYPE,
+    cache_interval=3,
+    cache_layer_id=0,
+    cache_block_id=0,
+).images
 
 # Normal SDXL run
+print("Normal SDXL run...")
 torch.manual_seed(args.seed)
 image = base(
     prompt=args.prompt,
@@ -94,3 +87,22 @@ image = base(
     cache_block_id=0,
 ).images
 image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
+
+# Should have no compilation for these new input shape
+print("Test run with multiple resolutions...")
+if args.run_multiple_resolutions:
+    sizes = [960, 720, 896, 768]
+    if "CI" in os.environ:
+        sizes = [360]
+    for h in sizes:
+        for w in sizes:
+            image = base(
+                prompt=args.prompt,
+                height=h,
+                width=w,
+                num_inference_steps=args.n_steps,
+                output_type=OUTPUT_TYPE,
+                cache_interval=3,
+                cache_layer_id=0,
+                cache_block_id=0,
+            ).images
