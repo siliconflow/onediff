@@ -195,7 +195,7 @@ Select *onediff_diffusion_model* in script, and a checkbox labeled *Model Quanti
 
 ### Offline Quantization
 
-1. Enter the directory where OneDiff is installed and run script by command to get quantized model
+1. Enter the directory where OneDiff is installed and run the script as follows to quantize the model
     ```python
     python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
       --model /path/to/your/model \
