@@ -174,7 +174,7 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 
 ## Stable Diffusion WebUI with OneDiff Enterprise
 
-We provide two types of quantization methods, one is online quantization and the other is offline quantization.
+We provide two types of quantization methods, online quantization and offline quantization.
 
 Online quantization will quantize all Conv2d and Linear modules. Its advantages are as follows:
 
