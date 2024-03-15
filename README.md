@@ -85,6 +85,8 @@ OneDiff support the acceleratioin for SOTA models.
 Compile and save the compiled result offline, then load it online for serving
 - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
 - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
+  - Compile at one device(such as device 0), then use the compiled result to other device(such as device 1~7).
+  - This is for special scene and is in the Enterprise Edition.
 
 ### OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can
@@ -93,12 +95,14 @@ If you need **Enterprise-level Support** for your system or business, you can
 
 OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
 
-|                      | OneDiff Enterprise   | OneDiff Community |
-| -------------------- | ------------------- | ----------- |
-| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(No time cost for most of the cases)           |
-| More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
-| Technical Support for deployment    | High priority support       | Community           |
-| Get the experimental technology/feature | Yes | |
+|                                                                                                           | OneDiff Enterprise Edition              | OneDiff Community Edition               |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
+| Multiple Resolutions                                                                                      | Yes(No time cost for most of the cases) | Yes(No time cost for most of the cases) |
+| More Extreme and Dedicated optimization(usually another 20~100% performance gain) for the most used model | Yes                                     |                                         |
+| Tools for specific(very large scale) server side deployment                                               | Yes                                     |                                         |
+| Technical Support for deployment                                                                          | High priority support                   | Community                               |
+| Get the experimental features                                                                             | Yes                                     |                                         |
+
 
 ### Roadmap
 [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
