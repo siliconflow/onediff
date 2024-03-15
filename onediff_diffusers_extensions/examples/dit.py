@@ -58,32 +58,6 @@ def load_pipe(
     return pipe
 
 
-class IterationProfiler:
-    def __init__(self):
-        self.begin = None
-        self.end = None
-        self.num_iterations = 0
-
-    def get_iter_per_sec(self):
-        if self.begin is None or self.end is None:
-            return None
-        self.end.synchronize()
-        dur = self.begin.elapsed_time(self.end)
-        return self.num_iterations / dur * 1000.0
-
-    def callback_on_step_end(self, pipe, i, t, callback_kwargs={}):
-        if self.begin is None:
-            event = torch.cuda.Event(enable_timing=True)
-            event.record()
-            self.begin = event
-        else:
-            event = torch.cuda.Event(enable_timing=True)
-            event.record()
-            self.end = event
-            self.num_iterations += 1
-        return callback_kwargs
-
-
 def main():
     args = parse_args()
 
