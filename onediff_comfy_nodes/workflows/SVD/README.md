@@ -10,7 +10,7 @@
 wget https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors -O ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors
 ```
 
-2. Download the [`svd_xt.safetensors`](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolve/main/svd_xt.safetensors) file and place it in the `ComfyUI/models/checkpoints/` directory:
+2. Download the [`svd_xt.safetensors`](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolve/main/svd_xt.safetensors) or [`svd_xt_1_1.safetensors`](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt-1-1/blob/main/svd_xt_1_1.safetensors) file and place it in the `ComfyUI/models/checkpoints/` directory:
 
 ```bash
 wget https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolve/main/svd_xt.safetensors -O ComfyUI/models/checkpoints/svd_xt.safetensors
