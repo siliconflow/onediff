@@ -90,10 +90,10 @@ class FusedSelfAttnProcessor:
             )
 
             if attn.upcast_attention and parse_boolean_from_env(
-                "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", True
             ):
                 set_boolean_env_var(
-                    "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False
+                    "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False
                 )
             hidden_states = flow._C.fused_multi_head_attention_inference_v2(
                 query=qkv,

@@ -22,9 +22,11 @@ class AlphaBlender(nn.Module):
         elif self.merge_strategy == "learned_with_images":
             # assert image_only_indicator is not None, "need image_only_indicator ..."
             if image_only_indicator is None:
-                alpha = rearrange(
-                    torch.sigmoid(self.mix_factor.to(device)), "... -> ... 1"
-                )
+                # alpha = rearrange(
+                #     torch.sigmoid(self.mix_factor.to(device)), "... -> ... 1"
+                # )
+                # Rewrite for onediff SVD dynamic shape
+                alpha = torch.sigmoid(self.mix_factor.to(device)).unsqueeze(-1)
             else:
                 # alpha = torch.where(
                 #     image_only_indicator.bool(),
@@ -34,8 +36,8 @@ class AlphaBlender(nn.Module):
                 # Rewrite for onediff SVD dynamic shape
                 alpha = torch.where(
                     image_only_indicator.bool(),
-                    torch.ones(1, 1, device=device),
-                    torch.sigmoid(self.mix_factor.to(device)).unsqueeze(-1),
+                    torch.ones(1, 1, device=image_only_indicator.device),
+                    torch.sigmoid(self.mix_factor.to(image_only_indicator.device)).unsqueeze(-1),
                 )
             # alpha = rearrange(alpha, self.rearrange_pattern)
             # Rewrite for onediff SVD dynamic shape, only VideoResBlock, rearrange_pattern="b t -> b 1 t 1 1",
