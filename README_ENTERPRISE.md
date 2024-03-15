@@ -183,7 +183,7 @@ Online quantization will quantize all Conv2d and Linear modules. Its advantages 
 
 Offline quantization requires you to manually run the quantization script we provide to obtain a quantized model, which can then be used in the WebUI. Its advantages are as follows:
 
-- Better Image quality. It can find and quantify modules with high computational costs but little impact on image quality, in order to achieve the best balance between computational costs and image quality.
+- Better image quality: It can identify and quantize modules with high computational costs yet minimal impact on image quality, to achieve the optimal balance between computational costs and image quality.
 
 ### Online Quantization
 
