@@ -17,7 +17,8 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [SDXL](#SDXL)
     - [SVD](#SVD)
 - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
-    - [SD-1.5](#SD-1.5)
+    - [Online Quantization](#online-quantization)
+    - [Offline Quantization](#offline-quantization)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
@@ -173,49 +174,79 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 
 ## Stable Diffusion WebUI with OneDiff Enterprise
 
-If you are using the official weight of StableDiffusionXL, just tick the **Model Quantization(int8) Speed Up** option.
+We provide two types of quantization methods, online quantization and offline quantization.
+
+Online quantization will quantize all Conv2d and Linear modules. Its advantages are as follows:
+
+- Easy to use: The only thing you need to do is just ticking the **Model Quantization(int8) Speed Up** option.
+- Fast: It can finish the quantification in a few seconds
+
+Offline quantization requires you to manually run the quantization script we provide to obtain a quantized model, which can then be used in the WebUI. Its advantages are as follows:
+
+- Better image quality: It can identify and quantize modules with high computational costs yet minimal impact on image quality, to achieve the optimal balance between computational costs and image quality.
+
+### Online Quantization
+
+Select *onediff_diffusion_model* in script, and a checkbox labeled *Model Quantization(int8) Speed Up* will appear below (as shown in the figure). By ticking this checkbox, you can use the online quantization function.
 
 <img src="./imgs/Enterprise_Tutorial_WebUI.png">
 
-### SD-1.5
+> Note: If you can't see the checkbox and instead see a message with the content *Hints: Enterprise function is not supported on your system*, it means that you do not have installed the onediff enterprise correctly. Please follow the instructions in the [Install OneDiff Enterprise](#install-onediff-enterprise) to install it.
 
-#### Scripts
+### Offline Quantization
 
-Run quantize-sd-fast.py by command to get quantized model:
+1. Enter the directory where OneDiff is installed and run the script as follows to quantize the model
+    ```python
+    python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
+      --model /path/to/your/model \
+      --quantized_model /path/to/save/quantized/model \
+      --height 512 \
+      --width 512 \
+      --conv_ssim_threshold 0.991 \
+      --linear_ssim_threshold 0.991 \
+      --conv_compute_density_threshold 0 \
+      --linear_compute_density_threshold 0 \
+      --save_as_float true \
+      --cache_dir /path/to/save/quantized/cache
+    ```
 
-```python3
-python3 quantize-sd-fast.py \
-  --model /path/to/your/sd/model \
-  --quantized_model /path/to/save/quantized/model \
-  --height 512 \
-  --width 512 \
-  --conv_ssim_threshold 0.985 \
-  --linear_ssim_threshold 0.991 \
-  --linear_compute_density_threshold 900 \
-  --format sd
-```
+    The meaning of each parameter is as follows:
 
-The meaning of each parameter is as follows:
+    `--model` Specifies the path of the model to be quantified, can be a diffusers format model (which is a folder containing unet, vae, text_encoder and etc.) or a single safetensors file
 
-`--model` Specifies the path of the model to be quantified
+    `--quantized_model` Specifies the path to save the quantized model
 
-`--quantized_model` Specifies the path to save the quantized model
+    `--height --width` Specify the height and width of the output image which are the most commonly used height and width in your WebUI usage
 
-`--height --width` Specify the size of the output image when quantizing
+    `--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization
+    `--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization
+    `--conv_compute_density_threshold` The conv modules whose computational density is higher than the threshold will be quantized. Default to 900
 
-`--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized
+    `--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized. Default to 300
 
-`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to 'sd', the model will be saved in the format of Stable Diffusion single safetensors
+    `--save_as_float` If save model with floating point weights. If set to true, the weight of quantized modules will be saved as floating point dtype, otherwise int dtype.
 
-After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model, and now you can load the quantized model in Stable Diffusion WebUI.
+    `--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
 
-<img src="./imgs/Enterprise_Tutorial_WebUI_Script.png">
+2. convert quantized model to origial Stable Diffusion single safetensors file by running the scirpt (if you want to convert SDXL model, use `onediff_sd_webui_extensions/tools/convert_diffusers_to_sdxl.py` instead)
+    ```python
+    python3 onediff_sd_webui_extensions/tools/convert_diffusers_to_sd.py \
+      --model_path /path/to/saved/quantized/model \
+      --checkpoint_path /path/to/save/quantized/safetensors \
+      --use_safetensors
+    ```
+Then you can get the offline quantized model in the path specified by `--checkpoint_path`and use it in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
 
-> Note: When you are using a quantized model, you should **not** tick the **Model Quantization(int8) Speed Up** option.
+> Note:
+> - Make sure that the safetensors file and the {model_name}_sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
+>
+> - When you set conv_ssim_threshold and linear_ssim_threshold to a too high value, the number of quantized modules will be very few, and you will obtain too low acceleration benefits.
+>
+> - When you set conv_ssim_threshold and linear_ssim_threshold to a too low value, the number of quantized modules will be very large, and you will obtain a higher acceleration benefits, but the quality of generated image may decrease significantly
+>
+> - When you are using offline quantized model, do remember to tick the **Model Quantization(int8) Speed Up** option, otherwise abnormal image may be generated.
 
 
 ## Diffusers with OneDiff Enterprise
