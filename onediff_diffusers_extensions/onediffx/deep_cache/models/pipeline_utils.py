@@ -106,7 +106,7 @@ if diffusers_version >= diffusers_0260_v:
     from diffusers.models.unets import unet_2d_condition as diffusers_unet_2d_condition
     from diffusers.models.unets import unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition
 else:
-    from diffusers.models import unet_2d_condition as diffusers_unet_unet_2d_condition
+    from diffusers.models import unet_2d_condition as diffusers_unet_2d_condition
     if diffusers_version >= diffusers_0240_v:
         from diffusers.models import unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition
 
