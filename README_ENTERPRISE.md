@@ -195,45 +195,52 @@ Select *onediff_diffusion_model* in script, and a checkbox labeled *Model Quanti
 
 ### Offline Quantization
 
-Enter the directory where OneDiff is installed and run script by command
-```python
-python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
-  --model /path/to/your/model \
-  --quantized_model /path/to/save/quantized/model \
-  --height 512 \
-  --width 512 \
-  --conv_ssim_threshold 0.991 \
-  --linear_ssim_threshold 0.991 \
-  --conv_compute_density_threshold 0 \
-  --linear_compute_density_threshold 0 \
-  --save_as_float true \
-  --cache_dir /path/to/save/quantized/cache
-```
+1. Enter the directory where OneDiff is installed and run script by command to get quantized model
+    ```python
+    python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
+      --model /path/to/your/model \
+      --quantized_model /path/to/save/quantized/model \
+      --height 512 \
+      --width 512 \
+      --conv_ssim_threshold 0.991 \
+      --linear_ssim_threshold 0.991 \
+      --conv_compute_density_threshold 0 \
+      --linear_compute_density_threshold 0 \
+      --save_as_float true \
+      --cache_dir /path/to/save/quantized/cache
+    ```
 
-The meaning of each parameter is as follows:
+    The meaning of each parameter is as follows:
 
-`--model` Specifies the path of the model to be quantified, can be a diffusers format model (which is a folder containing unet, vae, text_encoder and etc.) or a single safetensors file
+    `--model` Specifies the path of the model to be quantified, can be a diffusers format model (which is a folder containing unet, vae, text_encoder and etc.) or a single safetensors file
 
-`--quantized_model` Specifies the path to save the quantized model. If a single safetensors is specified by `--model`, a quantized model of safetensors named `quantized_model.safetensors` will be saved in the folder
+    `--quantized_model` Specifies the path to save the quantized model
 
-`--height --width` Specify the height and width of the output image which are the most commonly used height and width in your WebUI usage
+    `--height --width` Specify the height and width of the output image which are the most commonly used height and width in your WebUI usage
 
-`--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
+    `--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
+    `--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--conv_compute_density_threshold` The conv modules whose computational density is higher than the threshold will be quantized. Default to 900
+    `--conv_compute_density_threshold` The conv modules whose computational density is higher than the threshold will be quantized. Default to 900
 
-`--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized. Default to 300
+    `--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized. Default to 300
 
-`--save_as_float` If save model with floating point weights. If set to true, the weight of quantized modules will be saved as floating point dtype, otherwise int dtype.
+    `--save_as_float` If save model with floating point weights. If set to true, the weight of quantized modules will be saved as floating point dtype, otherwise int dtype.
 
-`--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
+    `--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
 
-Then you can use the offline quantized model in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
+2. convert quantized model to origial Stable Diffusion format by running the scirpt (if you want to convert SDXL model, use `onediff_sd_webui_extensions/tools/convert_diffusers_to_sdxl.py` instead)
+    ```python
+    python3 onediff_sd_webui_extensions/tools/convert_diffusers_to_sd.py \
+      --model_path /path/to/saved/quantized/model \
+      --checkpoint_path /path/to/save/quantized/safetensors \
+      --use_safetensors
+    ```
+Then you can get the offline quantized model in the path specified by `--checkpoint_path`and use it in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
 
 > Note:
-> - Make sure that the safetensors file and the sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
+> - Make sure that the safetensors file and the {model_name}_sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
 >
 > - When you set conv_ssim_threshold and linear_ssim_threshold to a too high value, the number of quantized modules will be very few, and you will obtain too low acceleration benefits.
 >

@@ -84,7 +84,7 @@ def compile_unet(
         )
         compiled_unet = unet_model
     if quantization:
-        calibrate_info = get_calibrate_info("sd_calibrate_info.txt")
+        calibrate_info = get_calibrate_info(f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt")
         compiled_unet = quantize_model(
             compiled_unet, inplace=False, calibrate_info=calibrate_info
         )

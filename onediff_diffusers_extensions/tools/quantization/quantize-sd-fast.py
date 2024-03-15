@@ -131,16 +131,3 @@ pipe.save_quantized(args.quantized_model, safe_serialization=True)
 end_time = time.time()
 
 print(f"Quantize module time: {end_time - start_time}s")
-
-if is_safetensors_model:
-    import sys
-    from pathlib import Path
-    sys.path.append(str(Path(__file__).parent.parent / "utils"))
-    from convert_diffusers_to_sd import convert_sd, convert_unet_calibrate_info_sd
-    from convert_diffusers_to_sdxl import convert_sdxl, convert_unet_calibrate_info_sdxl
-    if is_sdxl:
-        convert_sdxl(args.quantized_model, args.quantized_model + "/quantized_model.safetensors")
-        convert_unet_calibrate_info_sdxl(args.quantized_model + "/calibrate_info.txt", args.quantized_model + "/sd_calibrate_info.txt")
-    else:
-        convert_sd(args.quantized_model, args.quantized_model + "/quantized_model.safetensors")
-        convert_unet_calibrate_info_sd(args.quantized_model + "/calibrate_info.txt", args.quantized_model + "/sd_calibrate_info.txt")
