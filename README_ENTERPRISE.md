@@ -179,7 +179,7 @@ We provide two types of quantization methods, online quantization and offline qu
 Online quantization will quantize all Conv2d and Linear modules. Its advantages are as follows:
 
 - Easy to use: The only thing you need to do is just ticking the **Model Quantization(int8) Speed Up** option.
-- Fast. It can finish the quantification in a few seconds
+- Fast: It can finish the quantification in a few seconds
 
 Offline quantization requires you to manually run the quantization script we provide to obtain a quantized model, which can then be used in the WebUI. Its advantages are as follows:
 
