@@ -16,7 +16,7 @@ from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
 from functools import singledispatch
-
+from .patch_for_comfy import PatchForComfy
 __all__ = [
     "proxy_class",
     "ProxySubmodule",
@@ -25,7 +25,6 @@ __all__ = [
     "torch2oflow",
     "default_converter",
 ]
-
 
 def singledispatch_proxy(func):
     dispatcher = singledispatch(func)
@@ -41,6 +40,8 @@ def singledispatch_proxy(func):
             raise NotImplementedError(f"Transform failed of {type(first_param)}: {e}")
         after = result.__class__.__name__
 
+        # path for comfyui
+        PatchForComfy(result)(first_param)
         description = f"{before} transformed to  {after}"
 
         if before not in after and description not in _warning_set:
