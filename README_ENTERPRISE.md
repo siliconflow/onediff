@@ -230,7 +230,7 @@ Select *onediff_diffusion_model* in script, and a checkbox labeled *Model Quanti
 
     `--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
 
-2. convert quantized model to origial Stable Diffusion format by running the scirpt (if you want to convert SDXL model, use `onediff_sd_webui_extensions/tools/convert_diffusers_to_sdxl.py` instead)
+2. convert quantized model to origial Stable Diffusion single safetensors file by running the scirpt (if you want to convert SDXL model, use `onediff_sd_webui_extensions/tools/convert_diffusers_to_sdxl.py` instead)
     ```python
     python3 onediff_sd_webui_extensions/tools/convert_diffusers_to_sd.py \
       --model_path /path/to/saved/quantized/model \
