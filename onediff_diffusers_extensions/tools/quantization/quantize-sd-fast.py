@@ -62,7 +62,6 @@ parser.add_argument(
 )
 parser.add_argument("--seed", type=int, default=111)
 parser.add_argument("--cache_dir", type=str, default=None)
-parser.add_argument("--format", type=str, default="diffusers")
 args = parser.parse_args()
 
 pipeline_cls = AutoPipelineForText2Image if args.input_image is None else AutoPipelineForImage2Image
@@ -133,7 +132,7 @@ end_time = time.time()
 
 print(f"Quantize module time: {end_time - start_time}s")
 
-if args.format == "sd":
+if is_safetensors_model:
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).parent.parent / "utils"))
