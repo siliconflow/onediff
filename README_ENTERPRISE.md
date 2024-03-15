@@ -242,7 +242,8 @@ Then you can use the offline quantized model in WebUI (remember to tick the **Mo
 > - When you set conv_ssim_threshold and linear_ssim_threshold to a too high value, the number of quantized modules will be very few, and you will obtain too low acceleration benefits.
 >
 > - When you set conv_ssim_threshold and linear_ssim_threshold to a too low value, the number of quantized modules will be very large, and you will obtain a higher acceleration benefits, but the quality of generated image may decrease significantly
-
+>
+> - When you are using offline quantized model, do remember to tick the **Model Quantization(int8) Speed Up** option, otherwise abnormal image may be generated.
 
 
 ## Diffusers with OneDiff Enterprise
