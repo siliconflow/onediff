@@ -66,7 +66,6 @@ args = parser.parse_args()
 
 pipeline_cls = AutoPipelineForText2Image if args.input_image is None else AutoPipelineForImage2Image
 is_safetensors_model = Path(args.model).is_file and Path(args.model).suffix == ".safetensors"
-is_sdxl = False
 
 if is_safetensors_model:
     try: # check if safetensors is SDXL
@@ -78,7 +77,6 @@ if is_safetensors_model:
             variant=args.variant,
             use_safetensors=True,
         )
-        is_sdxl = True
     except:
         pipeline_cls = StableDiffusionPipeline if args.input_image is None else StableDiffusionImg2ImgPipeline
         pipe = QuantPipeline.from_single_file(
@@ -88,7 +86,6 @@ if is_safetensors_model:
             variant=args.variant,
             use_safetensors=True,
         )
-        is_sdxl = False
 
 else:
     pipe = QuantPipeline.from_pretrained(
