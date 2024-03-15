@@ -22,6 +22,7 @@ import importlib.metadata
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_0260_v = version.parse("0.26.0")
+diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import diffusers
@@ -322,6 +323,11 @@ else:
             additional_residuals=None,
         ):
             # print("exist_block_number:", exist_block_number, type(self))
+            if diffusers_version >= diffusers_0270_v:
+                if cross_attention_kwargs is not None:
+                    if cross_attention_kwargs.get("scale", None) is not None:
+                        logger.warning("Passing `scale` to `cross_attention_kwargs` is depcrecated. `scale` will be ignored.")
+
             output_states = ()
 
             blocks = list(zip(self.resnets, self.attentions))
@@ -444,6 +450,10 @@ else:
             enter_block_number: Optional[int] = None,
         ):
             # print("enter_block_number:", enter_block_number, type(self))
+            if diffusers_version >= diffusers_0270_v:
+                if cross_attention_kwargs is not None:
+                    if cross_attention_kwargs.get("scale", None) is not None:
+                        logger.warning("Passing `scale` to `cross_attention_kwargs` is depcrecated. `scale` will be ignored.")
             prv_f = []
 
             for i, (resnet, attn) in enumerate(zip(self.resnets, self.attentions)):

@@ -20,6 +20,7 @@ from oneflow.nn.graph.proxy import ProxyModule
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_0260_v = version.parse("0.26.0")
+diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import torch
@@ -149,164 +150,182 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
             sample = 2 * sample - 1.0
 
         # 1. time
-        timesteps = timestep
-        if not torch.is_tensor(timesteps):
-            # TODO: this requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
-            # This would be a good case for the `match` statement (Python 3.10+)
-            is_mps = sample.device.type == "mps"
-            if isinstance(timestep, float):
-                dtype = torch.float32 if is_mps else torch.float64
+        if diffusers_version < diffusers_0270_v:
+            timesteps = timestep
+            if not torch.is_tensor(timesteps):
+                # TODO: this requires sync between CPU and GPU. So try to pass timesteps as tensors if you can
+                # This would be a good case for the `match` statement (Python 3.10+)
+                is_mps = sample.device.type == "mps"
+                if isinstance(timestep, float):
+                    dtype = torch.float32 if is_mps else torch.float64
+                else:
+                    dtype = torch.int32 if is_mps else torch.int64
+                timesteps = torch.tensor([timesteps], dtype=dtype, device=sample.device)
+            elif len(timesteps.shape) == 0:
+                timesteps = timesteps[None].to(sample.device)
+
+            # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
+            # modified to support dynamic shape for onediff
+            if isinstance(self, ProxyModule):
+                timesteps = torch._C.broadcast_dim_like(timesteps, sample, dim=0)
             else:
-                dtype = torch.int32 if is_mps else torch.int64
-            timesteps = torch.tensor([timesteps], dtype=dtype, device=sample.device)
-        elif len(timesteps.shape) == 0:
-            timesteps = timesteps[None].to(sample.device)
+                timesteps = timesteps.expand(sample.shape[0])
 
-        # broadcast to batch dimension in a way that's compatible with ONNX/Core ML
-        # modified to support dynamic shape for onediff
-        if isinstance(self, ProxyModule):
-            timesteps = torch._C.broadcast_dim_like(timesteps, sample, dim=0)
+            t_emb = self.time_proj(timesteps)
+
+            # `Timesteps` does not contain any weights and will always return f32 tensors
+            # but time_embedding might actually be running in fp16. so we need to cast here.
+            # there might be better ways to encapsulate this.
+            t_emb = t_emb.to(dtype=sample.dtype)
         else:
-            timesteps = timesteps.expand(sample.shape[0])
-
-        t_emb = self.time_proj(timesteps)
-
-        # `Timesteps` does not contain any weights and will always return f32 tensors
-        # but time_embedding might actually be running in fp16. so we need to cast here.
-        # there might be better ways to encapsulate this.
-        t_emb = t_emb.to(dtype=sample.dtype)
+            t_emb = self.get_time_embed(sample=sample, timestep=timestep)
 
         emb = self.time_embedding(t_emb, timestep_cond)
         aug_emb = None
 
-        if self.class_embedding is not None:
-            if class_labels is None:
-                raise ValueError(
-                    "class_labels should be provided when num_class_embeds > 0"
-                )
+        if diffusers_version < diffusers_0270_v:
+            if self.class_embedding is not None:
+                if class_labels is None:
+                    raise ValueError(
+                        "class_labels should be provided when num_class_embeds > 0"
+                    )
 
-            if self.config.class_embed_type == "timestep":
-                class_labels = self.time_proj(class_labels)
+                if self.config.class_embed_type == "timestep":
+                    class_labels = self.time_proj(class_labels)
 
-                # `Timesteps` does not contain any weights and will always return f32 tensors
-                # there might be better ways to encapsulate this.
-                class_labels = class_labels.to(dtype=sample.dtype)
+                    # `Timesteps` does not contain any weights and will always return f32 tensors
+                    # there might be better ways to encapsulate this.
+                    class_labels = class_labels.to(dtype=sample.dtype)
 
-            class_emb = self.class_embedding(class_labels).to(dtype=sample.dtype)
+                class_emb = self.class_embedding(class_labels).to(dtype=sample.dtype)
 
-            if self.config.class_embeddings_concat:
-                emb = torch.cat([emb, class_emb], dim=-1)
-            else:
-                emb = emb + class_emb
+                if self.config.class_embeddings_concat:
+                    emb = torch.cat([emb, class_emb], dim=-1)
+                else:
+                    emb = emb + class_emb
 
-        if self.config.addition_embed_type == "text":
-            aug_emb = self.add_embedding(encoder_hidden_states)
-        elif self.config.addition_embed_type == "text_image":
-            # Kandinsky 2.1 - style
-            if "image_embeds" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `addition_embed_type` set to 'text_image' which requires the keyword argument `image_embeds` to be passed in `added_cond_kwargs`"
-                )
+            if self.config.addition_embed_type == "text":
+                aug_emb = self.add_embedding(encoder_hidden_states)
+            elif self.config.addition_embed_type == "text_image":
+                # Kandinsky 2.1 - style
+                if "image_embeds" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `addition_embed_type` set to 'text_image' which requires the keyword argument `image_embeds` to be passed in `added_cond_kwargs`"
+                    )
 
-            image_embs = added_cond_kwargs.get("image_embeds")
-            text_embs = added_cond_kwargs.get("text_embeds", encoder_hidden_states)
-            aug_emb = self.add_embedding(text_embs, image_embs)
-        elif self.config.addition_embed_type == "text_time":
-            # SDXL - style
-            if "text_embeds" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `addition_embed_type` set to 'text_time' which requires the keyword argument `text_embeds` to be passed in `added_cond_kwargs`"
-                )
-            text_embeds = added_cond_kwargs.get("text_embeds")
-            if "time_ids" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `addition_embed_type` set to 'text_time' which requires the keyword argument `time_ids` to be passed in `added_cond_kwargs`"
-                )
-            time_ids = added_cond_kwargs.get("time_ids")
-            time_embeds = self.add_time_proj(time_ids.flatten())
-            # modified to support dynamic shape for onediff
-            if isinstance(self, ProxyModule):
-                time_embeds = time_embeds.unflatten(
-                    dim=0, shape=(-1, time_ids.shape[1])
-                ).flatten(1, 2)
-            else:
-                time_embeds = time_embeds.reshape((text_embeds.shape[0], -1))
+                image_embs = added_cond_kwargs.get("image_embeds")
+                text_embs = added_cond_kwargs.get("text_embeds", encoder_hidden_states)
+                aug_emb = self.add_embedding(text_embs, image_embs)
+            elif self.config.addition_embed_type == "text_time":
+                # SDXL - style
+                if "text_embeds" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `addition_embed_type` set to 'text_time' which requires the keyword argument `text_embeds` to be passed in `added_cond_kwargs`"
+                    )
+                text_embeds = added_cond_kwargs.get("text_embeds")
+                if "time_ids" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `addition_embed_type` set to 'text_time' which requires the keyword argument `time_ids` to be passed in `added_cond_kwargs`"
+                    )
+                time_ids = added_cond_kwargs.get("time_ids")
+                time_embeds = self.add_time_proj(time_ids.flatten())
+                # modified to support dynamic shape for onediff
+                if isinstance(self, ProxyModule):
+                    time_embeds = time_embeds.unflatten(
+                        dim=0, shape=(-1, time_ids.shape[1])
+                    ).flatten(1, 2)
+                else:
+                    time_embeds = time_embeds.reshape((text_embeds.shape[0], -1))
 
-            add_embeds = torch.concat([text_embeds, time_embeds], dim=-1)
-            add_embeds = add_embeds.to(emb.dtype)
-            aug_emb = self.add_embedding(add_embeds)
-        elif self.config.addition_embed_type == "image":
-            # Kandinsky 2.2 - style
-            if "image_embeds" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `addition_embed_type` set to 'image' which requires the keyword argument `image_embeds` to be passed in `added_cond_kwargs`"
-                )
-            image_embs = added_cond_kwargs.get("image_embeds")
-            aug_emb = self.add_embedding(image_embs)
-        elif self.config.addition_embed_type == "image_hint":
-            # Kandinsky 2.2 - style
-            if (
-                "image_embeds" not in added_cond_kwargs
-                or "hint" not in added_cond_kwargs
-            ):
-                raise ValueError(
-                    f"{self.__class__} has the config param `addition_embed_type` set to 'image_hint' which requires the keyword arguments `image_embeds` and `hint` to be passed in `added_cond_kwargs`"
-                )
-            image_embs = added_cond_kwargs.get("image_embeds")
-            hint = added_cond_kwargs.get("hint")
-            aug_emb, hint = self.add_embedding(image_embs, hint)
-            sample = torch.cat([sample, hint], dim=1)
-
+                add_embeds = torch.concat([text_embeds, time_embeds], dim=-1)
+                add_embeds = add_embeds.to(emb.dtype)
+                aug_emb = self.add_embedding(add_embeds)
+            elif self.config.addition_embed_type == "image":
+                # Kandinsky 2.2 - style
+                if "image_embeds" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `addition_embed_type` set to 'image' which requires the keyword argument `image_embeds` to be passed in `added_cond_kwargs`"
+                    )
+                image_embs = added_cond_kwargs.get("image_embeds")
+                aug_emb = self.add_embedding(image_embs)
+            elif self.config.addition_embed_type == "image_hint":
+                # Kandinsky 2.2 - style
+                if (
+                    "image_embeds" not in added_cond_kwargs
+                    or "hint" not in added_cond_kwargs
+                ):
+                    raise ValueError(
+                        f"{self.__class__} has the config param `addition_embed_type` set to 'image_hint' which requires the keyword arguments `image_embeds` and `hint` to be passed in `added_cond_kwargs`"
+                    )
+                image_embs = added_cond_kwargs.get("image_embeds")
+                hint = added_cond_kwargs.get("hint")
+                aug_emb, hint = self.add_embedding(image_embs, hint)
+                sample = torch.cat([sample, hint], dim=1)
+        
+        else:
+            aug_emb = self.get_aug_embed(
+                emb=emb, encoder_hidden_states=encoder_hidden_states, added_cond_kwargs=added_cond_kwargs
+            )
+            if self.config.addition_embed_type == "image_hint":
+                aug_emb, hint = aug_emb
+                sample = torch.cat([sample, hint], dim=1)
+        
         emb = emb + aug_emb if aug_emb is not None else emb
 
         if self.time_embed_act is not None:
             emb = self.time_embed_act(emb)
 
-        if (
-            self.encoder_hid_proj is not None
-            and self.config.encoder_hid_dim_type == "text_proj"
-        ):
-            encoder_hidden_states = self.encoder_hid_proj(encoder_hidden_states)
-        elif (
-            self.encoder_hid_proj is not None
-            and self.config.encoder_hid_dim_type == "text_image_proj"
-        ):
-            # Kadinsky 2.1 - style
-            if "image_embeds" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'text_image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
-                )
+        if diffusers_version < diffusers_0270_v:
+            if (
+                self.encoder_hid_proj is not None
+                and self.config.encoder_hid_dim_type == "text_proj"
+            ):
+                encoder_hidden_states = self.encoder_hid_proj(encoder_hidden_states)
+            elif (
+                self.encoder_hid_proj is not None
+                and self.config.encoder_hid_dim_type == "text_image_proj"
+            ):
+                # Kadinsky 2.1 - style
+                if "image_embeds" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'text_image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
+                    )
 
-            image_embeds = added_cond_kwargs.get("image_embeds")
-            encoder_hidden_states = self.encoder_hid_proj(
-                encoder_hidden_states, image_embeds
-            )
-        elif (
-            self.encoder_hid_proj is not None
-            and self.config.encoder_hid_dim_type == "image_proj"
-        ):
-            # Kandinsky 2.2 - style
-            if "image_embeds" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
+                image_embeds = added_cond_kwargs.get("image_embeds")
+                encoder_hidden_states = self.encoder_hid_proj(
+                    encoder_hidden_states, image_embeds
                 )
-            image_embeds = added_cond_kwargs.get("image_embeds")
-            encoder_hidden_states = self.encoder_hid_proj(image_embeds)
-        elif (
-            self.encoder_hid_proj is not None
-            and self.config.encoder_hid_dim_type == "ip_image_proj"
-        ):
-            if "image_embeds" not in added_cond_kwargs:
-                raise ValueError(
-                    f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'ip_image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
+            elif (
+                self.encoder_hid_proj is not None
+                and self.config.encoder_hid_dim_type == "image_proj"
+            ):
+                # Kandinsky 2.2 - style
+                if "image_embeds" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
+                    )
+                image_embeds = added_cond_kwargs.get("image_embeds")
+                encoder_hidden_states = self.encoder_hid_proj(image_embeds)
+            elif (
+                self.encoder_hid_proj is not None
+                and self.config.encoder_hid_dim_type == "ip_image_proj"
+            ):
+                if "image_embeds" not in added_cond_kwargs:
+                    raise ValueError(
+                        f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'ip_image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
+                    )
+                image_embeds = added_cond_kwargs.get("image_embeds")
+                image_embeds = self.encoder_hid_proj(image_embeds).to(
+                    encoder_hidden_states.dtype
                 )
-            image_embeds = added_cond_kwargs.get("image_embeds")
-            image_embeds = self.encoder_hid_proj(image_embeds).to(
-                encoder_hidden_states.dtype
+                encoder_hidden_states = torch.cat(
+                    [encoder_hidden_states, image_embeds], dim=1
+                )
+        else:
+            encoder_hidden_states = self.process_encoder_hidden_states(
+                encoder_hidden_states=encoder_hidden_states, added_cond_kwargs=added_cond_kwargs
             )
-            encoder_hidden_states = torch.cat(
-                [encoder_hidden_states, image_embeds], dim=1
-            )
+
         # 2. pre-process
         sample = self.conv_in(sample)
 
@@ -381,7 +400,7 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
                     **additional_residuals,
                 )
             else:
-                if diffusers_version < diffusers_0210_v:
+                if diffusers_version < diffusers_0210_v or diffusers_version >= diffusers_0270_v:
                     sample, res_samples = downsample_block(
                         hidden_states=sample, temb=emb
                     )
@@ -486,7 +505,7 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
                     encoder_attention_mask=encoder_attention_mask,
                 )
             else:
-                if diffusers_version < diffusers_0210_v:
+                if diffusers_version < diffusers_0210_v or diffusers_version >= diffusers_0270_v:
                     sample, current_record_f = upsample_block(
                         hidden_states=sample,
                         temb=emb,

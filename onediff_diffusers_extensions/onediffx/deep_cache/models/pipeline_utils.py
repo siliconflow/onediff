@@ -7,6 +7,7 @@ import importlib.metadata
 diffusers_0220_v = version.parse("0.22.0")
 diffusers_0240_v = version.parse("0.24.0")
 diffusers_0260_v = version.parse("0.26.0")
+diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import diffusers
@@ -123,12 +124,21 @@ def enable_deep_cache_pipeline():
         if diffusers_version >= diffusers_0240_v:
             assert ORIGIN_3D_GET_DOWN_BLOCK is None
             assert ORIGIN_3D_GET_UP_BLOCK is None
-        ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES = (
-            diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates
-        )
-        diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
-            get_class_obj_and_candidates
-        )
+        
+        if diffusers_version < diffusers_0270_v:
+            ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES = (
+                diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates
+            )
+            diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
+                get_class_obj_and_candidates
+            )
+        else:
+            ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES = (
+                diffusers.pipelines.pipeline_loading_utils.get_class_obj_and_candidates
+            )
+            diffusers.pipelines.pipeline_loading_utils.get_class_obj_and_candidates = (
+                get_class_obj_and_candidates
+            )
 
         from .unet_2d_blocks import get_down_block as get_2d_down_block
 
@@ -171,9 +181,14 @@ def disable_deep_cache_pipeline():
             assert ORIGIN_3D_GET_DOWN_BLOCK is None
             assert ORIGIN_3D_GET_UP_BLOCK is None
         return
-    diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
-        ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
-    )
+    if diffusers_version < diffusers_0270_v:
+        diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates = (
+            ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
+        )
+    else:
+        diffusers.pipelines.pipeline_loading_utils.get_class_obj_and_candidates = (
+            ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES
+        )
     diffusers_unet_2d_condition.get_down_block = ORIGIN_2D_GET_DOWN_BLOCK
     diffusers_unet_2d_condition.get_up_block = ORIGIN_2D_GET_UP_BLOCK
     if diffusers_version >= diffusers_0240_v:
