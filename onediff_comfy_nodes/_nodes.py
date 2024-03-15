@@ -56,7 +56,7 @@ __all__ = [
 ]
 
 if not args.dont_upcast_attention:
-    os.environ["ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL"] = "0"
+    os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
 class ModelSpeedup:
@@ -188,7 +188,7 @@ class SVDSpeedup:
         # To avoid overflow issues while maintaining performance,
         # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
         set_boolean_env_var(
-            "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
+            "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", False
         )
 
         use_graph = static_mode == "enable"
@@ -702,7 +702,7 @@ class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
         need_compile = compile == "enable"
         if need_compile:
             set_boolean_env_var(
-                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", 0
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", False
             )
 
         modelpatcher, clip, vae = self.load_checkpoint(

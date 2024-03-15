@@ -3,11 +3,7 @@ from .log_utils import logger
 
 
 def get_support_message():
-    recipient_email = "caishenghang@oneflow.org"
-
-    message = f"""\033[91m Advanced features cannot be used !!! \033[0m
-If you need unrestricted multiple resolution, quantization support or any other more advanced features, please send an email to \033[91m{recipient_email}\033[0m and tell us about your use case, deployment scale and requirements.
-        """
+    message = f""" OneDiff Enterprise Edition features can't be used, please refer to here for help: https://github.com/siliconflow/onediff?tab=readme-ov-file#community--support """
     return message
 
 
@@ -15,8 +11,8 @@ def is_quantization_enabled():
     import oneflow
 
     if version("oneflow") < "0.9.1":
-        RuntimeError(
-            "onediff_comfy_nodes requires oneflow>=0.9.1 to run.", get_support_message()
+        logger.warning(
+            f"onediff_comfy_nodes requires oneflow>=0.9.1 to run, {get_support_message()}"
         )
         return False
     try:

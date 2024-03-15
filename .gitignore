@@ -138,9 +138,9 @@ proc_data
 runs
 /runs_old
 /wandb
-/examples/runs
-/examples/**/*.args
-/examples/rag/sweep
+/onediff_diffusers_extensions/examples/runs
+/onediff_diffusers_extensions/examples/**/*.args
+/onediff_diffusers_extensions/examples/rag/sweep
 
 # data
 /data

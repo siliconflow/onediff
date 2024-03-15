@@ -390,9 +390,9 @@ class Attention(nn.Module):
 
     def get_attention_scores(self, query, key, attention_mask=None):
         if self.upcast_attention and parse_boolean_from_env(
-            "ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", True
+            "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", True
         ):
-            set_boolean_env_var("ONEFLOW_KERENL_FMHA_ENABLE_TRT_FLASH_ATTN_IMPL", False)
+            set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False)
         dtype = query.dtype
         # if self.upcast_attention:
         #     query = query.float()
