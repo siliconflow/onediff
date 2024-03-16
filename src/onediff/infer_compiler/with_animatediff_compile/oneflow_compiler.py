@@ -1,8 +1,7 @@
 import types
 import torch
-import json
 from dataclasses import dataclass
-from typing import Any, Dict, Union
+from typing import Any, Dict
 import oneflow as flow
 from itertools import chain
 from oneflow.utils.tensor import to_torch

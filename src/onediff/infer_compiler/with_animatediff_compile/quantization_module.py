@@ -36,6 +36,7 @@ class QuantizationConfig:
     
     ### Test Experimental Data
         - [mse and ssim](https://github.com/siliconflow/onediff/pull/495#discussion_r1448999556)
+        - [onediff/pull/724](https://github.com/siliconflow/onediff/pull/724#issue-2183903737)
 
     """
 
@@ -166,10 +167,10 @@ class CostsQuantizationCalibrator(QuantizationCalibratorInterface):
                 filtered_costs_calibrate_info[key] = value
 
         if self.config.plot_calibrate_info and self.config.cache_dir is not None:
-            file_path = os.path.join(self.config.cache_dir, self.plot_calibrate_info_file_name)
-            self.plot_calibrate_info(
-                file_path, list(costs_calibrate_info.items())
+            file_path = os.path.join(
+                self.config.cache_dir, self.plot_calibrate_info_file_name
             )
+            self.plot_calibrate_info(file_path, list(costs_calibrate_info.items()))
             logger.info("Save Costs Calibrate Info to %s.html", self.costs_file_name)
 
         return filtered_costs_calibrate_info
@@ -371,19 +372,10 @@ class QuantizationMetricsCalculator(CostsQuantizationCalibrator):
         indexs = []
         if self.indicator_combination[0] == "1":
             indexs += find_peaks(mae_lst)
-            # print(f"{len(find_peaks(mae_lst))=}")
         if self.indicator_combination[1] == "1":
             indexs += find_peaks(mse_lst)
-            # print(f"{len(find_peaks(mse_lst))=}")
         if self.indicator_combination[2] == "1":
             indexs += find_peaks(max_diff_lst)
-            # print(f"{len(find_peaks(max_diff_lst))=}")
-        """
-        sd_v1-5
-        # len(find_peaks(mae_lst))=81
-        # len(find_peaks(mse_lst))=36
-        # len(find_peaks(max_diff_lst))=20
-        """
         indexs = set(indexs)
         filtered_calibrate_info = {}
         compute_density_th = config.compute_density_threshold
@@ -392,7 +384,7 @@ class QuantizationMetricsCalculator(CostsQuantizationCalibrator):
             if i not in indexs and value["compute_density"] >= compute_density_th:
                 filtered_calibrate_info[name] = value
 
-        if config.plot_calibrate_info:
+        if config.plot_calibrate_info and config.cache_dir is not None:
             info_lst = [
                 (
                     name,
@@ -514,7 +506,7 @@ def create_quantization_calculator(
     elif quality_level == 0:
         return DefaultQuantizationCalibrator(model, config)
     else:
-        raise RuntimeWarning("Not Implemented")
+        raise RuntimeError(f"quality_level={quality_level} is not implemented")
 
 
 class QuantizationModule:
@@ -523,6 +515,16 @@ class QuantizationModule:
     ):
         self.torch_model = torch_model
         self.quantization_config = quantization_config
+
+    def get_layer_counts(self, keys: List[str]):
+        linear_count, conv_count = 0, 0
+        for key in keys:
+            layer = get_sub_module(self.torch_model, key)
+            if isinstance(layer, nn.Linear):
+                linear_count += 1
+            elif isinstance(layer, nn.Conv2d):
+                conv_count += 1
+        return linear_count, conv_count
 
     def quantize_forward(self, *args: Any, **kwargs: Any):
         if not self.quantization_config.use_quantization:
@@ -540,21 +542,6 @@ class QuantizationModule:
             quality_level=config.quality_level,
         )
         out = calculator.calibrate(*args, **kwargs)
+        config.linear_count, config.conv_count = self.get_layer_counts(out.keys())
         config.calibrate_info = out
-        linear_names = [
-            name
-            for name, _ in out.items()
-            if isinstance(get_sub_module(self.torch_model, name), nn.Linear)
-        ]
-        conv_names = [
-            name
-            for name, _ in out.items()
-            if isinstance(get_sub_module(self.torch_model, name), nn.Conv2d)
-        ]
-        config.save_calibrate_info(
-            f"{config.quality_level=}.json",
-            calibrate_info={
-                "linear_names_length": len(linear_names),
-                "conv_names_length": len(conv_names),
-            },
-        )
+        config.save_quantization_config(file_name="calibrate_info.json")
