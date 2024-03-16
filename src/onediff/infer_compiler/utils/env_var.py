@@ -14,7 +14,7 @@ def set_boolean_env_var(env_var: str, val: Optional[bool]):
     if val is None:
         os.environ.pop(env_var, None)
     else:
-        os.environ[env_var] = str(val)
+        os.environ[env_var] = "1" if val else "0"
 
 
 def parse_integer_from_env(env_var, default_value=None):
@@ -28,4 +28,4 @@ def set_integer_env_var(env_var: str, val: Optional[int]):
     if val is None:
         os.environ.pop(env_var, None)
     else:
-        os.environ[env_var] = str(val)
+        os.environ[env_var] = str(int(val))

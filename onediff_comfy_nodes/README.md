@@ -148,7 +148,7 @@ While there is an example demonstrating OpenPose ControlNet, it's important to n
 ### SVD
 > doc link: [SVD](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/SVD)
 
-This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD.
+This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD. Furthermore, it is compatible with [SVD 1.1](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt-1-1).
 
 [SVD Speedup](workflows/text-to-video-speedup.png)
 

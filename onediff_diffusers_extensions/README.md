@@ -32,6 +32,7 @@ OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration 
     cd onediff_diffusers_extensions && python3 -m pip install -e .
     ```
 ## Compile, save and load pipeline
+The complete example to test compile/save/load the pipeline: [pipe_compile_save_load.py](examples/pipe_compile_save_load.py).
 ### Compile diffusers pipeline with `compile_pipe`.
 ```python
 import torch
@@ -48,6 +49,17 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
 pipe.to("cuda")
 
 pipe = compile_pipe(pipe)
+
+# run once to trigger compilation
+image = pipe(
+    prompt="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
+    height=512,
+    width=512,
+    num_inference_steps=30,
+    output_type="pil",
+).images
+
+image[0].save(f"test_image.png")
 ```
 
 ### Save compiled pipeline with `save_pipe`
@@ -64,6 +76,18 @@ pipe.to("cuda")
 
 pipe = compile_pipe(pipe)
 
+# run once to trigger compilation
+image = pipe(
+    prompt="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
+    height=512,
+    width=512,
+    num_inference_steps=30,
+    output_type="pil",
+).images
+
+image[0].save(f"test_image.png")
+
+# save the compiled pipe
 save_pipe(pipe, dir="cached_pipe")
 ```
 
@@ -81,7 +105,20 @@ pipe.to("cuda")
 
 pipe = compile_pipe(pipe)
 
+# load the compiled pipe
 load_pipe(pipe, dir="cached_pipe")
+
+# no compilation now
+image = pipe(
+    prompt="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
+    height=512,
+    width=512,
+    num_inference_steps=30,
+    output_type="pil",
+).images
+
+image[0].save(f"test_image.png")
+
 ```
 
 ## DeepCache speedup
