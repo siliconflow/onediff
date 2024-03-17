@@ -107,7 +107,18 @@ def unwrap_one(obj: Union[Tuple[Any], Any]) -> Any:
         obj = [x.flatten() for x in obj]
         return torch.cat(obj)
     else:
-        return obj
+        if not isinstance(obj, torch.Tensor):
+            if hasattr(obj, "values"):
+                try:
+                    obj = [
+                        x.flatten() for x in obj.values() if isinstance(x, torch.Tensor)
+                    ]
+                    return torch.cat(obj)
+                except Exception:
+                    pass
+            raise RuntimeError(f"Cannot unwrap {type(obj)}")
+        else:
+            return obj
 
 
 def normalize(data):

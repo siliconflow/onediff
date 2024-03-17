@@ -36,7 +36,7 @@ class DeployableModule:
         inplace=True,
         calibrate_info=None,
         cache_dir=None,
-        plot_calibrate_info=True,
+        plot_calibrate_info=False,
     ):
         if is_community_version():
             logger.warning("quantize is not supported in community version")
