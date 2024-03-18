@@ -3,10 +3,12 @@
 </p>
 
 ---
-
+<a href="https://github.com/siliconflow/onediff/stargazers"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=social"></a>
+[![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=flat-square)](https://discord.gg/RKJTjZMcPQ)
+<a href="https://github.com/siliconflow/onediff/wiki"><img src="https://img.shields.io/badge/OneDiff-Feedbacks-purple"></a>
+<a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live"><img src="https://img.shields.io/badge/Twitter-Discuss-blue?logo=twitter&amp"></a>
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
-
 
 OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
 - PyTorch Module compilation tools and strong optimized GPU Kernels for diffusion models
@@ -15,7 +17,7 @@ OneDiff is an out-of-the-box acceleration library for diffusion models, it provi
   - [OneDiff for ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [OneDiff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
-OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latested news:
+OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
 
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
