@@ -155,8 +155,6 @@ def main():
         controlnet=args.controlnet,
     )
 
-    height = args.height
-    width = args.width
     height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
     width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
 
@@ -236,12 +234,10 @@ def main():
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
     kwarg_inputs = get_kwarg_inputs()
-    iter_profiler = None
+    iter_profiler = IterationProfiler()
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
-        iter_profiler = IterationProfiler()
         kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
     elif "callback" in inspect.signature(pipe).parameters:
-        iter_profiler = IterationProfiler()
         kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_images = pipe(**kwarg_inputs).images

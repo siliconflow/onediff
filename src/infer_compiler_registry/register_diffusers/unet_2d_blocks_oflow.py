@@ -4,8 +4,6 @@ import importlib.metadata
 import oneflow as torch
 from onediff.infer_compiler.transform import transform_mgr
 
-from .resnet_oflow import Upsample2D
-
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
@@ -72,7 +70,7 @@ if diffusers_version < diffusers_0210_v:
 
                     ckpt_kwargs: Dict[str, Any] = {
                         "use_reentrant": False
-                    } if is_torch_version(">=", "1.11.0") else {}
+                    } if transformed_diffusers.utils.is_torch_version(">=", "1.11.0") else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(resnet),
                         hidden_states,
@@ -127,7 +125,7 @@ if diffusers_version < diffusers_0210_v:
 
                         return custom_forward
 
-                    if is_torch_version(">=", "1.11.0"):
+                    if transformed_diffusers.utils.is_torch_version(">=", "1.11.0"):
                         hidden_states = torch.utils.checkpoint.checkpoint(
                             create_custom_forward(resnet),
                             hidden_states,
@@ -238,7 +236,7 @@ else:
 
                     ckpt_kwargs: Dict[str, Any] = {
                         "use_reentrant": False
-                    } if is_torch_version(">=", "1.11.0") else {}
+                    } if transformed_diffusers.utils.is_torch_version(">=", "1.11.0") else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(resnet),
                         hidden_states,
@@ -319,7 +317,7 @@ else:
 
                         return custom_forward
 
-                    if is_torch_version(">=", "1.11.0"):
+                    if transformed_diffusers.utils.is_torch_version(">=", "1.11.0"):
                         hidden_states = torch.utils.checkpoint.checkpoint(
                             create_custom_forward(resnet),
                             hidden_states,
