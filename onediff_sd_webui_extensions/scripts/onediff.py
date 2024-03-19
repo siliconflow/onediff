@@ -14,6 +14,7 @@ from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
 
 from onediff.infer_compiler.utils.log_utils import logger
+from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -36,12 +37,6 @@ def generate_graph_path(ckpt_name: str, model_name: str) -> str:
     graph_file_path = os.path.join(save_ckpt_graphs_path, file_name)
 
     return graph_file_path
-
-
-def is_compiled(ckpt_name):
-    global compiled_unet, compiled_ckpt_name
-
-    return compiled_unet is not None and compiled_ckpt_name == ckpt_name
 
 
 def get_calibrate_info(filename: str) -> Union[None, Dict]:
@@ -84,7 +79,9 @@ def compile_unet(
         )
         compiled_unet = unet_model
     if quantization:
-        calibrate_info = get_calibrate_info(f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt")
+        calibrate_info = get_calibrate_info(
+            f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt"
+        )
         compiled_unet = quantize_model(
             compiled_unet, inplace=False, calibrate_info=calibrate_info
         )
@@ -108,6 +105,8 @@ class UnetCompileCtx(object):
 
 
 class Script(scripts.Script):
+    current_type = None
+
     def title(self):
         return "onediff_diffusion_model"
 
@@ -147,6 +146,37 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
+    def need_compile(self, model):
+        recompile = False
+
+        def get_model_type(model):
+            return {
+                "is_sdxl": model.is_sdxl,
+                "is_sd2": model.is_sd2,
+                "is_sd1": model.is_sd1,
+                "is_ssd": model.is_ssd,
+            }
+
+        if self.current_type == None:
+            recompile = True
+        else:
+            for key, v in self.current_type.items():
+                if v != getattr(model, key):
+                    recompile = True
+                    break
+
+        if recompile == True:
+            self.current_type = get_model_type(model)
+        elif parse_boolean_from_env(
+            os.environ.get("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
+        ):
+            warnings.warn(
+                f"If you want to reuse the compiled graph, please set environ var \
+                  `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` as '0', \
+                  or the compiled graph will work incorrectly"
+            )
+        return recompile
+
     def run(self, p, quantization=False):
         global compiled_unet, compiled_ckpt_name
         current_checkpoint = shared.opts.sd_model_checkpoint
@@ -156,16 +186,7 @@ class Script(scripts.Script):
             current_checkpoint + "_quantized" if quantization else current_checkpoint
         )
 
-        if not is_compiled(ckpt_name):
-            # graph_file = generate_graph_path(
-            #     ckpt_name, original_diffusion_model.__class__.__name__
-            # )
-            # graph_file_device = shared.device
-            # compile_options = {
-            #     "graph_file_device": graph_file_device,
-            #     "graph_file": graph_file,
-            # }
-            # TODO: fix compile_options
+        if self.need_compile(shared.sd_model):
             compile_options = {}
 
             compiled_unet = compile_unet(
@@ -174,6 +195,10 @@ class Script(scripts.Script):
                 options=compile_options,
             )
             compiled_ckpt_name = ckpt_name
+        else:
+            logger.info(
+                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
+            )
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
