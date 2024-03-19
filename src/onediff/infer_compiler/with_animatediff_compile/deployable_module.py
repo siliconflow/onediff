@@ -1,7 +1,7 @@
 import os
 import torch
 from .oneflow_compiler import DualModule
-from .quantization_module import QuantizationConfig, QuantizationModule
+from ...quantization.quantization_module import QuantizationConfig, QuantizationModule
 from ..utils.log_utils import logger
 from ..utils.version_util import is_community_version
 

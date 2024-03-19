@@ -5,7 +5,7 @@ from typing import Any, Dict
 import oneflow as flow
 from itertools import chain
 from oneflow.utils.tensor import to_torch
-from .quantization_module import QuantizationConfig
+from ...quantization.quantization_module import QuantizationConfig
 from ..utils.log_utils import logger
 from ..utils.cost_util import cost_cnt
 from ..utils.args_tree_util import input_output_processor

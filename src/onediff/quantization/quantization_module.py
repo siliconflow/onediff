@@ -6,10 +6,10 @@ from tqdm import tqdm
 from dataclasses import dataclass
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Tuple, Union
-from ..utils.module_operations import get_sub_module
-from ..utils.log_utils import logger
-from ..utils.graph_management_utils import calculate_model_hash
-from ...optimization.quant_optimizer import quantize_sub_module
+from ..infer_compiler.utils.module_operations import get_sub_module
+from ..infer_compiler.utils.log_utils import logger
+from ..infer_compiler.utils.graph_management_utils import calculate_model_hash
+from ..optimization.quant_optimizer import quantize_sub_module
 
 
 class QuantizationCalibratorInterface(ABC):
