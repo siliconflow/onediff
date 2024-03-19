@@ -5,8 +5,10 @@ from collections import OrderedDict
 
 import torch
 import diffusers
+
 if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils.import_utils import is_peft_available
+
     if is_peft_available():
         import peft
 else:
@@ -80,7 +82,9 @@ def get_delta_weight(
         lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
         lora_weight = lora_weight.reshape((self.weight.shape))
     else:
-        raise TypeError(f"[OneDiffX get_delta_weight] Expect type Linear or Conv2d, got {type(self)}")
+        raise TypeError(
+            f"[OneDiffX get_delta_weight] Expect type Linear or Conv2d, got {type(self)}"
+        )
     if weight != 1.0:
         lora_weight *= weight
     return lora_weight
@@ -118,13 +122,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
         w_down = self.lora_A[adapter].float().to(device)
         w_up = self.lora_B[adapter].float().to(device)
         if delta_weight is None:
-            delta_weight = get_delta_weight(
-                self, w_up, w_down, weight / self.scaling[adapter]
-            )
+            delta_weight = get_delta_weight(self, w_up, w_down, weight / self.scaling[adapter])
         else:
-            delta_weight += get_delta_weight(
-                self, w_up, w_down, weight / self.scaling[adapter]
-            )
+            delta_weight += get_delta_weight(self, w_up, w_down, weight / self.scaling[adapter])
         self.active_adapter_names[adapter] = weight
 
     if delta_weight is not None:
@@ -134,7 +134,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
 
 def _delete_adapter(self, adapter_names):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
-        raise TypeError(f"[OneDiffX _delete_adapter] Expect type Linear or Conv2d, got {type(self)}")
+        raise TypeError(
+            f"[OneDiffX _delete_adapter] Expect type Linear or Conv2d, got {type(self)}"
+        )
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
@@ -256,9 +258,12 @@ def _unfuse_lora(
     if delta_weight is not None:
         self.weight.data -= delta_weight
 
+
 # the code is referenced from https://github.com/huggingface/diffusers/blob/ce9825b56bd8a6849e68b9590022e935400659e6/src/diffusers/loaders/lora_conversion_utils.py#L24
 @classmethod
-def _maybe_map_sgm_blocks_to_diffusers(cls, state_dict, unet_config, delimiter="_", block_slice_pos=5):
+def _maybe_map_sgm_blocks_to_diffusers(
+    cls, state_dict, unet_config, delimiter="_", block_slice_pos=5
+):
     # 1. get all state_dict_keys
     all_keys = list(state_dict.keys())
     sgm_patterns = ["input_blocks", "middle_block", "output_blocks"]
@@ -335,7 +340,9 @@ def _maybe_map_sgm_blocks_to_diffusers(cls, state_dict, unet_config, delimiter="
 
         for key in middle_blocks[i]:
             new_key = delimiter.join(
-                key.split(delimiter)[: block_slice_pos - 1] + key_part + key.split(delimiter)[block_slice_pos:]
+                key.split(delimiter)[: block_slice_pos - 1]
+                + key_part
+                + key.split(delimiter)[block_slice_pos:]
             )
             new_state_dict[new_key] = state_dict.pop(key)
 
