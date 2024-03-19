@@ -55,7 +55,7 @@ The Full introduction of OneDiff:
 <img src="imgs/0_12_svd.png" height="400">
 
 ### Acceleration for State-of-the-art models
-OneDiff support the acceleratioin for SOTA models.
+OneDiff supports the acceleration for SOTA models.
 | AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
@@ -174,9 +174,11 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
 
 #### 2. Install torch and diffusers
+**Note: You can choose the latest versions you want for diffusers or transformers.**
 ```
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 ```
+
 
 #### 3. Install OneDiff
 
