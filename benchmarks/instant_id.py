@@ -1,3 +1,5 @@
+# Requirements: diffusers==0.25.1.
+# Reference: https://github.com/InstantID/InstantID/blob/main/gradio_demo/requirements.txt
 REPO = None
 FACE_ANALYSIS_ROOT = None
 MODEL = "wangqixun/YamerMIX_v8"
