@@ -2,7 +2,7 @@ REPO = None
 FACE_ANALYSIS_ROOT = None
 MODEL = "wangqixun/YamerMIX_v8"
 VARIANT = None
-CUSTOM_PIPELINE = None
+CUSTOM_PIPELINE = "pipeline_stable_diffusion_xl_instantid"
 SCHEDULER = "EulerAncestralDiscreteScheduler"
 LORA = None
 CONTROLNET = "InstantX/InstantID"
@@ -149,9 +149,6 @@ def main():
     args = parse_args()
 
     assert (
-        args.repo is not None
-    ), "Please set `--repo` to the local path of the cloned repo of https://github.com/InstantID/InstantID"
-    assert (
         args.controlnet is not None
     ), "Please set `--controlnet` to the name or path of the controlnet"
     assert (
@@ -179,12 +176,19 @@ def main():
             with open(attention_processor_path, "w") as f:
                 f.write(content)
 
-    sys.path.insert(0, args.repo)
+    custom_pipeline = None
+    draw_kps = None
+    if args.repo is None:
+        custom_pipeline = args.custom_pipeline
+        from diffusers import DiffusionPipeline
+        pipeline_cls = DiffusionPipeline
+    else:
+        sys.path.insert(0, args.repo)
 
-    from pipeline_stable_diffusion_xl_instantid import (
-        StableDiffusionXLInstantIDPipeline,
-        draw_kps,
-    )
+        from pipeline_stable_diffusion_xl_instantid import (
+            StableDiffusionXLInstantIDPipeline as pipeline_cls,
+            draw_kps,
+        )
 
     if os.path.exists(args.controlnet):
         controlnet = args.controlnet
@@ -202,14 +206,17 @@ def main():
     controlnet_path = os.path.join(controlnet, "ControlNetModel")
 
     pipe = load_pipe(
-        StableDiffusionXLInstantIDPipeline,
+        pipeline_cls,
         args.model,
         variant=args.variant,
-        custom_pipeline=args.custom_pipeline,
+        custom_pipeline=custom_pipeline,
         scheduler=args.scheduler,
         lora=args.lora,
         controlnet=controlnet_path,
     )
+
+    if draw_kps is None:
+        draw_kps = sys.modules[pipe.__module__].draw_kps
 
     pipe.load_ip_adapter_instantid(face_adapter)
 
