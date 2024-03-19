@@ -8,7 +8,11 @@ if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils import convert_state_dict_to_diffusers
 else:
     from .state_dict_utils import convert_state_dict_to_diffusers
-from diffusers.models.lora import text_encoder_attn_modules, text_encoder_mlp_modules
+
+if version.parse(diffusers.__version__) >= version.parse("0.24.0"):
+    from diffusers.models.lora import text_encoder_attn_modules, text_encoder_mlp_modules
+else:
+    from diffusers.loaders import text_encoder_attn_modules, text_encoder_mlp_modules
 from diffusers.utils import is_accelerate_available
 
 from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT

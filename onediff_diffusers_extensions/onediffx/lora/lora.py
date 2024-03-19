@@ -9,14 +9,22 @@ from onediff.infer_compiler.utils.log_utils import logger
 
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
-from diffusers.models.lora import PatchedLoraProjection
+try:
+    from diffusers.models.lora import PatchedLoraProjection
+except:
+    from diffusers.loaders import PatchedLoraProjection
 
 
-from .utils import _unfuse_lora, _set_adapter, _delete_adapter
+from .utils import _unfuse_lora, _set_adapter, _delete_adapter, _maybe_map_sgm_blocks_to_diffusers
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
 
-from diffusers.utils.import_utils import is_peft_available
+if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
+    from diffusers.utils.import_utils import is_peft_available
+    if is_peft_available():
+        import peft
+else:
+    is_peft_available = lambda: False
 
 if is_peft_available():
     import peft
@@ -38,11 +46,6 @@ def load_and_fuse_lora(
     use_cache=False,
     **kwargs,
 ) -> None:
-    if not is_onediffx_lora_available:
-        raise RuntimeError(
-            "onediffx.lora only supports diffusers of at least version 0.21.0"
-        )
-
     self = pipeline
 
     if use_cache:
@@ -52,11 +55,17 @@ def load_and_fuse_lora(
             **kwargs,
         )
     else:
+        # for diffusers <= 0.20
+        if hasattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers"):
+            orig_func = getattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers")
+            LoraLoaderMixin._map_sgm_blocks_to_diffusers = _maybe_map_sgm_blocks_to_diffusers
         state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
             pretrained_model_name_or_path_or_dict,
             unet_config=self.unet.config,
             **kwargs,
         )
+        if hasattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers"):
+            LoraLoaderMixin._map_sgm_blocks_to_diffusers = orig_func
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:

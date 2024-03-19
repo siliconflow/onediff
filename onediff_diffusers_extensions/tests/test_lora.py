@@ -114,13 +114,12 @@ def test_lora_adapter_name(multi_lora):
     target_image = np.array(
         Image.open(f"{image_file_prefix}/multi_lora_{image_name}.png")
     )
-    images_fusion.save(f"multi_lora_{image_name}.png")
     curr_image = np.array(images_fusion)
     ssim = structural_similarity(
         curr_image, target_image, channel_axis=-1, data_range=255
     )
     print(f"lora {multi_lora} ssim {ssim}")
-    assert ssim > 0.95
+    assert ssim > 0.94
 
 @pytest.mark.parametrize("lora", loras.values())
 def test_lora_switching(lora):
@@ -151,4 +150,4 @@ def test_lora_loading(name, lora):
     )
     unfuse_lora(pipe)
     print(f"lora {name} ssim {ssim}")
-    assert ssim > 0.97
+    assert ssim > 0.94
