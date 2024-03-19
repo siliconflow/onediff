@@ -63,6 +63,8 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
             self.current_device = self.offload_device
         else:
             self.current_device = current_device
+        
+        self.model_lowvram = False
 
     def clone(self):
         n = OneFlowSpeedUpModelPatcher(
@@ -80,6 +82,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         n.object_patches = self.object_patches.copy()
         n.model_options = copy.deepcopy(self.model_options)
         n.model_keys = self.model_keys
+        self.model_lowvram = False
         return n
 
     def add_patches(self, patches, strength_patch=1.0, strength_model=1.0):
