@@ -167,9 +167,7 @@ class Script(scripts.Script):
 
         if recompile == True:
             self.current_type = get_model_type(model)
-        elif parse_boolean_from_env(
-            os.environ.get("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1")
-        ):
+        elif parse_boolean_from_env("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1"):
             warnings.warn(
                 f"If you want to reuse the compiled graph, please set environ var \
                   `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` as '0', \
