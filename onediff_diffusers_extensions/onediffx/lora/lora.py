@@ -9,20 +9,26 @@ from onediff.infer_compiler.utils.log_utils import logger
 
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
-from diffusers.models.lora import PatchedLoraProjection
+
+if version.parse(diffusers.__version__) >= version.parse("0.21.0"):
+    from diffusers.models.lora import PatchedLoraProjection
+else:
+    from diffusers.loaders import PatchedLoraProjection
 
 
-from .utils import _unfuse_lora, _set_adapter, _delete_adapter
+from .utils import (
+    _unfuse_lora,
+    _set_adapter,
+    _delete_adapter,
+    _maybe_map_sgm_blocks_to_diffusers,
+    is_peft_available,
+)
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
 
-from diffusers.utils.import_utils import is_peft_available
-
 if is_peft_available():
     import peft
-is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse(
-    "0.21.0"
-)
+is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.19.3")
 
 
 USE_PEFT_BACKEND = False
@@ -40,23 +46,25 @@ def load_and_fuse_lora(
 ) -> None:
     if not is_onediffx_lora_available:
         raise RuntimeError(
-            "onediffx.lora only supports diffusers of at least version 0.21.0"
+            "onediffx.lora only supports diffusers of at least version 0.19.3"
         )
 
     self = pipeline
 
     if use_cache:
         state_dict, network_alphas = load_state_dict_cached(
-            pretrained_model_name_or_path_or_dict,
-            unet_config=self.unet.config,
-            **kwargs,
+            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs,
         )
     else:
+        # for diffusers <= 0.20
+        if hasattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers"):
+            orig_func = getattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers")
+            LoraLoaderMixin._map_sgm_blocks_to_diffusers = _maybe_map_sgm_blocks_to_diffusers
         state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
-            pretrained_model_name_or_path_or_dict,
-            unet_config=self.unet.config,
-            **kwargs,
+            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs,
         )
+        if hasattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers"):
+            LoraLoaderMixin._map_sgm_blocks_to_diffusers = orig_func
 
     is_correct_format = all("lora" in key for key in state_dict.keys())
     if not is_correct_format:
@@ -75,9 +83,7 @@ def load_and_fuse_lora(
     )
 
     # load lora weights into text encoder
-    text_encoder_state_dict = {
-        k: v for k, v in state_dict.items() if "text_encoder." in k
-    }
+    text_encoder_state_dict = {k: v for k, v in state_dict.items() if "text_encoder." in k}
     if len(text_encoder_state_dict) > 0:
         load_lora_into_text_encoder(
             self,
@@ -90,9 +96,7 @@ def load_and_fuse_lora(
             _pipeline=self,
         )
 
-    text_encoder_2_state_dict = {
-        k: v for k, v in state_dict.items() if "text_encoder_2." in k
-    }
+    text_encoder_2_state_dict = {k: v for k, v in state_dict.items() if "text_encoder_2." in k}
     if len(text_encoder_2_state_dict) > 0 and hasattr(self, "text_encoder_2"):
         load_lora_into_text_encoder(
             self,
@@ -194,9 +198,7 @@ def load_state_dict_cached(
 
     lora_name = str(lora) + (f"/{weight_name}" if weight_name else "")
     if lora_name in CachedLoRAs:
-        logger.debug(
-            f"[OneDiffX Cached LoRA] get cached lora of name: {str(lora_name)}"
-        )
+        logger.debug(f"[OneDiffX Cached LoRA] get cached lora of name: {str(lora_name)}")
         return CachedLoRAs[lora_name]
 
     state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(lora, **kwargs,)
