@@ -184,7 +184,11 @@ class Script(scripts.Script):
             current_checkpoint + "_quantized" if quantization else current_checkpoint
         )
 
-        if self.need_compile(shared.sd_model):
+        if (
+            quantization
+            and ckpt_name != compiled_ckpt_name
+            or self.need_compile(shared.sd_model)
+        ):
             compile_options = {}
 
             compiled_unet = compile_unet(
