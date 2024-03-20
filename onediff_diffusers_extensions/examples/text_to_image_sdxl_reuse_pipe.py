@@ -127,11 +127,6 @@ new_base.unet = compiled_unet
 new_base.vae.decoder = compiled_decoder
 
 torch.cuda.empty_cache()
-# print("check whether the weights are updated")
-# updated_w = base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
-# assert np.allclose(updated_w, new_w, atol=1e-3)
-# updated_w_oflow = base.unet.add_embedding.linear_1.oneflow_module.weight.detach().cpu().numpy()
-# assert np.allclose(updated_w_oflow, new_w, atol=1e-3)
 
 # Normal SDXL run
 print("Re-use the compiled graph")
