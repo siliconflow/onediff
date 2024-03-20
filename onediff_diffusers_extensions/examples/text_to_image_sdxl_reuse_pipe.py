@@ -61,25 +61,21 @@ base = StableDiffusionXLPipeline.from_pretrained(
 )
 base.to("cuda")
 
-new_base = StableDiffusionXLPipeline.from_pretrained(
-    "dataautogpt3/OpenDalleV1.1",
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
-)
-new_base.to("cuda")
 
 oneflow_compiler_config.mlir_enable_inference_optimization = False
 # Compile unet with oneflow
 if args.compile_unet:
     print("Compiling unet with oneflow.")
-    base.unet = oneflow_compile(base.unet)
+    compiled_unet = oneflow_compile(base.unet)
+    compiled_unet_eager = base.unet
+    base.unet = compiled_unet
 
 # Compile vae with oneflow
 if args.compile_vae:
     print("Compiling vae with oneflow.")
-    base.vae.decoder = oneflow_compile(base.vae.decoder)
+    compiled_decoder = oneflow_compile(base.vae.decoder)
+    compiled_decoder_eager = base.vae.decoder
+    base.vae.decoder = compiled_decoder
 
 # Warmup with run
 # Will do compilatioin in the first run
@@ -90,46 +86,73 @@ image = base(
     height=args.height,
     width=args.width,
     num_inference_steps=args.n_steps,
+    generator=torch.manual_seed(0),
     output_type=OUTPUT_TYPE,
 ).images
+del base
 
-# import numpy as np
-# base_state_dict = base.unet.state_dict()
-# new_state_dict = new_base.unet.state_dict()
-# for k, w in base_state_dict.items():
-#     if k in new_state_dict:
-#         if not np.allclose(w.detach().cpu().numpy(), new_state_dict[k].detach().cpu().numpy(), atol=1e-3):
-#             print(f"Parameter {k} is different.")
+torch.cuda.empty_cache()
 
-w = base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
-new_w = new_base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
-import numpy as np
-assert not np.allclose(w, new_w, atol=1e-3)
+print("loading new base")
+new_base = StableDiffusionXLPipeline.from_single_file(
+    "dataautogpt3/OpenDalleV1.1",
+    scheduler=scheduler,
+    torch_dtype=torch.float16,
+    variant=args.variant,
+    use_safetensors=True,
+)
+new_base.to("cuda")
 
-# Update the unet and vae
-# load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers. 
-# Reference: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict
-base.unet.load_state_dict(new_base.unet.state_dict())
-base.vae.decoder.load_state_dict(new_base.vae.decoder.state_dict())
-del new_base
-
-print("check whether the weights are updated")
-updated_w = base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
-assert np.allclose(updated_w, new_w, atol=1e-3)
-updated_w_oflow = base.unet.add_embedding.linear_1.oneflow_module.weight.detach().cpu().numpy()
-assert np.allclose(updated_w_oflow, new_w, atol=1e-3)
-
-# Normal SDXL run
-print("Normal SDXL run...")
-torch.manual_seed(args.seed)
-image = base(
+print("New base running by torch backend")
+image = new_base(
     prompt=args.prompt,
     height=args.height,
     width=args.width,
     num_inference_steps=args.n_steps,
+    generator=torch.manual_seed(0),
     output_type=OUTPUT_TYPE,
 ).images
-image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
+image[0].save(f"new_base_without_graph_h{args.height}-w{args.width}-{args.saved_image}")
+image_eager = image[0]
+
+
+# Update the unet and vae
+# load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers. 
+# Reference: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict
+print("Loading state_dict of new base into compiled graph")
+compiled_unet_eager.load_state_dict(new_base.unet.state_dict())
+compiled_decoder_eager.load_state_dict(new_base.vae.decoder.state_dict())
+
+new_base.unet = compiled_unet
+new_base.vae.decoder = compiled_decoder
+
+torch.cuda.empty_cache()
+# print("check whether the weights are updated")
+# updated_w = base.unet.add_embedding.linear_1.weight.detach().cpu().numpy()
+# assert np.allclose(updated_w, new_w, atol=1e-3)
+# updated_w_oflow = base.unet.add_embedding.linear_1.oneflow_module.weight.detach().cpu().numpy()
+# assert np.allclose(updated_w_oflow, new_w, atol=1e-3)
+
+# Normal SDXL run
+print("Re-use the compiled graph")
+image = new_base(
+    prompt=args.prompt,
+    height=args.height,
+    width=args.width,
+    num_inference_steps=args.n_steps,
+    generator=torch.manual_seed(0),
+    output_type=OUTPUT_TYPE,
+).images
+image[0].save(f"new_base_reuse_graph_h{args.height}-w{args.width}-{args.saved_image}")
+image_graph = image[0]
+
+from skimage.metrics import structural_similarity
+import numpy as np
+
+ssim = structural_similarity(
+    np.array(image_eager), np.array(image_graph), channel_axis=-1, data_range=255
+)
+print(f"ssim between naive torch and re-used graph is {ssim}")
 
 
 # Should have no compilation for these new input shape
@@ -140,11 +163,12 @@ if args.run_multiple_resolutions:
         sizes = [360]
     for h in sizes:
         for w in sizes:
-            image = base(
+            image = new_base(
                 prompt=args.prompt,
                 height=h,
                 width=w,
                 num_inference_steps=args.n_steps,
+                generator=torch.manual_seed(0),
                 output_type=OUTPUT_TYPE,
             ).images
 
