@@ -94,7 +94,7 @@ del base
 torch.cuda.empty_cache()
 
 print("loading new base")
-new_base = StableDiffusionXLPipeline.from_single_file(
+new_base = StableDiffusionXLPipeline.from_pretrained(
     "dataautogpt3/OpenDalleV1.1",
     scheduler=scheduler,
     torch_dtype=torch.float16,
