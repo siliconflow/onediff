@@ -3,10 +3,12 @@
 </p>
 
 ---
-
+<a href="https://github.com/siliconflow/onediff/stargazers"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=social"></a>
+[![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=flat-square)](https://discord.gg/RKJTjZMcPQ)
+<a href="https://github.com/siliconflow/onediff/wiki"><img src="https://img.shields.io/badge/OneDiff-Feedbacks-purple"></a>
+<a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live"><img src="https://img.shields.io/badge/Twitter-Discuss-blue?logo=twitter&amp"></a>
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
-
 
 OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
 - PyTorch Module compilation tools and strong optimized GPU Kernels for diffusion models
@@ -15,7 +17,7 @@ OneDiff is an out-of-the-box acceleration library for diffusion models, it provi
   - [OneDiff for ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [OneDiff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
-OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latested news:
+OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
 
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
@@ -53,7 +55,7 @@ The Full introduction of OneDiff:
 <img src="imgs/0_12_svd.png" height="400">
 
 ### Acceleration for State-of-the-art models
-OneDiff support the acceleratioin for SOTA models.
+OneDiff supports the acceleration for SOTA models.
 | AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
@@ -85,6 +87,8 @@ OneDiff support the acceleratioin for SOTA models.
 Compile and save the compiled result offline, then load it online for serving
 - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
 - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
+  - Compile at one device(such as device 0), then use the compiled result to other device(such as device 1~7).
+  - This is for special scene and is in the Enterprise Edition.
 
 ### OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can
@@ -93,12 +97,14 @@ If you need **Enterprise-level Support** for your system or business, you can
 
 OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
 
-|                      | OneDiff Enterprise   | OneDiff Community |
-| -------------------- | ------------------- | ----------- |
-| Multiple Resolutions | Yes(No time cost for most of the cases)       | Yes(No time cost for most of the cases)           |
-| More Extreme and Dedicated optimization(usually another 20~100% performance gain)         |   Yes         |                 |
-| Technical Support for deployment    | High priority support       | Community           |
-| Get the experimental technology/feature | Yes | |
+|                                                                                                           | OneDiff Enterprise Edition              | OneDiff Community Edition               |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
+| Multiple Resolutions                                                                                      | Yes(No time cost for most of the cases) | Yes(No time cost for most of the cases) |
+| More Extreme and Dedicated optimization(usually another 20~100% performance gain) for the most used model | Yes                                     |                                         |
+| Tools for specific(very large scale) server side deployment                                               | Yes                                     |                                         |
+| Technical Support for deployment                                                                          | High priority support                   | Community                               |
+| Get the experimental features                                                                             | Yes                                     |                                         |
+
 
 ### Roadmap
 [OneDiff Development Roadmap](https://github.com/siliconflow/onediff/wiki#onediff-roadmap)
@@ -168,9 +174,11 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
 
 #### 2. Install torch and diffusers
+**Note: You can choose the latest versions you want for diffusers or transformers.**
 ```
 python3 -m pip install "torch" "transformers==4.27.1" "diffusers[torch]==0.19.3"
 ```
+
 
 #### 3. Install OneDiff
 

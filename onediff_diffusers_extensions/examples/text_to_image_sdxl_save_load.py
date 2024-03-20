@@ -41,7 +41,7 @@ base = DiffusionPipeline.from_pretrained(
 )
 base.to("cuda")
 
-# To temporarily fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
+# To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
 if base.vae.dtype == torch.float16 and base.vae.config.force_upcast:
     base.upcast_vae()
 

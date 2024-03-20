@@ -1,4 +1,5 @@
 import os
+import torch
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
@@ -53,6 +54,14 @@ def _filter_parts(ignores=()):
 def compile_pipe(
     pipe, *, ignores=(),
 ):
+    # To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
+    if (
+        hasattr(pipe, "upcast_vae")
+        and pipe.vae.dtype == torch.float16
+        and pipe.vae.config.force_upcast
+    ):
+        pipe.upcast_vae()
+
     filtered_parts = _filter_parts(ignores=ignores)
     for part in filtered_parts:
         obj = _recursive_getattr(pipe, part, None)
@@ -72,9 +81,7 @@ def compile_pipe(
     return pipe
 
 
-def save_pipe(
-    pipe, dir="cached_pipe", *, ignores=(), overwrite=True
-):
+def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
     if not os.path.exists(dir):
         os.makedirs(dir)
     filtered_parts = _filter_parts(ignores=ignores)
@@ -87,7 +94,9 @@ def save_pipe(
             and obj.get_graph().is_compiled
         ):
             if not overwrite and os.path.isfile(os.path.join(dir, part)):
-                logger.info(f"Compiled graph already exists for {part}, not overwriting it.")
+                logger.info(
+                    f"Compiled graph already exists for {part}, not overwriting it."
+                )
                 continue
             logger.info(f"Saving {part}")
             obj.save_graph(os.path.join(dir, part))

@@ -42,6 +42,11 @@ parser.add_argument(
     type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
     default=True,
 )
+parser.add_argument(
+    "--run_rare_resolutions",
+    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+    default=True,
+)
 args = parser.parse_args()
 
 # Normal SDXL pipeline init.
@@ -94,8 +99,8 @@ image[0].save(f"h{args.height}-w{args.width}-{args.saved_image}")
 
 
 # Should have no compilation for these new input shape
-print("Test run with multiple resolutions...")
 if args.run_multiple_resolutions:
+    print("Test run with multiple resolutions...")
     sizes = [960, 720, 896, 768]
     if "CI" in os.environ:
         sizes = [360]
@@ -110,14 +115,14 @@ if args.run_multiple_resolutions:
             ).images
 
 
-# print("Test run with other another uncommon resolution...")
-# if args.run_multiple_resolutions:
-#     h = 544
-#     w = 408
-#     image = base(
-#         prompt=args.prompt,
-#         height=h,
-#         width=w,
-#         num_inference_steps=args.n_steps,
-#         output_type=OUTPUT_TYPE,
-#     ).images
+if args.run_rare_resolutions:
+    print("Test run with other another uncommon resolution...")
+    h = 544
+    w = 408
+    image = base(
+        prompt=args.prompt,
+        height=h,
+        width=w,
+        num_inference_steps=args.n_steps,
+        output_type=OUTPUT_TYPE,
+    ).images
