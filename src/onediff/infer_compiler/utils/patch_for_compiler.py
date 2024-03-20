@@ -10,6 +10,10 @@ class FakeCuda:
         return "cuda:0"
 
     @staticmethod
+    def memory_stats(dev):
+        return torch.cuda.memory_stats(dev)
+
+    @staticmethod
     def mem_get_info(dev):
         return torch.cuda.mem_get_info(str(dev))
 
@@ -103,3 +107,4 @@ flow.cuda.current_device = FakeCuda.current_device
 flow.cuda.mem_get_info = FakeCuda.mem_get_info
 flow.nn.functional.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
 F.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
+flow.cuda.memory_stats = FakeCuda.memory_stats
