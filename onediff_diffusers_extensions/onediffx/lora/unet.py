@@ -5,23 +5,15 @@ from collections import defaultdict
 import torch
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
-import diffusers
 from diffusers.models.lora import (
     LoRACompatibleConv,
     LoRACompatibleLinear,
 )
-
-from .utils import fuse_lora, get_adapter_names
-
+from .utils import fuse_lora, get_adapter_names, is_peft_available
 from diffusers.utils import is_accelerate_available
 
-if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
-    from diffusers.utils.import_utils import is_peft_available
-
-    if is_peft_available():
-        import peft
-else:
-    is_peft_available = lambda: False
+if is_peft_available():
+    import peft
 
 if is_accelerate_available():
     from accelerate.hooks import AlignDevicesHook, CpuOffload, remove_hook_from_module

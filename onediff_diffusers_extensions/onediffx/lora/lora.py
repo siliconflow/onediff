@@ -10,9 +10,9 @@ from onediff.infer_compiler.utils.log_utils import logger
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
 
-try:
+if version.parse(diffusers.__version__) >= version.parse("0.21.0"):
     from diffusers.models.lora import PatchedLoraProjection
-except:
+else:
     from diffusers.loaders import PatchedLoraProjection
 
 
@@ -21,21 +21,14 @@ from .utils import (
     _set_adapter,
     _delete_adapter,
     _maybe_map_sgm_blocks_to_diffusers,
+    is_peft_available,
 )
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
 
-if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
-    from diffusers.utils.import_utils import is_peft_available
-
-    if is_peft_available():
-        import peft
-else:
-    is_peft_available = lambda: False
-
 if is_peft_available():
     import peft
-is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.21.0")
+is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.19.3")
 
 
 USE_PEFT_BACKEND = False
@@ -51,6 +44,11 @@ def load_and_fuse_lora(
     use_cache=False,
     **kwargs,
 ) -> None:
+    if not is_onediffx_lora_available:
+        raise RuntimeError(
+            "onediffx.lora only supports diffusers of at least version 0.19.3"
+        )
+
     self = pipeline
 
     if use_cache:
