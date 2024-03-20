@@ -3,6 +3,7 @@
 - [Performance of Community Edition](#performance-of-community-edition)
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
+    - [Fast Model Switching](#fast-model-switching)
     - [LoRA](#lora)
 - [Quantization](#quantization)
 - [Contact](#contact)
@@ -60,6 +61,11 @@ Select `onediff_diffusion_model` from the Script menu, enter a prompt in the tex
 
 ![onediff_script](images/onediff_script.jpg)
 
+### Fast Model Switching
+
+When switching models, if the new model has the same structure as the old model, OneDiff will reuse the previously compiled graph, which means you don't need to compile the new model again, which significantly reduces the time it takes you to switch models.
+
+> Note: Please make sure that your PyTorch version is at least 2.1.0, and set the environment variable `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0 when starting the sd-webui service. And the feature is not supported for quantized model.
 
 ### LoRA
 
