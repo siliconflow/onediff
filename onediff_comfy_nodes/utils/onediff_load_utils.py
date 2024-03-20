@@ -1,6 +1,7 @@
 import folder_paths
 from pathlib import Path
 from comfy import model_management
+from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from .model_patcher import OneFlowSpeedUpModelPatcher
 from .graph_path import generate_graph_path
 from .loader_sample_tools import compoile_unet, quantize_unet
