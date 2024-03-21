@@ -1,9 +1,52 @@
 import os
-from typing import Any, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 from functools import partial
 
-from onediff_quant import quantize_pipeline, save_quantized
+from onediff.quantization.quantize_config import QuantizationConfig
+
+# from onediff_quant import quantize_pipeline, save_quantized
 from .quantize_utils import setup_onediff_quant, load_calibration_and_quantize_pipeline
+from .quantize_calibrators import DiffusersCalibrator, create_quantization_calculator
+from ..optimization.quant_optimizer import quantize_model
+
+def quantize_pipeline(pipe, *args, **kwargs):
+    compute_density_threshold = kwargs.pop("compute_density_threshold", 0)
+    conv_compute_density_threshold = kwargs.pop(
+        "conv_compute_density_threshold", compute_density_threshold
+    )
+    linear_compute_density_threshold = kwargs.pop(
+        "linear_compute_density_threshold", compute_density_threshold
+    )
+    conv_ssim_threshold = kwargs.pop("conv_ssim_threshold", 0)
+    linear_ssim_threshold = kwargs.pop("linear_ssim_threshold", 0)
+    quant_nbits = kwargs.pop("nbits", 8)
+    save_as_float = kwargs.pop("save_as_float", False)
+    cache_dir = kwargs.pop("cache_dir", None)
+    seed = kwargs.pop("seed", 111)
+
+    quant_config = QuantizationConfig.from_settings(
+        plot_calibrate_info=True,
+        conv_compute_density_threshold=conv_compute_density_threshold,
+        linear_compute_density_threshold=linear_compute_density_threshold,
+        conv_ssim_threshold=conv_ssim_threshold,
+        linear_ssim_threshold=linear_ssim_threshold,
+        bits=quant_nbits,
+        cache_dir = cache_dir,
+    )
+
+    def module_selector(pipe):
+        return pipe.unet
+    
+    calibrator = create_quantization_calculator(
+        pipe, quant_config, module_selector=module_selector, seed=seed,
+        calibrator_type=DiffusersCalibrator,
+    )
+    calibrate_info = calibrator.calibrate(*args, **kwargs)
+
+    pipe.unet = quantize_model(
+        pipe.unet,
+        calibrate_info = calibrate_info)
+    
 
 
 class QuantPipeline:
@@ -77,7 +120,8 @@ class QuantPipeline:
         """
         pipe = cls.from_pretrained(pretrained_model_name_or_path, *args, **kwargs)
         pipe.quantize = partial(quantize_pipeline, pipe)
-        pipe.save_quantized = partial(save_quantized, pipe)
+        # TODO fix save_quantized.
+        # pipe.save_quantized = partial(save_quantized, pipe)
         return pipe
 
     @classmethod
@@ -90,5 +134,8 @@ class QuantPipeline:
     ):
         pipe = cls.from_single_file(pretrained_model_name_or_path, *args, **kwargs)
         pipe.quantize = partial(quantize_pipeline, pipe)
-        pipe.save_quantized = partial(save_quantized, pipe)
+        # pipe.save_quantized = partial(save_quantized, pipe)
         return pipe
+
+    
+       

@@ -1,11 +1,10 @@
 import time
-import torch
 import torch.nn as nn
 from copy import deepcopy
 from ..infer_compiler.utils.log_utils import logger
 from ..infer_compiler.utils.version_util import is_quantization_enabled
 from ..infer_compiler.utils.cost_util import cost_cnt
-from ..infer_compiler.utils.module_operations import modify_sub_module, get_sub_module
+from ..infer_compiler.utils.module_operations import modify_sub_module
 from ..infer_compiler.transform.manager import transform_mgr
 
 
@@ -107,55 +106,3 @@ def quantize_model(
     )
 
     return model
-
-
-def quantize_sub_module(
-    model, sub_name, sub_module, bits=8, maxq=127, fake_quant=True, save_as_float=False
-):
-    from onediff_quant.quantization import Quantizer
-    from onediff_quant.utils import (
-        symm_quantize,
-        fake_symm_quantize,
-        get_quantize_module,
-    )
-
-    if sub_module is None:
-        sub_module = get_sub_module(model, sub_name)
-
-    quantizer = Quantizer()
-    quantizer.configure(bits=bits, perchannel=True)
-    quantizer.find_params(sub_module.weight.float(), weight=True)
-    shape = [-1] + [1] * (len(sub_module.weight.shape) - 1)
-    scale = quantizer.scale.reshape(*shape)
-
-    org_weight_data = sub_module.weight.data
-    org_requires_grad = sub_module.weight.requires_grad
-
-    # save_as_float = False
-    sub_module.weight.requires_grad = False
-    input_scale_and_zero_point = [None, None]
-
-    if fake_quant or save_as_float:
-        sub_module.weight.data = fake_symm_quantize(
-            sub_module.weight.data, scale.to(sub_module.weight.data.device), maxq,
-        )
-    else:
-        sub_module.weight.data = symm_quantize(
-            sub_module.weight.data, scale.to(sub_module.weight.data.device), maxq,
-        )
-    quant_module = get_quantize_module(
-        sub_module,
-        sub_name,
-        input_scale_and_zero_point + [scale.reshape(-1).tolist()],
-        fake_quant,  # fake_quant
-        False,
-        bits,
-    )
-    modify_sub_module(model, sub_name, quant_module)
-
-    def restore():
-        sub_module.weight.data = org_weight_data
-        sub_module.weight.requires_grad = org_requires_grad
-        modify_sub_module(model, sub_name, sub_module)
-
-    return restore

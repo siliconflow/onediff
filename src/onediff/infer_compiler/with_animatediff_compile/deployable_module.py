@@ -1,9 +1,5 @@
-import os
 import torch
 from .oneflow_compiler import DualModule
-from ...quantization.quantization_module import QuantizationConfig, QuantizationModule
-from ..utils.log_utils import logger
-from ..utils.version_util import is_community_version
 
 
 class DeployableModule:
@@ -14,7 +10,6 @@ class DeployableModule:
     __attrs = [
         "_deployed_original_module",
         "_deployed_compiled_model",
-        "quantization_config",
     ]
 
     def __init__(
@@ -23,44 +18,10 @@ class DeployableModule:
         assert compiled_model is not None, "Compiled model is None"
         self._deployed_original_module = original_module
         self._deployed_compiled_model = compiled_model
-        self.quantization_config: QuantizationConfig = self._deployed_compiled_model.quantization_config
-
-    def quantize(
-        self,
-        quantize_conv=True,
-        quantize_linear=True,
-        bits=8,
-        quality_level=2,
-        compute_density_threshold=0,
-        *,
-        inplace=True,
-        calibrate_info=None,
-        cache_dir=None,
-        plot_calibrate_info=False,
-    ):
-        if is_community_version():
-            logger.warning("quantize is not supported in community version")
-            return
-
-        config = self.quantization_config
-        config.__dict__.update(
-            {
-                "quantize_conv": quantize_conv,
-                "quantize_linear": quantize_linear,
-                "bits": bits,
-                "inplace": inplace,
-                "quality_level": quality_level,
-                "compute_density_threshold": compute_density_threshold,
-                "calibrate_info": calibrate_info,
-                "use_quantization": True,
-                "cache_dir": cache_dir,
-                "plot_calibrate_info": plot_calibrate_info,
-            }
-        )
-        if not os.path.exists(cache_dir):
-            os.makedirs(cache_dir)
-
-        return self
+    
+    
+    def quantize(self, config):
+        self.quant_module.quantization_config = config
 
     @property  # Keep compatibility with previous changes.
     def _deployable_module_model(self):
@@ -102,20 +63,7 @@ class DeployableModule:
     def to(self, *args, **kwargs):
         return self._deployed_compiled_model.to(*args, **kwargs)
 
-    def _quantize_forward_faster(self, *args, **kwargs):
-        if not self.quantization_config.use_quantization:
-            return
-        # prepare and calibration
-        QuantizationModule(
-            self._deployed_original_module, self.quantization_config
-        ).quantize_forward(*args, **kwargs)
-
     def __call__(self, *args, **kwargs):
-        if (
-            self.quantization_config.use_quantization
-            and self.quantization_config.calibrate_info is None
-        ):
-            self._quantize_forward_faster(*args, **kwargs)
         out = self._deployed_compiled_model(*args, **kwargs)
         return out
 

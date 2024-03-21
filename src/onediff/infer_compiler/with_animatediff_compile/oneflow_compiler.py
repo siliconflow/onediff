@@ -5,7 +5,6 @@ from typing import Any, Dict
 import oneflow as flow
 from itertools import chain
 from oneflow.utils.tensor import to_torch
-from ...quantization.quantization_module import QuantizationConfig
 from ..utils.log_utils import logger
 from ..utils.cost_util import cost_cnt
 from ..utils.args_tree_util import input_output_processor
@@ -137,7 +136,7 @@ class DualModule(OneFlowCompiledModel):
         super().__init__(
             torch_module, None, None, use_graph, dynamic, options, None, False, True
         )
-        self.quantization_config = QuantizationConfig()
+        self.quantization_config = None
 
     def get_modules(self):
         return self._torch_module, self._oneflow_module
@@ -164,17 +163,15 @@ class DualModule(OneFlowCompiledModel):
             return self._oneflow_module
 
         logger.debug(f"Convert {type(self._torch_module)} ...")
-        if self.quantization_config.use_quantization:
+        if self.quantization_config:
             conf = self.quantization_config
             torch_module = quantize_model(
                 self._torch_module,
                 bits=conf.bits,
-                quantize_conv=conf.quantize_conv,
-                quantize_linear=conf.quantize_linear,
                 inplace=conf.inplace,
                 calibrate_info=conf.calibrate_info,
             )
-            conf.use_quantization = False
+            self.quantization_config = None
         else:
             torch_module = self._torch_module
 

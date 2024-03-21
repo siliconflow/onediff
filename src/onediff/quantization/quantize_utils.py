@@ -1,5 +1,7 @@
 import os
-
+import random
+import torch 
+import numpy as np
 
 def setup_onediff_quant():
     os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
@@ -36,3 +38,13 @@ def load_calibration_and_quantize_pipeline(calibration_path, pipe):
             convert_quant_module_fn=lambda x: x,
             original_module_name=None,
         )
+
+
+
+def set_random_seed(seed = 1):
+    """https://pytorch.org/docs/stable/notes/randomness.html"""
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)
