@@ -26,7 +26,7 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
     args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
     count = len([v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)])
 
-    model = deployable_module.oneflow_module
+    model = deployable_module._deployable_module_model.oneflow_module
 
     cache_key = calculate_model_hash(model) + "_" + flow.__version__
     return f"{file_path}_{count}_{cache_key}.graph"

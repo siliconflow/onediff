@@ -105,4 +105,6 @@ def quantize_model(
         + f"Time: {time.time() - start_time:.4f}s \n"
     )
 
+
     return model
+

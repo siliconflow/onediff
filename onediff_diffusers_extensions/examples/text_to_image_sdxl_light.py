@@ -7,7 +7,11 @@ from safetensors.torch import load_file
 from diffusers import StableDiffusionXLPipeline
 from onediffx import compile_pipe, compiler_config, save_pipe, load_pipe
 from huggingface_hub import hf_hub_download
-from diffusers.utils import USE_PEFT_BACKEND
+
+try:
+    USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
+except Exception as e:
+    USE_PEFT_BACKEND = False
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
