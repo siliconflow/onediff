@@ -48,7 +48,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
-    "SetCacheFileName": "Set Cache File Name",
     "BatchSizePatcher": "Batch Size Patcher",
 }
 
