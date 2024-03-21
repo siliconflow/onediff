@@ -31,6 +31,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for Enterprise Edition or other business inquiries: contact@siliconflow.com
 
+---
 The Full Introduction of OneDiff:
 <!-- toc -->
 - [More About OneDiff](#more-about-onediff)
