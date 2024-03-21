@@ -3,12 +3,13 @@
 </p>
 
 ---
-<a href="https://github.com/siliconflow/onediff/stargazers"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=social"></a>
+<a href="https://github.com/siliconflow/onediff/wiki" target="_blank"><img src="https://img.shields.io/badge/OneDiff-Community-blue"></a>
+<a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=social"></a>
 [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=flat-square)](https://discord.gg/RKJTjZMcPQ)
-<a href="https://github.com/siliconflow/onediff/wiki"><img src="https://img.shields.io/badge/OneDiff-Feedbacks-purple"></a>
-<a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live"><img src="https://img.shields.io/badge/Twitter-Discuss-blue?logo=twitter&amp"></a>
+<a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-gray?logo=twitter&amp"></a>
 [![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
 [![Run examples](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
+
 
 ## About OneDiff
 OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
@@ -41,7 +42,6 @@ The Full Introduction of OneDiff:
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
 - [Release](#release)
-
 <!-- tocstop -->
 
 ## More About OneDiff
@@ -63,6 +63,10 @@ The Full Introduction of OneDiff:
 
 ### Acceleration for State-of-the-art models
 OneDiff supports the acceleration for SOTA models.
+* stable: release for public usage, and has long-term support;
+* beta: release for professional usage, and has long-term support;
+* alpha: early release for expert usage, and is **under active development**;
+
 | AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
@@ -79,11 +83,6 @@ OneDiff supports the acceleration for SOTA models.
 |           | SVD DeepCache               | stable       | beta       | stable    | beta       |           |            |
 
 **Note: Enterprise Edition contains all the functionality in Community Edition.**
-* stable: release for public usage, and has long-term support;
-* beta: release for professional usage, and has long-term support;
-* alpha: early release for expert usage, and is **under active development**;
-
-
 
 ### Acceleration for production environment
 #### PyTorch Module compilation
@@ -99,7 +98,7 @@ Compile and save the compiled result offline, then load it online for serving
 
 ### OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can
-- subscribe Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
+- subscribe to Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
 - or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
 OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
@@ -122,7 +121,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 ### OneDiff Installation
 
 #### 1. Install OneFlow
-> **_NOTE:_** We have updated OneFlow a lot for OneDiff, so please install OneFlow by the links below.
+> **_NOTE:_** We have updated OneFlow frequently for OneDiff, so please install OneFlow by the links below.
 
 - **CUDA 11.8**
 
