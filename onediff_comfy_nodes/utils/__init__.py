@@ -40,7 +40,7 @@ def load_graph(deploy_module, graph_filename, device, subfolder):
 
 
 def save_graph(deploy_module, prefix: str, device: str, subfolder: str):
-    str_cls_type = str(type(deploy_module._deployed_compiled_model))
+    str_cls_type = str(type(deploy_module._deployable_module_model._torch_module))
     match = re.search(r"<class '(.+?)'>", str_cls_type)
     module_class_name = match.group(1)
 
