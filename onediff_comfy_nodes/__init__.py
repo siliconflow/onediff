@@ -12,7 +12,6 @@ from ._nodes import (
     OneDiffCheckpointLoaderSimple,
     OneDiffControlNetLoader,
     OneDiffDeepCacheCheckpointLoaderSimple,
-    VaeSpeedupV2,
     BatchSizePatcher,
 )
 from ._compare_node import CompareModel, ShowImageDiff
@@ -32,7 +31,6 @@ NODE_CLASS_MAPPINGS = {
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
     "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
-    "VaeSpeedupV2": VaeSpeedupV2,
     "BatchSizePatcher": BatchSizePatcher,
 }
 
@@ -51,7 +49,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "SetCacheFileName": "Set Cache File Name",
-    "VaeSpeedupV2": "VAE Speedup V2",
     "BatchSizePatcher": "Batch Size Patcher",
 }
 
@@ -63,7 +60,6 @@ if _USE_UNET_INT8:
         OneDiffQuantCheckpointLoaderSimple,
         OneDiffQuantCheckpointLoaderSimpleAdvanced,
         ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
-        OneDiffFastQuantUnet
     )
 
     NODE_CLASS_MAPPINGS.update(
@@ -74,7 +70,6 @@ if _USE_UNET_INT8:
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": OneDiffQuantCheckpointLoaderSimpleAdvanced,
             "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
             "QuantKSampler": QuantKSampler,
-            "OneDiffFastQuantUnet": OneDiffFastQuantUnet,
         }
     )
 
@@ -86,6 +81,5 @@ if _USE_UNET_INT8:
             "OneDiffQuantCheckpointLoaderSimpleAdvanced": "Load Checkpoint - OneDiff Quant Advanced",
             "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": "Load Checkpoint - OneDiff Quant Advanced (img2vid)",
             "QuantKSampler": "Quant K Sampler",
-            "OneDiffFastQuantUnet": "Fast Quant Unet",
         }
     )
