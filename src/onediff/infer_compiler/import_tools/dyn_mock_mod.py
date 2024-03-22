@@ -182,8 +182,11 @@ class DynamicMockModule(ModuleType):
                 obj_entity = self._get_module(name)
             org_delete_list = deepcopy(_importer.delete_list)
 
-        # Update obj_entity inplace
-        _update_module([fullname] + org_delete_list, self._main_pkg_enable)
+        try:
+            # Update obj_entity inplace
+            _update_module([fullname] + org_delete_list, self._main_pkg_enable)
+        except Exception as e:
+            logger.warning(f'Failed to update obj_entity in place. Exception: {e}')
 
         if ismodule(obj_entity):
             return DynamicMockModule(self._pkg_name, obj_entity, self._main_pkg_enable)
