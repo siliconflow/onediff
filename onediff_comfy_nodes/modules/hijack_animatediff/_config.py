@@ -1,6 +1,6 @@
 """
 github: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
-commit: 4b31c0819d361e58f222cee3827079b3a6b6f966 
+commit: 5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1 
 """
 import os
 from ..sd_hijack_utils import Hijacker
