@@ -6,7 +6,7 @@
 
 ```bash
 cd ComfyUI/custom_nodes
-git clone https://github.com/ccssu/ComfyUI-InstantID.git 
+git clone https://github.com/siliconflow/ComfyUI-InstantID.git
 ```
 
 2. install the dependencies
