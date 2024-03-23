@@ -89,6 +89,7 @@ class DualModule(torch.nn.Module):
             if self._oneflow_module is None
             else getattr(self._oneflow_module, name)
         )
+
         if isinstance(torch_attr, torch.nn.ModuleList):
             if oneflow_attr is None:
                 oneflow_attr = flow.nn.ModuleList([None] * len(torch_attr))
@@ -327,6 +328,30 @@ class DeployableModule(torch.nn.Module):
     def extra_repr(self) -> str:
         return self._deployable_module_model.extra_repr()
 
+    def set_graph_file(self, file_path: str) -> None:
+        """ Sets the path of the graph file.
+
+        If the new file path is different from the old one, clears old graph data.
+
+        Args:
+            `file_path` (str): The path of the graph file.
+        """
+        old_file_path = self.get_graph_file()
+        if file_path and old_file_path == file_path:
+            return
+        compiled_options = self._deployable_module_options
+        compiled_options["graph_file"] = file_path
+
+        self._clear_old_graph()
+
+    def _clear_old_graph(self):
+        self._load_graph_first_run = True
+        self._deployable_module_dpl_graph = None
+        del self._deployable_module_model.oneflow_module
+
+    def get_graph_file(self):
+        return self._deployable_module_options.get("graph_file", None)
+
 
 class OneflowGraph(flow.nn.Graph):
     @flow.nn.Graph.with_dynamic_input_shape()
@@ -343,7 +368,7 @@ class OneflowGraph(flow.nn.Graph):
     @cost_cnt(transform_mgr.debug_mode)
     def load_graph(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
-        self.graph_state_dict = state_dict # used for OneflowGraph.save_graph
+        self.graph_state_dict = state_dict  # used for OneflowGraph.save_graph
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
         self.load_runtime_state_dict(state_dict, warmup_with_run=run_warmup)

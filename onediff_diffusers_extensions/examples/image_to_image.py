@@ -1,8 +1,8 @@
 import argparse
 from PIL import Image
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 from onediff.infer_compiler import oneflow_compile
 from diffusers import StableDiffusionImg2ImgPipeline
