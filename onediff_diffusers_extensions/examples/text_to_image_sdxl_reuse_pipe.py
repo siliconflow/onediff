@@ -19,6 +19,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument(
     "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
 )
+parser.add_argument(
+    "--new_base", type=str, default="dataautogpt3/OpenDalleV1.1",
+)
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
     "--prompt",
@@ -28,6 +31,7 @@ parser.add_argument(
 parser.add_argument("--height", type=int, default=1024)
 parser.add_argument("--width", type=int, default=1024)
 parser.add_argument("--n_steps", type=int, default=30)
+parser.add_argument("--guidance_scale", type=float, default=7.5)
 parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out.png")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
@@ -88,19 +92,29 @@ image = base(
     num_inference_steps=args.n_steps,
     generator=torch.manual_seed(0),
     output_type=OUTPUT_TYPE,
+    guidance_scale=args.guidance_scale,
 ).images
 del base
 
 torch.cuda.empty_cache()
 
 print("loading new base")
-new_base = StableDiffusionXLPipeline.from_pretrained(
-    "dataautogpt3/OpenDalleV1.1",
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
-)
+if str(args.new_base).endswith(".safetensors"):
+    new_base = StableDiffusionXLPipeline.from_single_file(
+        args.new_base,
+        scheduler=scheduler,
+        torch_dtype=torch.float16,
+        variant=args.variant,
+        use_safetensors=True,
+    )
+else:
+    new_base = StableDiffusionXLPipeline.from_pretrained(
+        args.new_base,
+        scheduler=scheduler,
+        torch_dtype=torch.float16,
+        variant=args.variant,
+        use_safetensors=True,
+    )
 new_base.to("cuda")
 
 print("New base running by torch backend")
@@ -111,6 +125,7 @@ image = new_base(
     num_inference_steps=args.n_steps,
     generator=torch.manual_seed(0),
     output_type=OUTPUT_TYPE,
+    guidance_scale=args.guidance_scale,
 ).images
 image[0].save(f"new_base_without_graph_h{args.height}-w{args.width}-{args.saved_image}")
 image_eager = image[0]
@@ -137,6 +152,7 @@ image = new_base(
     num_inference_steps=args.n_steps,
     generator=torch.manual_seed(0),
     output_type=OUTPUT_TYPE,
+    guidance_scale=args.guidance_scale,
 ).images
 image[0].save(f"new_base_reuse_graph_h{args.height}-w{args.width}-{args.saved_image}")
 image_graph = image[0]
