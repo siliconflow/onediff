@@ -205,6 +205,7 @@ class DeployableModule(torch.nn.Module):
             get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module),
         )
         object.__setattr__(self, "_modules", torch_module._modules)
+        object.__setattr__(self, "_torch_module", torch_module)
         self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = options

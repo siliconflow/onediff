@@ -71,14 +71,12 @@ oneflow_compiler_config.mlir_enable_inference_optimization = False
 if args.compile_unet:
     print("Compiling unet with oneflow.")
     compiled_unet = oneflow_compile(base.unet)
-    compiled_unet_eager = base.unet
     base.unet = compiled_unet
 
 # Compile vae with oneflow
 if args.compile_vae:
     print("Compiling vae with oneflow.")
     compiled_decoder = oneflow_compile(base.vae.decoder)
-    compiled_decoder_eager = base.vae.decoder
     base.vae.decoder = compiled_decoder
 
 # Warmup with run
@@ -135,8 +133,8 @@ image_eager = image[0]
 # load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers. 
 # Reference: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict
 print("Loading state_dict of new base into compiled graph")
-compiled_unet_eager.load_state_dict(new_base.unet.state_dict())
-compiled_decoder_eager.load_state_dict(new_base.vae.decoder.state_dict())
+compiled_unet._torch_module.load_state_dict(new_base.unet.state_dict())
+compiled_decoder._torch_module.load_state_dict(new_base.vae.decoder.state_dict())
 
 new_base.unet = compiled_unet
 new_base.vae.decoder = compiled_decoder
