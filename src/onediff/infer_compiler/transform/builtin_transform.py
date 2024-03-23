@@ -3,7 +3,6 @@
 import os
 import importlib
 import types
-import inspect
 from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -15,7 +14,7 @@ from .manager import transform_mgr
 from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
-from functools import singledispatch
+
 from .patch_for_comfy import PatchForComfy
 __all__ = [
     "proxy_class",
