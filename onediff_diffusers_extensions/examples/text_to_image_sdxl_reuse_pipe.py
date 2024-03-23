@@ -1,7 +1,3 @@
-"""
-Torch run example: python examples/text_to_image_sdxl.py
-Compile to oneflow graph example: python examples/text_to_image_sdxl.py
-"""
 import os
 import argparse
 
