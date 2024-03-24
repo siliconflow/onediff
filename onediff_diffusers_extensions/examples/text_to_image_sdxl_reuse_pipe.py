@@ -1,7 +1,6 @@
 import os
 import argparse
 
-import oneflow as flow
 import torch
 
 from onediff.infer_compiler import oneflow_compile
