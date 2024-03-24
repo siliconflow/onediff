@@ -231,8 +231,6 @@ jobs:
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_turbo.py --compile true --base /share_nfs/hf_models/sdxl-turbo
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py
-      - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_reuse_pipe.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --new_base /data/home/wangyi/models/base/SDXLRonghua_v40.safetensors
 
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
