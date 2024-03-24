@@ -26,7 +26,6 @@ setup(
         "accelerate",
         "torch",
         "onefx",
-        "omegaconf",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",
