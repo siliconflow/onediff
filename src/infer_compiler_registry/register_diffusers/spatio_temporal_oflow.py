@@ -37,79 +37,38 @@ if diffusers_version >= diffusers_0240_v:
     diffusers_0260_v = version.parse("0.26.0")
 
     if diffusers_version >= diffusers_0260_v:
-        DiffusersUNetSpatioTemporalConditionModel = transformed_diffusers.models.unets.unet_spatio_temporal_condition.UNetSpatioTemporalConditionModel
-        DiffusersTransformerSpatioTemporalModel = transformed_diffusers.models.transformers.transformer_temporal.TransformerSpatioTemporalModel
+        DiffusersUNetSpatioTemporalConditionModel = (
+            transformed_diffusers.models.unets.unet_spatio_temporal_condition.UNetSpatioTemporalConditionModel
+        )
+        DiffusersTransformerSpatioTemporalModel = (
+            transformed_diffusers.models.transformers.transformer_temporal.TransformerSpatioTemporalModel
+        )
 
     else:
-        DiffusersUNetSpatioTemporalConditionModel = transformed_diffusers.models.unet_spatio_temporal_condition.UNetSpatioTemporalConditionModel
-        DiffusersTransformerSpatioTemporalModel = transformed_diffusers.models.transformer_temporal.TransformerSpatioTemporalModel
+        DiffusersUNetSpatioTemporalConditionModel = (
+            transformed_diffusers.models.unet_spatio_temporal_condition.UNetSpatioTemporalConditionModel
+        )
+        DiffusersTransformerSpatioTemporalModel = (
+            transformed_diffusers.models.transformer_temporal.TransformerSpatioTemporalModel
+        )
 
-    DiffusersSpatioTemporalResBlock = transformed_diffusers.models.resnet.SpatioTemporalResBlock
-    DiffusersTemporalBasicTransformerBlock = transformed_diffusers.models.attention.TemporalBasicTransformerBlock
+    if diffusers_version >= version.parse("0.25.00"):
+        DiffusersTemporalDecoder = (
+            transformed_diffusers.models.autoencoders.autoencoder_kl_temporal_decoder.TemporalDecoder
+        )
+    else:
+        DiffusersTemporalDecoder = (
+            transformed_diffusers.models.autoencoder_kl_temporal_decoder.TemporalDecoder
+        )
 
+    DiffusersSpatioTemporalResBlock = (
+        transformed_diffusers.models.resnet.SpatioTemporalResBlock
+    )
+    DiffusersTemporalBasicTransformerBlock = (
+        transformed_diffusers.models.attention.TemporalBasicTransformerBlock
+    )
 
-    class TemporalDecoder(nn.Module):
-        def __init__(
-            self,
-            in_channels: int = 4,
-            out_channels: int = 3,
-            block_out_channels: Tuple[int] = (128, 256, 512, 512),
-            layers_per_block: int = 2,
-        ):
-            super().__init__()
-            self.layers_per_block = layers_per_block
-
-            self.conv_in = nn.Conv2d(
-                in_channels, block_out_channels[-1], kernel_size=3, stride=1, padding=1
-            )
-            self.mid_block = MidBlockTemporalDecoder(
-                num_layers=self.layers_per_block,
-                in_channels=block_out_channels[-1],
-                out_channels=block_out_channels[-1],
-                attention_head_dim=block_out_channels[-1],
-            )
-
-            # up
-            self.up_blocks = nn.ModuleList([])
-            reversed_block_out_channels = list(reversed(block_out_channels))
-            output_channel = reversed_block_out_channels[0]
-            for i in range(len(block_out_channels)):
-                prev_output_channel = output_channel
-                output_channel = reversed_block_out_channels[i]
-
-                is_final_block = i == len(block_out_channels) - 1
-                up_block = UpBlockTemporalDecoder(
-                    num_layers=self.layers_per_block + 1,
-                    in_channels=prev_output_channel,
-                    out_channels=output_channel,
-                    add_upsample=not is_final_block,
-                )
-                self.up_blocks.append(up_block)
-                prev_output_channel = output_channel
-
-            self.conv_norm_out = nn.GroupNorm(
-                num_channels=block_out_channels[0], num_groups=32, eps=1e-6
-            )
-
-            self.conv_act = nn.SiLU()
-            self.conv_out = torch.nn.Conv2d(
-                in_channels=block_out_channels[0],
-                out_channels=out_channels,
-                kernel_size=3,
-                padding=1,
-            )
-
-            conv_out_kernel_size = (3, 1, 1)
-            padding = [int(k // 2) for k in conv_out_kernel_size]
-            self.time_conv_out = torch.nn.Conv3d(
-                in_channels=out_channels,
-                out_channels=out_channels,
-                kernel_size=conv_out_kernel_size,
-                padding=padding,
-            )
-
-            self.gradient_checkpointing = False
-
+    class TemporalDecoder(DiffusersTemporalDecoder):
         def forward(
             self,
             sample: torch.FloatTensor,
@@ -150,18 +109,24 @@ if diffusers_version >= diffusers_0240_v:
                 else:
                     # middle
                     sample = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(self.mid_block), sample, image_only_indicator,
+                        create_custom_forward(self.mid_block),
+                        sample,
+                        image_only_indicator,
                     )
                     sample = sample.to(upscale_dtype)
 
                     # up
                     for up_block in self.up_blocks:
                         sample = torch.utils.checkpoint.checkpoint(
-                            create_custom_forward(up_block), sample, image_only_indicator,
+                            create_custom_forward(up_block),
+                            sample,
+                            image_only_indicator,
                         )
             else:
                 # middle
-                sample = self.mid_block(sample, image_only_indicator=image_only_indicator)
+                sample = self.mid_block(
+                    sample, image_only_indicator=image_only_indicator
+                )
                 sample = sample.to(upscale_dtype)
 
                 # up
@@ -186,7 +151,6 @@ if diffusers_version >= diffusers_0240_v:
 
             return sample
 
-
     # VideoResBlock
     class SpatioTemporalResBlock(DiffusersSpatioTemporalResBlock):
         def forward(
@@ -209,9 +173,9 @@ if diffusers_version >= diffusers_0240_v:
             # )
             #
             # Dynamic shape for VAE divide chunks
-            hidden_states_mix = hidden_states.unflatten(0, shape=(batch_size, -1)).permute(
-                0, 2, 1, 3, 4
-            )
+            hidden_states_mix = hidden_states.unflatten(
+                0, shape=(batch_size, -1)
+            ).permute(0, 2, 1, 3, 4)
             hidden_states = hidden_states.unflatten(0, shape=(batch_size, -1)).permute(
                 0, 2, 1, 3, 4
             )
@@ -231,7 +195,6 @@ if diffusers_version >= diffusers_0240_v:
             # Dynamic shape for VAE divide chunks
             hidden_states = hidden_states.permute(0, 2, 1, 3, 4).flatten(0, 1)
             return hidden_states
-
 
     class TransformerSpatioTemporalModel(DiffusersTransformerSpatioTemporalModel):
         def forward(
@@ -272,9 +235,9 @@ if diffusers_version >= diffusers_0240_v:
             #     batch_size, num_frames, -1, time_context.shape[-1]
             # )[:, 0]
             # Rewrite for onediff SVD dynamic shape
-            time_context_first_timestep = time_context.unflatten(0, shape=(batch_size, -1))[
-                :, 0
-            ]
+            time_context_first_timestep = time_context.unflatten(
+                0, shape=(batch_size, -1)
+            )[:, 0]
             # time_context = time_context_first_timestep[None, :].broadcast_to(
             #     height * width, batch_size, 1, time_context.shape[-1]
             # )
@@ -361,7 +324,6 @@ if diffusers_version >= diffusers_0240_v:
 
             return TransformerTemporalModelOutput(sample=output)
 
-
     class TemporalBasicTransformerBlock(DiffusersTemporalBasicTransformerBlock):
         def forward(
             self,
@@ -433,7 +395,6 @@ if diffusers_version >= diffusers_0240_v:
             hidden_states = hidden_states.flatten(0, 1)
 
             return hidden_states
-
 
     class UNetSpatioTemporalConditionModel(DiffusersUNetSpatioTemporalConditionModel):
         def forward(
