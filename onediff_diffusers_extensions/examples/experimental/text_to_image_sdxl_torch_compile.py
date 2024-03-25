@@ -6,8 +6,8 @@ torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dyna
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile

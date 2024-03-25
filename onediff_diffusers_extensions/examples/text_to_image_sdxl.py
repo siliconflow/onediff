@@ -5,8 +5,8 @@ Compile to oneflow graph example: python examples/text_to_image_sdxl.py
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
