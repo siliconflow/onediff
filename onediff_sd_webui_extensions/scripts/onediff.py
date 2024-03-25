@@ -151,10 +151,10 @@ class Script(scripts.Script):
 
         def get_model_type(model):
             return {
-                "is_sdxl": model.is_sdxl,
-                "is_sd2": model.is_sd2,
-                "is_sd1": model.is_sd1,
-                "is_ssd": model.is_ssd,
+                "is_sdxl": True if model.is_sdxl else False,
+                "is_sd2": True if model.is_sd2 else False,
+                "is_sd1": True if model.is_sd1 else False,
+                "is_ssd": True if model.is_ssd else False,
             }
 
         if self.current_type == None:
