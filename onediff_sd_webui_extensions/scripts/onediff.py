@@ -151,10 +151,10 @@ class Script(scripts.Script):
 
         def get_model_type(model):
             return {
-                "is_sdxl": True if model.is_sdxl else False,
-                "is_sd2": True if model.is_sd2 else False,
-                "is_sd1": True if model.is_sd1 else False,
-                "is_ssd": True if model.is_ssd else False,
+                "is_sdxl": getattr(model, 'is_sdxl', False),
+                "is_sd2": getattr(model, 'is_sd2', False),
+                "is_sd1": getattr(model, 'is_sd1', False),
+                "is_ssd": getattr(model, 'is_ssd', False),
             }
 
         if self.current_type == None:
