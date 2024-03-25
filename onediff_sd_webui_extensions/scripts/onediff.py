@@ -161,7 +161,7 @@ class Script(scripts.Script):
             recompile = True
         else:
             for key, v in self.current_type.items():
-                if v != getattr(model, key):
+                if v != getattr(model, key, False):
                     recompile = True
                     break
 
