@@ -12,6 +12,7 @@ from ._nodes import (
     OneDiffCheckpointLoaderSimple,
     OneDiffControlNetLoader,
     OneDiffDeepCacheCheckpointLoaderSimple,
+    BatchSizePatcher,
 )
 from ._compare_node import CompareModel, ShowImageDiff
 
@@ -30,6 +31,7 @@ NODE_CLASS_MAPPINGS = {
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
     "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
+    "BatchSizePatcher": BatchSizePatcher,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -46,6 +48,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
+    "BatchSizePatcher": "Batch Size Patcher",
 }
 
 

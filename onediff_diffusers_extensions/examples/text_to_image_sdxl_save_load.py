@@ -4,8 +4,8 @@
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 from onediff.infer_compiler import oneflow_compile
 from diffusers import DiffusionPipeline

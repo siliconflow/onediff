@@ -103,3 +103,19 @@ flow.cuda.current_device = FakeCuda.current_device
 flow.cuda.mem_get_info = FakeCuda.mem_get_info
 flow.nn.functional.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
 F.scaled_dot_product_attention = FakeCuda.scaled_dot_product_attention
+
+flow.cuda.memory_stats = torch.cuda.memory_stats
+flow.version = torch.version
+
+from oneflow import Tensor
+
+def oneflow_rfloordiv():
+    original_rfloordiv = Tensor.__rfloordiv__ 
+    def rfloordiv(self, other):
+        if isinstance(other, int):
+            other = flow.tensor(other)
+            
+        return original_rfloordiv(self, other)
+    return rfloordiv
+
+Tensor.__rfloordiv__ = oneflow_rfloordiv()

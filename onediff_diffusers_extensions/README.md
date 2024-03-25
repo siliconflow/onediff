@@ -430,6 +430,32 @@ We tested the performance of `set_adapters`, still using the five LoRA models me
 
 - While traversing the submodules of the model, we observed that the `getattr` time overhead of OneDiff's `DeployableModule` is high. Because the parameters of DeployableModule share the same address as the PyTorch module it wraps, we choose to traverse `DeployableModule._torch_module`, greatly improving traversal efficiency.
 
+## Compiled graph re-using
+
+When switching models, if the new model has the same structure as the old model, you can re-use the previously compiled graph, which means you don't need to compile the new model again, which significantly reduces the time it takes you to switch models.
+
+Here is a pseudo code, to get detailed usage, please refer to [text_to_image_sdxl_reuse_pipe](./examples/text_to_image_sdxl_reuse_pipe.py):
+
+```python
+base = StableDiffusionPipeline(...)
+compiled_unet = oneflow_compile(base.unet)
+base.unet = compiled_unet
+# This step needs some time to compile the UNet
+base(prompt)
+
+new_base = StableDiffusionPipeline(...)
+# Re-use the compiled graph by loading the new state dict into the `_torch_module` member of the object returned by `oneflow_compile`
+compiled_unet._torch_module.load_state_dict(new_base.unet.state_dict())
+# After loading the new state dict into the `compiled_unet._torch_module`, the weights of the compiled_unet are updated too
+new_base.unet = compiled_unet
+# This step doesn't need additional time to compile the UNet again because
+# new_base.unet is already compiled
+new_base(prompt)
+```
+
+> Note: Please make sure that your PyTorch version is **at least 2.1.0**, and set the environment variable `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to **0**. And the feature is not supported for quantized model.
+
+
 ## Quantization
 
 **Note**: Quantization feature is only supported by **OneDiff Enterprise**.
