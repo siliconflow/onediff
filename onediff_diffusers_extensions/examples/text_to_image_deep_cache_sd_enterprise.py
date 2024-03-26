@@ -19,7 +19,7 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
+        default="a photo of an astronaut riding a horse on mars",
     )
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)
@@ -69,7 +69,7 @@ infer_args = {
     "num_inference_steps": args.steps,
     "cache_interval": 2,
     "cache_layer_id": 0,
-    "cache_block_id": 1,
+    "cache_block_id": 0,
 }
 calibrate_info = {}
 with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
