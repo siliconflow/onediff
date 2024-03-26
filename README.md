@@ -127,14 +127,13 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
 - **CUDA 11.8**
 
+  For NA/EU users
   ```bash
-  # For NA/EU users
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu118
   ```
 
-
+  For CN users
   ```bash
-  # For CN users
   python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
   ```
 
@@ -144,27 +143,25 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
 - **CUDA 12.1**
 
+  For NA/EU users
   ```bash
-  # For NA/EU users
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu121
   ```
 
-
+  For CN users
   ```bash
-  # For CN users
   python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
   ```
 
 
 - **CUDA 12.2**
 
-  ```bash
-  # For NA/EU users
+  For NA/EU users
+  ```bash 
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu122
   ```
-
+  For CN users
   ```bash
-  # For CN users
   python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
   ```
 
