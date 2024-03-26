@@ -26,8 +26,8 @@ class SimpleModel(nn.Module):
         )
         # Fully connected layer
         self.fc = nn.Linear(
-            32 * 32 * 32, 10
-        )  # Input channels are 32*32*32, output 10 classes
+            32 * 32 * 32, 4
+        )  # Input channels are 32*32*32, output 4 classes
 
     def forward(self, x):
         x = torch.relu(self.conv1(x))
@@ -49,7 +49,7 @@ class SimpleModel_OF(flow.nn.Module):
         )
         # Fully connected layer
         self.fc = flow.nn.Linear(
-            32 * 32 * 32, 10
+            32 * 32 * 32, 4
         )  # Input channels are 32*32*32, output 10 classes
 
     def forward(self, x):
@@ -65,7 +65,7 @@ register(torch2oflow_class_map={SimpleModel: SimpleModel_OF})
 # Configure quantization
 config = QuantizationConfig.from_settings(
     quantize_conv=True,
-    quantize_linear=False,
+    quantize_linear=True,
     cache_dir="runs",
     plot_calibrate_info=True,
 )
@@ -86,13 +86,14 @@ class TestOnlineQuantModule(unittest.TestCase):
 
     def test_quantize_with_calibration(self):
         quantized_model, info = self.module.quantize_with_calibration(input_data)
-        status = self.module.collect_quantization_status(quantized_model, info)
+        status = self.module.collect_quantization_status(model, info)
+        assert status["quantized_conv_count"] == 2 and status["quantized_linear_count"] == 1
         store = QuantizationStatsStorage(config.cache_dir)
         store.save(data=status, file_name="quant_stats.json")
         compiled_model = oneflow_compile(quantized_model)
         torch.manual_seed(seed)
         quantized_output = compiled_model(input_data)
-        # print(f'{quantized_output=} \n {standard_output=}')
+        # print(f'{quantized_output=} \n{standard_output=}')
         self.assertTrue(torch.allclose(standard_output, quantized_output, 1e4, 1e4))
 
 
