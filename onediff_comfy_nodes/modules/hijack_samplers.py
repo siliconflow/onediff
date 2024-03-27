@@ -1,9 +1,40 @@
 """hijack ComfyUI/comfy/samplers.py"""
-import torch 
-from comfy.samplers import get_area_and_mult, can_concat_cond, cond_cat, calc_cond_uncond_batch
+from functools import total_ordering
+
+import torch
+from comfy.samplers import (calc_cond_uncond_batch, can_concat_cond, cond_cat,
+                            get_area_and_mult)
+
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+
+from .hijack_ipadapter_plus import is_load_ipadapter_plus_pkg
 from .sd_hijack_utils import Hijacker
 
+
+@total_ordering
+class Value:
+    def __init__(self, v):
+        self.v = v
+
+    def item(self):
+        return self.v
+
+    def __gt__(self, other):
+        return self.v == other
+
+    def __lt__(self, other):
+        return self.v < other
+
+
+class TempStep:
+    def __init__(self, timestep):
+        self.timesteps = []
+        for t in timestep:
+            self.timesteps.append(Value(t.item()))
+
+    def __getitem__(self, i):
+        return self.timesteps[i]
+    
 def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, model_options):
     out_cond = torch.zeros_like(x_in)
     out_count = torch.ones_like(x_in) * 1e-37
@@ -90,7 +121,11 @@ def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, m
                 transformer_options["patches"] = patches
 
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
-        transformer_options["sigmas"] = timestep
+        # transformer_options["sigmas"] = timestep
+        if is_load_ipadapter_plus_pkg:
+            transformer_options["sigmas"] = TempStep(timestep)
+        else:
+            transformer_options["sigmas"] = timestep
 
         c['transformer_options'] = transformer_options
 
