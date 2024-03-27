@@ -13,7 +13,7 @@
 [![CI testing](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
 
-## About OneDiff
+## OneDiff
 OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
 - PyTorch Module compilation tools and strong optimized GPU Kernels for diffusion models
 - Out-of-the-box acceleration for popular UIs/libs
@@ -21,7 +21,7 @@ OneDiff is an out-of-the-box acceleration library for diffusion models, it provi
   - [OneDiff for ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [OneDiff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
-## OneDiff News
+## News
 OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
 
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
@@ -37,40 +37,40 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ---
 The Full Introduction of OneDiff:
 <!-- toc -->
-- [State-of-the-art performance](#state-of-the-art-performance)
-- [Architecture](#architecture)
-- [Features](#features)
-- [More About OneDiff](#more-about-onediff)
-  - [Acceleration for production environment](#acceleration-for-production-environment)
+- [About OneDiff](#about-onediff)
+  - [Architecture](#architecture)
+  - [State-of-the-art performance](#state-of-the-art-performance)
+  - [Features](#features)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
+  - [Acceleration for production environment](#acceleration-for-production-environment)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
 - [Release](#release)
 <!-- tocstop -->
 
-## State-of-the-art performance
-### SDXL E2E time
+## About OneDiff
+### Architecture
+
+OneDiff interfaces with various front-end sd frameworks upward, and uses a custom virtual machine mixed with PyTorch as the inference engine downward.
+
+<img src="imgs/onediff_arch.jpg" height="500">
+
+### State-of-the-art performance
+#### SDXL E2E time
 - Model stabilityai/stable-diffusion-xl-base-1.0;
 - Image size 1024*1024, batch size 1, steps 30;
 - NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_sdxl.png" height="400">
 
-### SVD E2E time
+#### SVD E2E time
 - Model stabilityai/stable-video-diffusion-img2vid-xt;
 - Image size 576*1024, batch size 1, steps 25, decoder chunk size 5;
 - NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_svd.png" height="400">
 
-## Architecture
-
-OneDiff interfaces with various front-end sd frameworks upward, and uses a custom virtual machine mixed with PyTorch as the inference engine downward.
-
-![](./imgs/onediff_arch.jpg)
-
-## Features
-
+### Features
 
 | Main Function | Details |
 |----------------|----------------------------|
@@ -85,7 +85,6 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 | LoRA Occupancy | Tens of MB to hundreds of MB. |
 | Device Support | NVIDIA GPU 3090 RTX/4090 RTX/A100/A800/A10 etc. (Compatibility with Ascend in progress) |
 
-## More About OneDiff
 
 ### Acceleration for State-of-the-art models
 OneDiff supports the acceleration for SOTA models.
