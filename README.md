@@ -67,7 +67,7 @@ The Full Introduction of OneDiff:
 
 OneDiff interfaces with various front-end sd frameworks upward, and uses a custom virtual machine mixed with PyTorch as the inference engine downward.
 
-![](./imgs/onediff_arch.png)
+![](./imgs/onediff_arch.jpg)
 
 ## Features
 
