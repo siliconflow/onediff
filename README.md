@@ -37,8 +37,10 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ---
 The Full Introduction of OneDiff:
 <!-- toc -->
+- [State-of-the-art performance](#state-of-the-art-performance)
+- [Architecture](#architecture)
+- [Features](#features)
 - [More About OneDiff](#more-about-onediff)
-  - [State-of-the-art performance](#state-of-the-art-performance)
   - [Acceleration for production environment](#acceleration-for-production-environment)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
@@ -46,22 +48,44 @@ The Full Introduction of OneDiff:
 - [Release](#release)
 <!-- tocstop -->
 
-## More About OneDiff
-
-### State-of-the-art performance
-#### SDXL E2E time
+## State-of-the-art performance
+### SDXL E2E time
 - Model stabilityai/stable-diffusion-xl-base-1.0;
 - Image size 1024*1024, batch size 1, steps 30;
 - NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_sdxl.png" height="400">
 
-#### SVD E2E time
+### SVD E2E time
 - Model stabilityai/stable-video-diffusion-img2vid-xt;
 - Image size 576*1024, batch size 1, steps 25, decoder chunk size 5;
 - NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_svd.png" height="400">
+
+## Architecture
+
+OneDiff interfaces with various front-end sd frameworks upward, and uses a custom virtual machine mixed with PyTorch as the inference engine downward.
+
+![](./imgs/onediff_arch.png)
+
+## Features
+
+
+| Main Function | Details |
+|----------------|----------------------------|
+| Compiling Time   | About 1 minute (SDXL) |
+| Deployment Methods              | Plug and Play |
+| Dynamic Image Size Support  | Support with no overhead |
+| Model Support                 | SD1.5~2.1, SDXL, SDXL Turbo, etc. |
+| Algorithm Support             | SD standard workflow, LoRA, ControlNet, SVD, InstantID, SDXL Lightning, etc. |
+| SD Framework Support | ComfyUI, Diffusers, SD-webui |
+| Save & Load Accelerated Models | Yes |
+| Time of LoRA Switching | Hundreds of milliseconds |
+| LoRA Occupancy | Tens of MB to hundreds of MB. |
+| Device Support | NVIDIA GPU 3090 RTX/4090 RTX/A100/A800/A10 etc. (Compatibility with Ascend in progress) |
+
+## More About OneDiff
 
 ### Acceleration for State-of-the-art models
 OneDiff supports the acceleration for SOTA models.
