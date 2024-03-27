@@ -20,5 +20,5 @@ except Exception as e:
     print(traceback.format_exc())
     print(f"Warning Failed to load {pkg_root} due to {e}")
     is_load_ipadapter_plus_pkg = False
-    import pdb;pdb.set_trace()
+   
 ipadapter_plus_hijacker = Hijacker()
