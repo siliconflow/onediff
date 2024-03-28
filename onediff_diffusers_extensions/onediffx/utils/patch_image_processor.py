@@ -103,7 +103,6 @@ def pt_to_pil(images: np.ndarray) -> PIL.Image.Image:
         images = images[None, ...]
     # images = (images * 255).round().astype("uint8")
     images = _pt_to_pil_pre(images).numpy()
-
     if images.shape[-1] == 1:
         # special case for grayscale (single channel) images
         pil_images = [Image.fromarray(image.squeeze(), mode="L") for image in images]
