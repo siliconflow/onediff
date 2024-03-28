@@ -15,7 +15,7 @@ from .utils.log_utils import logger
 from .utils.cost_util import cost_cnt
 from .utils.param_utils import parse_device, check_device
 from .utils.graph_management_utils import graph_file_management
-
+from .utils.online_quantization_utils import quantize_and_deploy_wrapper
 
 class DualModule(torch.nn.Module):
     def __init__(self, torch_module, oneflow_module):
@@ -210,6 +210,7 @@ class DeployableModule(torch.nn.Module):
         self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = options
         self._deployable_module_dpl_graph = None
+        self._deployable_module_quant_config = None
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
 
@@ -249,6 +250,7 @@ class DeployableModule(torch.nn.Module):
             )
         return self._deployable_module_dpl_graph
 
+    
     @input_output_processor
     @handle_deployable_exception
     @graph_file_management
@@ -263,7 +265,8 @@ class DeployableModule(torch.nn.Module):
                     *args, **kwargs
                 )
         return output
-
+    
+    @quantize_and_deploy_wrapper
     @input_output_processor
     @handle_deployable_exception
     @graph_file_management
@@ -352,6 +355,29 @@ class DeployableModule(torch.nn.Module):
 
     def get_graph_file(self):
         return self._deployable_module_options.get("graph_file", None)
+    
+
+    def apply_online_quant(self, quant_config):
+        """
+        Applies the provided quantization configuration for online use.
+
+        Args:
+            quant_config (QuantizationConfig): The quantization configuration to apply.
+
+        Example:
+            >>> from onediff_quant.quantization import QuantizationConfig
+            >>> quant_config = QuantizationConfig.from_settings(
+            ...     quantize_conv=True,
+            ...     quantize_linear=True,
+            ...     conv_mae_threshold=0.005,
+            ...     linear_mae_threshold=0.005,
+            ...     conv_compute_density_threshold=300,
+            ...     linear_compute_density_threshold=100,
+            ...     cache_dir=args.cache_dir)
+            >>> model.apply_online_quant(quant_config)
+        """
+        self._deployable_module_quant_config = quant_config
+
 
 
 class OneflowGraph(flow.nn.Graph):
