@@ -82,7 +82,6 @@ def pt_to_numpy(images: torch.FloatTensor) -> np.ndarray:
     return _pt_to_numpy_pre(images).numpy()
 
 
-@torch.jit.script
 def _pt_to_pil_pre(images):
     return (
         images.permute(0, 2, 3, 1)
