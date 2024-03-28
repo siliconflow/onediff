@@ -42,6 +42,7 @@ The Full Introduction of OneDiff:
   - [Acceleration for production environment](#acceleration-for-production-environment)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
+  - [OneDiff Quality Benchmark](#onefiff-quality-benchmark)
 - [Installation](#installation)
 - [Release](#release)
 <!-- tocstop -->
@@ -113,6 +114,10 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Technical Support for deployment                                                                          | High priority support                   | Community                               |
 | Get the experimental features                                                                             | Yes                                     |                                         |
 
+### OneDiff Quality Benchmark
+
+We also maintain a repository for benchmarking the quality of generation after compilation acceleration using OneDiff:
+[OneDiffGenMetrics](https://github.com/siliconflow/OneDiffGenMetrics)
 
 ## Installation
 ### OS and GPU support

@@ -67,7 +67,7 @@ infer_args = {
     "height": args.height,
     "width": args.width,
     "num_inference_steps": args.steps,
-    "cache_interval": 2,
+    "cache_interval": 3,
     "cache_layer_id": 0,
     "cache_block_id": 0,
 }
@@ -109,7 +109,7 @@ if args.compile_text_encoder:
 
 if args.compile:
     pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
-    pipe.fast_unet = oneflow_compile(pipe.fast_unet)
+    pipe.fast_unet = oneflow_compile(pipe.fast_unet, use_graph=args.graph)
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
 
 if args.load_graph:
