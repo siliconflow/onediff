@@ -111,7 +111,6 @@ def pt_to_pil(images: np.ndarray) -> PIL.Image.Image:
         with torch.jit.optimized_execution(False):
             images = _pt_to_pil_pre(images).numpy()
     else:
-        print('not (device.type == "cuda" and device.index != 0)')
         images = _pt_to_pil_pre(images).numpy()
     if images.shape[-1] == 1:
         # special case for grayscale (single channel) images
