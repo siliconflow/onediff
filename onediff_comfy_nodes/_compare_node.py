@@ -110,8 +110,7 @@ class ShowImageDiff:
             "required": {
                 "images1": ("IMAGE",),
                 "images2": ("IMAGE",),
-                "rtol": ("STRING", {"default": "1e-4"}),
-                "atol": ("STRING", {"default": "1e-4"}),
+                "ssim_threshold": ("STRING", {"default": "0.9"}),
                 "raise_if_diff": (["enable", "disable"],),
                 "image_id": ("STRING", {"default": "ComfyUI"}),
             },
@@ -129,8 +128,7 @@ class ShowImageDiff:
         self,
         images1,
         images2,
-        rtol: str,
-        atol: str,
+        ssim_threshold: float,
         raise_if_diff: str,
         image_id="ComfyUI",
         prompt=None,
@@ -180,31 +178,9 @@ class ShowImageDiff:
             )
 
             if raise_if_diff == "enable":
-                default_rtol = 1e-4
-                default_atol = 1e-4
-                try:
-                    rtol = float(rtol)
-                except ValueError:
-                    print(
-                        "\033[91m"
-                        + f"rtol = {rtol} is not a float, use default value rtol={default_rtol}"
-                        + "\033[0m"
-                    )
-                    rtol = default_rtol
-                try:
-                    atol = float(atol)
-                except ValueError:
-                    print(
-                        "\033[91m"
-                        + f"atol = {atol} is not a float, use default value atol={default_atol}"
-                        + "\033[0m"
-                    )
-                    atol = default_atol
-
-                if not torch.allclose(image1, image2, rtol=rtol, atol=atol):
-                    raise RuntimeError(
-                        f"The diff between image1 and image2 is beyond the scope of rtol={rtol}, atol={atol}, max diff is {max_diff}"
-                    )
+                assert ssim > float(ssim_threshold), (
+                    f"Image diff is too large, ssim is {ssim}, "
+                )
 
         return {"ui": {"images": results}}
 

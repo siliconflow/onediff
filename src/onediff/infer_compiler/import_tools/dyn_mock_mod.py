@@ -79,10 +79,11 @@ def getattr_from_module_name(module, module_name: str):
 def _update_module(full_names, main_pkg_enable_context):
     with main_pkg_enable_context():
         original_results = inspect_modules_and_attributes(full_names)
-
+    
     updated_results = inspect_modules_and_attributes(full_names)
 
     torch_path = os.path.dirname(torch.__file__)
+
     for module_key, (module_path, module_code) in updated_results.items():
         org_module_path, org_module_code = original_results.get(
             module_key, (module_path, module_code)
@@ -182,9 +183,11 @@ class DynamicMockModule(ModuleType):
                 obj_entity = self._get_module(name)
             org_delete_list = deepcopy(_importer.delete_list)
 
+
         try:
             # Update obj_entity inplace
-            _update_module([fullname] + org_delete_list, self._main_pkg_enable)
+            if not _importer.enable:
+                _update_module([fullname] + org_delete_list, self._main_pkg_enable)
         except Exception as e:
             logger.warning(f'Failed to update obj_entity in place. Exception: {e}')
 
