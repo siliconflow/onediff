@@ -14,6 +14,8 @@ def parse_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--model", type=str, required=True)
+    parser.add_argument("--model_type", type=str, required=True, choices=['sd', 'sdxl'],
+                            help="Specify the model type: 'sd' for Stable Diffusion or 'sdxl' for Stable Diffusion XL.")
     parser.add_argument("--saved_image", type=str, required=True)
     parser.add_argument("--save_graph", action="store_true")
     parser.add_argument("--load_graph", action="store_true")
@@ -61,7 +63,10 @@ assert os.path.isfile(
     os.path.join(args.model, "calibrate_info.txt")
 ), f"calibrate_info.txt is required in args.model ({args.model})"
 
-from onediffx.deep_cache import StableDiffusionXLPipeline
+if args.model_type == 'sdxl':
+    from onediffx.deep_cache import StableDiffusionXLPipeline
+else:
+    from onediffx.deep_cache import StableDiffusionPipeline
 import onediff_quant
 from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
@@ -90,13 +95,22 @@ with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
 os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
 
 scheduler = EulerDiscreteScheduler.from_pretrained(args.model, subfolder="scheduler")
-pipe = StableDiffusionXLPipeline.from_pretrained(
-    args.model,
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    use_safetensors=True,
-    variant="fp16",
-)
+if args.model_type == 'sdxl':
+    pipe = StableDiffusionXLPipeline.from_pretrained(
+        args.model,
+        scheduler=scheduler,
+        torch_dtype=torch.float16,
+        use_safetensors=True,
+        variant="fp16",
+    )
+else:
+    pipe = StableDiffusionPipeline.from_pretrained(
+        args.model,
+        scheduler=scheduler,
+        revision="fp16",
+        variant="fp16",
+        torch_dtype=torch.float16,
+    )
 pipe.to("cuda")
 
 for sub_module_name, sub_calibrate_info in calibrate_info.items():
@@ -107,17 +121,17 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:
         pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
-    if pipe.text_encoder_2 is not None:
+    if args.model_type == 'sdxl' and pipe.text_encoder_2 is not None:
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
 
 if args.compile:
     if pipe.text_encoder is not None:
         pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
-    if pipe.text_encoder_2 is not None:
+    if args.model_type == 'sdxl' and pipe.text_encoder_2 is not None:
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
     pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
     pipe.fast_unet = oneflow_compile(pipe.fast_unet, use_graph=args.graph)
-    if pipe.needs_upcasting:
+    if args.model_type == 'sdxl' and pipe.needs_upcasting:
         # To avoid mis-match of loaded graph and loaded model
         pipe.upcast_vae()
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
