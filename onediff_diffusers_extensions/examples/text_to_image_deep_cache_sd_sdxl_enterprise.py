@@ -121,17 +121,17 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:
         pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
-    if args.model_type == 'sdxl' and pipe.text_encoder_2 is not None:
+    if hasattr(pipe, 'text_encoder_2'):
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
 
 if args.compile:
     if pipe.text_encoder is not None:
         pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
-    if args.model_type == 'sdxl' and pipe.text_encoder_2 is not None:
+    if hasattr(pipe, 'text_encoder_2'):
         pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, use_graph=args.graph)
     pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
     pipe.fast_unet = oneflow_compile(pipe.fast_unet, use_graph=args.graph)
-    if args.model_type == 'sdxl' and pipe.needs_upcasting:
+    if hasattr(pipe, 'text_encoder_2') and pipe.needs_upcasting:
         # To avoid mis-match of loaded graph and loaded model
         pipe.upcast_vae()
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
