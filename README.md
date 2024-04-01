@@ -13,7 +13,7 @@
 [![CI testing](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
 
 
-## About OneDiff
+## OneDiff
 OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
 - PyTorch Module compilation tools and strong optimized GPU Kernels for diffusion models
 - Out-of-the-box acceleration for popular UIs/libs
@@ -21,7 +21,7 @@ OneDiff is an out-of-the-box acceleration library for diffusion models, it provi
   - [OneDiff for ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [OneDiff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
-## OneDiff News
+## News
 OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
 
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
@@ -37,16 +37,23 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 ---
 The Full Introduction of OneDiff:
 <!-- toc -->
-- [More About OneDiff](#more-about-onediff)
+- [About OneDiff](#about-onediff)
+  - [Architecture](#architecture)
   - [State-of-the-art performance](#state-of-the-art-performance)
-  - [Acceleration for production environment](#acceleration-for-production-environment)
+  - [Features](#features)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
+  - [Acceleration for production environment](#acceleration-for-production-environment)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
 - [Release](#release)
 <!-- tocstop -->
 
-## More About OneDiff
+## About OneDiff
+### Architecture
+
+OneDiff interfaces with various front-end sd frameworks upward, and uses a custom virtual machine mixed with PyTorch as the inference engine downward.
+
+<img src="imgs/onediff_arch.png" height="500">
 
 ### State-of-the-art performance
 #### SDXL E2E time
@@ -62,6 +69,22 @@ The Full Introduction of OneDiff:
 - NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_svd.png" height="400">
+
+### Features
+
+| Main Function | Details |
+|----------------|----------------------------|
+| Compiling Time   | About 1 minute (SDXL) |
+| Deployment Methods              | Plug and Play |
+| Dynamic Image Size Support  | Support with no overhead |
+| Model Support                 | SD1.5~2.1, SDXL, SDXL Turbo, etc. |
+| Algorithm Support             | SD standard workflow, LoRA, ControlNet, SVD, InstantID, SDXL Lightning, etc. |
+| SD Framework Support | ComfyUI, Diffusers, SD-webui |
+| Save & Load Accelerated Models | Yes |
+| Time of LoRA Switching | Hundreds of milliseconds |
+| LoRA Occupancy | Tens of MB to hundreds of MB. |
+| Device Support | NVIDIA GPU 3090 RTX/4090 RTX/A100/A800/A10 etc. (Compatibility with Ascend in progress) |
+
 
 ### Acceleration for State-of-the-art models
 OneDiff supports the acceleration for SOTA models.
@@ -127,14 +150,13 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
 - **CUDA 11.8**
 
+  For NA/EU users
   ```bash
-  # For NA/EU users
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu118
   ```
 
-
+  For CN users
   ```bash
-  # For CN users
   python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
   ```
 
@@ -144,27 +166,25 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 
 - **CUDA 12.1**
 
+  For NA/EU users
   ```bash
-  # For NA/EU users
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu121
   ```
 
-
+  For CN users
   ```bash
-  # For CN users
   python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
   ```
 
 
 - **CUDA 12.2**
 
-  ```bash
-  # For NA/EU users
+  For NA/EU users
+  ```bash 
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu122
   ```
-
+  For CN users
   ```bash
-  # For CN users
   python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
   ```
 

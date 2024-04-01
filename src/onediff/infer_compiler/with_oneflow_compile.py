@@ -227,6 +227,7 @@ class DeployableModule(torch.nn.Module):
             existing_module._deployable_module_input_count
         )
 
+        instance._deployable_module_quant_config = existing_module._deployable_module_quant_config
         return instance
 
     def get_graph(self):

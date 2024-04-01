@@ -11,6 +11,7 @@ from onediff.optimization.quant_optimizer import quantize_model
 
 # onediff_comfy_nodes
 from .model_patcher import state_dict_hook
+from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
 
 def compoile_unet(diffusion_model, graph_file):
@@ -24,7 +25,9 @@ def compoile_unet(diffusion_model, graph_file):
         "graph_file": graph_file,
         "graph_file_device": load_device,
     }
-
+    if isinstance(diffusion_model, DeployableModule):
+        return diffusion_model
+    
     diffusion_model = oneflow_compile(
         diffusion_model, use_graph=use_graph, options=compile_options,
     )

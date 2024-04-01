@@ -385,7 +385,7 @@ import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from comfy.controlnet import ControlLora, ControlNet
 from .modules.onediff_controlnet import OneDiffControlLora
-
+from .modules.optimizer_strategy import OptimizerStrategy, DeepcacheOptimizerExecutor, OnelineQuantizationOptimizerExecutor
 
 class OneDiffControlNetLoader(ControlNetLoader):
     CATEGORY = "OneDiff/Loaders"
@@ -429,6 +429,9 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             "required": {
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "vae_speedup": (["disable", "enable"],),
+            },
+            "optional": {
+                    "model_optimizer": ("MODEL_OPTIMIZER",),
             }
         }
 
@@ -436,17 +439,22 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     FUNCTION = "onediff_load_checkpoint"
 
     def onediff_load_checkpoint(
-        self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
+        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, model_optimizer: callable=None,
     ):
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
+
         unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
+        if model_optimizer is not None:
+            modelpatcher = model_optimizer(modelpatcher)
+        
         modelpatcher.model.diffusion_model = compoile_unet(
-            modelpatcher.model.diffusion_model, unet_graph_file
-        )
+                modelpatcher.model.diffusion_model, unet_graph_file)
+        
         modelpatcher.model._register_state_dict_hook(state_dict_hook)
+
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
             vae.first_stage_model = oneflow_compile(
@@ -461,6 +469,181 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
+
+
+class OneDiffDeepcacheOptimizer:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "cache_interval": (
+                    "INT",
+                    {
+                        "default": 3,
+                        "min": 1,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "cache_layer_id": (
+                    "INT",
+                    {"default": 0, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "cache_block_id": (
+                    "INT",
+                    {"default": 1, "min": 0, "max": 12, "step": 1, "display": "number"},
+                ),
+                "start_step": (
+                    "INT",
+                    {
+                        "default": 0,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 1,
+                        "display": "number",
+                    },
+                ),
+                "end_step": (
+                    "INT",
+                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1},
+                ),
+            },
+        }
+
+    CATEGORY = "OneDiff/Optimizer"
+    RETURN_TYPES = ("DeepPCacheOptimizer",)
+    FUNCTION = "apply"
+
+    def apply(
+        self,
+        cache_interval=3,
+        cache_layer_id=0,
+        cache_block_id=1,
+        start_step=0,
+        end_step=1000,
+    ):
+        return (
+            DeepcacheOptimizerExecutor(
+                cache_interval=cache_interval,
+                cache_layer_id=cache_layer_id,
+                cache_block_id=cache_block_id,
+                start_step=start_step,
+                end_step=end_step,
+            ),
+        )
+
+
+class OneDiffOnlineQuantizationOptimizer:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "quantized_conv_percentage": (
+                    "INT",
+                    {
+                        "default": 70,
+                        "min": 0,  # Minimum value
+                        "max": 100,  # Maximum value
+                        "step": 1,  # Slider's step
+                        "display": "slider",  # Cosmetic only: display as "number" or "slider"
+                    },
+                ),
+                "quantized_linear_percentage": (
+                    "INT",
+                    {
+                        "default": 80,
+                        "min": 0,  # Minimum value
+                        "max": 100,  # Maximum value
+                        "step": 1,  # Slider's step
+                        "display": "slider",  # Cosmetic only: display as "number" or "slider"
+                    },
+                ),
+                "conv_compute_density_threshold":(
+                   "INT",
+                    {
+                        "default": 100,
+                        "min": 0,  # Minimum value
+                        "max": 2000,  # Maximum value
+                        "step": 10,  # Slider's step
+                        "display": "number",  # Cosmetic only: display as "number" or "slider"
+                    },
+                ),
+                "linear_compute_density_threshold":(
+                    "INT",
+                    {
+                        "default": 300,
+                        "min": 0,  # Minimum value
+                        "max": 2000,  # Maximum value
+                        "step": 10,  # Slider's step
+                        "display": "number",  # Cosmetic only: display as "number" or "slider"
+                    },
+                )
+            },
+        }
+
+    CATEGORY = "OneDiff/Optimizer"
+    RETURN_TYPES = ("QuantizationOptimizer",)
+    FUNCTION = "apply"
+
+    def apply(self, quantized_conv_percentage=0, quantized_linear_percentage=0, conv_compute_density_threshold=0, linear_compute_density_threshold=0):
+        return (
+            OnelineQuantizationOptimizerExecutor(
+                conv_percentage=quantized_conv_percentage,
+                linear_percentage=quantized_linear_percentage,
+                conv_compute_density_threshold = conv_compute_density_threshold,
+                linear_compute_density_threshold = linear_compute_density_threshold,
+            ),
+        )
+
+
+class OneDiffModelOptimizer:
+    """Main class responsible for optimizing models."""
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {},
+            "optional": {
+                "quantization_optimizer": ("QuantizationOptimizer",),
+                "deeppcache_optimizer": ("DeepPCacheOptimizer",),
+            },
+        }
+
+    CATEGORY = "OneDiff/Optimization"
+    RETURN_TYPES = ("MODEL_OPTIMIZER",)
+    FUNCTION = "optimize_model"
+
+    def optimize_model(self, quantization_optimizer:OptimizerStrategy =None, deeppcache_optimizer:OptimizerStrategy=None):
+        """Apply the optimization technique to the model."""
+        
+        def apply_optimizer(model, ckpt_name=""):
+            def set_compiled_options(module: DeployableModule, graph_file="unet"):
+                assert isinstance(module, DeployableModule)
+                compile_options = {
+                    "graph_file": graph_file,
+                    "graph_file_device": model_management.get_torch_device(),
+                }
+                module._deployable_module_options.update(compile_options)
+
+            if deeppcache_optimizer is not None:
+                model = deeppcache_optimizer.apply(model)
+                graph_file = generate_graph_path(ckpt_name, model.fast_deep_cache_unet._torch_module)
+                set_compiled_options(model.fast_deep_cache_unet, graph_file)
+                graph_file = generate_graph_path(ckpt_name, model.deep_cache_unet._torch_module)
+                set_compiled_options(model.deep_cache_unet, graph_file)
+                
+            if quantization_optimizer is not None:
+                model = quantization_optimizer.apply(model)
+                diff_model: DeployableModule = model.model.diffusion_model
+                graph_file = generate_graph_path(ckpt_name, model.model)
+                set_compiled_options(diff_model, graph_file)
+                quant_config = diff_model._deployable_module_quant_config
+                quant_config.cache_dir = os.path.dirname(graph_file)
+                    
+            return model
+
+        return (apply_optimizer,)
 
 
 class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
@@ -754,7 +937,7 @@ class BatchSizePatcher:
 
 
 
-    
+
 if _USE_UNET_INT8:
     from .utils.quant_ksampler_tools import (
         KSampleQuantumBase,

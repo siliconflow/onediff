@@ -16,12 +16,13 @@ def online_quantize_model(
         OnlineQuantModule,
         create_quantization_calculator,
     )
-
-    calculator = create_quantization_calculator(
-        model, quant_config, module_selector, seed,
-        calibration_info=calibration_info,
-    )
-
+    if getattr(quant_config, "quantization_calculator", None):
+        calculator = quant_config.quantization_calculator
+    else:
+        calculator = create_quantization_calculator(
+            model, quant_config, module_selector, seed,
+            calibration_info=calibration_info,
+        )
     module = OnlineQuantModule(calculator, False, inplace=inplace)
 
     quantized_model,  info = module.quantize_with_calibration(

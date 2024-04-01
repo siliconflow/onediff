@@ -4,7 +4,8 @@ from comfy.model_base import SVD_img2vid
 
 from onediff.infer_compiler.utils import set_boolean_env_var
 from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
-
+from register_comfy import DeepCacheUNet, FastDeepCacheUNet
+from onediff.infer_compiler import oneflow_compile
 
 def deep_cache_speedup(
     model,
@@ -16,17 +17,38 @@ def deep_cache_speedup(
     end_step,
     *,
     gen_compile_options=None,
+    use_oneflow_deepcache_speedup_modelpatcher = True,
 ):
     offload_device = model_management.unet_offload_device()
-    model_patcher = OneFlowDeepCacheSpeedUpModelPatcher(
-        model.model,
-        load_device=model_management.get_torch_device(),
-        offload_device=offload_device,
-        cache_layer_id=cache_layer_id,
-        cache_block_id=cache_block_id,
-        use_graph=use_graph,
-        gen_compile_options=gen_compile_options,
-    )
+    if use_oneflow_deepcache_speedup_modelpatcher:
+        model_patcher = OneFlowDeepCacheSpeedUpModelPatcher(
+            model.model,
+            load_device=model_management.get_torch_device(),
+            offload_device=offload_device,
+            cache_layer_id=cache_layer_id,
+            cache_block_id=cache_block_id,
+            use_graph=use_graph,
+            gen_compile_options=gen_compile_options,
+        )
+    else:
+        model_patcher = model
+        model_patcher.deep_cache_unet = DeepCacheUNet(
+            model_patcher.model.diffusion_model, cache_layer_id, cache_block_id
+        )
+
+        model_patcher.fast_deep_cache_unet = FastDeepCacheUNet(
+            model_patcher.model.diffusion_model, cache_layer_id, cache_block_id
+        )
+        if use_graph:
+            gen_compile_options = gen_compile_options or (lambda x: {})
+            compile_options = gen_compile_options(model_patcher.deep_cache_unet)
+            model_patcher.deep_cache_unet = oneflow_compile(
+                model_patcher.deep_cache_unet, use_graph=use_graph, options=compile_options,
+            )
+            compile_options = gen_compile_options(model_patcher.fast_deep_cache_unet)
+            model_patcher.fast_deep_cache_unet = oneflow_compile(
+                model_patcher.fast_deep_cache_unet, use_graph=use_graph, options=compile_options,
+            )
 
     current_t = -1
     current_step = -1

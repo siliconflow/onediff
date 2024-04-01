@@ -7,11 +7,13 @@ import modules.scripts as scripts
 import modules.shared as shared
 from modules.sd_models import select_checkpoint
 from modules.processing import process_images
+from modules import script_callbacks
 
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
+from onediff_hijack import do_hijack as onediff_do_hijack
 
 from onediff.infer_compiler.utils.log_utils import logger
 from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
@@ -204,3 +206,5 @@ class Script(scripts.Script):
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         return proc
+
+onediff_do_hijack()
