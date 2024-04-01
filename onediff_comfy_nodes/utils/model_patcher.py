@@ -541,7 +541,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         else:
             self.current_device = current_device
 
-        self.model_lowvram = False
+        self.model_lowvram = getattr(model, "model_lowvram", False)
 
 def get_mixed_speedup_class(module_cls):
     class MixedSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher, module_cls):
@@ -586,7 +586,7 @@ def get_mixed_speedup_class(module_cls):
             n.model_options = copy.deepcopy(self.model_options)
             n.model_keys = self.model_keys
             
-            n.model_lowvram = False
+            n.model_lowvram = self.model_lowvram
             return n
 
     return MixedSpeedUpModelPatcher
