@@ -44,7 +44,7 @@ The Full Introduction of OneDiff:
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [Acceleration for production environment](#acceleration-for-production-environment)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
-  - [OneDiff Quality Benchmark](#onefiff-quality-benchmark)
+  - [OneDiff Quality Evalutioin](#onediff-quality-evalution)
 - [Installation](#installation)
 - [Release](#release)
 <!-- tocstop -->
@@ -120,7 +120,7 @@ Compile and save the compiled result offline, then load it online for serving
 - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
 - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
   - Compile at one device(such as device 0), then use the compiled result to other device(such as device 1~7).
-  - This is for special scene and is in the Enterprise Edition.
+  - This is for special scenes and is in the Enterprise Edition.
 
 ### OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can
@@ -137,9 +137,9 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Technical Support for deployment                                                                          | High priority support                   | Community                               |
 | Get the experimental features                                                                             | Yes                                     |                                         |
 
-### OneDiff Quality Benchmark
+### OneDiff Quality Evaluation
 
-We also maintain a repository for benchmarking the quality of generation after compilation acceleration using OneDiff:
+We also maintain a repository for benchmarking the quality of generation after acceleration using OneDiff:
 [OneDiffGenMetrics](https://github.com/siliconflow/OneDiffGenMetrics)
 
 ## Installation
