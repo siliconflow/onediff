@@ -122,7 +122,7 @@ def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, m
 
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
         # transformer_options["sigmas"] = timestep
-        if is_load_ipadapter_plus_pkg:
+        if is_load_ipadapter_plus_pkg and len(timestep) == 1:
             transformer_options["sigmas"] = TempStep(timestep)
         else:
             transformer_options["sigmas"] = timestep
