@@ -1,21 +1,23 @@
+import os
 from dataclasses import dataclass
 from functools import singledispatchmethod
 from typing import Any, Dict
 
 import torch
 import torch.nn as nn
+from comfy.controlnet import ControlNet
 from comfy.model_patcher import ModelPatcher
 from onediff_quant.quantization import QuantizationConfig
 from onediff_quant.quantization.module_operations import get_sub_module
-from onediff_quant.quantization.quantize_calibrators import (
-    QuantizationMetricsCalculator,
-)
+from onediff_quant.quantization.quantize_calibrators import \
+    QuantizationMetricsCalculator
 from onediff_quant.quantization.quantize_config import Metric
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
-from .optimizer_strategy import OptimizerStrategy
+from ...utils.graph_path import generate_graph_path
+from .optimizer_strategy import OptimizerStrategy, set_compiled_options
 
 
 def get_torch_model(diff_model):
@@ -47,15 +49,19 @@ class SubQuantizationPercentileCalculator(QuantizationMetricsCalculator):
     def calibrate(self, *args: Any, **kwargs: Any) -> Dict[str, Dict[str, float]]:
         if self.conv_percentage == 1.0 and self.linear_percentage == 1.0:
             # only_use_compute_density
-            costs_calibrate_info = self.compute_quantization_costs(args, kwargs, module_selector=self.module_selector)
+            costs_calibrate_info = self.compute_quantization_costs(
+                args, kwargs, module_selector=self.module_selector
+            )
             costs_calibrate_info = self.apply_filter(costs_calibrate_info)
-            self.save_quantization_status(costs_calibrate_info, "quantization_stats.json")
+            self.save_quantization_status(
+                costs_calibrate_info, "quantization_stats.json"
+            )
             return costs_calibrate_info
-        
+
         calibrate_info = self.calibrate_all_layers(
             args, kwargs, module_selector=self.module_selector
         )
-        
+
         selected_model = self.module_selector(self.model)
 
         # Initialize max and min values, as well as lists for linear and convolutional layer data
@@ -101,12 +107,12 @@ class OnelineQuantizationOptimizerExecutor(OptimizerStrategy):
     linear_compute_density_threshold: int = 300
 
     @singledispatchmethod
-    def apply(self, model):
+    def apply(self, model, *args, **kwargs):
         print(f"{type(self).__name__}.apply() not implemented for {type(model)}")
         return model
 
     @apply.register(ModelPatcher)
-    def _(self, model: ModelPatcher):
+    def _(self, model: ModelPatcher, ckpt_name=""):
         quant_config = QuantizationConfig.from_settings(
             quantize_conv=True,
             quantize_linear=True,
@@ -130,6 +136,38 @@ class OnelineQuantizationOptimizerExecutor(OptimizerStrategy):
             diff_model = oneflow_compile(diff_model)
         diff_model.apply_online_quant(quant_config)
         model.model.diffusion_model = diff_model
+
+        graph_file = generate_graph_path(ckpt_name, model.model)
+        quant_config.cache_dir = os.path.dirname(graph_file)
+        set_compiled_options(diff_model, graph_file)
+        quant_config = diff_model._deployable_module_quant_config
         return model
 
-
+    @apply.register(ControlNet)
+    def _(self, model, ckpt_name=""):
+        quant_config = QuantizationConfig.from_settings(
+            quantize_conv=True,
+            quantize_linear=True,
+            bits=8,
+            conv_mae_threshold=0.9,
+            linear_mae_threshold=0.9,
+            plot_calibrate_info=True,
+            conv_compute_density_threshold=self.conv_compute_density_threshold,
+            linear_compute_density_threshold=self.linear_compute_density_threshold,
+        )
+        control_model = model.control_model
+        quant_config.quantization_calculator = SubQuantizationPercentileCalculator(
+            control_model,
+            quant_config,
+            cache_key="ControlNet",
+            conv_percentage=self.conv_percentage / 100,
+            linear_percentage=self.linear_percentage / 100,
+        )
+        graph_file = generate_graph_path(ckpt_name, control_model)
+        quant_config.cache_dir = os.path.dirname(graph_file)
+        if not isinstance(control_model, DeployableModule):
+            control_model = oneflow_compile(control_model)
+        control_model.apply_online_quant(quant_config)
+        set_compiled_options(control_model, graph_file)
+        model.control_model = control_model
+        return model

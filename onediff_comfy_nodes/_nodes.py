@@ -388,10 +388,18 @@ from .modules.onediff_controlnet import OneDiffControlLora
 from .modules.optimizer_strategy import OptimizerStrategy, DeepcacheOptimizerExecutor, OnelineQuantizationOptimizerExecutor
 
 class OneDiffControlNetLoader(ControlNetLoader):
+    @classmethod
+    def INPUT_TYPES(s):
+        ret = super().INPUT_TYPES()
+        ret.update({"optional": {
+                    "model_optimizer": ("MODEL_OPTIMIZER",),}
+        })
+        return ret 
+
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_controlnet"
 
-    def onediff_load_controlnet(self, control_net_name):
+    def onediff_load_controlnet(self, control_net_name, model_optimizer=None):
         controlnet = super().load_controlnet(control_net_name)[0]
         load_device = model_management.get_torch_device()
 
@@ -408,12 +416,15 @@ class OneDiffControlNetLoader(ControlNetLoader):
             )
             return (controlnet,)
         elif isinstance(controlnet, ControlNet):
-            control_model = controlnet.control_model
-            compile_options = gen_compile_options(control_model)
-            control_model = control_model.to(load_device)
-            controlnet.control_model = oneflow_compile(
-                control_model, options=compile_options
-            )
+            if model_optimizer:
+                controlnet = model_optimizer(controlnet, ckpt_name=control_net_name)
+            else:
+                control_model = controlnet.control_model
+                compile_options = gen_compile_options(control_model)
+                control_model = control_model.to(load_device)
+                controlnet.control_model = oneflow_compile(
+                    control_model, options=compile_options
+                )
             return (controlnet,)
         else:
             print(
@@ -448,7 +459,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
 
         unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
         if model_optimizer is not None:
-            modelpatcher = model_optimizer(modelpatcher)
+            modelpatcher = model_optimizer(modelpatcher, ckpt_name=ckpt_name)
         
         modelpatcher.model.diffusion_model = compoile_unet(
                 modelpatcher.model.diffusion_model, unet_graph_file)
@@ -617,29 +628,13 @@ class OneDiffModelOptimizer:
     def optimize_model(self, quantization_optimizer:OptimizerStrategy =None, deeppcache_optimizer:OptimizerStrategy=None):
         """Apply the optimization technique to the model."""
         
-        def apply_optimizer(model, ckpt_name=""):
-            def set_compiled_options(module: DeployableModule, graph_file="unet"):
-                assert isinstance(module, DeployableModule)
-                compile_options = {
-                    "graph_file": graph_file,
-                    "graph_file_device": model_management.get_torch_device(),
-                }
-                module._deployable_module_options.update(compile_options)
-
+        def apply_optimizer(model,*,ckpt_name=""):
+        
             if deeppcache_optimizer is not None:
-                model = deeppcache_optimizer.apply(model)
-                graph_file = generate_graph_path(ckpt_name, model.fast_deep_cache_unet._torch_module)
-                set_compiled_options(model.fast_deep_cache_unet, graph_file)
-                graph_file = generate_graph_path(ckpt_name, model.deep_cache_unet._torch_module)
-                set_compiled_options(model.deep_cache_unet, graph_file)
+                model = deeppcache_optimizer.apply(model, ckpt_name)
                 
             if quantization_optimizer is not None:
-                model = quantization_optimizer.apply(model)
-                diff_model: DeployableModule = model.model.diffusion_model
-                graph_file = generate_graph_path(ckpt_name, model.model)
-                set_compiled_options(diff_model, graph_file)
-                quant_config = diff_model._deployable_module_quant_config
-                quant_config.cache_dir = os.path.dirname(graph_file)
+                model = quantization_optimizer.apply(model, ckpt_name)
                     
             return model
 
