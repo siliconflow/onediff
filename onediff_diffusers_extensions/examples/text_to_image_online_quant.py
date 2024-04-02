@@ -44,8 +44,8 @@ $   python text_to_image_online_quant.py \
 | -------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------- |
 | --conv_mae_threshold 0.9               | [0, 1] | 0.1     | MAE threshold for quantizing convolutional modules to 0.1.                   |
 | --linear_mae_threshold 1               | [0, 1] | 0.2     | MAE threshold for quantizing linear modules to 0.2.                            |
-| --conv_compute_density_threshold 900   | [1, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
-| --linear_compute_density_threshold 300 | [1, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
+| --conv_compute_density_threshold 900   | [0, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
+| --linear_compute_density_threshold 300 | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
 
 Notes:
 
