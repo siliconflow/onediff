@@ -7,33 +7,8 @@ from comfy.samplers import (calc_cond_uncond_batch, can_concat_cond, cond_cat,
 
 from onediff.infer_compiler.with_oneflow_compile import DeployableModule
 
-from .hijack_ipadapter_plus import is_load_ipadapter_plus_pkg
 from .sd_hijack_utils import Hijacker
 
-
-@total_ordering
-class Value:
-    def __init__(self, v):
-        self.v = v
-
-    def item(self):
-        return self.v
-
-    def __gt__(self, other):
-        return self.v == other
-
-    def __lt__(self, other):
-        return self.v < other
-
-
-class TempStep:
-    def __init__(self, timestep):
-        self.timesteps = []
-        for t in timestep:
-            self.timesteps.append(Value(t.item()))
-
-    def __getitem__(self, i):
-        return self.timesteps[i]
     
 def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, model_options):
     out_cond = torch.zeros_like(x_in)
@@ -122,8 +97,8 @@ def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, m
 
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
         # transformer_options["sigmas"] = timestep
-        if is_load_ipadapter_plus_pkg and len(timestep) == 1:
-            transformer_options["sigmas"] = TempStep(timestep)
+        if len(timestep) == 1:
+            transformer_options["sigmas"] = timestep.item()
         else:
             transformer_options["sigmas"] = timestep
 

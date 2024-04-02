@@ -109,7 +109,9 @@ class CrossAttentionPatch(torch.nn.Module):
     def forward(self, q, k, v, extra_options):
         dtype = q.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
-        sigma = extra_options["sigmas"][0].item() if "sigmas" in extra_options else 999999999.9
+        # sigma = extra_options["sigmas"][0].item() if "sigmas" in extra_options else 999999999.9
+        sigma = extra_options["sigmas"] if "sigmas" in extra_options else 999999999.9
+        
         block_type = extra_options["block"][0]
         # block_id = extra_options["block"][1]
         t_idx = extra_options["transformer_index"]
