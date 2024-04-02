@@ -20,6 +20,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [Online Quantization](#online-quantization)
     - [Offline Quantization](#offline-quantization)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
+    - [SD-1.5](#SD-1.5)
     - [SDXL](#SDXL)
     - [SVD](#SVD)
 
@@ -251,6 +252,30 @@ Then you can get the offline quantized model in the path specified by `--checkpo
 
 ## Diffusers with OneDiff Enterprise
 
+### SD-1.5
+
+#### Accessing Diffusers Models
+
+To download the necessary models, please visit the [siliconflow/stable-diffusion-v1-5-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise) on HuggingFace. Additionally, to use the quantized model customized for DeepCache, please visit the [siliconflow/stable-diffusion-v1-5-onediff-deepcache-int8](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-deepcache-int8).
+
+#### Scripts
+
+Run [text_to_image_sd_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py) by command:
+
+```bash
+python text_to_image_sd_enterprise.py --model $model_path --saved_image output_sd.png
+```
+
+Type `python3 text_to_image_sd_enterprise.py -h` for more options.
+
+#### SD-1.5 + DeepCache
+
+Ensure that you have installed [OneDiffX](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sd_sdxl_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_deep_cache_sd_sdxl_enterprise.py) by command:
+
+```bash
+python text_to_image_deep_cache_sd_sdxl_enterprise.py --model $model_path --model_type sd --saved_image output_deepcache_sd.png
+```
+
 ### SDXL
 
 #### Accessing Diffusers Models
@@ -269,10 +294,10 @@ Type `python3 text_to_image_sdxl_enterprise.py -h` for more options.
 
 #### SDXL + DeepCache
 
-Ensure that you have installed [OneDiffX](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sdxl_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_deep_cache_sdxl_enterprise.py) by command:
+Ensure that you have installed [OneDiffX](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sd_sdxl_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_deep_cache_sd_sdxl_enterprise.py) by command:
 
 ```bash
-python text_to_image_deep_cache_sdxl_enterprise.py --model $model_path --saved_image output_deepcache.png
+python text_to_image_deep_cache_sd_sdxl_enterprise.py --model $model_path --model_type sdxl --saved_image output_deepcache.png
 ```
 
 ### SVD

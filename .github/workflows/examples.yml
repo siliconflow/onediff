@@ -214,7 +214,7 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_enterprise.py --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0-int8 --width 512 --height 512 --saved_image output_enterprise_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --width 512 --height 512 --saved_image output_enterprise_deepcache_sdxl.png
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sd_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --model_type sdxl --width 512 --height 512 --saved_image output_enterprise_deepcache_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --width 512 --height 512 --run_multiple_resolutions true --saved_image deepcache_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples'
