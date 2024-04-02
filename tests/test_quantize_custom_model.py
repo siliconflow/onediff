@@ -1,16 +1,27 @@
+import importlib
 import os
 import unittest
 
 import oneflow as flow
 import torch
-from onediff_quant.quantization import (OfflineQuantModule, OnlineQuantModule,
-                                        QuantizationConfig,
-                                        QuantizationStatsStorage,
-                                        create_quantization_calculator)
 from torch import nn
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.utils import is_community_version
+
+is_community = is_community_version()
+onediff_quant_spec = importlib.util.find_spec("onediff_quant")
+if is_community or onediff_quant_spec is None:
+    print(f"{is_community=} {onediff_quant_spec=}")
+    exit(0)
+
+from onediff_quant.quantization import (
+    OfflineQuantModule,
+    OnlineQuantModule,
+    QuantizationConfig,
+    create_quantization_calculator,
+)
 
 
 # Define the model
@@ -66,8 +77,8 @@ register(torch2oflow_class_map={SimpleModel: SimpleModel_OF})
 config = QuantizationConfig.from_settings(
     quantize_conv=True,
     quantize_linear=True,
-    cache_dir="runs",
-    plot_calibrate_info=True,
+    cache_dir="cache_dir",
+    plot_calibrate_info=False,
 )
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = SimpleModel().to(device).to(torch.float16)
@@ -87,9 +98,10 @@ class TestOnlineQuantModule(unittest.TestCase):
     def test_quantize_with_calibration(self):
         quantized_model, info = self.module.quantize_with_calibration(input_data)
         status = self.module.collect_quantization_status(model, info)
-        assert status["quantized_conv_count"] == 2 and status["quantized_linear_count"] == 1
-        store = QuantizationStatsStorage(config.cache_dir)
-        store.save(data=status, file_name="quant_stats.json")
+        assert (
+            status["quantized_conv_count"] == 2
+            and status["quantized_linear_count"] == 1
+        )
         compiled_model = oneflow_compile(quantized_model)
         torch.manual_seed(seed)
         quantized_output = compiled_model(input_data)
