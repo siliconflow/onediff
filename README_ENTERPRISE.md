@@ -20,7 +20,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [Online Quantization](#online-quantization)
     - [Offline Quantization](#offline-quantization)
 - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
-    - [Diffusers SD 1.5](#diffusers-sd-1.5)
+    - [Diffusers SD](#diffusers-sd)
     - [Diffusers SDXL](#diffusers-sdxl)
     - [Diffusers SVD](#diffusers-svd)
 
@@ -98,7 +98,7 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 ### ComfyUI SD
 
 
-  For more information and to **access the model below**, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
+  For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
 
 <details> 
 <summary> Download the required model files </summary>
@@ -123,7 +123,7 @@ Click the links below to view the workflow images, or load them directly into Co
 
 ### ComfyUI SDXL
 
-  For model details, visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
+  For model details and to **access the model files and Workflow below**, please  visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
 
 <details> 
 <summary> Download the required model files </summary>
@@ -148,7 +148,7 @@ wget https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v
 ### ComfyUI SVD
 
 
-  For model details, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
+  For model details and to **access the model files and Workflow below** ,visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
 
 
 <details>
@@ -257,7 +257,7 @@ Then you can get the offline quantized model in the path specified by `--checkpo
 
 ## Diffusers with OneDiff Enterprise
 
-### Diffusers SD 1.5
+### Diffusers SD
 
 #### Accessing Diffusers Models
 
