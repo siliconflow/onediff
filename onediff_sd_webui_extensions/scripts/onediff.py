@@ -175,6 +175,10 @@ class Script(scripts.Script):
         return is_changed
 
     def run(self, p, quantization=False):
+        # For OneDiff Community, the input param `quantization` is a HTML string
+        if isinstance(quantization, str):
+            quantization = False
+
         global compiled_unet, compiled_ckpt_name
         current_checkpoint = shared.opts.sd_model_checkpoint
         original_diffusion_model = shared.sd_model.model.diffusion_model
