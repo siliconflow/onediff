@@ -171,8 +171,9 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 </details>
 
 
-  - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)
-  - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
+  - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)<img src="./imgs/svd-int8-workflow.png"  width = 100% height = 100%>
+
+  - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)<img src="./imgs/svd-int8-deepcache-workflow.png"  width = 100% height = 100%>
 
 
 ## Stable Diffusion WebUI with OneDiff Enterprise
