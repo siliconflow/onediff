@@ -1,4 +1,5 @@
 import os
+import re
 import warnings
 import gradio as gr
 from pathlib import Path
@@ -196,14 +197,9 @@ class Script(scripts.Script):
             )
             if model_changed:
                 # need to transpose conv weights
-                run_state = (
-                    compiled_unet._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()
-                )
-                run_state_dict = {k: v for k, v in zip(run_state[0], run_state[1])}
                 for k in self.convname_dict:
                     orig_tensor = original_diffusion_model.get_parameter(k)
-                    target_name = self.convname_dict[k]
-                    target_tensor = run_state_dict.get(target_name, None)
+                    target_tensor = self.convname_dict[k]
                     if target_tensor is None:
                         need_recompile = True
                         break
@@ -227,36 +223,20 @@ class Script(scripts.Script):
 
         # AutoNHWC will transpose conv weight, which generate a new tensor in graph
         # The part is to find the corresponding relationship between the tensors before/after transpose
+        def convert_var_name(s: str, prefix="variable_transpose_"):
+            s = re.sub(r"_[0-9]+$", "", s.removeprefix(prefix)).removeprefix("model.")
+            return s
+
         if not quantization and self.convname_dict is None:
             self.convname_dict = {}
             run_state = (
                 compiled_unet._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()
             )
-            run_state_dict = {k: v for k, v in zip(run_state[0], run_state[1])}
-
-            # group by shape, reduce the computational complexity of loop for allclose
-            shape2tensor = defaultdict(list)
-            for name, param in original_diffusion_model.named_parameters():
-                shape2tensor[tuple(param.data.shape)].append([name, param.data])
-
-            for name, tensor in run_state_dict.items():
-                if not name.startswith("variable_transpose") or tensor.ndim != 4:
-                    continue
-                shape = tensor.shape
-                new_shape = (shape[0], shape[3], shape[1], shape[2])
-                candidate_tensors = shape2tensor[new_shape]
-                original_tensor = tensor.permute(0, 3, 1, 2)
-                for orig_name, t in candidate_tensors:
-                    t = flow.utils.tensor.from_torch(t)
-                    if flow.allclose(original_tensor.float(), t.float()):
-                        self.convname_dict[orig_name] = name
-
-            if len(self.convname_dict) != len(
-                [x for x in run_state[0] if x.startswith("variable_transpose")]
-            ):
-                raise RuntimeError(
-                    "Unable to establish a connection for conv weights in the leader and graph. Please check in the https://github.com/siliconflow/onediff/issues and submit an issue and explain the model structure you are using."
-                )
+            self.convname_dict = {
+                convert_var_name(k): v
+                for k, v in zip(run_state[0], run_state[1])
+                if k.startswith("variable_")
+            }
         return proc
 
 
