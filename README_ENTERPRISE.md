@@ -89,7 +89,9 @@ python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=o
 
 Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
 
-**NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
+**NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it. 
+
+**NOTE**: It should be noted that you need to make sure you are logged in to [Hugging Face](https://huggingface.co/) before clicking the "Workflow" link below.
 
 
 
@@ -115,7 +117,7 @@ wget https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-ente
 
 </details>
 
-Click the links below to view the workflow images, or load them directly into ComfyUI.
+Click the links below to view the workflow images, or load them directly into ComfyUI. 
 
   - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)<img src="./imgs/comfyui_screenshots_onediff_quant_advanced.png"  width = 100% height = 100%>
 
