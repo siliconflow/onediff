@@ -91,10 +91,12 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 
 **NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
 
+
+
 ### ComfyUI SD
 
 
-  For more information and to access the model, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
+  For more information and to **access the model below**, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
 
 <details> 
 <summary> Download the required model files </summary>
@@ -115,7 +117,7 @@ wget https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-ente
 
 Click the links below to view the workflow images, or load them directly into ComfyUI.
 
-  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
+  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)<img src="./imgs/comfyui_screenshots_onediff_quant_advanced.png"  width = 100% height = 100%>
 
 ### ComfyUI SDXL
 
@@ -138,8 +140,8 @@ wget https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v
 </details>
 
 
-  - Workflow: [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
-  - Workflow: [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
+  - Workflow: [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)<img src="./imgs/onediff_quant_base.png"  width = 100% height = 100%>
+  - Workflow: [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)<img src="./imgs/onediff_quant_deepcache.png"  width = 100% height = 100%>
 
 ### ComfyUI SVD
 
