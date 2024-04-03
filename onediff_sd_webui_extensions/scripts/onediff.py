@@ -218,7 +218,9 @@ class Script(scripts.Script):
             compiled_ckpt_name = ckpt_name
             self.convname_dict = None
 
-        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
+        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(
+            self.convname_dict
+        ):
             proc = process_images(p)
 
         # AutoNHWC will transpose conv weight, which generate a new tensor in graph
