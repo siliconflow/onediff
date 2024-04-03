@@ -3,6 +3,8 @@ import warnings
 import gradio as gr
 from pathlib import Path
 from typing import Union, Dict
+from collections import defaultdict
+import oneflow as flow
 import modules.scripts as scripts
 import modules.shared as shared
 from modules.sd_models import select_checkpoint
@@ -108,6 +110,7 @@ class UnetCompileCtx(object):
 
 class Script(scripts.Script):
     current_type = None
+    convname_dict = None
 
     def title(self):
         return "onediff_diffusion_model"
@@ -148,8 +151,8 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
-    def need_compile(self, model):
-        recompile = False
+    def check_model_structure_change(self, model):
+        is_changed = False
 
         def get_model_type(model):
             return {
@@ -160,21 +163,16 @@ class Script(scripts.Script):
             }
 
         if self.current_type == None:
-            recompile = True
+            is_changed = True
         else:
             for key, v in self.current_type.items():
                 if v != getattr(model, key):
-                    recompile = True
+                    is_changed = True
                     break
 
-        if recompile == True:
+        if is_changed == True:
             self.current_type = get_model_type(model)
-        elif parse_boolean_from_env("ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION", "1"):
-            warnings.warn(
-                f"If you want to reuse the compiled graph, please set environ var `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` as '0', or the compiled graph will work incorrectly.",
-                RuntimeWarning,
-            )
-        return recompile
+        return is_changed
 
     def run(self, p, quantization=False):
         global compiled_unet, compiled_ckpt_name
@@ -185,11 +183,31 @@ class Script(scripts.Script):
             current_checkpoint + "_quantized" if quantization else current_checkpoint
         )
 
-        if (
-            quantization
-            and ckpt_name != compiled_ckpt_name
-            or self.need_compile(shared.sd_model)
-        ):
+        model_changed = ckpt_name != compiled_ckpt_name
+        model_structure_changed = self.check_model_structure_change(shared.sd_model)
+        need_recompile = (quantization and model_changed) or model_structure_changed
+        if not need_recompile:
+            logger.info(
+                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
+            )
+            if model_changed:
+                # need to transpose conv weights
+                run_state = (
+                    compiled_unet._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()
+                )
+                run_state_dict = {k: v for k, v in zip(run_state[0], run_state[1])}
+                for k in self.convname_dict:
+                    orig_tensor = original_diffusion_model.get_parameter(k)
+                    target_name = self.convname_dict[k]
+                    target_tensor = run_state_dict.get(target_name, None)
+                    if target_tensor is None:
+                        need_recompile = True
+                        break
+                    target_tensor.copy_(
+                        flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
+                    )
+
+        if need_recompile:
             compile_options = {}
 
             compiled_unet = compile_unet(
@@ -198,13 +216,44 @@ class Script(scripts.Script):
                 options=compile_options,
             )
             compiled_ckpt_name = ckpt_name
-        else:
-            logger.info(
-                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
-            )
+            self.convname_dict = None
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
+
+        # AutoNHWC will transpose conv weight, which generate a new tensor in graph
+        # The part is to find the corresponding relationship between the tensors before/after transpose
+        if not quantization and self.convname_dict is None:
+            self.convname_dict = {}
+            run_state = (
+                compiled_unet._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()
+            )
+            run_state_dict = {k: v for k, v in zip(run_state[0], run_state[1])}
+
+            # group by shape, reduce the computational complexity of loop for allclose
+            shape2tensor = defaultdict(list)
+            for name, param in original_diffusion_model.named_parameters():
+                shape2tensor[tuple(param.data.shape)].append([name, param.data])
+
+            for name, tensor in run_state_dict.items():
+                if not name.startswith("variable_transpose") or tensor.ndim != 4:
+                    continue
+                shape = tensor.shape
+                new_shape = (shape[0], shape[3], shape[1], shape[2])
+                candidate_tensors = shape2tensor[new_shape]
+                original_tensor = tensor.permute(0, 3, 1, 2)
+                for orig_name, t in candidate_tensors:
+                    t = flow.utils.tensor.from_torch(t)
+                    if flow.allclose(original_tensor.float(), t.float()):
+                        self.convname_dict[orig_name] = name
+
+            if len(self.convname_dict) != len(
+                [x for x in run_state[0] if x.startswith("variable_transpose")]
+            ):
+                raise RuntimeError(
+                    "Unable to establish a connection for conv weights in the leader and graph. Please check in the https://github.com/siliconflow/onediff/issues and submit an issue and explain the model structure you are using."
+                )
         return proc
+
 
 onediff_do_hijack()
