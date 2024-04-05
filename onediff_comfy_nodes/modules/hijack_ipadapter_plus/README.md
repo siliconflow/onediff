@@ -18,7 +18,7 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 
 ### Quick Start
 
-> Recommend running the official example of ComfyUI AnimateDiff Evolved now, and then trying OneDiff acceleration. 
+> Recommend running the official example of ComfyUI_IPAdapter_plus now, and then trying OneDiff acceleration. 
 
 Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_IPAdapter_plus:
 
@@ -26,7 +26,8 @@ Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 
-![workflow (1)](https://github.com/siliconflow/onediff/assets/109639975/b4c1bcac-1c15-45e0-94f1-7a352e2939fd)
+![ipadapter_example](https://github.com/siliconflow/onediff/assets/109639975/a5f9478b-930a-41e3-92a8-fc54ddf9e9ba)
+
 
  | PyTorch                                                                                                | OneDiff                                                                                                  |
  | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |

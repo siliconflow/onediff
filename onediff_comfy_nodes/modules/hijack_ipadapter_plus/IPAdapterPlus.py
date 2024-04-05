@@ -21,10 +21,7 @@ def get_patches_replace_attn2(diff_model):
 def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
 
     patch_kwargs = torch2oflow(patch_kwargs)
-    diff_model = oneflow_compile(
-        model.model.diffusion_model, use_graph=True, dynamic=False, options={}
-    )
-    model.model.diffusion_model = diff_model
+    diff_model = model.model.diffusion_model 
     patches_replace_attn2 = get_patches_replace_attn2(diff_model)
 
     to = model.model_options["transformer_options"]
