@@ -39,8 +39,10 @@ model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
 from .modules.hijack_samplers import samplers_hijack
 from .modules.hijack_animatediff import animatediff_hijacker
+from .modules.hijack_ipadapter_plus import ipadapter_plus_hijacker
 samplers_hijack.hijack()
 animatediff_hijacker.hijack()
+ipadapter_plus_hijacker.hijack()
 
 
 __all__ = [
