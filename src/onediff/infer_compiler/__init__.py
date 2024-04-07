@@ -4,14 +4,11 @@ import oneflow as flow
 
 from .utils.patch_for_compiler import *  # TODO:
 from .transform.custom_transform import register
-from .with_onediff_compile import onediff_compile as onediff_compile
+from .with_onediff_compile import compile, oneflow_compile
 from oneflow.framework.args_tree import ArgsTree
 
 from .with_fx_interpreter import OneFlowInterpreter
 from .with_fx_graph import fx_node_tranform
-
-
-oneflow_compile = onediff_compile
 
 
 def oneflow_backend(gm, example_inputs, *args, **kwargs):

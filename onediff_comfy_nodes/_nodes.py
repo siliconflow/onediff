@@ -3,7 +3,7 @@ from onediff.infer_compiler.transform import torch2oflow
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from onediff.infer_compiler.utils import set_boolean_env_var
 from onediff.optimization.quant_optimizer import quantize_model
-from onediff.infer_compiler import onediff_compile
+from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.deployable_module import DeployableModule
 
 import os
@@ -190,7 +190,7 @@ class SVDSpeedup:
         use_graph = static_mode == "enable"
 
         new_model = copy.deepcopy(model)
-        new_model.model.diffusion_model = onediff_compile(
+        new_model.model.diffusion_model = oneflow_compile(
             new_model.model.diffusion_model, use_graph=use_graph
         )
 
@@ -215,7 +215,7 @@ class VaeSpeedup:
             vae
         )  # Loading/offloading will not cause an increase in VRAM.
 
-        new_vae.first_stage_model = onediff_compile(
+        new_vae.first_stage_model = oneflow_compile(
             new_vae.first_stage_model, use_graph=use_graph
         )
 
@@ -401,7 +401,7 @@ class OneDiffControlNetLoader(ControlNetLoader):
             control_model = controlnet.control_model
             compile_options = gen_compile_options(control_model)
             control_model = control_model.to(load_device)
-            controlnet.control_model = onediff_compile(
+            controlnet.control_model = oneflow_compile(
                 control_model, options=compile_options
             )
             return (controlnet,)
@@ -439,7 +439,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         modelpatcher.model._register_state_dict_hook(state_dict_hook)
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = onediff_compile(
+            vae.first_stage_model = oneflow_compile(
                 vae.first_stage_model,
                 use_graph=True,
                 options={
@@ -526,7 +526,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
             }
 
         if vae_speedup == "enable":
-            vae.first_stage_model = onediff_compile(
+            vae.first_stage_model = oneflow_compile(
                 vae.first_stage_model,
                 use_graph=True,
                 options=gen_compile_options(vae.first_stage_model),
@@ -586,7 +586,7 @@ class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = onediff_compile(
+            vae.first_stage_model = oneflow_compile(
                 vae.first_stage_model,
                 use_graph=True,
                 options={

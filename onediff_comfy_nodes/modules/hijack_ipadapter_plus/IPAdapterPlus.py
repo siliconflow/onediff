@@ -2,7 +2,6 @@
 import os
 from pathlib import Path
 
-from onediff.infer_compiler import onediff_compile
 from onediff.infer_compiler.transform import torch2oflow
 from onediff.infer_compiler.deployable_module import DeployableModule
 
