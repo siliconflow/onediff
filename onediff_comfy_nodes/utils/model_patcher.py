@@ -34,7 +34,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         graph_device=None,
     ):
         from onediff.infer_compiler import oneflow_compile
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        from onediff.infer_compiler.deployable_module import DeployableModule
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}
@@ -63,7 +63,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
             self.current_device = self.offload_device
         else:
             self.current_device = current_device
-        
+
         self.model_lowvram = False
 
     def clone(self):
@@ -502,7 +502,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         gen_compile_options=None,
     ):
         from onediff.infer_compiler import oneflow_compile
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        from onediff.infer_compiler.deployable_module import DeployableModule
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}
@@ -542,6 +542,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.current_device = current_device
 
         self.model_lowvram = getattr(model, "model_lowvram", False)
+
 
 def get_mixed_speedup_class(module_cls):
     class MixedSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher, module_cls):
@@ -585,7 +586,7 @@ def get_mixed_speedup_class(module_cls):
             n.object_patches = self.object_patches.copy()
             n.model_options = copy.deepcopy(self.model_options)
             n.model_keys = self.model_keys
-            
+
             n.model_lowvram = self.model_lowvram
             return n
 

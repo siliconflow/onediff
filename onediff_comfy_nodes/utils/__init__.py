@@ -2,7 +2,7 @@ import os
 import re
 import time
 
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
 from .onediff_quant_utils import (
     replace_module_with_quantizable_module,
     _use_graph,
