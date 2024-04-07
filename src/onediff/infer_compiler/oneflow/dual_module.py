@@ -91,6 +91,8 @@ class DualModule(torch.nn.Module):
             return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
+            from .utils import get_mixed_dual_module
+
             return get_mixed_dual_module(torch_attr.__class__)(torch_attr, oneflow_attr)
         else:
             return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
@@ -118,6 +120,8 @@ class DualModuleList(torch.nn.ModuleList):
         assert len(torch_modules) == len(oneflow_modules)
         self._torch_modules = torch_modules
         self._oneflow_modules = oneflow_modules
+        from .utils import get_mixed_dual_module
+
         dual_modules = []
         for torch_module, oneflow_module in zip(
             self._torch_modules, self._oneflow_modules
