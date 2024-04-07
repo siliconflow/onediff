@@ -13,7 +13,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [For NA/EU users](#for-naeu-users)
     - [For CN users](#for-cn-users)
 - [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
-    - [ComfyUI SD](#comfyui-sd)
+    - [ComfyUI SD 1.5](#comfyui-sd-1-5)
     - [ComfyUI SDXL](#comfyui-sdxl)
     - [ComfyUI SVD](#comfyui-svd)
 - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
@@ -89,13 +89,13 @@ python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=o
 
 Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
 
-**NOTE1**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it. 
+**NOTE1**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
 
 **NOTE2**: It should be noted that you need to make sure you are logged in to [Hugging Face](https://huggingface.co/) before clicking the "Workflow" link below.
 
 
-
-### ComfyUI SD
+<a id="comfyui-sd-1-5"></a>
+### ComfyUI SD 1.5
 
 
   For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
@@ -119,7 +119,7 @@ wget https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-ente
 
 Click the links below to view the workflow images, or load them directly into ComfyUI. 
 
-  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)<img src="./imgs/comfyui_screenshots_onediff_quant_advanced.png"  width = 100% height = 100%>
+  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
 
 ### ComfyUI SDXL
 
@@ -142,8 +142,8 @@ wget https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v
 </details>
 
 
-  - Workflow: [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)<img src="./imgs/onediff_quant_base.png"  width = 100% height = 100%>
-  - Workflow: [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)<img src="./imgs/onediff_quant_deepcache.png"  width = 100% height = 100%>
+  - Workflow: [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
+  - Workflow: [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
 
 ### ComfyUI SVD
 
@@ -173,9 +173,9 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 </details>
 
 
-  - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)<img src="./imgs/svd-int8-workflow.png"  width = 100% height = 100%>
+  - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)
 
-  - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)<img src="./imgs/svd-int8-deepcache-workflow.png"  width = 100% height = 100%>
+  - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
 
 
 ## Stable Diffusion WebUI with OneDiff Enterprise
