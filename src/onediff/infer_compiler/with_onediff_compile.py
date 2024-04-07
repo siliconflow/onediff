@@ -2,7 +2,7 @@ import torch
 from .deployable_module import DeployableModule
 
 
-def oneflow_compile(
+def onediff_compile(
     torch_module: torch.nn.Module,
     *,
     backend="oneflow",

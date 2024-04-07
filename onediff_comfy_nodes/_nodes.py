@@ -1,11 +1,10 @@
 from functools import partial
 from onediff.infer_compiler.transform import torch2oflow
-from onediff.infer_compiler.with_oneflow_compile import oneflow_compile
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from onediff.infer_compiler.utils import set_boolean_env_var
 from onediff.optimization.quant_optimizer import quantize_model
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler import onediff_compile
+from onediff.infer_compiler.deployable_module import DeployableModule
 
 import os
 import re
@@ -40,6 +39,7 @@ nodes_hijacker.hijack()
 from .modules.hijack_samplers import samplers_hijack
 from .modules.hijack_animatediff import animatediff_hijacker
 from .modules.hijack_ipadapter_plus import ipadapter_plus_hijacker
+
 samplers_hijack.hijack()
 animatediff_hijacker.hijack()
 ipadapter_plus_hijacker.hijack()
@@ -73,8 +73,6 @@ class ModelSpeedup:
     CATEGORY = "OneDiff"
 
     def speedup(self, model, static_mode):
-        from onediff.infer_compiler import oneflow_compile
-
         use_graph = static_mode == "enable"
 
         offload_device = model_management.unet_offload_device()
@@ -143,8 +141,6 @@ class ModelGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, model, graph):
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
-
         diffusion_model = model.model.diffusion_model
 
         load_graph(diffusion_model, graph, "cuda", subfolder="unet")
@@ -185,8 +181,6 @@ class SVDSpeedup:
     CATEGORY = "OneDiff"
 
     def speedup(self, model, static_mode):
-        from onediff.infer_compiler import oneflow_compile
-
         # To avoid overflow issues while maintaining performance,
         # refer to: https://github.com/siliconflow/onediff/blob/09a94df1c1a9c93ec8681e79d24bcb39ff6f227b/examples/image_to_video.py#L112
         set_boolean_env_var(
@@ -196,7 +190,7 @@ class SVDSpeedup:
         use_graph = static_mode == "enable"
 
         new_model = copy.deepcopy(model)
-        new_model.model.diffusion_model = oneflow_compile(
+        new_model.model.diffusion_model = onediff_compile(
             new_model.model.diffusion_model, use_graph=use_graph
         )
 
@@ -215,15 +209,13 @@ class VaeSpeedup:
     CATEGORY = "OneDiff"
 
     def speedup(self, vae, static_mode):
-        from onediff.infer_compiler import oneflow_compile
-
         use_graph = static_mode == "enable"
 
         new_vae = copy.deepcopy(
             vae
         )  # Loading/offloading will not cause an increase in VRAM.
 
-        new_vae.first_stage_model = oneflow_compile(
+        new_vae.first_stage_model = onediff_compile(
             new_vae.first_stage_model, use_graph=use_graph
         )
 
@@ -248,8 +240,6 @@ class VaeGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, vae, graph):
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
-
         vae_model = vae.first_stage_model
         device = model_management.vae_offload_device()
         load_graph(vae_model, graph, device, subfolder="vae")
@@ -273,8 +263,6 @@ class VaeGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, images, vae, filename_prefix):
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
-
         vae_model = vae.first_stage_model
         vae_device = model_management.vae_offload_device()
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
@@ -413,7 +401,7 @@ class OneDiffControlNetLoader(ControlNetLoader):
             control_model = controlnet.control_model
             compile_options = gen_compile_options(control_model)
             control_model = control_model.to(load_device)
-            controlnet.control_model = oneflow_compile(
+            controlnet.control_model = onediff_compile(
                 control_model, options=compile_options
             )
             return (controlnet,)
@@ -451,7 +439,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         modelpatcher.model._register_state_dict_hook(state_dict_hook)
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = oneflow_compile(
+            vae.first_stage_model = onediff_compile(
                 vae.first_stage_model,
                 use_graph=True,
                 options={
@@ -538,7 +526,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
             }
 
         if vae_speedup == "enable":
-            vae.first_stage_model = oneflow_compile(
+            vae.first_stage_model = onediff_compile(
                 vae.first_stage_model,
                 use_graph=True,
                 options=gen_compile_options(vae.first_stage_model),
@@ -598,7 +586,7 @@ class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
 
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
-            vae.first_stage_model = oneflow_compile(
+            vae.first_stage_model = onediff_compile(
                 vae.first_stage_model,
                 use_graph=True,
                 options={
@@ -720,10 +708,7 @@ class BatchSizePatcher:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "latent_image": ("LATENT", ),
-            },
+            "required": {"model": ("MODEL",), "latent_image": ("LATENT",),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -738,7 +723,7 @@ class BatchSizePatcher:
             file_dir = os.path.dirname(file_path)
             file_name = os.path.basename(file_path)
             names = file_name.split("_")
-            key , is_replace = "bs=", False
+            key, is_replace = "bs=", False
             for i, name in enumerate(names):
                 if key in name:
                     names[i] = f"{key}{batch_size}"
@@ -748,15 +733,13 @@ class BatchSizePatcher:
 
             new_file_name = "_".join(names)
             new_file_path = os.path.join(file_dir, new_file_name)
-            
+
             diff_model.set_graph_file(new_file_path)
         else:
             print(f"Warning: model is not a {DeployableModule}")
         return (model,)
 
 
-
-    
 if _USE_UNET_INT8:
     from .utils.quant_ksampler_tools import (
         KSampleQuantumBase,

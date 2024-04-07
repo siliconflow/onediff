@@ -1,5 +1,5 @@
 import numpy as np
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import onediff_compile
 from onediff.infer_compiler.transform import register
 import torch
 import torch.nn as nn
@@ -34,12 +34,12 @@ m = MyModule().to("cuda")
 x = torch.randn(2, 10).to("cuda")
 y_torch = m(x)
 
-m = oneflow_compile(m)
+m = onediff_compile(m)
 y_oneflow = m(x)
 
 assert np.allclose(y_torch.detach().cpu(), y_oneflow.detach().cpu(), 1e-03, 1e-03)
 
-from onediff.infer_compiler.with_oneflow_compile import DualModule, DualModuleList
+from onediff.infer_compiler.oneflow.dual_module import DualModule, DualModuleList
 
 assert isinstance(m.linears, DualModuleList)
 
