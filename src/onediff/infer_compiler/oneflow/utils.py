@@ -2,6 +2,7 @@ from functools import wraps
 
 from ..transform.builtin_transform import torch2oflow
 from ..transform.manager import transform_mgr
+from ..utils.log_utils import logger
 from .dual_module import DualModule
 
 
