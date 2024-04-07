@@ -2,15 +2,14 @@
 import os
 from pathlib import Path
 
-from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.transform import torch2oflow
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
 
-from ._config import (ipadapter_plus_hijacker, ipadapter_plus_of,
-                      ipadapter_plus_pt)
+from ._config import ipadapter_plus_hijacker, ipadapter_plus_of, ipadapter_plus_pt
 from .CrossAttentionPatch import CrossAttentionPatch as CrossAttentionPatch_OF
 
 set_model_patch_replace_fn_pt = ipadapter_plus_pt.IPAdapterPlus.set_model_patch_replace
+
 
 def get_patches_replace_attn2(diff_model):
     if not hasattr(diff_model._deployable_module_model, "patches_replace_attn2"):
@@ -21,7 +20,7 @@ def get_patches_replace_attn2(diff_model):
 def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
 
     patch_kwargs = torch2oflow(patch_kwargs)
-    diff_model = model.model.diffusion_model 
+    diff_model = model.model.diffusion_model
     patches_replace_attn2 = get_patches_replace_attn2(diff_model)
 
     to = model.model_options["transformer_options"]
@@ -47,4 +46,6 @@ def cond_func(org_fn, model, *args, **kwargs):
     return isinstance(model.model.diffusion_model, DeployableModule)
 
 
-ipadapter_plus_hijacker.register(set_model_patch_replace_fn_pt, set_model_patch_replace_fn_of, cond_func)
+ipadapter_plus_hijacker.register(
+    set_model_patch_replace_fn_pt, set_model_patch_replace_fn_of, cond_func
+)
