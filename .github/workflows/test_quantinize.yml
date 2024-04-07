@@ -1,0 +1,156 @@
+name: CI testing
+
+on:
+  pull_request:
+    paths-ignore:
+      - "*.md"
+      - "**/*.md"
+      - "LICENSE*"
+  schedule:
+    # every 3 hours
+    - cron: "0 */3 * * *"
+
+env:
+  CONTAINER_NAME: onediff-test
+  REGION_ID: cn-beijing
+  ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
+  COMFYUI_SRC_DIR: ComfyUI
+  SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
+  UNET_INT8: /share_nfs/hf_models/unet_int8
+  CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
+  SELENIUM_CONTAINER_NAME: selenium-test
+  SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
+concurrency:
+  group: sd-examples-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  upload_src:
+    if: github.repository == 'siliconflow/onediff'
+    runs-on: [ubuntu-latest]
+    outputs:
+      onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
+      # comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
+    steps:
+      - name: Setup ossutil
+        run: |
+          curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o ossutil64
+          sudo chmod +x ossutil64
+          ./ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          path: onediff
+      - name: Pack src
+        working-directory: onediff
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --format zip HEAD > onediff-src.zip
+      
+      - name: Upload src
+        id: upload_to_oss
+        run: |
+          ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
+          COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
+          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
+          echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
+          echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
+  run-examples:
+    name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
+    runs-on: [self-hosted, cuda]
+    needs: [upload_src]
+    strategy:
+      fail-fast: false
+      max-parallel: 5
+      matrix:
+        image:
+          - onediff:cu118
+          - onediff-pro:cu121
+        test-suite:
+          - quantify_image_testing
+    steps:
+      - name: Login to ACR with the AccessKey pair
+        uses: aliyun/acr-login@v1
+        with:
+          login-server: https://registry.${{env.REGION_ID}}.aliyuncs.com
+          username: "${{ secrets.ACR_USERNAME }}"
+          password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Fix permissions
+        run: |
+          set -x
+          docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
+      - name: Setup ossutil
+        if: github.repository == 'siliconflow/onediff'
+        run: |
+          if [ ! -f "$HOME/ossutil64" ]; then
+            curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
+            chmod +x $HOME/ossutil64
+          fi
+          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+      - name: Checkout vis OSS
+        if: github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.onediff_src_url }} .
+          unzip -o $(basename ${{ needs.upload_src.outputs.onediff_src_url }})
+      - name: Checkout
+        if: github.repository != 'siliconflow/onediff'
+        uses: actions/checkout@v4
+      - name: Clean docker containers
+        run: |
+          docker rm -f ${{ env.CONTAINER_NAME }} || true
+          docker rm -f ${{ env.SELENIUM_CONTAINER_NAME }} || true
+      - run: docker image prune -f
+      - run: |
+          docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
+      - run: docker image prune -f      
+      - name: Setup docker for diffusers examples
+        if: matrix.test-suite == 'quantify_image_testing'
+        run: |
+          env
+          docker compose -f tests/diffusers-docker-compose.yml up -d
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m oneflow --doctor
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+      - name: Install onediff-quant if needed
+        if: startsWith(matrix.image, 'onediff-pro')
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
+      - name: Setup OneDiff diffusers extension
+        if: matrix.test-suite == 'quantify_image_testing'
+        run: |
+          docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
+        #
+      - name: Run OneDiff quantization extension
+        if: matrix.test-suite == 'quantify_image_testing' && startsWith(matrix.image, 'onediff-pro')
+        run: |
+          docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py --model /share_nfs/hf_models/stable-diffusion-v1-5 --quantized_model /src/test/quantized_model_pth --height 512 --width 512  --conv_ssim_threshold 0.991  --linear_ssim_threshold 0.991 --conv_compute_density_threshold 0  --linear_compute_density_threshold 0  --save_as_float true --cache_dir /src/test/cache
+          docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /src/test/quantized_model_pth --width 512 --height 512 --saved_image /src/test/civitai/output_enterprise_sd.png
+            # - if: matrix.test-suite == 'quantify_image_testing'
+      - name: Run quantization validation script
+        run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/ssim_compare.py
+        id: validator
+      - name: Conditional follow-up
+        if: success()
+        run: echo "Following up because validation succeeded."
+      - name: Error handling
+        if: failure()
+        run: echo "Handling failure because validation failed."
+      - name: Shutdown docker for diffusers examples
+        if: matrix.test-suite == 'quantify_image_testing'
+        run: |
+          docker compose -f tests/diffusers-docker-compose.yml down
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
