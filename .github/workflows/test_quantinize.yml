@@ -14,7 +14,6 @@ env:
   CONTAINER_NAME: onediff-test
   REGION_ID: cn-beijing
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
-  COMFYUI_SRC_DIR: ComfyUI
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
@@ -30,7 +29,6 @@ jobs:
     runs-on: [ubuntu-latest]
     outputs:
       onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
-      # comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
     steps:
       - name: Setup ossutil
         run: |
@@ -52,11 +50,8 @@ jobs:
         id: upload_to_oss
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
-          COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
-          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
-          echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
