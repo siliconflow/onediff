@@ -3,6 +3,8 @@ import torch
 import oneflow as flow
 from typing import List, Dict, Any
 
+from .log_utils import logger
+
 
 def parse_device(args: List[Any], kwargs: Dict[str, Any]):
     if "device" in kwargs:
@@ -73,6 +75,7 @@ CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
 def state_update_hook(module, incompatible_keys):
     if not hasattr(module, STATE_UPDATED_ATTR):
         return
+    logger.info(f"load_state_dict called, set {STATE_UPDATED_ATTR} to True")
     setattr(module, STATE_UPDATED_ATTR, True)
 
 
