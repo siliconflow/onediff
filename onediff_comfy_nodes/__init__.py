@@ -15,7 +15,7 @@ from ._nodes import (
     BatchSizePatcher,
 )
 from ._compare_node import CompareModel, ShowImageDiff
-from ._nodes import OneDiffModelOptimizer, OneDiffDeepcacheOptimizer, OneDiffOnlineQuantizationOptimizer
+
 
 NODE_CLASS_MAPPINGS = {
     "ModelSpeedup": ModelSpeedup,
@@ -32,9 +32,6 @@ NODE_CLASS_MAPPINGS = {
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
     "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
     "BatchSizePatcher": BatchSizePatcher,
-    "OneDiffModelOptimizer": OneDiffModelOptimizer,
-    "OneDiffDeepcacheOptimizer": OneDiffDeepcacheOptimizer,
-    "OneDiffOnlineQuantizationOptimizer": OneDiffOnlineQuantizationOptimizer,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -52,9 +49,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "BatchSizePatcher": "Batch Size Patcher",
-    "OneDiffModelOptimizer": "Model Optimizer - OneDiff",
-    "OneDiffDeepcacheOptimizer": "DeepCache Optimizer - OneDiff",
-    "OneDiffOnlineQuantizationOptimizer": "Online Quantization Optimizer - OneDiff",
 }
 
 

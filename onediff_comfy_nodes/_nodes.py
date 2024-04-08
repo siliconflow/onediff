@@ -375,21 +375,13 @@ import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from comfy.controlnet import ControlLora, ControlNet
 from .modules.onediff_controlnet import OneDiffControlLora
-from .modules.optimizer_strategy import OptimizerStrategy, DeepcacheOptimizerExecutor, OnelineQuantizationOptimizerExecutor
+
 
 class OneDiffControlNetLoader(ControlNetLoader):
-    @classmethod
-    def INPUT_TYPES(s):
-        ret = super().INPUT_TYPES()
-        ret.update({"optional": {
-                    "model_optimizer": ("MODEL_OPTIMIZER",),}
-        })
-        return ret 
-
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_controlnet"
 
-    def onediff_load_controlnet(self, control_net_name, model_optimizer=None):
+    def onediff_load_controlnet(self, control_net_name):
         controlnet = super().load_controlnet(control_net_name)[0]
         load_device = model_management.get_torch_device()
 
@@ -406,15 +398,12 @@ class OneDiffControlNetLoader(ControlNetLoader):
             )
             return (controlnet,)
         elif isinstance(controlnet, ControlNet):
-            if model_optimizer:
-                controlnet = model_optimizer(controlnet, ckpt_name=control_net_name)
-            else:
-                control_model = controlnet.control_model
-                compile_options = gen_compile_options(control_model)
-                control_model = control_model.to(load_device)
-                controlnet.control_model = oneflow_compile(
-                    control_model, options=compile_options
-                )
+            control_model = controlnet.control_model
+            compile_options = gen_compile_options(control_model)
+            control_model = control_model.to(load_device)
+            controlnet.control_model = oneflow_compile(
+                control_model, options=compile_options
+            )
             return (controlnet,)
         else:
             print(
@@ -430,9 +419,6 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
             "required": {
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "vae_speedup": (["disable", "enable"],),
-            },
-            "optional": {
-                    "model_optimizer": ("MODEL_OPTIMIZER",),
             }
         }
 
@@ -440,22 +426,17 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     FUNCTION = "onediff_load_checkpoint"
 
     def onediff_load_checkpoint(
-        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, model_optimizer: callable=None,
+        self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
     ):
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-
         unet_graph_file = generate_graph_path(ckpt_name, modelpatcher.model)
-        if model_optimizer is not None:
-            modelpatcher = model_optimizer(modelpatcher, ckpt_name=ckpt_name)
-        
         modelpatcher.model.diffusion_model = compoile_unet(
-                modelpatcher.model.diffusion_model, unet_graph_file)
-        
+            modelpatcher.model.diffusion_model, unet_graph_file
+        )
         modelpatcher.model._register_state_dict_hook(state_dict_hook)
-
         if vae_speedup == "enable":
             file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
             vae.first_stage_model = oneflow_compile(
@@ -470,165 +451,6 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
-
-
-class OneDiffDeepcacheOptimizer:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "cache_interval": (
-                    "INT",
-                    {
-                        "default": 3,
-                        "min": 1,
-                        "max": 1000,
-                        "step": 1,
-                        "display": "number",
-                    },
-                ),
-                "cache_layer_id": (
-                    "INT",
-                    {"default": 0, "min": 0, "max": 12, "step": 1, "display": "number"},
-                ),
-                "cache_block_id": (
-                    "INT",
-                    {"default": 1, "min": 0, "max": 12, "step": 1, "display": "number"},
-                ),
-                "start_step": (
-                    "INT",
-                    {
-                        "default": 0,
-                        "min": 0,
-                        "max": 1000,
-                        "step": 1,
-                        "display": "number",
-                    },
-                ),
-                "end_step": (
-                    "INT",
-                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1},
-                ),
-            },
-        }
-
-    CATEGORY = "OneDiff/Optimizer"
-    RETURN_TYPES = ("DeepPCacheOptimizer",)
-    FUNCTION = "apply"
-
-    def apply(
-        self,
-        cache_interval=3,
-        cache_layer_id=0,
-        cache_block_id=1,
-        start_step=0,
-        end_step=1000,
-    ):
-        return (
-            DeepcacheOptimizerExecutor(
-                cache_interval=cache_interval,
-                cache_layer_id=cache_layer_id,
-                cache_block_id=cache_block_id,
-                start_step=start_step,
-                end_step=end_step,
-            ),
-        )
-
-
-class OneDiffOnlineQuantizationOptimizer:
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {
-                "quantized_conv_percentage": (
-                    "INT",
-                    {
-                        "default": 70,
-                        "min": 0,  # Minimum value
-                        "max": 100,  # Maximum value
-                        "step": 1,  # Slider's step
-                        "display": "slider",  # Cosmetic only: display as "number" or "slider"
-                    },
-                ),
-                "quantized_linear_percentage": (
-                    "INT",
-                    {
-                        "default": 80,
-                        "min": 0,  # Minimum value
-                        "max": 100,  # Maximum value
-                        "step": 1,  # Slider's step
-                        "display": "slider",  # Cosmetic only: display as "number" or "slider"
-                    },
-                ),
-                "conv_compute_density_threshold":(
-                   "INT",
-                    {
-                        "default": 100,
-                        "min": 0,  # Minimum value
-                        "max": 2000,  # Maximum value
-                        "step": 10,  # Slider's step
-                        "display": "number",  # Cosmetic only: display as "number" or "slider"
-                    },
-                ),
-                "linear_compute_density_threshold":(
-                    "INT",
-                    {
-                        "default": 300,
-                        "min": 0,  # Minimum value
-                        "max": 2000,  # Maximum value
-                        "step": 10,  # Slider's step
-                        "display": "number",  # Cosmetic only: display as "number" or "slider"
-                    },
-                )
-            },
-        }
-
-    CATEGORY = "OneDiff/Optimizer"
-    RETURN_TYPES = ("QuantizationOptimizer",)
-    FUNCTION = "apply"
-
-    def apply(self, quantized_conv_percentage=0, quantized_linear_percentage=0, conv_compute_density_threshold=0, linear_compute_density_threshold=0):
-        return (
-            OnelineQuantizationOptimizerExecutor(
-                conv_percentage=quantized_conv_percentage,
-                linear_percentage=quantized_linear_percentage,
-                conv_compute_density_threshold = conv_compute_density_threshold,
-                linear_compute_density_threshold = linear_compute_density_threshold,
-            ),
-        )
-
-
-class OneDiffModelOptimizer:
-    """Main class responsible for optimizing models."""
-
-    @classmethod
-    def INPUT_TYPES(s):
-        return {
-            "required": {},
-            "optional": {
-                "quantization_optimizer": ("QuantizationOptimizer",),
-                "deeppcache_optimizer": ("DeepPCacheOptimizer",),
-            },
-        }
-
-    CATEGORY = "OneDiff/Optimization"
-    RETURN_TYPES = ("MODEL_OPTIMIZER",)
-    FUNCTION = "optimize_model"
-
-    def optimize_model(self, quantization_optimizer:OptimizerStrategy =None, deeppcache_optimizer:OptimizerStrategy=None):
-        """Apply the optimization technique to the model."""
-        
-        def apply_optimizer(model,*,ckpt_name=""):
-        
-            if deeppcache_optimizer is not None:
-                model = deeppcache_optimizer.apply(model, ckpt_name)
-                
-            if quantization_optimizer is not None:
-                model = quantization_optimizer.apply(model, ckpt_name)
-                    
-            return model
-
-        return (apply_optimizer,)
 
 
 class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):

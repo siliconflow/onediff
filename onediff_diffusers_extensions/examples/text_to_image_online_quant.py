@@ -1,38 +1,42 @@
-"""[Stable Diffusion V1.5 - Hugging Face Model Hub](https://huggingface.co/runwayml/stable-diffusion-v1-5)
+"""[SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
 
 ## Performance Comparison
 
-Updated on Tue 02 Apr 2024 
+Updated on Mon 08 Apr 2024 
 
-Timings for 50 steps at 512x512
-| Accelerator             | Baseline (non-optimized) | OneDiff Quant(optimized) | Percentage improvement |
-| ----------------------- | ------------------------ | ------------------------ | ---------------------- |
-| NVIDIA GeForce RTX 3090 | 2.51 s                   | 0.92 s                   | ~63 %                  |
+Timings for 30 steps at 1024x1024
+| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| ----------------------- | ------------------------ | ------------------ | ------------------------ |
+| NVIDIA GeForce RTX 3090 | 8.03 s                   | 4.44 s ( ~44.7%)   | 3.34 s ( ~58.4%)         |
+
+- torch   {version: 2.2.1+cu121}
+- oneflow {git_commit: 710818c, version: 0.9.1.dev20240406+cu121, enterprise: True}
 
 ## Install
 
-1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/tree/main?tab=readme-ov-file#installation)
+1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
 ## Usage:
+> onediff/onediff_diffusers_extensions/examples/text_to_image_online_quant.py
 
 ```shell
 # Baseline (non-optimized)
 $   python text_to_image_online_quant.py \
-        --model_id  /share_nfs/hf_models/stable-diffusion-v1-5  \
+        --model_id  /share_nfs/hf_models/stable-diffusion-xl-base-1.0  \
         --seed 1 \
-        --backend torch  --height 512 --width 512 --output_file sd-v1-5_torch.png
+        --backend torch  --height 1024 --width 1024 --output_file sdxl_torch.png
 ```
 ```shell
 # OneDiff Quant(optimized)
 $   python text_to_image_online_quant.py \
-        --model_id  /share_nfs/hf_models/stable-diffusion-v1-5  \
+        --model_id  /share_nfs/hf_models/stable-diffusion-xl-base-1.0  \
         --seed 1 \
         --backend onediff \
-        --cache_dir ./run_sd-v1-5_quant \
-        --height 512 \
-        --width 512 \
-        --output_file sd-v1-5_quant.png   \
+        --cache_dir ./run_sdxl_quant \
+        --height 1024 \
+        --width 1024 \
+        --output_file sdxl_quant.png   \
         --quantize \
         --conv_mae_threshold 0.1 \
         --linear_mae_threshold 0.2 \
@@ -43,7 +47,7 @@ $   python text_to_image_online_quant.py \
 | Option                                 | Range  | Default | Description                                                                  |
 | -------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------- |
 | --conv_mae_threshold 0.9               | [0, 1] | 0.1     | MAE threshold for quantizing convolutional modules to 0.1.                   |
-| --linear_mae_threshold 1               | [0, 1] | 0.2     | MAE threshold for quantizing linear modules to 0.2.                            |
+| --linear_mae_threshold 1               | [0, 1] | 0.2     | MAE threshold for quantizing linear modules to 0.2.                          |
 | --conv_compute_density_threshold 900   | [0, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
 | --linear_compute_density_threshold 300 | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
 
@@ -72,7 +76,7 @@ def parse_args():
     parser.add_argument("--cache_dir", default="./run_sd-v1-5")
     parser.add_argument("--height", type=int, default=1024)
     parser.add_argument("--width", type=int, default=1024)
-    parser.add_argument("--num_inference_steps", type=int, default=50)
+    parser.add_argument("--num_inference_steps", type=int, default=30)
     parser.add_argument("--conv_mae_threshold", type=float, default=0.2)
     parser.add_argument("--linear_mae_threshold", type=float, default=0.4)
     parser.add_argument("--conv_compute_density_threshold", type=int, default=900)
@@ -109,14 +113,13 @@ def main():
     pipe(prompt=args.prompt, num_inference_steps=1)
 
     # Run_inference
-    for _ in range(4):
+    for _ in range(5):
         start_time = time.time()
         torch.manual_seed(args.seed)
         image = pipe(prompt=args.prompt, height=args.height, width=args.width, num_inference_steps=args.num_inference_steps).images[0]
         end_time = time.time()
         print(f"Inference time: {end_time - start_time:.2f} seconds")
     
-    # [onediff_quant.png](https://github.com/siliconflow/onediff/assets/109639975/75cd9407-c9bb-423f-9e70-c15df76ff2b1)
     save_image(image, args.output_file)
 
 if __name__ == "__main__":
