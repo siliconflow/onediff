@@ -64,3 +64,39 @@ def update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[
         target_tensor.copy_(
             flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
         )
+
+# hooks for constant folding conv weights
+
+STATE_UPDATED_ATTR = "_onediff_state_updated"
+CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
+
+def state_update_hook(module, incompatible_keys):
+    if not hasattr(module, STATE_UPDATED_ATTR):
+        return
+    setattr(module, STATE_UPDATED_ATTR, True)
+
+
+def forward_generate_constant_folding_info_hook(module):
+    if module._deployable_module_dpl_graph is None:
+        return
+
+    if getattr(module, CONSTANT_FOLDING_INFO_ATTR, None) is not None:
+        return
+
+    constant_folding_info = get_constant_folding_info(module)
+    setattr(module, CONSTANT_FOLDING_INFO_ATTR, constant_folding_info)
+
+
+def forward_pre_check_state_update_hook(module):
+    if module._deployable_module_dpl_graph is None:
+        return
+
+    if not getattr(module._torch_module, STATE_UPDATED_ATTR, False):
+        return
+
+    constant_folding_info = getattr(module, CONSTANT_FOLDING_INFO_ATTR, None)
+    if constant_folding_info is None:
+        return
+
+    update_graph_with_constant_folding_info(module, constant_folding_info)
+    setattr(module._torch_module, STATE_UPDATED_ATTR, False)

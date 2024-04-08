@@ -6,7 +6,7 @@ from ..transform.manager import transform_mgr
 from ..utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from ..utils.args_tree_util import input_output_processor
 from ..utils.log_utils import logger
-from ..utils.param_utils import parse_device, check_device
+from ..utils.param_utils import parse_device, check_device, STATE_UPDATED_ATTR, forward_generate_constant_folding_info_hook, forward_pre_check_state_update_hook, state_update_hook
 from ..utils.graph_management_utils import graph_file_management
 from ..deployable_module import DeployableModule
 
@@ -31,6 +31,12 @@ class OneflowDeployableModule(DeployableModule):
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
+
+        # for checking state dict update of torch_module
+        torch_module.register_load_state_dict_post_hook(state_update_hook)
+        setattr(torch_module, STATE_UPDATED_ATTR, False)
+        self.register_forward_hook(forward_generate_constant_folding_info_hook)
+        self.register_forward_pre_hook(forward_pre_check_state_update_hook)
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
@@ -87,6 +93,9 @@ class OneflowDeployableModule(DeployableModule):
     @handle_deployable_exception
     @graph_file_management
     def __call__(self, *args, **kwargs):
+        # pre hooks
+        forward_pre_check_state_update_hook(self)
+
         if self._deployable_module_use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
@@ -94,6 +103,10 @@ class OneflowDeployableModule(DeployableModule):
         else:
             with oneflow_exec_mode():
                 output = self._deployable_module_model.oneflow_module(*args, **kwargs)
+
+        # post hooks
+        forward_generate_constant_folding_info_hook(self)
+
         return output
 
     def to(self, *args, **kwargs):
