@@ -128,7 +128,6 @@ jobs:
         run: |
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py --model /share_nfs/hf_models/stable-diffusion-v1-5 --quantized_model /src/test/quantized_model_pth --height 512 --width 512  --conv_ssim_threshold 0.991  --linear_ssim_threshold 0.991 --conv_compute_density_threshold 0  --linear_compute_density_threshold 0  --save_as_float true --cache_dir /src/civitai
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /src/test/quantized_model_pth --width 512 --height 512 --saved_image /src/test/civitai/output_enterprise_sd.png
-            # - if: matrix.test-suite == 'quantify_image_testing'
       - name: Run quantization validation script
         run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/ssim_compare.py
         id: validator
