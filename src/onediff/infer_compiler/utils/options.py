@@ -13,18 +13,18 @@ class OneFlowCompileOptions:
 
 
 @dataclasses.dataclass
-class NexFortInductorCompileOptions:
+class NexfortInductorCompileOptions:
     disable: bool = False
     mode: str = None
     options: Dict = dataclasses.field(default_factory=dict)
 
 
 @dataclasses.dataclass
-class NexFortCompileOptions:
-    inductor: NexFortInductorCompileOptions
+class NexfortCompileOptions:
+    inductor: NexfortInductorCompileOptions
 
     def __init__(self):
-        self.inductor = NexFortInductorCompileOptions()
+        self.inductor = NexfortInductorCompileOptions()
 
 
 @dataclasses.dataclass
@@ -36,9 +36,9 @@ class CompileOptions:
     oneflow: OneFlowCompileOptions
 
     # nexfort specific options
-    nexfort: NexFortCompileOptions
+    nexfort: NexfortCompileOptions
 
     def __init__(self, dynamic=True):
         self.dynamic = dynamic
         self.oneflow = OneFlowCompileOptions()
-        self.nexfort = NexFortCompileOptions()
+        self.nexfort = NexfortCompileOptions()
