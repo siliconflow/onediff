@@ -1,4 +1,4 @@
-name: CI testing
+name: CI  quanti testing
 
 on:
   pull_request:
@@ -92,7 +92,6 @@ jobs:
       - run: docker image prune -f
       - run: |
           docker pull ${{ env.ACR_ORG }}/${{ matrix.image }}
-
       - name: Setup docker for diffusers examples
         if: matrix.test-suite == 'quantify_image_testing'
         run: |
@@ -103,7 +102,6 @@ jobs:
           ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
-
       - run: nvidia-smi
       - run: nvidia-smi -L
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m oneflow --doctor
@@ -112,11 +110,9 @@ jobs:
         if: startsWith(matrix.image, 'onediff-pro')
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
-  
       - name: Print pip package versions
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip list
-      
       - name: Setup OneDiff diffusers extension
         if: matrix.test-suite == 'quantify_image_testing'
         run: |
@@ -127,7 +123,6 @@ jobs:
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /src/test/quantized_model_pth --width 512 --height 512 --saved_image /src/test/output_enterprise_sd.png
       - name: Run quantization validation script
         run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/ssim_compare.py
-        
       - name: Shutdown docker for diffusers examples
         if: matrix.test-suite == 'quantify_image_testing'
         run: |
