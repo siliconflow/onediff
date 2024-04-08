@@ -8,6 +8,7 @@ from ..utils.args_tree_util import input_output_processor
 from ..utils.log_utils import logger
 from ..utils.param_utils import parse_device, check_device, STATE_UPDATED_ATTR, forward_generate_constant_folding_info_hook, forward_pre_check_state_update_hook, state_update_hook
 from ..utils.graph_management_utils import graph_file_management
+from ..utils.options import OneflowCompileOptions
 from ..deployable_module import DeployableModule
 
 from .utils import handle_deployable_exception, get_mixed_dual_module, get_oneflow_graph
@@ -15,7 +16,7 @@ from .utils import handle_deployable_exception, get_mixed_dual_module, get_onefl
 
 class OneflowDeployableModule(DeployableModule):
     def __init__(
-        self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={},
+        self, torch_module, oneflow_module, dynamic=True, options=None,
     ):
         torch.nn.Module.__init__(self)
         object.__setattr__(
@@ -25,9 +26,10 @@ class OneflowDeployableModule(DeployableModule):
         )
         object.__setattr__(self, "_modules", torch_module._modules)
         object.__setattr__(self, "_torch_module", torch_module)
-        self._deployable_module_use_graph = use_graph
         self._deployable_module_enable_dynamic = dynamic
-        self._deployable_module_options = options
+        self._deployable_module_options = (
+            options if options is not None else OneflowCompileOptions()
+        )
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
@@ -37,13 +39,15 @@ class OneflowDeployableModule(DeployableModule):
         setattr(torch_module, STATE_UPDATED_ATTR, False)
 
     @classmethod
-    def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
+    def from_existing(cls, existing_module, dynamic=True, options=None):
         torch_module = existing_module._deployable_module_model._torch_module
         oneflow_module = existing_module._deployable_module_model._oneflow_module
-        instance = cls(torch_module, oneflow_module, use_graph, dynamic, options)
-        instance._deployable_module_dpl_graph = (
-            existing_module._deployable_module_dpl_graph if use_graph else None
-        )
+        instance = cls(torch_module, oneflow_module, dynamic, options)
+        instance._deployable_module_dpl_graph = None
+        if hasattr(existing_module, "_deployable_module_dpl_graph"):
+            instance._deployable_module_dpl_graph = (
+                existing_module._deployable_module_dpl_graph
+            )
         instance._load_graph_first_run = existing_module._load_graph_first_run
         instance._deployable_module_input_count = (
             existing_module._deployable_module_input_count
@@ -54,21 +58,17 @@ class OneflowDeployableModule(DeployableModule):
     def get_graph(self):
         if self._deployable_module_dpl_graph is not None:
             return self._deployable_module_dpl_graph
-        if "size" in self._deployable_module_options:
-            size = self._deployable_module_options["size"]
-        else:
-            size = 9
         self._deployable_module_dpl_graph = get_oneflow_graph(
             self._deployable_module_model.oneflow_module,
-            size,
+            self._deployable_module_options.max_cached_graph_size,
             self._deployable_module_enable_dynamic,
         )
-        # Enabel debug mode
+        # Enable debug mode
         if transform_mgr.debug_mode:
             self._deployable_module_dpl_graph.debug(0)
-        if "debug" in self._deployable_module_options:
+        if self._deployable_module_options.debug_level > 0:
             self._deployable_module_dpl_graph.debug(
-                self._deployable_module_options["debug"]
+                self._deployable_module_options.debug_level
             )
         return self._deployable_module_dpl_graph
 
@@ -76,7 +76,7 @@ class OneflowDeployableModule(DeployableModule):
     @handle_deployable_exception
     @graph_file_management
     def apply_model(self, *args, **kwargs):
-        if self._deployable_module_use_graph:
+        if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
                 output = dpl_graph(*args, **kwargs)
@@ -94,7 +94,7 @@ class OneflowDeployableModule(DeployableModule):
         # pre hooks
         forward_pre_check_state_update_hook(self)
 
-        if self._deployable_module_use_graph:
+        if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
                 output = dpl_graph(*args, **kwargs)
@@ -131,7 +131,7 @@ class OneflowDeployableModule(DeployableModule):
     @handle_deployable_exception
     @graph_file_management
     def decode(self, *args, **kwargs):
-        if self._deployable_module_use_graph:
+        if self._deployable_module_options.use_graph:
 
             def _build(graph, *args, **kwargs):
                 return graph.model.decode(*args, **kwargs)
@@ -170,9 +170,7 @@ class OneflowDeployableModule(DeployableModule):
         old_file_path = self.get_graph_file()
         if file_path and old_file_path == file_path:
             return
-        compiled_options = self._deployable_module_options
-        compiled_options["graph_file"] = file_path
-
+        self._deployable_module_options.graph_file = file_path
         self._clear_old_graph()
 
     def _clear_old_graph(self):
@@ -181,4 +179,4 @@ class OneflowDeployableModule(DeployableModule):
         del self._deployable_module_model.oneflow_module
 
     def get_graph_file(self):
-        return self._deployable_module_options.get("graph_file", None)
+        return self._deployable_module_options.graph_file
