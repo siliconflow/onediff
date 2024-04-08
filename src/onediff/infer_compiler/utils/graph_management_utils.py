@@ -9,6 +9,7 @@ from ..transform.builtin_transform import torch2oflow
 from ..transform.manager import transform_mgr
 from .log_utils import logger
 from .cost_util import cost_time
+from .options import OneFlowCompileOptions
 
 
 def calculate_model_hash(model):
@@ -35,8 +36,12 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
 def graph_file_management(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        compile_options = getattr(self, "_deployable_module_options", {})
-        graph_file = compile_options.get("graph_file", None)
+        compile_options = (
+            self._deployable_module_options
+            if hasattr(self, "_deployable_module_options")
+            else OneFlowCompileOptions()
+        )
+        graph_file = compile_options.graph_file
 
         is_first_load = (
             getattr(self, "_load_graph_first_run", True) and graph_file is not None
@@ -58,7 +63,7 @@ def graph_file_management(func):
                     f"Graph file {graph_file} does not exist! Generating graph."
                 )
             else:
-                graph_device = compile_options.get("graph_file_device")
+                graph_device = compile_options.graph_file_device
                 self.load_graph(graph_file, torch2oflow(graph_device))
                 logger.info(f"Loaded graph file: {graph_file}")
                 is_first_load = False

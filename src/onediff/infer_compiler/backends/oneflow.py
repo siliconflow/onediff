@@ -3,18 +3,18 @@ from .registry import register_backend
 
 
 @register_backend("oneflow")
-def compile(torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, options={}):
+def compile(torch_module: torch.nn.Module, *, options=None):
     """
     Transform a torch nn.Module to oneflow.nn.Module, then optimize it with oneflow.nn.Graph.
     Args:
        model (torch.nn.Module): Module to optimize
-       use_graph (bool): Whether to optimize with oneflow.nn.Graph
-       dynamic (bool): When this is True, we will generate one graph and reuse it to avoid recompilations when
-        input shape change.  This may not always work as some operations/optimizations break the contition of
-        reusing.  When this is False, we will generate a graph for each new input shape, and will always specialize.
-        By default (True).
-       options (dict): A dictionary of options to pass to the compiler:
-        - 'debug' which config the nn.Graph debug level, default -1(no debug info), max 3(max debug info);
+       options (CompileOptions): Compilation options to pass to the compiler:
+        - 'dynamic': When this is True, we will generate one graph and reuse it to avoid recompilations when
+                     input shape change.  This may not always work as some operations/optimizations break the contition of
+                     reusing. When this is False, we will generate a graph for each new input shape, and will always specialize.
+                     default True.
+        - 'use_graph' whether to optimize with oneflow.nn.Graph, default True.
+        - 'debug' which config the nn.Graph debug level, default -1(no debug info), max 3(max debug info).
         - 'size' which config the cache size when cache is enabled. Note that after onediff v0.12, cache is default disabled.
         - 'graph_file' (None) generates a compilation cache file. If the file exists, loading occurs; if not, the compilation result is saved after the first run.
         - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
@@ -28,10 +28,12 @@ def compile(torch_module: torch.nn.Module, *, use_graph=True, dynamic=True, opti
     def wrap_module(module):
         if isinstance(module, OneflowDeployableModule):
             assert not module._is_raw_deployable_module
-            return module.__class__.from_existing(module, use_graph, dynamic, options)
+            return module.__class__.from_existing(
+                module, options.dynamic, options.oneflow
+            )
         else:
             return get_mixed_deployable_module(module.__class__)(
-                module, None, use_graph, dynamic, options
+                module, None, options.dynamic, options.oneflow
             )
 
     model = wrap_module(torch_module)
