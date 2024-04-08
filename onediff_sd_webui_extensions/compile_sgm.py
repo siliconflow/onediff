@@ -76,7 +76,7 @@ torch2oflow_class_map = {
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_sgm_unet(unet_model, *, options={}):
+def compile_sgm_unet(unet_model, *, options=None):
     if not isinstance(unet_model, UNetModel):
         return
     for module in unet_model.modules():
