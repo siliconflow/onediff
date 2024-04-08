@@ -1,7 +1,7 @@
 import folder_paths
 from pathlib import Path
 from comfy import model_management
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile, CompileOptions
 from .model_patcher import OneFlowSpeedUpModelPatcher
 from .graph_path import generate_graph_path
 from .loader_sample_tools import compoile_unet, quantize_unet
@@ -48,14 +48,13 @@ def onediff_load_quant_checkpoint_advanced(
         )
 
     if vae_speedup == "enable":
-        file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+        compile_options = CompileOptions()
+        compile_options.oneflow.graph_file = generate_graph_path(
+            ckpt_name, vae.first_stage_model
+        )
+        compile_options.oneflow.graph_file_device = model_management.get_torch_device()
         vae.first_stage_model = oneflow_compile(
-            vae.first_stage_model,
-            use_graph=True,
-            options={
-                "graph_file": file_path,
-                "graph_file_device": model_management.get_torch_device(),
-            },
+            vae.first_stage_model, options=compile_options
         )
 
     # set inplace update

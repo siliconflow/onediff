@@ -2,8 +2,7 @@ import os
 import time
 import argparse
 
-from onediff.infer_compiler import oneflow_compile
-from onediff.schedulers import EulerDiscreteScheduler
+from onediff.infer_compiler import oneflow_compile, CompileOptions
 
 import torch
 import torch.nn as nn
@@ -77,13 +76,8 @@ with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
             [float(x) for x in items[3].split(",")],
         ]
 
-
-os.environ["ONEFLOW_RUN_GRAPH_BY_VM"] = "1"
-
-scheduler = EulerDiscreteScheduler.from_pretrained(args.model, subfolder="scheduler")
 pipe = StableDiffusionPipeline.from_pretrained(
     args.model,
-    scheduler=scheduler,
     use_auth_token=True,
     revision="fp16",
     variant="fp16",
@@ -98,13 +92,16 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
+options = CompileOptions()
+options.oneflow.use_graph = args.graph
+
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:
-        pipe.text_encoder = oneflow_compile(pipe.text_encoder, use_graph=args.graph)
+        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=options)
 
 if args.compile:
-    pipe.unet = oneflow_compile(pipe.unet, use_graph=args.graph)
-    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, use_graph=args.graph)
+    pipe.unet = oneflow_compile(pipe.unet, options=options)
+    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=options)
 
 if args.load_graph:
     print("Loading graphs to avoid compilation...")

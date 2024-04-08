@@ -36,7 +36,7 @@ def input_output_processor(func):
     def wrapper(self: "DeployableModule", *args, **kwargs):
         mapped_args, mapped_kwargs, input_count = process_input(*args, **kwargs)
         if (
-            self._deployable_module_use_graph
+            self._deployable_module_options.use_graph
             and self._deployable_module_dpl_graph is not None
         ):
             count = len(self._deployable_module_dpl_graph._input_op_names)

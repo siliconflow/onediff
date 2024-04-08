@@ -9,8 +9,7 @@ compiled_models = {}
 
 
 class VaeCompileCtx(object):
-    def __init__(self, use_graph=True, options={}):
-        self._use_graph = use_graph
+    def __init__(self, options=None):
         self._options = options
         # https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/75336dfc84cae280036bc52a6805eb10d9ae30ba/modules/sd_vae_approx.py#L43
         self._model_name = (
@@ -26,9 +25,7 @@ class VaeCompileCtx(object):
         global compiled_models
         model = compiled_models.get(self._model_name)
         if model is None:
-            model = oneflow_compile(
-                self._original_model, use_graph=self._use_graph, options=self._options
-            )
+            model = oneflow_compile(self._original_model, options=self._options)
             compiled_models[self._model_name] = model
         sd_vae_approx_models[self._model_name] = model
 
