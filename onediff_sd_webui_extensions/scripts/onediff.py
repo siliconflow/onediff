@@ -19,8 +19,7 @@ from onediff_lora import HijackLoraActivate
 from onediff_hijack import do_hijack as onediff_do_hijack
 
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
-from onediff.infer_compiler.utils.param_utils import get_constant_folding_info, update_graph_with_constant_folding_info
+from onediff.infer_compiler.utils.param_utils import CONSTANT_FOLDING_INFO_ATTR
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -112,7 +111,6 @@ class UnetCompileCtx(object):
 
 class Script(scripts.Script):
     current_type = None
-    convname_dict = None
 
     def title(self):
         return "onediff_diffusion_model"
@@ -192,12 +190,6 @@ class Script(scripts.Script):
         model_changed = ckpt_name != compiled_ckpt_name
         model_structure_changed = self.check_model_structure_change(shared.sd_model)
         need_recompile = (quantization and model_changed) or model_structure_changed
-        if not need_recompile:
-            logger.info(
-                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
-            )
-            if model_changed:
-                update_graph_with_constant_folding_info(compiled_unet, self.convname_dict)
 
         if need_recompile:
             compile_options = {}
@@ -208,17 +200,15 @@ class Script(scripts.Script):
                 options=compile_options,
             )
             compiled_ckpt_name = ckpt_name
-            self.convname_dict = None
+        else:
+            logger.info(
+                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
+            )
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(
-            self.convname_dict
+            getattr(compiled_unet, CONSTANT_FOLDING_INFO_ATTR, None)
         ):
             proc = process_images(p)
-
-        # AutoNHWC will transpose conv weight, which generate a new tensor in graph
-        # The part is to find the corresponding relationship between the tensors before/after transpose
-        if not quantization and self.convname_dict is None:
-            self.convname_dict = get_constant_folding_info(compiled_unet)
         return proc
 
 
