@@ -2,7 +2,7 @@ import warnings
 from typing import Union, List
 from collections import defaultdict
 import torch
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
 
 _nested_counter = defaultdict(lambda: 0)
 
@@ -10,7 +10,7 @@ _nested_counter = defaultdict(lambda: 0)
 class TensorInplaceAssign:
     r"""
     This class is used as a context manager, instantiated with either a `torch.nn.Module` or
-    `onediff.infer_compiler.with_oneflow_compile.DeployableModule` during initialization.
+    `onediff.infer_compiler.deployable_module.DeployableModule` during initialization.
     Within the context manager, all Tensors associated with the provided module will be
     transformed into AutoInplaceCopyTensor. After transformed, assignments to Tensor.data are
     modified to in-place copying.

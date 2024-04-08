@@ -3,7 +3,7 @@ from typing import Union, Dict
 from collections import defaultdict
 
 import torch
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
 from diffusers.models.lora import (
     LoRACompatibleConv,
@@ -51,17 +51,24 @@ def load_lora_into_unet(
     keys = list(state_dict.keys())
     cls = type(self)
 
-    if all(key.startswith(cls.unet_name) or key.startswith(cls.text_encoder_name) for key in keys):
+    if all(
+        key.startswith(cls.unet_name) or key.startswith(cls.text_encoder_name)
+        for key in keys
+    ):
         # Load the layers corresponding to UNet.
         logger.info(f"Loading {cls.unet_name}.")
 
         unet_keys = [k for k in keys if k.startswith(cls.unet_name)]
         state_dict = {
-            k.replace(f"{cls.unet_name}.", ""): v for k, v in state_dict.items() if k in unet_keys
+            k.replace(f"{cls.unet_name}.", ""): v
+            for k, v in state_dict.items()
+            if k in unet_keys
         }
 
         if network_alphas is not None:
-            alpha_keys = [k for k in network_alphas.keys() if k.startswith(cls.unet_name)]
+            alpha_keys = [
+                k for k in network_alphas.keys() if k.startswith(cls.unet_name)
+            ]
             network_alphas = {
                 k.replace(f"{cls.unet_name}.", ""): v
                 for k, v in network_alphas.items()
@@ -104,7 +111,9 @@ def _convert_state_dict_legacy_attn_format(self, state_dict, network_alphas):
             logger.warning(warn_message)
         unet_keys = [k for k in state_dict.keys() if k.startswith(self.unet_name)]
         state_dict = {
-            k.replace(f"{self.unet_name}.", ""): v for k, v in state_dict.items() if k in unet_keys
+            k.replace(f"{self.unet_name}.", ""): v
+            for k, v in state_dict.items()
+            if k in unet_keys
         }
 
     # change processor format to 'pure' LoRACompatibleLinear format
@@ -122,12 +131,16 @@ def _convert_state_dict_legacy_attn_format(self, state_dict, network_alphas):
         state_dict = {format_to_lora_compatible(k): v for k, v in state_dict.items()}
 
         if network_alphas is not None:
-            network_alphas = {format_to_lora_compatible(k): v for k, v in network_alphas.items()}
+            network_alphas = {
+                format_to_lora_compatible(k): v for k, v in network_alphas.items()
+            }
     return state_dict, network_alphas
 
 
 def _load_attn_procs(
-    self, pretrained_model_name_or_path_or_dict: Union[str, Dict[str, torch.Tensor]], **kwargs,
+    self,
+    pretrained_model_name_or_path_or_dict: Union[str, Dict[str, torch.Tensor]],
+    **kwargs,
 ):
 
     lora_scale = kwargs.pop("lora_scale", 1.0)
@@ -176,7 +189,9 @@ def _load_attn_procs(
             if network_alphas is not None:
                 for k in network_alphas_keys:
                     if k.replace(".alpha", "") in key:
-                        mapped_network_alphas.update({attn_processor_key: network_alphas.get(k)})
+                        mapped_network_alphas.update(
+                            {attn_processor_key: network_alphas.get(k)}
+                        )
                         used_network_alphas_keys.add(k)
 
         if not is_network_alphas_none:
@@ -204,7 +219,12 @@ def _load_attn_procs(
 
             if isinstance(
                 attn_processor,
-                (LoRACompatibleConv, torch.nn.Conv2d, LoRACompatibleLinear, torch.nn.Linear,),
+                (
+                    LoRACompatibleConv,
+                    torch.nn.Conv2d,
+                    LoRACompatibleLinear,
+                    torch.nn.Linear,
+                ),
             ):
                 fuse_lora(
                     attn_processor,
@@ -216,7 +236,8 @@ def _load_attn_procs(
                     adapter_name=adapter_name,
                 )
             elif is_peft_available() and isinstance(
-                attn_processor, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+                attn_processor,
+                (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
             ):
                 fuse_lora(
                     attn_processor.base_layer,
@@ -242,8 +263,12 @@ def _load_attn_procs(
     if not USE_PEFT_BACKEND:
         if _pipeline is not None:
             for _, component in _pipeline.components.items():
-                if isinstance(component, torch.nn.Module) and hasattr(component, "_hf_hook"):
-                    is_model_cpu_offload = isinstance(getattr(component, "_hf_hook"), CpuOffload)
+                if isinstance(component, torch.nn.Module) and hasattr(
+                    component, "_hf_hook"
+                ):
+                    is_model_cpu_offload = isinstance(
+                        getattr(component, "_hf_hook"), CpuOffload
+                    )
                     is_sequential_cpu_offload = isinstance(
                         getattr(component, "_hf_hook"), AlignDevicesHook
                     )
@@ -251,7 +276,9 @@ def _load_attn_procs(
                     logger.info(
                         "Accelerate hooks detected. Since you have called `load_lora_weights()`, the previous hooks will be first removed. Then the LoRA parameters will be loaded and the hooks will be applied again."
                     )
-                    remove_hook_from_module(component, recurse=is_sequential_cpu_offload)
+                    remove_hook_from_module(
+                        component, recurse=is_sequential_cpu_offload
+                    )
 
         # self.to(dtype=self.dtype, device=self.device)
 

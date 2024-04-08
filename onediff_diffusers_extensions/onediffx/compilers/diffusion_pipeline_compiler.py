@@ -1,7 +1,7 @@
 import os
 import torch
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
 
 

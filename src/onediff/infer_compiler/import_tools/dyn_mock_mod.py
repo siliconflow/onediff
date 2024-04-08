@@ -38,8 +38,7 @@ def inspect_modules_and_attributes(module_names):
             try:
                 attr_value = getattr(module, attr)
                 source_file = inspect.getsourcefile(attr_value)
-                source_code = inspect.getsource(attr_value)
-                attribute_info[f"{module_name};{attr}"] = (source_file, source_code)
+                attribute_info[f"{module_name};{attr}"] = (source_file, f"{attr_value}")
             except Exception as e:
                 pass
 
@@ -72,14 +71,14 @@ def getattr_from_module_name(module, module_name: str):
                 raise RuntimeError(
                     f"Not support {module_name} with parameters Module: {module}"
                 )
-        sub_module = getattr(sub_module, attr)
+        sub_module = getattr(sub_module, attr, None)
     return sub_module
 
 
 def _update_module(full_names, main_pkg_enable_context):
     with main_pkg_enable_context():
         original_results = inspect_modules_and_attributes(full_names)
-    
+
     updated_results = inspect_modules_and_attributes(full_names)
 
     torch_path = os.path.dirname(torch.__file__)
@@ -109,9 +108,6 @@ def _update_module(full_names, main_pkg_enable_context):
 
                 value = getattr_from_module_name(other, module_name=str(sample_module))
                 if value is None:
-                    logger.warning(
-                        f"Skip {str(sample_module)} because is not supported"
-                    )
                     continue
 
                 setattr(module, attr_name, value)
@@ -183,13 +179,12 @@ class DynamicMockModule(ModuleType):
                 obj_entity = self._get_module(name)
             org_delete_list = deepcopy(_importer.delete_list)
 
-
         try:
             # Update obj_entity inplace
             if not _importer.enable:
                 _update_module([fullname] + org_delete_list, self._main_pkg_enable)
         except Exception as e:
-            logger.warning(f'Failed to update obj_entity in place. Exception: {e}')
+            logger.warning(f"Failed to update obj_entity in place. Exception: {e}")
 
         if ismodule(obj_entity):
             return DynamicMockModule(self._pkg_name, obj_entity, self._main_pkg_enable)

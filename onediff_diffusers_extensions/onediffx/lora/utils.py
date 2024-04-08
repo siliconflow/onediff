@@ -18,7 +18,7 @@ if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
     from diffusers.models.lora import PatchedLoraProjection
-from onediff.infer_compiler.with_oneflow_compile import DualModule
+from onediff.infer_compiler.oneflow.dual_module import DualModule
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
@@ -100,7 +100,9 @@ def offload_tensor(tensor, device):
 
 def _set_adapter(self, adapter_names, adapter_weights):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
-        raise TypeError(f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}")
+        raise TypeError(
+            f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}"
+        )
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
@@ -122,9 +124,13 @@ def _set_adapter(self, adapter_names, adapter_weights):
         w_down = self.lora_A[adapter].float().to(device)
         w_up = self.lora_B[adapter].float().to(device)
         if delta_weight is None:
-            delta_weight = get_delta_weight(self, w_up, w_down, weight / self.scaling[adapter])
+            delta_weight = get_delta_weight(
+                self, w_up, w_down, weight / self.scaling[adapter]
+            )
         else:
-            delta_weight += get_delta_weight(self, w_up, w_down, weight / self.scaling[adapter])
+            delta_weight += get_delta_weight(
+                self, w_up, w_down, weight / self.scaling[adapter]
+            )
         self.active_adapter_names[adapter] = weight
 
     if delta_weight is not None:
@@ -296,18 +302,26 @@ def _maybe_map_sgm_blocks_to_diffusers(
             elif sgm_patterns[2] in layer:
                 output_block_ids.add(layer_id)
             else:
-                raise ValueError(f"Checkpoint not supported because layer {layer} not supported.")
+                raise ValueError(
+                    f"Checkpoint not supported because layer {layer} not supported."
+                )
 
     input_blocks = {
-        layer_id: [key for key in state_dict if f"input_blocks{delimiter}{layer_id}" in key]
+        layer_id: [
+            key for key in state_dict if f"input_blocks{delimiter}{layer_id}" in key
+        ]
         for layer_id in input_block_ids
     }
     middle_blocks = {
-        layer_id: [key for key in state_dict if f"middle_block{delimiter}{layer_id}" in key]
+        layer_id: [
+            key for key in state_dict if f"middle_block{delimiter}{layer_id}" in key
+        ]
         for layer_id in middle_block_ids
     }
     output_blocks = {
-        layer_id: [key for key in state_dict if f"output_blocks{delimiter}{layer_id}" in key]
+        layer_id: [
+            key for key in state_dict if f"output_blocks{delimiter}{layer_id}" in key
+        ]
         for layer_id in output_block_ids
     }
 
@@ -318,7 +332,9 @@ def _maybe_map_sgm_blocks_to_diffusers(
 
         for key in input_blocks[i]:
             inner_block_id = int(key.split(delimiter)[block_slice_pos])
-            inner_block_key = inner_block_map[inner_block_id] if "op" not in key else "downsamplers"
+            inner_block_key = (
+                inner_block_map[inner_block_id] if "op" not in key else "downsamplers"
+            )
             inner_layers_in_block = str(layer_in_block_id) if "op" not in key else "0"
             new_key = delimiter.join(
                 key.split(delimiter)[: block_slice_pos - 1]
@@ -353,7 +369,9 @@ def _maybe_map_sgm_blocks_to_diffusers(
         for key in output_blocks[i]:
             inner_block_id = int(key.split(delimiter)[block_slice_pos])
             inner_block_key = inner_block_map[inner_block_id]
-            inner_layers_in_block = str(layer_in_block_id) if inner_block_id < 2 else "0"
+            inner_layers_in_block = (
+                str(layer_in_block_id) if inner_block_id < 2 else "0"
+            )
             new_key = delimiter.join(
                 key.split(delimiter)[: block_slice_pos - 1]
                 + [str(block_id), inner_block_key, inner_layers_in_block]
