@@ -127,7 +127,7 @@ Click the links below to view the workflow images, or load them directly into Co
 ### ComfyUI SD 2.1
 
 
-  For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/tree/main).
+  For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v2-1-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/tree/main).
 
 <details> 
 <summary> Download the required model files </summary>
