@@ -34,7 +34,7 @@ def get_constant_folding_info(deployable_module, torch_module: torch.nn.Module =
         s = re.sub(r"_[0-9]+$", "", s.removeprefix(prefix)).removeprefix("model.")
         return s
 
-    from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+    from onediff.infer_compiler.deployable_module import DeployableModule
     if not isinstance(deployable_module, DeployableModule):
         raise TypeError(f"deployable_model must be a DeployableModule, got {type(deployable_module)}")
     if torch_module is None:
@@ -52,7 +52,7 @@ def get_constant_folding_info(deployable_module, torch_module: torch.nn.Module =
     return result
 
 def update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[str, flow.Tensor]) -> None:
-    from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+    from onediff.infer_compiler.deployable_module import DeployableModule
     if isinstance(module, DeployableModule):
         module = module._torch_module
 

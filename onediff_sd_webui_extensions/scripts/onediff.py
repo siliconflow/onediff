@@ -20,6 +20,7 @@ from onediff_hijack import do_hijack as onediff_do_hijack
 
 from onediff.infer_compiler.utils.log_utils import logger
 from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
+from onediff.infer_compiler.utils.param_utils import get_constant_folding_info, update_graph_with_constant_folding_info
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -196,16 +197,7 @@ class Script(scripts.Script):
                 f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
             )
             if model_changed:
-                # need to transpose conv weights
-                for k in self.convname_dict:
-                    orig_tensor = original_diffusion_model.get_parameter(k)
-                    target_tensor = self.convname_dict[k]
-                    if target_tensor is None:
-                        need_recompile = True
-                        break
-                    target_tensor.copy_(
-                        flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
-                    )
+                update_graph_with_constant_folding_info(compiled_unet, self.convname_dict)
 
         if need_recompile:
             compile_options = {}
@@ -225,20 +217,8 @@ class Script(scripts.Script):
 
         # AutoNHWC will transpose conv weight, which generate a new tensor in graph
         # The part is to find the corresponding relationship between the tensors before/after transpose
-        def convert_var_name(s: str, prefix="variable_transpose_"):
-            s = re.sub(r"_[0-9]+$", "", s.removeprefix(prefix)).removeprefix("model.")
-            return s
-
         if not quantization and self.convname_dict is None:
-            self.convname_dict = {}
-            run_state = (
-                compiled_unet._deployable_module_dpl_graph._c_nn_graph.get_runtime_var_states()
-            )
-            self.convname_dict = {
-                convert_var_name(k): v
-                for k, v in zip(run_state[0], run_state[1])
-                if k.startswith("variable_")
-            }
+            self.convname_dict = get_constant_folding_info(compiled_unet)
         return proc
 
 
