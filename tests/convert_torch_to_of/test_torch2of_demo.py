@@ -47,7 +47,7 @@ def test_torch2of_demo():
     # Compile PyTorch model to OneFlow
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     pytorch_model = PyTorchModel().to(device)
-    of_model = oneflow_compile(pytorch_model, use_graph=True)
+    of_model = oneflow_compile(pytorch_model)
 
     # Verify conversion
     x = torch.randn(4, 4).to(device)
