@@ -71,7 +71,7 @@ def getattr_from_module_name(module, module_name: str):
                 raise RuntimeError(
                     f"Not support {module_name} with parameters Module: {module}"
                 )
-        sub_module = getattr(sub_module, attr)
+        sub_module = getattr(sub_module, attr, None)
     return sub_module
 
 
@@ -108,9 +108,6 @@ def _update_module(full_names, main_pkg_enable_context):
 
                 value = getattr_from_module_name(other, module_name=str(sample_module))
                 if value is None:
-                    logger.warning(
-                        f"Skip {str(sample_module)} because is not supported"
-                    )
                     continue
 
                 setattr(module, attr_name, value)
