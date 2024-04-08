@@ -35,8 +35,6 @@ class OneflowDeployableModule(DeployableModule):
         # for checking state dict update of torch_module
         torch_module.register_load_state_dict_post_hook(state_update_hook)
         setattr(torch_module, STATE_UPDATED_ATTR, False)
-        self.register_forward_hook(forward_generate_constant_folding_info_hook)
-        self.register_forward_pre_hook(forward_pre_check_state_update_hook)
 
     @classmethod
     def from_existing(cls, existing_module, use_graph=None, dynamic=None, options=None):
