@@ -65,7 +65,7 @@ Select `onediff_diffusion_model` from the Script menu, enter a prompt in the tex
 
 When switching models, if the new model has the same structure as the old model, OneDiff will reuse the previously compiled graph, which means you don't need to compile the new model again, which significantly reduces the time it takes you to switch models.
 
-> Note: Please make sure that your PyTorch version is at least 2.1.0, and set the environment variable `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0 when starting the sd-webui service. And the feature is not supported for quantized model.
+> Note: Please make sure that your PyTorch version is at least 2.1.0. And the feature is not supported for quantized model.
 
 ### LoRA
 
@@ -73,20 +73,15 @@ OneDiff supports the complete functionality related to LoRA. You can use OneDiff
 
 FAQ:
 
-
-1. Does OneDiff support model types other than LoRA, such as LyCORIS?
-
-    If your LoRA model only contains the weights of the Linear module, you can directly use OneDiff without any modifications. But if your LoRA model includes the weights of the Conv module (such as LyCORIS), you need to disable constant folding optimization by setting the env var `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0 (which may cause a performance drop of around 4.4%), otherwise the weights of the Conv module may not be loaded into the model.
-
-2. After switching LoRA, should I recompile the model?
+1. After switching LoRA, should I recompile the model?
 
     OneDiff supports dynamically switching LoRA without  recompiling the model, because the model with LoRA and the one without LoRA share the same parameter pointer, which have already been captured by the static graph.
 
-3. What's the time cost of LoRA fusing?
+2. What's the time cost of LoRA fusing?
 
     The initial few times of LoRA fusing may take a bit of time (1~2s), but when stabilized, the time cost is ~700ms.
 
-4. Will LoRA fusing affect the inference efficiency of the model?
+3. Will LoRA fusing affect the inference efficiency of the model?
 
     No, the model's inference efficiency remains the same after fusing LoRA as it was before fusing LoRA.
 

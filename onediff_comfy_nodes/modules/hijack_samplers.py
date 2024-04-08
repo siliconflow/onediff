@@ -1,10 +1,22 @@
 """hijack ComfyUI/comfy/samplers.py"""
-import torch 
-from comfy.samplers import get_area_and_mult, can_concat_cond, cond_cat, calc_cond_uncond_batch
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from functools import total_ordering
+
+import torch
+from comfy.samplers import (
+    calc_cond_uncond_batch,
+    can_concat_cond,
+    cond_cat,
+    get_area_and_mult,
+)
+
+from onediff.infer_compiler.deployable_module import DeployableModule
+
 from .sd_hijack_utils import Hijacker
 
-def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, model_options):
+
+def new_calc_cond_uncond_batch(
+    orig_func, model, cond, uncond, x_in, timestep, model_options
+):
     out_cond = torch.zeros_like(x_in)
     out_count = torch.ones_like(x_in) * 1e-37
 
@@ -72,11 +84,13 @@ def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, m
         timestep_ = torch.cat([timestep] * batch_chunks)
 
         if control is not None:
-            c['control'] = control.get_control(input_x, timestep_, c, len(cond_or_uncond))
+            c["control"] = control.get_control(
+                input_x, timestep_, c, len(cond_or_uncond)
+            )
 
         transformer_options = {}
-        if 'transformer_options' in model_options:
-            transformer_options = model_options['transformer_options'].copy()
+        if "transformer_options" in model_options:
+            transformer_options = model_options["transformer_options"].copy()
 
         if patches is not None:
             if "patches" in transformer_options:
@@ -90,23 +104,55 @@ def new_calc_cond_uncond_batch(orig_func, model, cond, uncond, x_in, timestep, m
                 transformer_options["patches"] = patches
 
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
-        transformer_options["sigmas"] = timestep
+        # transformer_options["sigmas"] = timestep
+        if len(timestep) == 1:
+            transformer_options["sigmas"] = timestep.item()
+        else:
+            transformer_options["sigmas"] = timestep
 
-        c['transformer_options'] = transformer_options
+        c["transformer_options"] = transformer_options
 
-        if 'model_function_wrapper' in model_options:
-            output = model_options['model_function_wrapper'](model.apply_model, {"input": input_x, "timestep": timestep_, "c": c, "cond_or_uncond": cond_or_uncond}).chunk(batch_chunks)
+        if "model_function_wrapper" in model_options:
+            output = model_options["model_function_wrapper"](
+                model.apply_model,
+                {
+                    "input": input_x,
+                    "timestep": timestep_,
+                    "c": c,
+                    "cond_or_uncond": cond_or_uncond,
+                },
+            ).chunk(batch_chunks)
         else:
             output = model.apply_model(input_x, timestep_, **c).chunk(batch_chunks)
         del input_x
 
         for o in range(batch_chunks):
             if cond_or_uncond[o] == COND:
-                out_cond[:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += output[o] * mult[o]
-                out_count[:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += mult[o]
+                out_cond[
+                    :,
+                    :,
+                    area[o][2] : area[o][0] + area[o][2],
+                    area[o][3] : area[o][1] + area[o][3],
+                ] += (output[o] * mult[o])
+                out_count[
+                    :,
+                    :,
+                    area[o][2] : area[o][0] + area[o][2],
+                    area[o][3] : area[o][1] + area[o][3],
+                ] += mult[o]
             else:
-                out_uncond[:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += output[o] * mult[o]
-                out_uncond_count[:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += mult[o]
+                out_uncond[
+                    :,
+                    :,
+                    area[o][2] : area[o][0] + area[o][2],
+                    area[o][3] : area[o][1] + area[o][3],
+                ] += (output[o] * mult[o])
+                out_uncond_count[
+                    :,
+                    :,
+                    area[o][2] : area[o][0] + area[o][2],
+                    area[o][3] : area[o][1] + area[o][3],
+                ] += mult[o]
         del mult
 
     out_cond /= out_count
@@ -123,9 +169,10 @@ def cond_func(orig_func, model, *args, **kwargs):
     else:
         return False
 
+
 samplers_hijack = Hijacker()
 samplers_hijack.register(
-    orig_func= calc_cond_uncond_batch,
+    orig_func=calc_cond_uncond_batch,
     sub_func=new_calc_cond_uncond_batch,
     cond_func=cond_func,
 )

@@ -1,7 +1,7 @@
 import os
 from typing import Optional
 import dataclasses
-from .utils import (
+from ..utils import (
     parse_boolean_from_env,
     set_boolean_env_var,
     parse_integer_from_env,
