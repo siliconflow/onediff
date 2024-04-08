@@ -6,7 +6,7 @@ import sys
 
 def validate():
     image1 = np.array(Image.open('/share_nfs/civitai/20240407-163408.jpg').convert('RGB'))
-    image2 = np.array(Image.open('/src/onediff/tests/output_enterprise_sd.png').convert('RGB'))
+    image2 = np.array(Image.open('/share_nfs/quant_test/output_enterprise_sd.png').convert('RGB'))
     # Calculate SSIM
     ssim_index = ssim(image1, image2, multichannel=True, win_size=3)
     print("SSIM:", ssim_index)
