@@ -83,7 +83,7 @@ def graph_file_management(func):
             except Exception as e:
                 logger.error(f"Failed to save graph file: {graph_file}! {e}")
 
-        if self._deployable_module_use_graph and is_first_load:
+        if self._deployable_module_options.use_graph and is_first_load:
             handle_graph_loading()
             ret = func(self, *args, **kwargs)
             handle_graph_saving()

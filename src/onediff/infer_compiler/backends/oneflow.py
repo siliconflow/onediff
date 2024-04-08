@@ -1,5 +1,6 @@
 import torch
 from .registry import register_backend
+from ..utils.options import CompileOptions
 
 
 @register_backend("oneflow")
@@ -24,6 +25,8 @@ def compile(torch_module: torch.nn.Module, *, options=None):
     from ..oneflow.utils import get_mixed_deployable_module
 
     set_default_registry()
+
+    options = options if options is not None else CompileOptions()
 
     def wrap_module(module):
         if isinstance(module, OneflowDeployableModule):
