@@ -4,7 +4,7 @@ import torch
 
 
 @dataclasses.dataclass
-class OneFlowCompileOptions:
+class OneflowCompileOptions:
     use_graph: bool = True
     debug_level: int = -1
     max_cached_graph_size: int = 9
@@ -33,12 +33,12 @@ class CompileOptions:
     dynamic: bool
 
     # oneflow specific options
-    oneflow: OneFlowCompileOptions
+    oneflow: OneflowCompileOptions
 
     # nexfort specific options
     nexfort: NexfortCompileOptions
 
     def __init__(self, dynamic=True):
         self.dynamic = dynamic
-        self.oneflow = OneFlowCompileOptions()
+        self.oneflow = OneflowCompileOptions()
         self.nexfort = NexfortCompileOptions()

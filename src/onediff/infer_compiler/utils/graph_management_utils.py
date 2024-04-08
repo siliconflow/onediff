@@ -9,7 +9,7 @@ from ..transform.builtin_transform import torch2oflow
 from ..transform.manager import transform_mgr
 from .log_utils import logger
 from .cost_util import cost_time
-from .options import OneFlowCompileOptions
+from .options import OneflowCompileOptions
 
 
 def calculate_model_hash(model):
@@ -39,7 +39,7 @@ def graph_file_management(func):
         compile_options = (
             self._deployable_module_options
             if hasattr(self, "_deployable_module_options")
-            else OneFlowCompileOptions()
+            else OneflowCompileOptions()
         )
         graph_file = compile_options.graph_file
 

@@ -8,7 +8,7 @@ from ..utils.args_tree_util import input_output_processor
 from ..utils.log_utils import logger
 from ..utils.param_utils import parse_device, check_device
 from ..utils.graph_management_utils import graph_file_management
-from ..utils.options import OneFlowCompileOptions
+from ..utils.options import OneflowCompileOptions
 from ..deployable_module import DeployableModule
 
 from .utils import handle_deployable_exception, get_mixed_dual_module, get_oneflow_graph
@@ -28,7 +28,7 @@ class OneflowDeployableModule(DeployableModule):
         object.__setattr__(self, "_torch_module", torch_module)
         self._deployable_module_enable_dynamic = dynamic
         self._deployable_module_options = (
-            options if options is not None else OneFlowCompileOptions()
+            options if options is not None else OneflowCompileOptions()
         )
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
