@@ -64,19 +64,15 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
 
 
 def compile_unet(
-    unet_model, quantization=False, *, use_graph=True, options={},
+    unet_model, quantization=False, *, options=None,
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
 
     if isinstance(unet_model, UNetModelLDM):
-        compiled_unet = compile_ldm_unet(
-            unet_model, use_graph=use_graph, options=options
-        )
+        compiled_unet = compile_ldm_unet(unet_model, options=options)
     elif isinstance(unet_model, UNetModelSGM):
-        compiled_unet = compile_sgm_unet(
-            unet_model, use_graph=use_graph, options=options
-        )
+        compiled_unet = compile_sgm_unet(unet_model, options=options)
     else:
         warnings.warn(
             f"Unsupported model type: {type(unet_model)} for compilation , skip",
@@ -192,12 +188,8 @@ class Script(scripts.Script):
         need_recompile = (quantization and model_changed) or model_structure_changed
 
         if need_recompile:
-            compile_options = {}
-
             compiled_unet = compile_unet(
-                original_diffusion_model,
-                quantization=quantization,
-                options=compile_options,
+                original_diffusion_model, quantization=quantization
             )
             compiled_ckpt_name = ckpt_name
         else:

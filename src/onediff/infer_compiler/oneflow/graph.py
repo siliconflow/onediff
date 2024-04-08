@@ -1,6 +1,7 @@
 import oneflow as flow
 
 from ..transform.manager import transform_mgr
+from ..transform.builtin_transform import reverse_proxy_class
 from ..utils.log_utils import logger
 from ..utils.cost_util import cost_cnt
 

@@ -50,24 +50,22 @@ def get_mixed_deployable_module(module_cls):
     from .deployable_module import OneflowDeployableModule
 
     class MixedOneflowDeployableModule(OneflowDeployableModule, module_cls):
-        def __init__(
-            self, torch_module, oneflow_module, use_graph=True, dynamic=True, options={}
-        ):
+        def __init__(self, torch_module, oneflow_module, dynamic=True, options=None):
             OneflowDeployableModule.__init__(
-                self, torch_module, oneflow_module, use_graph, dynamic, options
+                self, torch_module, oneflow_module, dynamic, options
             )
             self._is_raw_deployable_module = False
 
         @classmethod
-        def from_existing(
-            cls, existing_module, use_graph=None, dynamic=True, options=None
-        ):
+        def from_existing(cls, existing_module, dynamic=True, options=None):
             torch_module = existing_module._deployable_module_model._torch_module
             oneflow_module = existing_module._deployable_module_model._oneflow_module
-            instance = cls(torch_module, oneflow_module, use_graph, dynamic, options)
-            instance._deployable_module_dpl_graph = (
-                existing_module._deployable_module_dpl_graph if use_graph else None
-            )
+            instance = cls(torch_module, oneflow_module, dynamic, options)
+            instance._deployable_module_dpl_graph = None
+            if hasattr(existing_module, "_deployable_module_dpl_graph"):
+                instance._deployable_module_dpl_graph = (
+                    existing_module._deployable_module_dpl_graph
+                )
             return instance
 
         def _get_name(self):
