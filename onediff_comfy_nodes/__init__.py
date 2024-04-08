@@ -14,7 +14,7 @@ from ._nodes import (
     OneDiffDeepCacheCheckpointLoaderSimple,
     BatchSizePatcher,
 )
-from ._compare_node import CompareModel, ShowImageDiff
+from .comfy_extras_nodes._compare_node import CompareModel, ShowImageDiff
 from ._nodes import OneDiffModelOptimizer, OneDiffDeepcacheOptimizer, OneDiffOnlineQuantizationOptimizer
 
 NODE_CLASS_MAPPINGS = {

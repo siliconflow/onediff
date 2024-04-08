@@ -3,8 +3,10 @@ import random
 from PIL import Image
 import os
 import numpy as np
-import torch
 import subprocess
+import numpy as np
+import oneflow as flow
+from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 
 try:
     from skimage.metrics import structural_similarity
@@ -47,10 +49,6 @@ class CompareModel:
     def compare(self, torch_model, oneflow_model, check):
         if check == "disable":
             return {}
-
-        import numpy as np
-        import oneflow as flow
-        from onediff.infer_compiler.transform.builtin_transform import torch2oflow
 
         torch_model.patch_model("cuda")
         oneflow_model.patch_model("cuda")
