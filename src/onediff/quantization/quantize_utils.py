@@ -12,19 +12,12 @@ def setup_onediff_quant():
 
 
 def load_calibration_and_quantize_pipeline(calibration_path, pipe):
-    calibrate_info = {}
-    with open(calibration_path, "r") as f:
-        for line in f.readlines():
-            line = line.strip()
-            items = line.split(" ")
-            calibrate_info[items[0]] = [
-                float(items[1]),
-                int(items[2]),
-                [float(x) for x in items[3].split(",")],
-            ]
-
+    from onediff_quant.quantization import CalibrationStorage
     from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
+    store = CalibrationStorage()
+    calibrate_info = store.load_from_file(file_path=calibration_path)
+    
     for sub_module_name, sub_calibrate_info in calibrate_info.items():
         replace_sub_module_with_quantizable_module(
             pipe.unet,
