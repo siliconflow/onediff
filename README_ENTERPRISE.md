@@ -119,7 +119,7 @@ wget https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-ente
 
 </details>
 
-Click the links below to view the workflow images, or load them directly into ComfyUI. 
+Click the links below to view the workflow images, or load them directly into ComfyUI.
 
   - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
 
@@ -177,7 +177,7 @@ wget https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v
 ### ComfyUI SVD
 
 
-  For model details and to **access the model files and Workflow below** ,visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
+  For model details and to **access the model files and Workflow below**, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
 
 
 <details>
