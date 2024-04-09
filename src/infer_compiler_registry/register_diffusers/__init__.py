@@ -12,10 +12,15 @@ from diffusers.models.attention_processor import (
     AttnProcessor2_0,
 )
 from diffusers.models.attention_processor import LoRAAttnProcessor2_0
-from diffusers.models.unet_2d_condition import UNet2DConditionModel
-from diffusers.models.unet_2d_blocks import AttnUpBlock2D, CrossAttnUpBlock2D, UpBlock2D
-from diffusers.models.resnet import Upsample2D
-from diffusers.models.transformer_2d import Transformer2DModel
+
+if diffusers_version < version.parse("0.26.00"):
+    from diffusers.models.unet_2d_condition import UNet2DConditionModel
+    from diffusers.models.unet_2d_blocks import AttnUpBlock2D, CrossAttnUpBlock2D, UpBlock2D
+    from diffusers.models.transformer_2d import Transformer2DModel
+else:
+    from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel
+    from diffusers.models.unets.unet_2d_blocks import AttnUpBlock2D, CrossAttnUpBlock2D, UpBlock2D
+    from diffusers.models.transformers.transformer_2d import Transformer2DModel
 
 if diffusers_version >= version.parse("0.25.00"):
     from diffusers.models.upsampling import Upsample2D
@@ -23,14 +28,15 @@ else:
     from diffusers.models.resnet import Upsample2D
 if diffusers_version >= version.parse("0.24.00"):
     from diffusers.models.resnet import SpatioTemporalResBlock
-    from diffusers.models.transformer_temporal import TransformerSpatioTemporalModel
     from diffusers.models.attention import TemporalBasicTransformerBlock
 
     if diffusers_version >= version.parse("0.26.00"):
         from diffusers.models.unets.unet_spatio_temporal_condition import (
             UNetSpatioTemporalConditionModel,
         )
+        from diffusers.models.transformers.transformer_temporal import TransformerSpatioTemporalModel
     else:
+        from diffusers.models.transformer_temporal import TransformerSpatioTemporalModel
         from diffusers.models.unet_spatio_temporal_condition import (
             UNetSpatioTemporalConditionModel,
         )
@@ -41,6 +47,18 @@ if diffusers_version >= version.parse("0.24.00"):
         )
     else:
         from diffusers.models.autoencoder_kl_temporal_decoder import TemporalDecoder
+    
+    from .spatio_temporal_oflow import SpatioTemporalResBlock as SpatioTemporalResBlockOflow
+    from .spatio_temporal_oflow import TemporalDecoder as TemporalDecoderOflow
+    from .spatio_temporal_oflow import (
+        TransformerSpatioTemporalModel as TransformerSpatioTemporalModelOflow,
+    )
+    from .spatio_temporal_oflow import (
+        TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow,
+    )
+    from .spatio_temporal_oflow import (
+        UNetSpatioTemporalConditionModel as UNetSpatioTemporalConditionModelOflow,
+    )
 
 from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
@@ -51,17 +69,6 @@ from .unet_2d_blocks_oflow import CrossAttnUpBlock2D as CrossAttnUpBlock2DOflow
 from .unet_2d_blocks_oflow import UpBlock2D as UpBlock2DOflow
 from .resnet_oflow import Upsample2D as Upsample2DOflow
 from .transformer_2d_oflow import Transformer2DModel as Transformer2DModelOflow
-from .spatio_temporal_oflow import SpatioTemporalResBlock as SpatioTemporalResBlockOflow
-from .spatio_temporal_oflow import TemporalDecoder as TemporalDecoderOflow
-from .spatio_temporal_oflow import (
-    TransformerSpatioTemporalModel as TransformerSpatioTemporalModelOflow,
-)
-from .spatio_temporal_oflow import (
-    TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow,
-)
-from .spatio_temporal_oflow import (
-    UNetSpatioTemporalConditionModel as UNetSpatioTemporalConditionModelOflow,
-)
 
 # For CI
 if diffusers_version >= version.parse("0.24.00"):

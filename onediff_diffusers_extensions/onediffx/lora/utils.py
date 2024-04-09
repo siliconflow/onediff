@@ -1,14 +1,93 @@
-from typing import Dict, Union
+import os
+from typing import Dict, Union, List
 from packaging import version
+from collections import OrderedDict
 
 import torch
 import diffusers
-from onediff.infer_compiler.with_oneflow_compile import DualModule
+
+if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
+    from diffusers.utils.import_utils import is_peft_available
+
+    if is_peft_available():
+        import peft
+else:
+    is_peft_available = lambda: False
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
     from diffusers.models.lora import PatchedLoraProjection
+from onediff.infer_compiler.oneflow.dual_module import DualModule
+
+if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
+    from diffusers.loaders import PatchedLoraProjection
+else:
+    from diffusers.models.lora import PatchedLoraProjection
+
+
+_adapter_layer_names = ()
+
+
+def init_lora_infos(self: torch.nn.Module):
+    self.r = {}
+    self.lora_alpha = {}
+    self.scaling = {}
+    self.lora_A = {}
+    self.lora_B = {}
+    self.adapter_names = set()
+    self.active_adapter_names = {}
+
+
+def delete_lora_infos(self, adapter_names):
+    curr_adapter_names = self.adapter_names.copy()
+    for adapter_name in adapter_names:
+        if adapter_name not in curr_adapter_names:
+            continue
+        self.r.pop(adapter_name)
+        self.lora_alpha.pop(adapter_name)
+        self.scaling.pop(adapter_name)
+        self.lora_A.pop(adapter_name)
+        self.lora_B.pop(adapter_name)
+        self.adapter_names.remove(adapter_name)
+        if adapter_name in self.active_adapter_names:
+            self.active_adapter_names.pop(adapter_name)
+
+
+def get_adapter_names(self):
+    if not hasattr(self, "adapter_names"):
+        result = "default_0"
+    else:
+        if not isinstance(self.adapter_names, set):
+            adapter_names = set([self.adapter_names])
+        else:
+            adapter_names = self.adapter_names
+        for i in range(0, 10000):
+            result = f"default_{i}"
+            if result not in adapter_names:
+                break
+    return result
+
+
+def get_delta_weight(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+    w_up: torch.Tensor,
+    w_down: torch.Tensor,
+    weight: float,
+):
+
+    if isinstance(self, (torch.nn.Linear, PatchedLoraProjection)):
+        lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
+    elif isinstance(self, torch.nn.Conv2d):
+        lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
+        lora_weight = lora_weight.reshape((self.weight.shape))
+    else:
+        raise TypeError(
+            f"[OneDiffX get_delta_weight] Expect type Linear or Conv2d, got {type(self)}"
+        )
+    if weight != 1.0:
+        lora_weight *= weight
+    return lora_weight
 
 
 def offload_tensor(tensor, device):
@@ -19,128 +98,77 @@ def offload_tensor(tensor, device):
         return tensor.to(device)
 
 
-def linear_fuse_lora(
-    self: Union[torch.nn.Linear, PatchedLoraProjection],
-    state_dict: Dict[str, torch.Tensor],
-    lora_scale: float = 1.0,
-    alpha: float = None,
-    rank: float = None,
-    *,
-    prefix="lora",
-    offload_device="cpu",
-    offload_weight="lora",
-):
-    r"""
-    This will fuse the LoRA weights in `state_dict` into Linear module.
-
-    Parameters:
-        self (Union[torch.nn.Linear, PatchedLoraProjection]):
-            Model layer to be fused, must be Linear or PatchedLoraProjection.
-        state_dict (Dict[str, torch.Tensor]):
-            Dictionary containing LoRA weight.
-        lora_scale (float, optional):
-            Scaling factor for LoRA weights. Default is 1.0.
-        alpha (float, optional):
-            Alpha parameter of LoRA weights. Default is None.
-        rank (float, optional):
-            Rank of LoRA weights. Default is None.
-        prefix (str, optional):
-            Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
-        offload_device (str, optional):
-            Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
-        offload_weight (str, optional):
-            Which weights to be offloaded, can be "lora" or "weight". Default is "lora".
-            If set to "weight", the weight of Linear rather than LoRA will be saved for unfusing.
-    """
-    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
-    if isinstance(self, DualModule):
-        self = self._torch_module
+def _set_adapter(self, adapter_names, adapter_weights):
+    if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
+        raise TypeError(
+            f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}"
+        )
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
+    if not hasattr(self, "adapter_names"):
+        return
+    if adapter_weights is None:
+        adapter_weights = 1.0
+    if isinstance(adapter_weights, float):
+        adapter_weights = [adapter_weights,] * len(adapter_names)
+    _unfuse_lora(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device
-    down_key = prefix + ".down.weight"
-    up_key = prefix + ".up.weight"
 
-    w_down = state_dict[down_key].float().to(device)
-    w_up = state_dict[up_key].float().to(device)
+    delta_weight = None
+    for adapter, weight in zip(adapter_names, adapter_weights):
+        if adapter not in self.adapter_names:
+            continue
 
-    if alpha is not None:
-        w_up = w_up * (alpha / rank * lora_scale)
+        self.active_adapter_names[adapter] = weight
+        w_down = self.lora_A[adapter].float().to(device)
+        w_up = self.lora_B[adapter].float().to(device)
+        if delta_weight is None:
+            delta_weight = get_delta_weight(
+                self, w_up, w_down, weight / self.scaling[adapter]
+            )
+        else:
+            delta_weight += get_delta_weight(
+                self, w_up, w_down, weight / self.scaling[adapter]
+            )
+        self.active_adapter_names[adapter] = weight
 
-    if offload_weight == "lora":
-        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
-        self.register_buffer(
-            "_lora_down", offload_tensor(state_dict[down_key], offload_device)
+    if delta_weight is not None:
+        fused_weight = self.weight.data.float() + delta_weight
+        self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+
+
+def _delete_adapter(self, adapter_names):
+    if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
+        raise TypeError(
+            f"[OneDiffX _delete_adapter] Expect type Linear or Conv2d, got {type(self)}"
         )
-        self._lora_scale = lora_scale
-
-    elif offload_weight == "weight":
-        self.register_buffer(
-            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
-        )
-
-    else:
-        raise ValueError(
-            f"[OneDiff linear_fuse_lora] Invalid offload weight: {offload_weight}"
-        )
-
-    lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
-    fused_weight = self.weight.data.float() + lora_weight
-    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
-
-
-def _linear_unfuse_lora(self: Union[torch.nn.Linear, PatchedLoraProjection]):
-    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection))
-    if isinstance(self, DualModule):
-        self = self._torch_module
     if isinstance(self, PatchedLoraProjection):
         self = self.regular_linear_layer
-
-    fused_weight = self.weight.data
-    dtype, device = fused_weight.dtype, fused_weight.device
-
-    if (
-        "_lora_orig_weight" in self._buffers
-        and self.get_buffer("_lora_orig_weight") is not None
-    ):
-        unfused_weight = self._lora_orig_weight
-        self._lora_orig_weight = None
-
-    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self.get_buffer("_lora_up").to(device=device).float()
-        w_down = self.get_buffer("_lora_down").to(device).float()
-
-        unfused_weight = self.weight.data.float() - (
-            torch.bmm(w_up[None, :], w_down[None, :])[0]
-        )
-        self._lora_up = None
-        self._lora_down = None
-        self._lora_scale = None
-
-    else:
+    if not hasattr(self, "adapter_names"):
         return
+    _unfuse_lora(self, adapter_names=adapter_names)
+    delete_lora_infos(self, adapter_names)
 
-    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
 
-
-def conv_fuse_lora(
-    self: torch.nn.Conv2d,
-    state_dict: Dict[str, torch.Tensor],
+def fuse_lora(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+    state_dict: Dict[str, torch.Tensor] = None,
     lora_scale: float = 1.0,
     alpha: float = None,
     rank: float = None,
     *,
+    adapter_name=None,
+    fuse=True,
     prefix="lora",
     offload_device="cpu",
-    offload_weight="lora",
 ) -> None:
     r"""
-    This will fuse the LoRA weights in `state_dict` into Conv2d module.
+    This will fuse the LoRA weights in `state_dict` into Linear or Conv2d module.
 
     Parameters:
-        self (torch.nn.Conv2d):
-            Model layer to be fused, must be torch.nn.Conv2d.
+        self (Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d]):
+            Model layer to be fused, must be Linear or PatchedLoraProjection or Conv2d.
         state_dict (Dict[str, torch.Tensor]):
             Dictionary containing LoRA weight.
         lora_scale (float, optional):
@@ -153,71 +181,205 @@ def conv_fuse_lora(
             Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
         offload_device (str, optional):
             Offload Device for backuping weight, can be "cpu" or "cuda". Default is "cpu".
-        offload_weight (str, optional):
-            Which weights to be offloaded, can be "lora" or "weight". Default is "lora".
-            If set to "weight", the weight of Conv2d rather than LoRA will be saved for unfusing.
     """
-    assert isinstance(self, torch.nn.Conv2d)
+    if not isinstance(self, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d)):
+        if is_peft_available() and isinstance(
+            self, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d)
+        ):
+            self = self.base_layer
+        else:
+            raise TypeError(
+                f"[OneDiffX fuse_lora] Only Linear and Conv2d can fuse lora, but got type {type(self)}"
+            )
+
     if isinstance(self, DualModule):
         self = self._torch_module
-    dtype, device = self.weight.data.dtype, self.weight.data.device
+    if isinstance(self, PatchedLoraProjection):
+        self = self.regular_linear_layer
 
+    if not hasattr(self, "adapter_names"):
+        init_lora_infos(self)
+
+    dtype, device = self.weight.data.dtype, self.weight.data.device
     down_key = prefix + ".down.weight"
     up_key = prefix + ".up.weight"
+
     w_down = state_dict[down_key].float().to(device)
     w_up = state_dict[up_key].float().to(device)
 
     if alpha is not None:
         w_up = w_up * (alpha / rank * lora_scale)
 
-    if offload_weight == "lora":
-        self.register_buffer("_lora_up", offload_tensor(w_up, offload_device))
-        self.register_buffer(
-            "_lora_down", offload_tensor(state_dict[down_key], offload_device)
-        )
-        self._lora_scale = lora_scale
-    elif offload_weight == "weight":
-        self.register_buffer(
-            "_lora_orig_weight", offload_tensor(self.weight.data, offload_device)
-        )
-    else:
-        raise ValueError(
-            f"[OneDiff conv_fuse_lora] Invalid offload weight: {offload_weight}"
-        )
+    adapter_name = adapter_name if adapter_name is not None else get_adapter_names(self)
 
-    lora_weight = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-    lora_weight = lora_weight.reshape((self.weight.shape))
+    self.r[adapter_name] = rank
+    self.lora_alpha[adapter_name] = alpha
+    self.scaling[adapter_name] = lora_scale
+    self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
+    self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
+    self.adapter_names.add(adapter_name)
+    self.active_adapter_names[adapter_name] = 1.0
 
-    fused_weight = self.weight.data.float() + lora_weight
-    self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+    if fuse:
+        lora_weight = get_delta_weight(self, w_up, w_down, 1.0)
+        fused_weight = self.weight.data.float() + lora_weight
+        self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
 
 
-def _conv_unfuse_lora(self: torch.nn.Conv2d):
-    assert isinstance(self, torch.nn.Conv2d)
+def _unfuse_lora(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+    adapter_names: Union[str, List[str]] = None,
+):
+    assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d))
+    if not hasattr(self, "adapter_names"):
+        return
+    if isinstance(self, DualModule):
+        self = self._torch_module
+    if isinstance(self, PatchedLoraProjection):
+        self = self.regular_linear_layer
 
     fused_weight = self.weight.data
     dtype, device = fused_weight.dtype, fused_weight.device
 
-    if (
-        "_lora_orig_weight" in self._buffers
-        and self.get_buffer("_lora_orig_weight") is not None
-    ):
-        unfused_weight = self._lora_orig_weight
-        self._lora_orig_weight = None
+    delta_weight = None
+    if adapter_names is None:
+        adapter_names = self.active_adapter_names.copy()
 
-    elif "_lora_up" in self._buffers and self.get_buffer("_lora_up") is not None:
-        w_up = self._lora_up.to(device=device).float()
-        w_down = self._lora_down.to(device).float()
+    for name in adapter_names:
+        if name not in self.active_adapter_names:
+            continue
+        weight = self.active_adapter_names[name]
+        w_down = self.lora_A[name].to(device=device).float()
+        w_up = self.lora_B[name].to(device).float()
+        if delta_weight is None:
+            delta_weight = get_delta_weight(self, w_up, w_down, weight).to(
+                dtype=dtype, device=device
+            )
+        else:
+            delta_weight += get_delta_weight(self, w_up, w_down, weight).to(
+                dtype=dtype, device=device
+            )
+        self.active_adapter_names.pop(name)
 
-        fusion = torch.mm(w_up.flatten(start_dim=1), w_down.flatten(start_dim=1))
-        fusion = fusion.reshape((fused_weight.shape))
-        unfused_weight = fused_weight.float() - fusion
+    if delta_weight is not None:
+        self.weight.data -= delta_weight
 
-        self._lora_up = None
-        self._lora_down = None
-        self._lora_scale = None
 
-    else:
-        return
+# the code is referenced from https://github.com/huggingface/diffusers/blob/ce9825b56bd8a6849e68b9590022e935400659e6/src/diffusers/loaders/lora_conversion_utils.py#L24
+@classmethod
+def _maybe_map_sgm_blocks_to_diffusers(
+    cls, state_dict, unet_config, delimiter="_", block_slice_pos=5
+):
+    # 1. get all state_dict_keys
+    all_keys = list(state_dict.keys())
+    sgm_patterns = ["input_blocks", "middle_block", "output_blocks"]
 
-    self.weight.data.copy_(unfused_weight.to(device=device, dtype=dtype))
+    # 2. check if needs remapping, if not return original dict
+    is_in_sgm_format = False
+    for key in all_keys:
+        if any(p in key for p in sgm_patterns):
+            is_in_sgm_format = True
+            break
+
+    if not is_in_sgm_format:
+        return state_dict
+    # 3. Else remap from SGM patterns
+    new_state_dict = {}
+    inner_block_map = ["resnets", "attentions", "upsamplers"]
+
+    # Retrieves # of down, mid and up blocks
+    input_block_ids, middle_block_ids, output_block_ids = set(), set(), set()
+
+    for layer in all_keys:
+        if "text" in layer:
+            new_state_dict[layer] = state_dict.pop(layer)
+        else:
+            layer_id = int(layer.split(delimiter)[:block_slice_pos][-1])
+            if sgm_patterns[0] in layer:
+                input_block_ids.add(layer_id)
+            elif sgm_patterns[1] in layer:
+                middle_block_ids.add(layer_id)
+            elif sgm_patterns[2] in layer:
+                output_block_ids.add(layer_id)
+            else:
+                raise ValueError(
+                    f"Checkpoint not supported because layer {layer} not supported."
+                )
+
+    input_blocks = {
+        layer_id: [
+            key for key in state_dict if f"input_blocks{delimiter}{layer_id}" in key
+        ]
+        for layer_id in input_block_ids
+    }
+    middle_blocks = {
+        layer_id: [
+            key for key in state_dict if f"middle_block{delimiter}{layer_id}" in key
+        ]
+        for layer_id in middle_block_ids
+    }
+    output_blocks = {
+        layer_id: [
+            key for key in state_dict if f"output_blocks{delimiter}{layer_id}" in key
+        ]
+        for layer_id in output_block_ids
+    }
+
+    # Rename keys accordingly
+    for i in input_block_ids:
+        block_id = (i - 1) // (unet_config.layers_per_block + 1)
+        layer_in_block_id = (i - 1) % (unet_config.layers_per_block + 1)
+
+        for key in input_blocks[i]:
+            inner_block_id = int(key.split(delimiter)[block_slice_pos])
+            inner_block_key = (
+                inner_block_map[inner_block_id] if "op" not in key else "downsamplers"
+            )
+            inner_layers_in_block = str(layer_in_block_id) if "op" not in key else "0"
+            new_key = delimiter.join(
+                key.split(delimiter)[: block_slice_pos - 1]
+                + [str(block_id), inner_block_key, inner_layers_in_block]
+                + key.split(delimiter)[block_slice_pos + 1 :]
+            )
+            new_state_dict[new_key] = state_dict.pop(key)
+
+    for i in middle_block_ids:
+        key_part = None
+        if i == 0:
+            key_part = [inner_block_map[0], "0"]
+        elif i == 1:
+            key_part = [inner_block_map[1], "0"]
+        elif i == 2:
+            key_part = [inner_block_map[0], "1"]
+        else:
+            raise ValueError(f"Invalid middle block id {i}.")
+
+        for key in middle_blocks[i]:
+            new_key = delimiter.join(
+                key.split(delimiter)[: block_slice_pos - 1]
+                + key_part
+                + key.split(delimiter)[block_slice_pos:]
+            )
+            new_state_dict[new_key] = state_dict.pop(key)
+
+    for i in output_block_ids:
+        block_id = i // (unet_config.layers_per_block + 1)
+        layer_in_block_id = i % (unet_config.layers_per_block + 1)
+
+        for key in output_blocks[i]:
+            inner_block_id = int(key.split(delimiter)[block_slice_pos])
+            inner_block_key = inner_block_map[inner_block_id]
+            inner_layers_in_block = (
+                str(layer_in_block_id) if inner_block_id < 2 else "0"
+            )
+            new_key = delimiter.join(
+                key.split(delimiter)[: block_slice_pos - 1]
+                + [str(block_id), inner_block_key, inner_layers_in_block]
+                + key.split(delimiter)[block_slice_pos + 1 :]
+            )
+            new_state_dict[new_key] = state_dict.pop(key)
+
+    if len(state_dict) > 0:
+        raise ValueError("At this point all state dict entries have to be converted.")
+
+    return new_state_dict

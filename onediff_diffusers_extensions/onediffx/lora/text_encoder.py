@@ -8,13 +8,20 @@ if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils import convert_state_dict_to_diffusers
 else:
     from .state_dict_utils import convert_state_dict_to_diffusers
-from diffusers.models.lora import text_encoder_attn_modules, text_encoder_mlp_modules
+
+if version.parse(diffusers.__version__) >= version.parse("0.24.0"):
+    from diffusers.models.lora import (
+        text_encoder_attn_modules,
+        text_encoder_mlp_modules,
+    )
+else:
+    from diffusers.loaders import text_encoder_attn_modules, text_encoder_mlp_modules
 from diffusers.utils import is_accelerate_available
 
 from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT
 from onediff.infer_compiler.utils.log_utils import logger
 
-from .utils import linear_fuse_lora
+from .utils import fuse_lora, get_adapter_names
 
 USE_PEFT_BACKEND = False
 
@@ -61,10 +68,23 @@ def load_lora_into_text_encoder(
             `default_{i}` where i is the total number of adapters being loaded.
     """
     low_cpu_mem_usage = (
-        low_cpu_mem_usage
-        if low_cpu_mem_usage is not None
-        else _LOW_CPU_MEM_USAGE_DEFAULT
+        low_cpu_mem_usage if low_cpu_mem_usage is not None else _LOW_CPU_MEM_USAGE_DEFAULT
     )
+
+    if adapter_name is None:
+        adapter_name = get_adapter_names(text_encoder)
+
+    if hasattr(text_encoder, "adapter_names"):
+        if adapter_name in text_encoder.adapter_names:
+            raise ValueError(
+                f"[OneDiffX load_lora_into_text_encoder] The adapter name {adapter_name} already exists in text_encoder"
+            )
+        else:
+            text_encoder.adapter_name.add(adapter_name)
+            text_encoder.active_adapter_name[adapter_name] = 1.0
+    else:
+        text_encoder.adapter_name = set([adapter_name])
+        text_encoder.active_adapter_name = {adapter_name: 1.0}
 
     # If the serialization format is new (introduced in https://github.com/huggingface/diffusers/pull/2918),
     # then the `state_dict` keys should have `self.unet_name` and/or `self.text_encoder_name` as
@@ -75,13 +95,9 @@ def load_lora_into_text_encoder(
     # Safe prefix to check with.
     if any(cls.text_encoder_name in key for key in keys):
         # Load the layers corresponding to text encoder and make necessary adjustments.
-        text_encoder_keys = [
-            k for k in keys if k.startswith(prefix) and k.split(".")[0] == prefix
-        ]
+        text_encoder_keys = [k for k in keys if k.startswith(prefix) and k.split(".")[0] == prefix]
         text_encoder_lora_state_dict = {
-            k.replace(f"{prefix}.", ""): v
-            for k, v in state_dict.items()
-            if k in text_encoder_keys
+            k.replace(f"{prefix}.", ""): v for k, v in state_dict.items() if k in text_encoder_keys
         }
 
         if len(text_encoder_lora_state_dict) > 0:
@@ -101,40 +117,26 @@ def load_lora_into_text_encoder(
                     rank_key = f"{name}.out_proj.lora_B.weight"
                     rank[rank_key] = text_encoder_lora_state_dict[rank_key].shape[1]
 
-                patch_mlp = any(
-                    ".mlp." in key for key in text_encoder_lora_state_dict.keys()
-                )
+                patch_mlp = any(".mlp." in key for key in text_encoder_lora_state_dict.keys())
                 if patch_mlp:
                     for name, _ in text_encoder_mlp_modules(text_encoder):
                         rank_key_fc1 = f"{name}.fc1.lora_B.weight"
                         rank_key_fc2 = f"{name}.fc2.lora_B.weight"
 
-                        rank[rank_key_fc1] = text_encoder_lora_state_dict[
-                            rank_key_fc1
-                        ].shape[1]
-                        rank[rank_key_fc2] = text_encoder_lora_state_dict[
-                            rank_key_fc2
-                        ].shape[1]
+                        rank[rank_key_fc1] = text_encoder_lora_state_dict[rank_key_fc1].shape[1]
+                        rank[rank_key_fc2] = text_encoder_lora_state_dict[rank_key_fc2].shape[1]
             else:
                 for name, _ in text_encoder_attn_modules(text_encoder):
                     rank_key = f"{name}.out_proj.lora_linear_layer.up.weight"
-                    rank.update(
-                        {rank_key: text_encoder_lora_state_dict[rank_key].shape[1]}
-                    )
+                    rank.update({rank_key: text_encoder_lora_state_dict[rank_key].shape[1]})
 
-                patch_mlp = any(
-                    ".mlp." in key for key in text_encoder_lora_state_dict.keys()
-                )
+                patch_mlp = any(".mlp." in key for key in text_encoder_lora_state_dict.keys())
                 if patch_mlp:
                     for name, _ in text_encoder_mlp_modules(text_encoder):
                         rank_key_fc1 = f"{name}.fc1.lora_linear_layer.up.weight"
                         rank_key_fc2 = f"{name}.fc2.lora_linear_layer.up.weight"
-                        rank[rank_key_fc1] = text_encoder_lora_state_dict[
-                            rank_key_fc1
-                        ].shape[1]
-                        rank[rank_key_fc2] = text_encoder_lora_state_dict[
-                            rank_key_fc2
-                        ].shape[1]
+                        rank[rank_key_fc1] = text_encoder_lora_state_dict[rank_key_fc1].shape[1]
+                        rank[rank_key_fc2] = text_encoder_lora_state_dict[rank_key_fc2].shape[1]
 
             # group text encoder lora state_dict
             te_lora_grouped_dict = defaultdict(dict)
@@ -192,56 +194,50 @@ def load_lora_into_text_encoder(
                 is_network_alphas_populated = len(network_alphas) > 0
 
                 for name, attn_module in text_encoder_attn_modules(text_encoder):
-                    query_alpha = network_alphas.pop(
-                        name + ".to_q_lora.down.weight.alpha", None
-                    )
-                    key_alpha = network_alphas.pop(
-                        name + ".to_k_lora.down.weight.alpha", None
-                    )
-                    value_alpha = network_alphas.pop(
-                        name + ".to_v_lora.down.weight.alpha", None
-                    )
-                    out_alpha = network_alphas.pop(
-                        name + ".to_out_lora.down.weight.alpha", None
-                    )
+                    query_alpha = network_alphas.pop(name + ".to_q_lora.down.weight.alpha", None)
+                    key_alpha = network_alphas.pop(name + ".to_k_lora.down.weight.alpha", None)
+                    value_alpha = network_alphas.pop(name + ".to_v_lora.down.weight.alpha", None)
+                    out_alpha = network_alphas.pop(name + ".to_out_lora.down.weight.alpha", None)
 
                     if isinstance(rank, dict):
-                        current_rank = rank.pop(
-                            f"{name}.out_proj.lora_linear_layer.up.weight"
-                        )
+                        current_rank = rank.pop(f"{name}.out_proj.lora_linear_layer.up.weight")
                     else:
                         current_rank = rank
 
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.q_proj,
                         te_lora_grouped_dict.pop(f"{name}.q_proj"),
                         lora_scale,
                         query_alpha,
                         current_rank,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.k_proj,
                         te_lora_grouped_dict.pop(f"{name}.k_proj"),
                         lora_scale,
                         key_alpha,
                         current_rank,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.v_proj,
                         te_lora_grouped_dict.pop(f"{name}.v_proj"),
                         lora_scale,
                         value_alpha,
                         current_rank,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
-                    linear_fuse_lora(
+                    fuse_lora(
                         attn_module.out_proj,
                         te_lora_grouped_dict.pop(f"{name}.out_proj"),
                         lora_scale,
                         out_alpha,
                         current_rank,
+                        adapter_name=adapter_name,
                         prefix="lora_linear_layer",
                     )
 
@@ -254,27 +250,25 @@ def load_lora_into_text_encoder(
                             name + ".fc2.lora_linear_layer.down.weight.alpha", None
                         )
 
-                        current_rank_fc1 = rank.pop(
-                            f"{name}.fc1.lora_linear_layer.up.weight"
-                        )
-                        current_rank_fc2 = rank.pop(
-                            f"{name}.fc2.lora_linear_layer.up.weight"
-                        )
+                        current_rank_fc1 = rank.pop(f"{name}.fc1.lora_linear_layer.up.weight")
+                        current_rank_fc2 = rank.pop(f"{name}.fc2.lora_linear_layer.up.weight")
 
-                        linear_fuse_lora(
+                        fuse_lora(
                             mlp_module.fc1,
                             te_lora_grouped_dict.pop(f"{name}.fc1"),
                             lora_scale,
                             fc1_alpha,
                             current_rank_fc1,
+                            adapter_name=adapter_name,
                             prefix="lora_linear_layer",
                         )
-                        linear_fuse_lora(
+                        fuse_lora(
                             mlp_module.fc2,
                             te_lora_grouped_dict.pop(f"{name}.fc2"),
                             lora_scale,
                             fc2_alpha,
                             current_rank_fc2,
+                            adapter_name=adapter_name,
                             prefix="lora_linear_layer",
                         )
 

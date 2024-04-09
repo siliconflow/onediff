@@ -8,8 +8,10 @@ import importlib.metadata
 from packaging import version
 import random
 import click
-import oneflow as flow
+
 import torch
+import oneflow as flow
+
 from tqdm import tqdm
 from dataclasses import dataclass, fields
 from onediff.infer_compiler import oneflow_compile

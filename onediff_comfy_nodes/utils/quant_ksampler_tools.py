@@ -71,7 +71,7 @@ def quantize_sub_module(model, sub_name, sub_module, bits):
 
 
 class quantized_model_patcher:
-    def __init__(self, model_patcher, layers, bits, verbose=False, use_graph=False):
+    def __init__(self, model_patcher, layers, bits, verbose=False):
         self.model_patcher = model_patcher
         self.diffusion_model = model_patcher.model.diffusion_model
         self.layers = layers
@@ -311,17 +311,14 @@ def compile_model_patcher_context(model_patcher):
             "deep_cache_unet": model_patcher.deep_cache_unet,
             "fast_deep_cache_unet": model_patcher.fast_deep_cache_unet,
         }
-
-        model_patcher.deep_cache_unet = oneflow_compile(
-            model_patcher.deep_cache_unet, use_graph=True
-        )
+        model_patcher.deep_cache_unet = oneflow_compile(model_patcher.deep_cache_unet)
         model_patcher.fast_deep_cache_unet = oneflow_compile(
-            model_patcher.fast_deep_cache_unet, use_graph=True
+            model_patcher.fast_deep_cache_unet
         )
     else:
         original_diffusion_model = model_patcher.model.diffusion_model
         model_patcher.model.diffusion_model = oneflow_compile(
-            model_patcher.model.diffusion_model, use_graph=True
+            model_patcher.model.diffusion_model
         )
 
     yield model_patcher

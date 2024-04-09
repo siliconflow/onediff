@@ -15,10 +15,6 @@ else:
 __all__ = ["replace_module_with_quantizable_module"]
 
 
-def _use_graph():
-    os.environ["with_graph"] = "1"
-
-
 def get_sub_module(module, sub_module_name) -> nn.Module:
     """Get a submodule of a module using dot-separated names.
 
@@ -197,8 +193,6 @@ def replace_module_with_quantizable_module(
     diffusion_model, calibrate_info_path, use_rewrite_attn=True
 ):
     from onediff_quant.utils import get_quantize_module
-
-    _use_graph()
 
     calibrate_info = _load_calibrate_info(calibrate_info_path)
     for sub_module_name, sub_calibrate_info in calibrate_info.items():

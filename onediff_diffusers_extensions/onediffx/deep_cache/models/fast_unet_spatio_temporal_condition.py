@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from typing import Union, Optional, Tuple
 from diffusers.utils import BaseOutput, logging
+from oneflow.nn.graph.proxy import ProxyModule
 
 from .unet_spatio_temporal_condition import UNetSpatioTemporalConditionOutput
 
@@ -19,9 +20,9 @@ class FastUNetSpatioTemporalConditionModel(nn.Module):
         timestep: Union[torch.Tensor, float, int],
         encoder_hidden_states: torch.Tensor,
         added_time_ids: torch.Tensor,
+        return_dict: bool = True,
         cache_features: Optional[torch.Tensor] = None,
         cache_branch: Optional[int] = None,
-        return_dict: bool = True,
     ) -> Union[UNetSpatioTemporalConditionOutput, Tuple]:
         r"""
         The [`UNetSpatioTemporalConditionModel`] forward method.
@@ -187,9 +188,11 @@ class FastUNetSpatioTemporalConditionModel(nn.Module):
         sample = self.unet_module.conv_out(sample)
 
         # 7. Reshape back to original shape
-        # sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
-        # Rewrite for onediff SVD dynamic shape
-        sample = sample.unflatten(0, shape=(batch_size, -1))
+        if isinstance(self, ProxyModule):
+            # Rewrite for onediff SVD dynamic shape
+            sample = sample.unflatten(0, shape=(batch_size, -1))
+        else:
+            sample = sample.reshape(batch_size, num_frames, *sample.shape[1:])
 
         if not return_dict:
             return (sample, cache_features)

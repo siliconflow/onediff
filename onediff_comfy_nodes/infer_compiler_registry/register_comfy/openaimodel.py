@@ -68,8 +68,12 @@ class UNetModel(proxy_class(comfy.ldm.modules.diffusionmodules.openaimodel.UNetM
         transformer_patches = transformer_options.get("patches", {})
 
         num_video_frames = kwargs.get("num_video_frames", self.default_num_video_frames)
+        default_image_only_indicator = getattr(
+            self, "default_image_only_indicator", None
+        )
+        # https://github.com/comfyanonymous/ComfyUI/blob/cb7c3a2921cfc0805be0229b4634e1143d60e6fe/comfy/ldm/modules/diffusionmodules/openaimodel.py#L832
         image_only_indicator = kwargs.get(
-            "image_only_indicator", self.default_image_only_indicator
+            "image_only_indicator", default_image_only_indicator
         )
         time_context = kwargs.get("time_context", None)
 

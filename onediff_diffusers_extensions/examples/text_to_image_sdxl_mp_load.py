@@ -4,8 +4,8 @@
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

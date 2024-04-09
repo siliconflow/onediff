@@ -1,5 +1,5 @@
-# Run with ONEFLOW_RUN_GRAPH_BY_VM=1 to get faster
 MODEL = "stabilityai/stable-video-diffusion-img2vid-xt"
+# SVD 1.1: stabilityai/stable-video-diffusion-img2vid-xt-1-1 is also available.
 VARIANT = None
 CUSTOM_PIPELINE = None
 SCHEDULER = None
@@ -8,13 +8,19 @@ CONTROLNET = None
 STEPS = 25
 SEED = None
 WARMUPS = 1
-FRAMES = None
 BATCH = 1
-HEIGHT = 576
-WIDTH = 1024
 ALTER_HEIGHT = None
 ALTER_WIDTH = None
+# The official recommended parameters for SVD 1.1 are:
+# Resolution: 1024x576,
+# Frame count: 25 frames,
+# FPS: 6,
+# Motion Bucket Id: 127.
+HEIGHT = 576
+WIDTH = 1024
+FRAMES = 25
 FPS = 7
+MOTION_BUCKET_ID = 127
 DECODE_CHUNK_SIZE = 5
 INPUT_IMAGE = "https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true"
 CONTROL_IMAGE = None
@@ -31,12 +37,12 @@ import argparse
 import time
 import json
 import random
-import torch
 from PIL import Image, ImageDraw
-from diffusers.utils import load_image, export_to_video
 
 import oneflow as flow
+import torch
 from onediffx import compile_pipe, compiler_config
+from diffusers.utils import load_image, export_to_video
 
 
 def parse_args():
@@ -55,6 +61,7 @@ def parse_args():
     parser.add_argument("--height", type=int, default=HEIGHT)
     parser.add_argument("--width", type=int, default=WIDTH)
     parser.add_argument("--fps", type=int, default=FPS)
+    parser.add_argument("--motion_bucket_id", type=int, default=MOTION_BUCKET_ID)
     parser.add_argument("--decode-chunk-size", type=int, default=DECODE_CHUNK_SIZE)
     parser.add_argument("--cache_interval", type=int, default=CACHE_INTERVAL)
     parser.add_argument("--cache_branch", type=int, default=CACHE_BRANCH)
@@ -107,7 +114,7 @@ def load_pipe(
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
-        pipe = QuantPipeline.from_pretrained(
+        pipe = QuantPipeline.from_quantized(
             pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
         )
     else:
@@ -188,7 +195,7 @@ def main():
         pipe.unet = torch.compile(pipe.unet)
         if hasattr(pipe, "controlnet"):
             pipe.controlnet = torch.compile(pipe.controlnet)
-        # model.vae = torch.compile(model.vae)
+        pipe.vae = torch.compile(pipe.vae)
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
@@ -225,6 +232,7 @@ def main():
                 num_videos_per_prompt=args.batch,
                 num_frames=args.frames,
                 fps=args.fps,
+                motion_bucket_id=args.motion_bucket_id,
                 decode_chunk_size=args.decode_chunk_size,
                 generator=None
                 if args.seed is None
@@ -249,12 +257,10 @@ def main():
             print("End warmup")
 
         kwarg_inputs = get_kwarg_inputs()
-        iter_profiler = None
+        iter_profiler = IterationProfiler()
         if "callback_on_step_end" in inspect.signature(pipe).parameters:
-            iter_profiler = IterationProfiler()
             kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
         elif "callback" in inspect.signature(pipe).parameters:
-            iter_profiler = IterationProfiler()
             kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
         begin = time.time()
         output_frames = pipe(**kwarg_inputs).frames

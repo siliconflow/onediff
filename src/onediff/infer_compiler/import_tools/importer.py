@@ -1,57 +1,64 @@
 import os
 import sys
 import importlib
+from inspect import ismodule
 from typing import Optional, Union
+from functools import lru_cache
 from types import FunctionType, ModuleType
-from oneflow.mock_torch import DynamicMockModule
 from pathlib import Path
 from importlib.metadata import requires
 from .format_utils import MockEntityNameFormatter
+from .dyn_mock_mod import DynamicMockModule
 from ..utils.log_utils import logger
 
-__all__ = ["import_module_from_path", "LazyMocker", "is_need_mock"]
+__all__ = ["LazyMocker", "is_need_mock"]
+
+# Cache all imported modules (maxsize=None: no limit)
+@lru_cache(maxsize=None)
+def has_torch_dependency(main_pkg: str):
+    try:
+        pkgs = requires(main_pkg)
+    except Exception as e:
+        # packages may lack metadata
+        return False
+    return any(pkg.split(" ")[0] == "torch" for pkg in pkgs)
 
 
 def is_need_mock(cls) -> bool:
     assert isinstance(cls, (type, str))
     main_pkg = cls.__module__.split(".")[0]
-    try:
-        if main_pkg == "torch":
-            return True
-        pkgs = requires(main_pkg)
-    except Exception as e:
-        logger.info(f"Error when checking need mock of package {main_pkg}: {e}")
+
+    if main_pkg == "torch":
         return True
-    if pkgs:
-        for pkg in pkgs:
-            pkg = pkg.split(" ")[0]
-            if pkg == "torch":
-                return True
-        return False
-    return True
+
+    return has_torch_dependency(main_pkg)
 
 
-def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
-    if isinstance(module_path, Path):
-        module_path = str(module_path)
-    module_name = os.path.basename(module_path)
-    if os.path.isfile(module_path):
-        sp = os.path.splitext(module_path)
-        module_name = sp[0]
+class DynamicModuleLoader(ModuleType):
+    def __init__(self, obj_entity: ModuleType, pkg_root=None, module_path=None):
+        self.obj_entity = obj_entity
+        self.pkg_root = pkg_root
+        self.module_path = module_path
 
-    if os.path.isfile(module_path):
-        module_spec = importlib.util.spec_from_file_location(module_name, module_path)
-        module_dir = os.path.split(module_path)[0]
-    else:
-        module_spec = importlib.util.spec_from_file_location(
-            module_name, os.path.join(module_path, "__init__.py")
-        )
-        module_dir = module_path
+    @classmethod
+    def from_path(cls, module_path: str):
+        model_name = os.path.basename(module_path)
+        module = importlib.import_module(model_name)
+        return cls(module, module_path, module_path)
 
-    module = importlib.util.module_from_spec(module_spec)
-    sys.modules[module_name] = module
-    module_spec.loader.exec_module(module)
-    return module
+    def __getattr__(self, name):
+        obj_entity = getattr(self.obj_entity, name, None)
+        module_path = os.path.join(self.module_path, name)
+        if obj_entity is None:
+            pkg_name = os.path.basename(self.pkg_root)
+            absolute_name = os.path.relpath(module_path, self.pkg_root).replace(
+                os.path.sep, "."
+            )
+            absolute_name = f"{pkg_name}.{absolute_name}"
+            obj_entity = importlib.import_module(absolute_name)
+        if ismodule(obj_entity):
+            return DynamicModuleLoader(obj_entity, self.pkg_root, module_path)
+        return obj_entity
 
 
 class LazyMocker:
@@ -104,6 +111,18 @@ class LazyMocker:
         formatter = MockEntityNameFormatter(prefix=self.prefix, suffix=self.suffix)
         full_obj_name = formatter.format(entity)
         attrs = full_obj_name.split(".")
+        if attrs[0] == "__main__":
+            import __main__
+
+            main_path = __main__.__file__
+            main_path_parent = Path(main_path).parent
+            if str(main_path_parent) not in sys.path:
+                sys.path.append(str(main_path_parent))
+            main_name = Path(main_path).stem
+            mock_main = DynamicMockModule.from_package(main_name, verbose=False)
+            for name in attrs[1:]:
+                mock_main = getattr(mock_main, name)
+            return mock_main
 
         # add package path to sys.path to avoid mock error
         self.add_mocked_package(attrs[0])

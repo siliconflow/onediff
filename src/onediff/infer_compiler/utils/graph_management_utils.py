@@ -9,6 +9,7 @@ from ..transform.builtin_transform import torch2oflow
 from ..transform.manager import transform_mgr
 from .log_utils import logger
 from .cost_util import cost_time
+from .options import OneflowCompileOptions
 
 
 def calculate_model_hash(model):
@@ -34,9 +35,14 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
 
 def graph_file_management(func):
     @wraps(func)
-    def wrapper(self: "DeployableModule", *args, **kwargs):
-        compile_options = getattr(self, "_deployable_module_options", {})
-        graph_file = compile_options.get("graph_file", None)
+    def wrapper(self, *args, **kwargs):
+        compile_options = (
+            self._deployable_module_options
+            if hasattr(self, "_deployable_module_options")
+            else OneflowCompileOptions()
+        )
+        graph_file = compile_options.graph_file
+
         is_first_load = (
             getattr(self, "_load_graph_first_run", True) and graph_file is not None
         )
@@ -57,7 +63,7 @@ def graph_file_management(func):
                     f"Graph file {graph_file} does not exist! Generating graph."
                 )
             else:
-                graph_device = compile_options.get("graph_file_device")
+                graph_device = compile_options.graph_file_device
                 self.load_graph(graph_file, torch2oflow(graph_device))
                 logger.info(f"Loaded graph file: {graph_file}")
                 is_first_load = False
@@ -66,7 +72,6 @@ def graph_file_management(func):
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
                 return
-
             try:
                 parent_dir = os.path.dirname(graph_file)
                 if parent_dir != "":
@@ -78,9 +83,12 @@ def graph_file_management(func):
             except Exception as e:
                 logger.error(f"Failed to save graph file: {graph_file}! {e}")
 
-        handle_graph_loading()
-        ret = func(self, *args, **kwargs)
-        handle_graph_saving()
+        if self._deployable_module_options.use_graph and is_first_load:
+            handle_graph_loading()
+            ret = func(self, *args, **kwargs)
+            handle_graph_saving()
+        else:
+            ret = func(self, *args, **kwargs)
 
         return ret
 
