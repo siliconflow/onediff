@@ -4,13 +4,10 @@ import warnings
 import gradio as gr
 from pathlib import Path
 from typing import Union, Dict
-from collections import defaultdict
-import oneflow as flow
 import modules.scripts as scripts
 import modules.shared as shared
 from modules.sd_models import select_checkpoint
 from modules.processing import process_images
-from modules import script_callbacks
 
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
@@ -19,7 +16,7 @@ from onediff_lora import HijackLoraActivate
 from onediff_hijack import do_hijack as onediff_do_hijack
 
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.infer_compiler.utils.param_utils import CONSTANT_FOLDING_INFO_ATTR
+from onediff.infer_compiler.utils.param_utils import get_constant_folding_info
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -198,7 +195,7 @@ class Script(scripts.Script):
             )
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(
-            getattr(compiled_unet, CONSTANT_FOLDING_INFO_ATTR, None)
+            get_constant_folding_info(compiled_unet)
         ):
             proc = process_images(p)
         return proc
