@@ -149,6 +149,12 @@ class OneflowDeployableModule(DeployableModule):
     def save_graph(self, file_path):
         self.get_graph().save_graph(file_path)
 
+    def offload(self):
+        self.get_graph().offload()
+
+    def load(self):
+        self.get_graph().load()
+
     def extra_repr(self) -> str:
         return self._deployable_module_model.extra_repr()
 
