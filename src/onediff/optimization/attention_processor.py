@@ -84,7 +84,7 @@ class FusedSelfAttnProcessor:
             hidden_states = flow.bmm(attention_probs, value)
             hidden_states = attn.batch_to_head_dim(hidden_states)
         else:
-            from ..infer_compiler.env import (
+            from ..infer_compiler.env_var import (
                 parse_boolean_from_env,
                 set_boolean_env_var,
             )

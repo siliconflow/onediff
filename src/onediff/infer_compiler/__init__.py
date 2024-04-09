@@ -2,7 +2,7 @@ import os
 import torch
 
 from .deployable_module import DeployableModule
-from .env import populate_default_env_var
+from .env_var import populate_default_env_var
 from .options import *
 from .options import _GLOBAL_compile_options as compile_options
 from .with_onediff_compile import compile, oneflow_compile

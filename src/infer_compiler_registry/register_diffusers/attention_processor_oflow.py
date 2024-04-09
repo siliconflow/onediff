@@ -21,7 +21,7 @@ import os
 import diffusers
 from diffusers.utils import deprecate, logging
 
-from onediff.infer_compiler.env import parse_boolean_from_env, set_boolean_env_var
+from onediff.infer_compiler.env_var import parse_boolean_from_env, set_boolean_env_var
 
 
 def is_xformers_available():

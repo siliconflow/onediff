@@ -20,7 +20,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
         - 'graph_file' (None) generates a compilation cache file. If the file exists, loading occurs; if not, the compilation result is saved after the first run.
         - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
     """
-    from ..env import populate_oneflow_env_var
+    from ..env_var import populate_oneflow_env_var
     from ..transform.custom_transform import set_default_registry
     from ..oneflow.deployable_module import OneflowDeployableModule
     from ..oneflow.utils import get_mixed_deployable_module

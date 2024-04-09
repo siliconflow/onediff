@@ -2,7 +2,7 @@ import torch
 from comfy import model_management
 from comfy.model_base import SVD_img2vid
 
-from onediff.infer_compiler.env import set_boolean_env_var
+from onediff.infer_compiler.env_var import set_boolean_env_var
 from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
 
 
