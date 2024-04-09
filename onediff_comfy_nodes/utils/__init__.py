@@ -5,7 +5,6 @@ import time
 from onediff.infer_compiler.deployable_module import DeployableModule
 from .onediff_quant_utils import (
     replace_module_with_quantizable_module,
-    _use_graph,
     quantize_and_save_model,
 )
 from .onediff_load_utils import onediff_load_quant_checkpoint_advanced
