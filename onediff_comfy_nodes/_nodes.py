@@ -3,7 +3,7 @@ from onediff.infer_compiler.transform import torch2oflow
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from onediff.infer_compiler.utils import set_boolean_env_var
 from onediff.optimization.quant_optimizer import quantize_model
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile, CompileOptions
 from onediff.infer_compiler.deployable_module import DeployableModule
 
 import os
@@ -187,11 +187,12 @@ class SVDSpeedup:
             "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", False
         )
 
-        use_graph = static_mode == "enable"
+        compile_options = CompileOptions()
+        compile_options.oneflow.use_graph = static_mode == "enable"
 
         new_model = copy.deepcopy(model)
         new_model.model.diffusion_model = oneflow_compile(
-            new_model.model.diffusion_model, use_graph=use_graph
+            new_model.model.diffusion_model, options=compile_options
         )
 
         return (new_model,)
@@ -209,14 +210,14 @@ class VaeSpeedup:
     CATEGORY = "OneDiff"
 
     def speedup(self, vae, static_mode):
-        use_graph = static_mode == "enable"
-
         new_vae = copy.deepcopy(
             vae
         )  # Loading/offloading will not cause an increase in VRAM.
 
+        compile_options = CompileOptions()
+        compile_options.oneflow.use_graph = static_mode == "enable"
         new_vae.first_stage_model = oneflow_compile(
-            new_vae.first_stage_model, use_graph=use_graph
+            new_vae.first_stage_model, options=compile_options
         )
 
         return (new_vae,)
@@ -386,11 +387,12 @@ class OneDiffControlNetLoader(ControlNetLoader):
         load_device = model_management.get_torch_device()
 
         def gen_compile_options(model):
-            graph_file = generate_graph_path(control_net_name, model)
-            return {
-                "graph_file": graph_file,
-                "graph_file_device": load_device,
-            }
+            compile_options = CompileOptions()
+            compile_options.oneflow.graph_file = generate_graph_path(
+                control_net_name, model
+            )
+            compile_options.oneflow.graph_file_device = load_device
+            return compile_options
 
         if isinstance(controlnet, ControlLora):
             controlnet = OneDiffControlLora.from_controllora(
@@ -438,14 +440,15 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         )
         modelpatcher.model._register_state_dict_hook(state_dict_hook)
         if vae_speedup == "enable":
-            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            compile_options = CompileOptions()
+            compile_options.oneflow.graph_file = generate_graph_path(
+                ckpt_name, vae.first_stage_model
+            )
+            compile_options.oneflow.graph_file_device = (
+                model_management.get_torch_device()
+            )
             vae.first_stage_model = oneflow_compile(
-                vae.first_stage_model,
-                use_graph=True,
-                options={
-                    "graph_file": file_path,
-                    "graph_file_device": model_management.get_torch_device(),
-                },
+                vae.first_stage_model, options=compile_options
             )
 
         # set inplace update
@@ -518,17 +521,18 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         )
 
         def gen_compile_options(model):
+            compile_options = CompileOptions()
             # cache_key = f'{cache_interval}_{cache_layer_id}_{cache_block_id}_{start_step}_{end_step}'
             graph_file = generate_graph_path(ckpt_name, model)
-            return {
-                "graph_file": graph_file,
-                "graph_file_device": model_management.get_torch_device(),
-            }
+            compile_options.oneflow.graph_file = graph_file
+            compile_options.oneflow.graph_file_device = (
+                model_management.get_torch_device()
+            )
+            return compile_options
 
         if vae_speedup == "enable":
             vae.first_stage_model = oneflow_compile(
                 vae.first_stage_model,
-                use_graph=True,
                 options=gen_compile_options(vae.first_stage_model),
             )
 
@@ -585,14 +589,15 @@ class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
         )
 
         if vae_speedup == "enable":
-            file_path = generate_graph_path(ckpt_name, vae.first_stage_model)
+            compile_options = CompileOptions()
+            compile_options.oneflow.graph_file = generate_graph_path(
+                ckpt_name, vae.first_stage_model
+            )
+            compile_options.oneflow.graph_file_device = (
+                model_management.get_torch_device()
+            )
             vae.first_stage_model = oneflow_compile(
-                vae.first_stage_model,
-                use_graph=True,
-                options={
-                    "graph_file": file_path,
-                    "graph_file_device": model_management.get_torch_device(),
-                },
+                vae.first_stage_model, options=compile_options
             )
 
         # set inplace update
