@@ -2,7 +2,7 @@ import os
 import time
 import argparse
 
-from onediff.infer_compiler import oneflow_compile, CompileOptions
+from onediff.infer_compiler import oneflow_compile, compile_options
 
 import torch
 import torch.nn as nn
@@ -92,16 +92,15 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
-options = CompileOptions()
-options.oneflow.use_graph = args.graph
+compile_options.oneflow.use_graph = args.graph
 
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:
-        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=options)
+        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=compile_options)
 
 if args.compile:
-    pipe.unet = oneflow_compile(pipe.unet, options=options)
-    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=options)
+    pipe.unet = oneflow_compile(pipe.unet, options=compile_options)
+    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=compile_options)
 
 if args.load_graph:
     print("Loading graphs to avoid compilation...")

@@ -1,7 +1,7 @@
 from functools import partial
 from onediff.infer_compiler.transform import torch2oflow
 from ._config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-from onediff.infer_compiler.utils import set_boolean_env_var
+from onediff.infer_compiler.env import set_boolean_env_var
 from onediff.optimization.quant_optimizer import quantize_model
 from onediff.infer_compiler import oneflow_compile, CompileOptions
 from onediff.infer_compiler.deployable_module import DeployableModule

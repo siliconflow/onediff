@@ -3,9 +3,7 @@ import argparse
 
 import torch
 
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.oneflow import oneflow_compiler_config
-from onediff.schedulers import EulerDiscreteScheduler
+from onediff.infer_compiler import oneflow_compile, compile_options
 from diffusers import StableDiffusionXLPipeline
 
 # import diffusers
@@ -51,28 +49,22 @@ args = parser.parse_args()
 OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
-scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
 base = StableDiffusionXLPipeline.from_pretrained(
-    args.base,
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
 
-
-oneflow_compiler_config.mlir_enable_inference_optimization = False
+compile_options.oneflow.mlir_enable_inference_optimization = False
 # Compile unet with oneflow
 if args.compile_unet:
     print("Compiling unet with oneflow.")
-    compiled_unet = oneflow_compile(base.unet)
+    compiled_unet = oneflow_compile(base.unet, options=compile_options)
     base.unet = compiled_unet
 
 # Compile vae with oneflow
 if args.compile_vae:
     print("Compiling vae with oneflow.")
-    compiled_decoder = oneflow_compile(base.vae.decoder)
+    compiled_decoder = oneflow_compile(base.vae.decoder, options=compile_options)
     base.vae.decoder = compiled_decoder
 
 # Warmup with run
@@ -96,7 +88,6 @@ print("loading new base")
 if str(args.new_base).endswith(".safetensors"):
     new_base = StableDiffusionXLPipeline.from_single_file(
         args.new_base,
-        scheduler=scheduler,
         torch_dtype=torch.float16,
         variant=args.variant,
         use_safetensors=True,
@@ -104,7 +95,6 @@ if str(args.new_base).endswith(".safetensors"):
 else:
     new_base = StableDiffusionXLPipeline.from_pretrained(
         args.new_base,
-        scheduler=scheduler,
         torch_dtype=torch.float16,
         variant=args.variant,
         use_safetensors=True,

@@ -5,7 +5,7 @@ import time
 import torch
 from safetensors.torch import load_file
 from diffusers import StableDiffusionXLPipeline
-from onediffx import compile_pipe, compiler_config, save_pipe, load_pipe
+from onediffx import compile_pipe, save_pipe, load_pipe
 from huggingface_hub import hf_hub_download
 
 try:

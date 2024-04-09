@@ -197,7 +197,7 @@ deepcache_output = pipe(
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from onediffx import compile_pipe, compiler_config
+from onediffx import compile_pipe, compile_options
 from onediffx.deep_cache import StableVideoDiffusionPipeline
 
 pipe = StableVideoDiffusionPipeline.from_pretrained(
@@ -208,8 +208,8 @@ pipe = StableVideoDiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-compiler_config.attention_allow_half_precision_score_accumulation_max_m = 0
-pipe = compile_pipe(pipe)
+compile_options.oneflow.attention_allow_half_precision_score_accumulation_max_m = 0
+pipe = compile_pipe(pipe, options=compile_options)
 
 input_image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true")
 input_image = input_image.resize((1024, 576))
@@ -415,12 +415,12 @@ We tested the performance of `set_adapters`, still using the five LoRA models me
 
 2. If your LoRA model only contains the weights of the Linear module, you can directly use OneDiffX without any modifications. But if your LoRA model includes the weights of the Conv module (such as LyCORIS), you need to disable constant folding optimization by above methods (which may cause a performance drop of around 4.4%), otherwise the weights of the Conv module may not be loaded into the model.
     - Set the env var `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0
-    - Set compiler_config.mlir_enable_inference_optimization to 0 before invoking `oneflow_compile` as the code below
+    - Set mlir_enable_inference_optimization to 0 when invoking `oneflow_compile` as the code below
         ```
-        from onediffx import compiler_config
-        compiler_config.mlir_enable_inference_optimization = 0
+        from onediffx import compile_options
+        compile_options.oneflow.mlir_enable_inference_optimization = 0
         ...
-        pipe.unet = oneflow_compile(pipe.unet)
+        pipe.unet = oneflow_compile(pipe.unet, options=compile_options)
         ...
         ```
 ### Optimization

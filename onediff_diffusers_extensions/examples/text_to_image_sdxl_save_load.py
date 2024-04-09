@@ -7,7 +7,7 @@ import argparse
 import torch
 import oneflow as flow
 
-from onediff.infer_compiler import oneflow_compile, CompileOptions
+from onediff.infer_compiler import oneflow_compile, compile_options
 from diffusers import DiffusionPipeline
 
 parser = argparse.ArgumentParser()
@@ -47,7 +47,6 @@ if base.vae.dtype == torch.float16 and base.vae.config.force_upcast:
 
 # Compile unet and vae
 print("unet and vae is compiled to oneflow.")
-compile_options = CompileOptions()
 compile_options.oneflow.max_cached_graph_size = cmd_args.num_dynamic_input_size
 
 base.unet = oneflow_compile(base.unet, options=compile_options)

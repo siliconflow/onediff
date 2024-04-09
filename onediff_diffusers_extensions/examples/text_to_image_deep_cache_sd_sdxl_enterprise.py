@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 # oneflow_compile should be imported before importing any diffusers
-from onediff.infer_compiler import oneflow_compile, CompileOptions
+from onediff.infer_compiler import oneflow_compile, compile_options
 
 
 def parse_args():
@@ -110,26 +110,29 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
-options = CompileOptions()
-options.oneflow.use_graph = args.graph
+compile_options.oneflow.use_graph = args.graph
 
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:
-        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=options)
+        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=compile_options)
     if hasattr(pipe, "text_encoder_2"):
-        pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, options=options)
+        pipe.text_encoder_2 = oneflow_compile(
+            pipe.text_encoder_2, options=compile_options
+        )
 
 if args.compile:
     if pipe.text_encoder is not None:
-        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=options)
+        pipe.text_encoder = oneflow_compile(pipe.text_encoder, options=compile_options)
     if hasattr(pipe, "text_encoder_2"):
-        pipe.text_encoder_2 = oneflow_compile(pipe.text_encoder_2, options=options)
-    pipe.unet = oneflow_compile(pipe.unet, options=options)
-    pipe.fast_unet = oneflow_compile(pipe.fast_unet, options=options)
+        pipe.text_encoder_2 = oneflow_compile(
+            pipe.text_encoder_2, options=compile_options
+        )
+    pipe.unet = oneflow_compile(pipe.unet, options=compile_options)
+    pipe.fast_unet = oneflow_compile(pipe.fast_unet, options=compile_options)
     if hasattr(pipe, "text_encoder_2") and pipe.needs_upcasting:
         # To avoid mis-match of loaded graph and loaded model
         pipe.upcast_vae()
-    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=options)
+    pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=compile_options)
 
 if args.load_graph:
     print("Loading graphs to avoid compilation...")

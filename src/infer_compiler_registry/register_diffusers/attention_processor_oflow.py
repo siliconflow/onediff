@@ -21,7 +21,7 @@ import os
 import diffusers
 from diffusers.utils import deprecate, logging
 
-from onediff.infer_compiler.utils import parse_boolean_from_env, set_boolean_env_var
+from onediff.infer_compiler.env import parse_boolean_from_env, set_boolean_env_var
 
 
 def is_xformers_available():
@@ -392,7 +392,9 @@ class Attention(nn.Module):
         if self.upcast_attention and parse_boolean_from_env(
             "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", True
         ):
-            set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False)
+            set_boolean_env_var(
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False
+            )
         dtype = query.dtype
         # if self.upcast_attention:
         #     query = query.float()

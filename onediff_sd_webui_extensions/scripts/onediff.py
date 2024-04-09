@@ -19,7 +19,7 @@ from onediff_lora import HijackLoraActivate
 from onediff_hijack import do_hijack as onediff_do_hijack
 
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
+from onediff.infer_compiler.env import parse_boolean_from_env
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
