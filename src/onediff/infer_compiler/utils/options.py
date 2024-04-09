@@ -21,10 +21,23 @@ class NexfortInductorCompileOptions:
 
 @dataclasses.dataclass
 class NexfortCompileOptions:
+    memory_format: torch.memory_format
+    fuse_qkv_projections: bool
     inductor: NexfortInductorCompileOptions
 
-    def __init__(self):
-        self.inductor = NexfortInductorCompileOptions()
+    def __init__(
+        self,
+        memory_format=torch.channels_last,
+        fuse_qkv_projections=True,
+        inductor=None,
+    ):
+        if isinstance(memory_format, str):
+            memory_format = getattr(torch, memory_format)
+        self.memory_format = memory_format
+        self.fuse_qkv_projections = fuse_qkv_projections
+        self.inductor = (
+            inductor if inductor is not None else NexfortInductorCompileOptions()
+        )
 
 
 @dataclasses.dataclass
@@ -38,7 +51,7 @@ class CompileOptions:
     # nexfort specific options
     nexfort: NexfortCompileOptions
 
-    def __init__(self, dynamic=True):
+    def __init__(self, dynamic=True, oneflow=None, nexfort=None):
         self.dynamic = dynamic
-        self.oneflow = OneflowCompileOptions()
-        self.nexfort = NexfortCompileOptions()
+        self.oneflow = oneflow if oneflow is not None else OneflowCompileOptions()
+        self.nexfort = nexfort if nexfort is not None else NexfortCompileOptions()

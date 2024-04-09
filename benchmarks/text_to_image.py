@@ -30,7 +30,6 @@ import torch
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-import oneflow as flow
 from onediffx import compile_pipe
 
 
@@ -62,7 +61,7 @@ def parse_args():
         "--compiler",
         type=str,
         default="oneflow",
-        choices=["none", "oneflow", "compile", "compile-max-autotune"],
+        choices=["none", "oneflow", "nexfort", "compile", "compile-max-autotune"],
     )
     return parser.parse_args()
 
@@ -162,6 +161,8 @@ def main():
         pass
     elif args.compiler == "oneflow":
         pipe = compile_pipe(pipe)
+    elif args.compiler == "nexfort":
+        pipe = compile_pipe(pipe, backend="nexfort")
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         pipe.unet = torch.compile(pipe.unet, mode=mode)
@@ -248,10 +249,13 @@ def main():
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
-    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
-    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+    if args.compiler == "oneflow":
+        import oneflow as flow
+
+        cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
+    else:
+        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
+    print(f"CUDA Mem after: {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
 
     if args.output_image is not None:

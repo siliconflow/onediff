@@ -1,6 +1,6 @@
 import os
 import torch
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import compile
 from onediff.infer_compiler.deployable_module import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
 
@@ -34,6 +34,7 @@ _PARTS = [
     "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
     "vae.decoder",
     "vae.encoder",
+    "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
 ]
 
 
@@ -52,7 +53,7 @@ def _filter_parts(ignores=()):
 
 
 def compile_pipe(
-    pipe, *, ignores=(),
+    pipe, *, backend="oneflow", options=None, ignores=(),
 ):
     # To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
     if (
@@ -67,7 +68,9 @@ def compile_pipe(
         obj = _recursive_getattr(pipe, part, None)
         if obj is not None:
             logger.info(f"Compiling {part}")
-            _recursive_setattr(pipe, part, oneflow_compile(obj))
+            _recursive_setattr(
+                pipe, part, compile(obj, backend=backend, options=options)
+            )
 
     if hasattr(pipe, "image_processor") and "image_processor" not in ignores:
         logger.info("Patching image_processor")
