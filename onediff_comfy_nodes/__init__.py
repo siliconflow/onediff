@@ -1,84 +1,32 @@
 """OneDiff ComfyUI Speedup Module"""
-from ._config import _USE_UNET_INT8
-from ._nodes import (
-    ModelSpeedup,
-    ModelGraphLoader,
-    ModelGraphSaver,
-    VaeSpeedup,
-    VaeGraphLoader,
-    VaeGraphSaver,
-    SVDSpeedup,
-    ModuleDeepCacheSpeedup,
-    OneDiffCheckpointLoaderSimple,
-    OneDiffControlNetLoader,
-    OneDiffDeepCacheCheckpointLoaderSimple,
-    BatchSizePatcher,
-)
-from ._compare_node import CompareModel, ShowImageDiff
-
+from ._config import *
+from ._nodes import (ModelSpeedup, OneDiffApplyModelOptimizer,
+                     OneDiffCheckpointLoaderSimple, OneDiffControlNetLoader,
+                     VaeSpeedup)
 
 NODE_CLASS_MAPPINGS = {
     "ModelSpeedup": ModelSpeedup,
-    "CompareModel": CompareModel,
-    "ShowImageDiff": ShowImageDiff,
-    "ModelGraphLoader": ModelGraphLoader,
-    "ModelGraphSaver": ModelGraphSaver,
     "VaeSpeedup": VaeSpeedup,
-    "VaeGraphSaver": VaeGraphSaver,
-    "VaeGraphLoader": VaeGraphLoader,
-    "SVDSpeedup": SVDSpeedup,
-    "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
+    "SVDSpeedup": ModelSpeedup,
+    "OneDiffModelOptimizer": OneDiffApplyModelOptimizer, 
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
-    "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
-    "BatchSizePatcher": BatchSizePatcher,
+
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ModelSpeedup": "Model Speedup",
-    "CompareModel": "Model Weight Comparator",
-    "ShowImageDiff": "Image Distinction Scanner",
-    "ModelGraphLoader": "Model Graph Loader",
-    "ModelGraphSaver": "Model Graph Saver",
     "VaeSpeedup": "VAE Speedup",
-    "VaeGraphLoader": "VAE Graph Loader",
-    "VaeGraphSaver": "VAE Graph Saver",
-    "SVDSpeedup": "SVD Speedup",
-    "ModuleDeepCacheSpeedup": "Model DeepCache Speedup",
+    "OneDiffModelOptimizer": "Apply Model Optimizer - OneDff",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
-    "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
-    "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
-    "BatchSizePatcher": "Batch Size Patcher",
+    "SVDSpeedup": "SVD Speedup",
 }
 
+from .extras_nodes import (nodes_compare, nodes_oneflow_optimizer,
+                           nodes_torch_compile_optimizer)
 
-if _USE_UNET_INT8:
-    from ._nodes import UNETLoaderInt8, Quant8Model
-    from ._nodes import (
-        QuantKSampler,
-        OneDiffQuantCheckpointLoaderSimple,
-        OneDiffQuantCheckpointLoaderSimpleAdvanced,
-        ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
-    )
+extras = [nodes_compare, nodes_oneflow_optimizer, nodes_torch_compile_optimizer]
+for node in extras:
+    NODE_CLASS_MAPPINGS.update(node.NODE_CLASS_MAPPINGS)
+    NODE_DISPLAY_NAME_MAPPINGS.update(node.NODE_DISPLAY_NAME_MAPPINGS)
 
-    NODE_CLASS_MAPPINGS.update(
-        {
-            "UNETLoaderInt8": UNETLoaderInt8,
-            "Quant8Model": Quant8Model,
-            "OneDiffQuantCheckpointLoaderSimple": OneDiffQuantCheckpointLoaderSimple,
-            "OneDiffQuantCheckpointLoaderSimpleAdvanced": OneDiffQuantCheckpointLoaderSimpleAdvanced,
-            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": ImageOnlyOneDiffQuantCheckpointLoaderAdvanced,
-            "QuantKSampler": QuantKSampler,
-        }
-    )
-
-    NODE_DISPLAY_NAME_MAPPINGS.update(
-        {
-            "UNETLoaderInt8": "UNET Loader Int8",
-            "Quant8Model": "Model Quantization(int8)",
-            "OneDiffQuantCheckpointLoaderSimple": "Load Checkpoint - OneDiff Quant",
-            "OneDiffQuantCheckpointLoaderSimpleAdvanced": "Load Checkpoint - OneDiff Quant Advanced",
-            "ImageOnlyOneDiffQuantCheckpointLoaderAdvanced": "Load Checkpoint - OneDiff Quant Advanced (img2vid)",
-            "QuantKSampler": "Quant K Sampler",
-        }
-    )

@@ -54,8 +54,13 @@ def singledispatch_proxy(func):
 
 
 def proxy_class(cls: type):
-    return transform_mgr.transform_cls(cls)
-
+    try:
+        out = transform_mgr.transform_cls(cls)
+        return out 
+    except Exception as e:
+        import traceback 
+        print(traceback.format_exc())
+        import pdb; pdb.set_trace()
 
 def reverse_proxy_class(cls: type):
     return transform_mgr.reverse_transform_cls(cls)
