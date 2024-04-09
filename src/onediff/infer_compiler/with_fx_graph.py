@@ -1,14 +1,13 @@
 import os
 import torch
 import torch.fx as fx
-import oneflow as flow
 from torch.fx.node import map_aggregate
 from typing import Any, Dict, Iterator, List, Optional, Tuple, Union
 
-from .transform import get_attr, torch2oflow
-
 
 def fx_node_tranform(gm):
+    import oneflow as flow
+
     of_gm = to_of_transform(gm)
 
     enable_graph = os.getenv("ONEDIFF_INFER_COMPILER_USE_GRAPH", "True").lower() in (
@@ -40,6 +39,9 @@ def fx_node_tranform(gm):
 def to_of_transform(
     gm: torch.fx.GraphModule, tracer_class: type = fx.Tracer
 ) -> torch.fx.GraphModule:
+    import oneflow as flow
+    from .transform import get_attr, torch2oflow
+
     name2node = {}
     name2obj = {}
     torch2flow = {}
@@ -94,6 +96,8 @@ def to_of_transform(
 
 
 def replace_node(node, name2node):
+    from .transform import torch2oflow
+
     if isinstance(node, torch.fx.Node):
         return name2node[node.name]
     else:

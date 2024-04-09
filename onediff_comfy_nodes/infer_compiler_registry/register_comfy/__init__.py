@@ -1,4 +1,4 @@
-from onediff.infer_compiler import register
+from onediff.infer_compiler.transform import register
 from onediff.infer_compiler.utils import is_community_version
 from nodes import *  # must imported before import comfy
 from pathlib import Path
