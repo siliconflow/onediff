@@ -21,6 +21,10 @@ OneDiff is an out-of-the-box acceleration library for diffusion models, it provi
   - [OneDiff for ComfyUI](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes)
   - [OneDiff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
+For example:
+
+<img src="imgs/replace_a100.png" height="300">
+
 ## News
 OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
 
