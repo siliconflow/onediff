@@ -6,7 +6,7 @@ import unittest
 
 class  QuantizeQuality(unittest.TestCase):
 
-    def validate():
+    def test_validate(self):
         ssim = 0
         image1 = np.array(Image.open('/share_nfs/civitai/20240407-163408.jpg').convert('RGB'))
         image2 = np.array(Image.open('/src/onediff/output_enterprise_sd.png').convert('RGB'))
