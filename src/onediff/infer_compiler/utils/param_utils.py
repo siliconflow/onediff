@@ -1,7 +1,7 @@
 import re
 import torch
 import oneflow as flow
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Union
 
 from .log_utils import logger
 
@@ -29,7 +29,7 @@ def check_device(current_device, target_device) -> bool:
 
     return _convert(current_device) == _convert(target_device)
 
-def get_constant_folding_info(deployable_module, torch_module: torch.nn.Module = None) -> Dict[str, flow.Tensor]:
+def generate_constant_folding_info(deployable_module, torch_module: torch.nn.Module = None) -> Dict[str, flow.Tensor]:
     # convert str like 'variable_transpose_model.input_blocks.10.0.in_layers.2.weight_239'
     # to 'input_blocks.10.0.in_layers.2.weight'
     def convert_var_name(s: str, prefix="variable_transpose_"):
@@ -51,7 +51,7 @@ def get_constant_folding_info(deployable_module, torch_module: torch.nn.Module =
         for k, v in zip(*graph._c_nn_graph.get_runtime_var_states())
         if k.startswith("variable_")
     }
-    return result
+    setattr(deployable_module, CONSTANT_FOLDING_INFO_ATTR, result)
 
 def update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[str, flow.Tensor]) -> None:
     from onediff.infer_compiler.deployable_module import DeployableModule
@@ -66,6 +66,12 @@ def update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[
         target_tensor.copy_(
             flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
         )
+
+def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
+    from onediff.infer_compiler.deployable_module import DeployableModule
+    if not isinstance(module, DeployableModule):
+        raise TypeError(f"module must be a DeployableModule, got {type(module)}")
+    return getattr(module, CONSTANT_FOLDING_INFO_ATTR, None)
 
 # hooks for constant folding conv weights
 
@@ -86,8 +92,7 @@ def forward_generate_constant_folding_info_hook(module):
     if getattr(module, CONSTANT_FOLDING_INFO_ATTR, None) is not None:
         return
 
-    constant_folding_info = get_constant_folding_info(module)
-    setattr(module, CONSTANT_FOLDING_INFO_ATTR, constant_folding_info)
+    generate_constant_folding_info(module)
 
 
 def forward_pre_check_state_update_hook(module):
