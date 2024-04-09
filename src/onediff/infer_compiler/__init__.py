@@ -3,7 +3,7 @@ import torch
 import oneflow as flow
 
 from .utils.patch_for_compiler import *  # TODO:
-from .utils.options import *
+from .options import *
 from .transform.custom_transform import register
 from .with_onediff_compile import compile, oneflow_compile
 from oneflow.framework.args_tree import ArgsTree

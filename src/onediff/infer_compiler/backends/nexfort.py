@@ -1,7 +1,7 @@
 import dataclasses
 import torch
 from .registry import register_backend
-from ..utils.options import CompileOptions
+from ..options import CompileOptions
 
 
 def make_inductor_options(options):
