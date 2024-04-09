@@ -49,16 +49,19 @@ def hijacked_activate(activate_func, *, conv_dict=None):
                     ),
                 ):
                     continue
+                if conv_dict is not None and isinstance(sub_module, torch.nn.Conv2d):
+                    orig_name = sub_module.network_current_names
                 networks.network_apply_weights(sub_module)
 
                 # for LyCORIS cases
                 if conv_dict is not None and isinstance(sub_module, torch.nn.Conv2d):
-                    target_tensor = conv_dict.get(name + ".weight", None)
-                    if target_tensor is None:
-                        continue
-                    target_tensor.copy_(
-                        flow.utils.tensor.from_torch(sub_module.weight.permute(0, 2, 3, 1))
-                    )
+                    if orig_name != sub_module.network_current_names:
+                        target_tensor = conv_dict.get(name + ".weight", None)
+                        if target_tensor is None:
+                            continue
+                        target_tensor.copy_(
+                            flow.utils.tensor.from_torch(sub_module.weight.permute(0, 2, 3, 1))
+                        )
 
     activate._onediff_hijacked = True
     return activate
