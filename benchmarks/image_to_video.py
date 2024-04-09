@@ -1,4 +1,3 @@
-# Run with ONEFLOW_RUN_GRAPH_BY_VM=1 to get faster
 MODEL = "stabilityai/stable-video-diffusion-img2vid-xt"
 # SVD 1.1: stabilityai/stable-video-diffusion-img2vid-xt-1-1 is also available.
 VARIANT = None

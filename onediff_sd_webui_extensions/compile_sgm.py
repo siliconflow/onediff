@@ -76,7 +76,7 @@ torch2oflow_class_map = {
 register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
 
-def compile_sgm_unet(unet_model, *, use_graph=True, options={}):
+def compile_sgm_unet(unet_model, *, options=None):
     if not isinstance(unet_model, UNetModel):
         return
     for module in unet_model.modules():
@@ -84,4 +84,4 @@ def compile_sgm_unet(unet_model, *, use_graph=True, options={}):
             module.checkpoint = False
         if isinstance(module, ResBlock):
             module.use_checkpoint = False
-    return oneflow_compile(unet_model, use_graph=use_graph, options=options)
+    return oneflow_compile(unet_model, options=options)

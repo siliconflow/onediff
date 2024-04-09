@@ -71,11 +71,7 @@ def load_and_compile_pipe(
     controlnet=None,
 ):
     from diffusers import StableDiffusionXLPipeline
-
-    if compile_type == "oneflow":
-        from onediff.schedulers import EulerDiscreteScheduler
-    else:
-        from diffusers import EulerDiscreteScheduler
+    from diffusers import EulerDiscreteScheduler
 
     extra_kwargs = {}
     if custom_pipeline is not None:

@@ -2,10 +2,10 @@ import os
 import torch
 import oneflow as flow
 
-from .oneflow_compiler_config import oneflow_compiler_config
 from .utils.patch_for_compiler import *  # TODO:
+from .utils.options import *
 from .transform.custom_transform import register
-from .with_oneflow_compile import oneflow_compile
+from .with_onediff_compile import compile, oneflow_compile
 from oneflow.framework.args_tree import ArgsTree
 
 from .with_fx_interpreter import OneFlowInterpreter

@@ -4,9 +4,10 @@ import argparse
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler import oneflow_compiler_config
+from onediff.infer_compiler.oneflow import oneflow_compiler_config
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
+
 # import diffusers
 # diffusers.logging.set_verbosity_info()
 
@@ -125,7 +126,7 @@ image_eager = image[0]
 
 
 # Update the unet and vae
-# load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers. 
+# load_state_dict(state_dict, strict=True, assign=False), assign is False means copying them inplace into the module’s current parameters and buffers.
 # Reference: https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.load_state_dict
 print("Loading state_dict of new base into compiled graph")
 compiled_unet._torch_module.load_state_dict(new_base.unet.state_dict())

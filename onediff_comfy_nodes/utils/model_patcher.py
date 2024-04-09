@@ -33,8 +33,8 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         graph_path=None,
         graph_device=None,
     ):
-        from onediff.infer_compiler import oneflow_compile
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        from onediff.infer_compiler import oneflow_compile, CompileOptions
+        from onediff.infer_compiler.deployable_module import DeployableModule
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}
@@ -47,10 +47,12 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 "diffusion_model"
             ] = self.model.diffusion_model
         else:
+            options = CompileOptions()
+            options.oneflow.use_graph = use_graph
+            options.oneflow.graph_file = graph_path
+            options.oneflow.graph_file_device = graph_device
             self.model.__dict__["_modules"]["diffusion_model"] = oneflow_compile(
-                self.model.diffusion_model,
-                use_graph=use_graph,
-                options={"graph_file": graph_path, "graph_file_device": graph_device},
+                self.model.diffusion_model, options=options
             )
         self.model._register_state_dict_hook(state_dict_hook)
         self.patches = {}
@@ -63,7 +65,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
             self.current_device = self.offload_device
         else:
             self.current_device = current_device
-        
+
         self.model_lowvram = False
 
     def clone(self):
@@ -501,8 +503,8 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         use_graph=None,
         gen_compile_options=None,
     ):
-        from onediff.infer_compiler import oneflow_compile
-        from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+        from onediff.infer_compiler import oneflow_compile, CompileOptions
+        from onediff.infer_compiler.deployable_module import DeployableModule
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}
@@ -519,14 +521,16 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
         if use_graph:
-            gen_compile_options = gen_compile_options or (lambda x: {})
+            gen_compile_options = gen_compile_options or (lambda x: CompileOptions())
             compile_options = gen_compile_options(self.deep_cache_unet)
+            compile_options.oneflow.use_graph = use_graph
             self.deep_cache_unet = oneflow_compile(
-                self.deep_cache_unet, use_graph=use_graph, options=compile_options,
+                self.deep_cache_unet, options=compile_options,
             )
             compile_options = gen_compile_options(self.fast_deep_cache_unet)
+            compile_options.oneflow.use_graph = use_graph
             self.fast_deep_cache_unet = oneflow_compile(
-                self.fast_deep_cache_unet, use_graph=use_graph, options=compile_options,
+                self.fast_deep_cache_unet, options=compile_options,
             )
             self.model._register_state_dict_hook(state_dict_hook)
 
@@ -542,6 +546,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.current_device = current_device
 
         self.model_lowvram = getattr(model, "model_lowvram", False)
+
 
 def get_mixed_speedup_class(module_cls):
     class MixedSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher, module_cls):
@@ -585,7 +590,7 @@ def get_mixed_speedup_class(module_cls):
             n.object_patches = self.object_patches.copy()
             n.model_options = copy.deepcopy(self.model_options)
             n.model_keys = self.model_keys
-            
+
             n.model_lowvram = self.model_lowvram
             return n
 
