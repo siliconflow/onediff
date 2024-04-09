@@ -61,9 +61,9 @@ if args.compile_unet:
     base.unet = oneflow_compile(base.unet)
 
 # Compile vae with oneflow
-if args.compile_vae:
-    print("Compiling vae with oneflow.")
-    base.vae.decoder = oneflow_compile(base.vae.decoder)
+# if args.compile_vae:
+#     print("Compiling vae with oneflow.")
+#     base.vae.decoder = oneflow_compile(base.vae.decoder)
 
 # Warmup with run
 # Will do compilatioin in the first run
@@ -94,12 +94,12 @@ def run():
 @cost_cnt(True)
 def offload():
     print("offload graph to CPU")
-    #base.unet.offload()
+    base.unet.offload()
 
 @cost_cnt(True)
 def load():
     print("load graph to GPU")
-    #base.unet.load()
+    base.unet.load()
 
 run()
 offload()
