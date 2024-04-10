@@ -6,6 +6,7 @@ import folder_paths
 import torch
 from comfy import model_management
 from comfy.cli_args import args
+
 from onediff.infer_compiler.utils import is_community_version
 
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
@@ -17,11 +18,13 @@ from ..modules.oneflow.hijack_samplers import samplers_hijack
 from ..modules.oneflow.optimizer_basic import BasicOneFlowOptimizerExecutor
 from ..modules.oneflow.optimizer_deepcache import DeepcacheOptimizerExecutor
 from ..modules.oneflow.optimizer_patch import PatchOptimizerExecutor
-from ..modules.oneflow.optimizer_quantization import \
-    OnelineQuantizationOptimizerExecutor
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..modules.optimizer_scheduler import OptimizerScheduler
 from ..utils.import_utils import is_onediff_quant_available
+
+if is_onediff_quant_available() and not is_community_version():
+    from ..modules.oneflow.optimizer_quantization import \
+        OnelineQuantizationOptimizerExecutor
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -219,6 +222,13 @@ class OneDiffOnlineQuantizationOptimizer:
 
     @torch.no_grad()
     def apply(self, quantized_conv_percentage=0, quantized_linear_percentage=0, conv_compute_density_threshold=0, linear_compute_density_threshold=0):
+        if not is_onediff_quant_available() and is_community_version():
+            raise RuntimeError(f'OneDiff quantization and community version are not available. '
+                       f'Please refer to the documentation for reinstalling OneDiff Enterprise: '
+                       f'https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise\n'
+                       f'is_community_version={is_community_version()}\n'
+                       f'is_onediff_quant_available={is_onediff_quant_available()}')
+
         return (
             OnelineQuantizationOptimizerExecutor(
                 conv_percentage=quantized_conv_percentage,
@@ -463,6 +473,7 @@ NODE_CLASS_MAPPINGS = {
    "BatchSizePatcher": BatchSizePatcher,
    "OneDiffOnlineQuantizationOptimizer": OneDiffOnlineQuantizationOptimizer,
    "SVDSpeedup": SVDSpeedup,
+   "OneFlowDeepcacheOptimizer": OneFlowDeepcacheOptimizer, 
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -475,7 +486,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "BatchSizePatcher": "Batch Size Patcher",
-    "OneDiffOnlineQuantizationOptimizer": "Online OneFlow Quantizer - OneDiff"
+    "OneDiffOnlineQuantizationOptimizer": "Online OneFlow Quantizer - OneDiff",
+    "OneFlowDeepcacheOptimizer": "OneFlow Deepcache Optimizer - OneDiff"
 }
 
 

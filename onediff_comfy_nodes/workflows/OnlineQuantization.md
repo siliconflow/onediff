@@ -15,7 +15,7 @@
 
 Notes:
 
-1. Specify the directory for saving graphsusing export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs".
+1. Specify the directory for saving graphs using export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs".
 2. The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
 
 ## Performance Comparison
@@ -39,3 +39,13 @@ Updated on Mon 08 Apr 2024
 
 ### SVD
 ![svd_quant](https://github.com/siliconflow/onediff/assets/109639975/93ebe3d5-8413-4a7e-8b93-fd016f61abe9)
+
+| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| ----------------------- | ------------------------ | ------------------ | ------------------------ |
+| NVIDIA A800-SXM4-80GB   | 63.64 s                   | 47.57 s ( ~25.25%)   | 49.83 s ( ~21.7%)     |
+
+- torch   `python -c "import torch; print(torch.__version__)"`: {version: 2.4.0.dev20240405+cu121}
+- oneflow  `python -m oneflow --doctor`: {git_commit: 4ed3138, version: 0.9.1.dev20240402+cu122, enterprise: True}
+- ComfyUI Tue Apr 9 commit: 4201181b35402e0a992b861f8d2f0e0b267f52fa
+- Start comfyui command: `python main.py --gpu-only`
+- Python 3.10.13
