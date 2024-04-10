@@ -11,11 +11,15 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
-安装plotly包
+3.Install plotly
+```bash
+python3 -m pip install plotly 
+```
+
 ## Online Quant
 
 First, you need to download [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) model.
-如果你是多卡用户
+If you are a multi card user, please select the graphics card that executes the program
 1. Set CUDA device using export CUDA_VISIBLE_DEVICES=7.
 
 2. The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
@@ -64,7 +68,7 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
 
 ## Quant a custom model
 
-要实现自定义模型的量化，请参考如下脚本
+To achieve quantization of custom models, please refer to the following script
 ```bash
 python tests/test_quantize_custom_model.py
 ```
