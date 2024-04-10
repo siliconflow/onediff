@@ -50,8 +50,6 @@ class CompareModel:
         if check == "disable":
             return {}
 
-  
-
         torch_model.patch_model("cuda")
         oneflow_model.patch_model("cuda")
 
@@ -178,9 +176,9 @@ class ShowImageDiff:
             )
 
             if raise_if_diff == "enable":
-                assert ssim > float(ssim_threshold), (
-                    f"Image diff is too large, ssim is {ssim}, "
-                )
+                assert ssim > float(
+                    ssim_threshold
+                ), f"Image diff is too large, ssim is {ssim}, "
 
         return {"ui": {"images": results}}
 
@@ -188,7 +186,6 @@ class ShowImageDiff:
         i = 255.0 * image.cpu().numpy()
         img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))
         return np.array(img)
-
 
 
 NODE_CLASS_MAPPINGS = {

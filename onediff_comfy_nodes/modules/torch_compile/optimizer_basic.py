@@ -11,7 +11,15 @@ from ..optimizer_interface import OptimizerExecutor
 
 class TorchCompileOptimizerExecutor(OptimizerExecutor):
     # https://pytorch.org/docs/stable/_modules/torch.html#compile
-    def __init__(self, fullgraph=False, dynamic=None, backend='inductor', mode='default', options=None, disable=False):
+    def __init__(
+        self,
+        fullgraph=False,
+        dynamic=None,
+        backend="inductor",
+        mode="default",
+        options=None,
+        disable=False,
+    ):
         super().__init__()
         self.compile_kwargs = {
             "fullgraph": fullgraph,
@@ -23,11 +31,9 @@ class TorchCompileOptimizerExecutor(OptimizerExecutor):
         }
         self.compile_fn = partial(torch.compile, **self.compile_kwargs)
 
-
     @singledispatchmethod
     def execute(self, model, ckpt_name=None, **kwargs):
-        raise NotImplementedError(f'Cannot execute {type(model)=}')
-    
+        raise NotImplementedError(f"Cannot execute {type(model)=}")
 
     @execute.register(ModelPatcher)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
@@ -38,7 +44,7 @@ class TorchCompileOptimizerExecutor(OptimizerExecutor):
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
         model.first_stage_model = self.compile_fn(model.first_stage_model)
         return model
-    
+
     @execute.register(ControlNet)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
         torch_model = model.control_model

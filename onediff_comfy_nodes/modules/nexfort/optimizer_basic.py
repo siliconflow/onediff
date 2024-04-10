@@ -44,3 +44,4 @@ class NexFortOptimizerExecutor(OptimizerExecutor):
         compiled_model = self.compile_fn(torch_model)
         model.control_model = compiled_model
         return model
+    
