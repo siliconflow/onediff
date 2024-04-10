@@ -15,6 +15,7 @@ from ..utils.param_utils import (
     state_update_hook,
 )
 from ..utils.graph_management_utils import graph_file_management
+from ..utils.online_quantization_utils import quantize_and_deploy_wrapper
 from ..utils.options import OneflowCompileOptions
 from ..deployable_module import DeployableModule
 
@@ -34,6 +35,7 @@ class OneflowDeployableModule(DeployableModule):
         object.__setattr__(self, "_modules", torch_module._modules)
         object.__setattr__(self, "_torch_module", torch_module)
         self._deployable_module_enable_dynamic = dynamic
+        self._deployable_module_quant_config = None
         self._deployable_module_options = (
             options if options is not None else OneflowCompileOptions()
         )
@@ -59,6 +61,7 @@ class OneflowDeployableModule(DeployableModule):
         instance._deployable_module_input_count = (
             existing_module._deployable_module_input_count
         )
+        instance._deployable_module_quant_config = existing_module._deployable_module_quant_config
 
         return instance
 
@@ -93,7 +96,8 @@ class OneflowDeployableModule(DeployableModule):
                     *args, **kwargs
                 )
         return output
-
+    
+    @quantize_and_deploy_wrapper
     @input_output_processor
     @handle_deployable_exception
     @graph_file_management
@@ -186,4 +190,26 @@ class OneflowDeployableModule(DeployableModule):
         del self._deployable_module_model.oneflow_module
 
     def get_graph_file(self):
+        return self._deployable_module_options.get("graph_file", None)
+
+    def apply_online_quant(self, quant_config):
+        """
+        Applies the provided quantization configuration for online use.
+
+        Args:
+            quant_config (QuantizationConfig): The quantization configuration to apply.
+
+        Example:
+            >>> from onediff_quant.quantization import QuantizationConfig
+            >>> quant_config = QuantizationConfig.from_settings(
+            ...     quantize_conv=True,
+            ...     quantize_linear=True,
+            ...     conv_mae_threshold=0.005,
+            ...     linear_mae_threshold=0.005,
+            ...     conv_compute_density_threshold=300,
+            ...     linear_compute_density_threshold=100,
+            ...     cache_dir=args.cache_dir)
+            >>> model.apply_online_quant(quant_config)
+        """
+        self._deployable_module_quant_config = quant_config
         return self._deployable_module_options.graph_file
