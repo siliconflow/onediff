@@ -1,6 +1,5 @@
 import os
+import folder_paths
 
-# from folder_paths import 
-
-# TODO fix path
-os.environ["COMFYUI_ROOT"] = "/home/fengwen/workspace/ComfyUI"
+# https://github.com/comfyanonymous/ComfyUI/blob/master/folder_paths.py#L9
+os.environ["COMFYUI_ROOT"] = folder_paths.base_path
