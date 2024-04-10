@@ -6,7 +6,14 @@ from ..transform.manager import transform_mgr
 from ..utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from ..utils.args_tree_util import input_output_processor
 from ..utils.log_utils import logger
-from ..utils.param_utils import parse_device, check_device, STATE_UPDATED_ATTR, forward_generate_constant_folding_info_hook, forward_pre_check_state_update_hook, state_update_hook
+from ..utils.param_utils import (
+    parse_device,
+    check_device,
+    STATE_UPDATED_ATTR,
+    forward_generate_constant_folding_info_hook,
+    forward_pre_check_and_update_state_hook,
+    state_update_hook,
+)
 from ..utils.graph_management_utils import graph_file_management
 from ..utils.options import OneflowCompileOptions
 from ..deployable_module import DeployableModule
@@ -92,7 +99,7 @@ class OneflowDeployableModule(DeployableModule):
     @graph_file_management
     def __call__(self, *args, **kwargs):
         # pre hooks
-        forward_pre_check_state_update_hook(self)
+        forward_pre_check_and_update_state_hook(self)
 
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()

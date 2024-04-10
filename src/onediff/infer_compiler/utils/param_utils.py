@@ -29,7 +29,10 @@ def check_device(current_device, target_device) -> bool:
 
     return _convert(current_device) == _convert(target_device)
 
-def generate_constant_folding_info(deployable_module, torch_module: torch.nn.Module = None) -> Dict[str, flow.Tensor]:
+
+def generate_constant_folding_info(
+    deployable_module, torch_module: torch.nn.Module = None
+) -> Dict[str, flow.Tensor]:
     # convert str like 'variable_transpose_model.input_blocks.10.0.in_layers.2.weight_239'
     # to 'input_blocks.10.0.in_layers.2.weight'
     def convert_var_name(s: str, prefix="variable_transpose_"):
@@ -37,8 +40,11 @@ def generate_constant_folding_info(deployable_module, torch_module: torch.nn.Mod
         return s
 
     from onediff.infer_compiler.deployable_module import DeployableModule
+
     if not isinstance(deployable_module, DeployableModule):
-        raise TypeError(f"deployable_model must be a DeployableModule, got {type(deployable_module)}")
+        raise TypeError(
+            f"deployable_model must be a DeployableModule, got {type(deployable_module)}"
+        )
     if torch_module is None:
         torch_module = deployable_module._torch_module
 
@@ -53,8 +59,12 @@ def generate_constant_folding_info(deployable_module, torch_module: torch.nn.Mod
     }
     setattr(deployable_module, CONSTANT_FOLDING_INFO_ATTR, result)
 
-def update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[str, flow.Tensor]) -> None:
+
+def update_graph_with_constant_folding_info(
+    module: torch.nn.Module, info: Dict[str, flow.Tensor]
+) -> None:
     from onediff.infer_compiler.deployable_module import DeployableModule
+
     if isinstance(module, DeployableModule):
         module = module._torch_module
 
@@ -67,16 +77,20 @@ def update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[
             flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
         )
 
+
 def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
     from onediff.infer_compiler.deployable_module import DeployableModule
+
     if not isinstance(module, DeployableModule):
         raise TypeError(f"module must be a DeployableModule, got {type(module)}")
     return getattr(module, CONSTANT_FOLDING_INFO_ATTR, None)
+
 
 # hooks for constant folding conv weights
 
 STATE_UPDATED_ATTR = "_onediff_state_updated"
 CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
+
 
 def state_update_hook(module, incompatible_keys):
     if not hasattr(module, STATE_UPDATED_ATTR):
@@ -95,7 +109,7 @@ def forward_generate_constant_folding_info_hook(module):
     generate_constant_folding_info(module)
 
 
-def forward_pre_check_state_update_hook(module):
+def forward_pre_check_and_update_state_hook(module):
     if module._deployable_module_dpl_graph is None:
         return
 
