@@ -3,6 +3,7 @@
 import os
 import importlib
 import types
+import traceback
 from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -58,9 +59,9 @@ def proxy_class(cls: type):
         out = transform_mgr.transform_cls(cls)
         return out 
     except Exception as e:
-        import traceback 
-        print(traceback.format_exc())
-        import pdb; pdb.set_trace()
+        # If an exception occurs during transformation, print traceback for debugging
+        raise RuntimeError(f"An exception occurred during class transformation:\n{traceback.format_exc()}\nException: {e}")
+
 
 def reverse_proxy_class(cls: type):
     return transform_mgr.reverse_transform_cls(cls)
