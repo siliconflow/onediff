@@ -9,7 +9,7 @@ from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.oneflow import \
-    OneflowDeployableModule as DeployableModule
+    OneflowDeployableModule as DeployableModule 
 
 from ..optimizer_interface import OptimizerExecutor
 from .onediff_controlnet import OneDiffControlLora

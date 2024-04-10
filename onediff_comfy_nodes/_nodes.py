@@ -153,7 +153,7 @@ class OneDiffControlNetLoader(ControlNetLoader):
     def onediff_load_controlnet(self, control_net_name, custom_optimizer=None):
         controlnet = super().load_controlnet(control_net_name)[0]
         op = OptimizerScheduler(BasicOptimizerExecutor())
-        controlnet = op.compile(controlnet)
+        controlnet = op.compile(controlnet, ckpt_name=control_net_name)
         return (controlnet,)
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):

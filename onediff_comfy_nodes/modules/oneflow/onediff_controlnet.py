@@ -35,7 +35,7 @@ def set_attr_of(obj, attr, value):
 class OneDiffControlLora(ControlLora):
     @classmethod
     def from_controllora(
-        cls, controlnet: ControlLora, *, gen_compile_options: callable = None
+        cls, controlnet: ControlLora, *, gen_compile_options: callable = None 
     ):
         c = cls(
             controlnet.control_weights,
@@ -78,15 +78,18 @@ class OneDiffControlLora(ControlLora):
             self.control_model.to(dtype)
             self.control_model.to(comfy.model_management.get_torch_device())
 
-            compile_options = (
+            file_device_dict = (
                 self.gen_compile_options(self.control_model)
                 if self.gen_compile_options is not None
                 else {}
             )
-
             self._oneflow_model = oneflow_compile(
-                self.control_model, options=compile_options
+                self.control_model
             )
+            compiled_options = self._oneflow_model._deployable_module_options
+            compiled_options.graph_file = file_device_dict.get("graph_file", None)
+            compiled_options.graph_file_device = file_device_dict.get("graph_file_device", None)
+
 
         self.control_model = self._oneflow_model
 
