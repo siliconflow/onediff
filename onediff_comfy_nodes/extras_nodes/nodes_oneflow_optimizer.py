@@ -329,9 +329,36 @@ class BatchSizePatcher:
         model = op(model=model, latent_image=latent_image)
         return (model,)
 
+class SVDSpeedup:
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {"model": ("MODEL",), 
+                        "inplace": ([False, True],),
+                        "cache_name": ("STRING", {
+                            "multiline": False, #True if you want the field to look like the one on the ClipTextEncode node
+                            "default": "svd"}),
+            },
+            "optional": {
+                "custom_optimizer": ("CUSTOM_OPTIMIZER",),
+            }
 
+        }
 
+    RETURN_TYPES = ("MODEL",)
+    FUNCTION = "speedup"
+    CATEGORY = "OneDiff"
 
+    @torch.no_grad()
+    def speedup(self, model, inplace=False, cache_name = "svd", custom_optimizer: OptimizerScheduler=None):
+        if custom_optimizer:
+            op = custom_optimizer
+            op.inplace = inplace
+        else:
+            op = OptimizerScheduler(BasicOneFlowOptimizerExecutor(), inplace=inplace)
+
+        optimized_model = op.compile(model, ckpt_name=cache_name)
+        return (optimized_model,)
 
 ########################## For downward compatibility, it is retained ###################
 class VaeGraphLoader:
@@ -379,7 +406,6 @@ class VaeGraphSaver:
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
 
         return {}
-
 
 class ModelGraphLoader:
     @classmethod
@@ -435,6 +461,8 @@ NODE_CLASS_MAPPINGS = {
    "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
    "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
    "BatchSizePatcher": BatchSizePatcher,
+   "OneDiffOnlineQuantizationOptimizer": OneDiffOnlineQuantizationOptimizer,
+   "SVDSpeedup": SVDSpeedup,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -447,6 +475,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "BatchSizePatcher": "Batch Size Patcher",
+    "OneDiffOnlineQuantizationOptimizer": "Online OneFlow Quantizer - OneDiff"
 }
 
 

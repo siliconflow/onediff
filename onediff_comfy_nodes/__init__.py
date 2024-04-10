@@ -7,7 +7,6 @@ from ._nodes import (ModelSpeedup, OneDiffApplyModelOptimizer,
 NODE_CLASS_MAPPINGS = {
     "ModelSpeedup": ModelSpeedup,
     "VaeSpeedup": VaeSpeedup,
-    "SVDSpeedup": ModelSpeedup,
     "OneDiffModelOptimizer": OneDiffApplyModelOptimizer, 
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
@@ -19,7 +18,6 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "VaeSpeedup": "VAE Speedup",
     "OneDiffModelOptimizer": "Apply Model Optimizer - OneDff",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
-    "SVDSpeedup": "SVD Speedup",
 }
 
 from .extras_nodes import (nodes_compare, nodes_oneflow_optimizer,

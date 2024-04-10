@@ -20,7 +20,7 @@ __all__ = [
     "ControlnetSpeedup",
     "OneDiffApplyModelOptimizer"
     "OneDiffControlNetLoader",
-    "OneDiffControlNetLoader",
+    "OneDiffCheckpointLoaderSimple"
 ]
 
 class ModelSpeedup:
