@@ -174,15 +174,15 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
 
     @torch.no_grad()
     def onediff_load_checkpoint(
-        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, model_optimizer: OptimizerScheduler=None,
+        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, custom_optimizer: OptimizerScheduler=None,
     ):
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-        if model_optimizer is None:
-            model_optimizer = OptimizerScheduler(BasicOptimizerExecutor())
-        modelpatcher = model_optimizer.compile(modelpatcher, ckpt_name=ckpt_name)
+        if custom_optimizer is None:
+            custom_optimizer = OptimizerScheduler(BasicOptimizerExecutor())
+        modelpatcher = custom_optimizer.compile(modelpatcher, ckpt_name=ckpt_name)
         if vae_speedup == "enable":
             vae_optimizer = OptimizerScheduler(BasicOptimizerExecutor())
             vae = vae_optimizer.compile(vae, ckpt_name=ckpt_name)
