@@ -29,21 +29,23 @@ def check_device(current_device, target_device) -> bool:
 
     return _convert(current_device) == _convert(target_device)
 
+
 # hooks and helper functions for constant folding conv weights
 
 STATE_UPDATED_ATTR = "_onediff_state_updated"
 CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
 GRAPH_RELATED_TENSOR_ATTR = "_onediff_graph_related_tensor"
 
+
 def init_state_update_attr(module: torch.nn.Module):
     from onediff.infer_compiler.deployable_module import DeployableModule
+
     if isinstance(module, DeployableModule):
         module = module._torch_module
     if not isinstance(module, torch.nn.Module):
-        raise TypeError(
-            f"module must be a torch.nn.Module, got {type(module)}"
-        )
+        raise TypeError(f"module must be a torch.nn.Module, got {type(module)}")
     setattr(module, STATE_UPDATED_ATTR, False)
+
 
 def set_constant_folded_conv_attr(
     deployable_module, constant_folding_info: Dict[str, flow.Tensor] = None
@@ -73,6 +75,7 @@ def set_constant_folded_conv_attr(
             weight_name.removesuffix(".weight")
         )
         object.__setattr__(submodule, GRAPH_RELATED_TENSOR_ATTR, weight_tensor)
+
 
 def generate_constant_folding_info(
     deployable_module, torch_module: torch.nn.Module = None
@@ -126,6 +129,7 @@ def update_graph_with_constant_folding_info(
             flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
         )
 
+
 def update_graph_related_tensor(module: torch.nn.Conv2d) -> None:
     if not isinstance(module, torch.nn.Conv2d):
         return
@@ -136,6 +140,7 @@ def update_graph_related_tensor(module: torch.nn.Conv2d) -> None:
         flow.utils.tensor.from_torch(module.weight.data.permute(0, 2, 3, 1))
     )
 
+
 def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
     from onediff.infer_compiler.deployable_module import DeployableModule
 
@@ -143,11 +148,13 @@ def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
         raise TypeError(f"module must be a DeployableModule, got {type(module)}")
     return getattr(module, CONSTANT_FOLDING_INFO_ATTR, None)
 
+
 def state_update_hook(module, incompatible_keys):
     if not hasattr(module, STATE_UPDATED_ATTR):
         return
     logger.info(f"load_state_dict called, set {STATE_UPDATED_ATTR} to True")
     setattr(module, STATE_UPDATED_ATTR, True)
+
 
 def forward_generate_constant_folding_info_hook(module, args, output):
     if module._deployable_module_dpl_graph is None:
@@ -157,6 +164,7 @@ def forward_generate_constant_folding_info_hook(module, args, output):
         return
 
     generate_constant_folding_info(module)
+
 
 def forward_pre_check_and_update_state_hook(module, args):
     if module._deployable_module_dpl_graph is None:
