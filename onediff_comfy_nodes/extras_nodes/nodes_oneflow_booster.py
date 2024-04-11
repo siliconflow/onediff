@@ -232,9 +232,9 @@ class OneDiffOnlineQuantizationBooster:
         conv_compute_density_threshold=0,
         linear_compute_density_threshold=0,
     ):
-        if not is_onediff_quant_available() and is_community_version():
+        if not is_onediff_quant_available() or is_community_version():
             raise RuntimeError(
-                f"OneDiff quantization and community version are not available. "
+                f"OneDiff Quant or community version are not available. "
                 f"Please refer to the documentation for reinstalling OneDiff Enterprise: "
                 f"https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise\n"
                 f"is_community_version={is_community_version()}\n"
