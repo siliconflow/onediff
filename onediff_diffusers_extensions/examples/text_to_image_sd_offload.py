@@ -57,6 +57,22 @@ base = AutoPipelineForText2Image.from_pretrained(
 )
 base.to("cuda")
 
+@cost_cnt(True)
+def torch_offload():
+    base.unet.to("cpu")
+    import gc
+    gc.collect()
+    torch.cuda.empty_cache()
+
+@cost_cnt(True)
+def torch_load():
+    base.unet.to("cuda")
+    import gc
+    gc.collect()
+
+torch_offload()
+torch_load()
+
 # Compile unet with oneflow
 if args.compile_unet:
     print("Compiling unet with oneflow.")
@@ -104,6 +120,15 @@ def load():
     base.unet.load()
 
 run()
+import gc
+gc.collect()
+torch.cuda.empty_cache()
+offload()
+load()
+run()
+import gc
+gc.collect()
+torch.cuda.empty_cache()
 offload()
 load()
 run()
