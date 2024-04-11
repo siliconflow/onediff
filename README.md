@@ -136,7 +136,7 @@ If you need **Enterprise-level Support** for your system or business, you can
 - subscribe to Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
 - or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
 
-OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
+OneDiff Enterprise Edition can be **subscribed to for one month with one GPU** and the cost is low.
 
 |                                                                                                           | OneDiff Enterprise Edition              | OneDiff Community Edition               |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
@@ -189,7 +189,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 - **CUDA 12.2**
 
   For NA/EU users
-  ```bash 
+  ```bash
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu122
   ```
   For CN users
