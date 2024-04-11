@@ -194,9 +194,7 @@ class Script(scripts.Script):
                 f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
             )
 
-        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(
-            get_constant_folding_info(compiled_unet)
-        ):
+        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         return proc
 

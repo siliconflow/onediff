@@ -29,6 +29,40 @@ def check_device(current_device, target_device) -> bool:
 
     return _convert(current_device) == _convert(target_device)
 
+# hooks and helper functions for constant folding conv weights
+
+STATE_UPDATED_ATTR = "_onediff_state_updated"
+CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
+GRAPH_RELATED_TENSOR_ATTR = "_onediff_graph_related_tensor"
+
+def set_constant_folded_conv_attr(
+    deployable_module, constant_folding_info: Dict[str, flow.Tensor] = None
+) -> None:
+    from onediff.infer_compiler.deployable_module import DeployableModule
+
+    if not isinstance(deployable_module, DeployableModule):
+        raise TypeError(
+            f"deployable_model must be a DeployableModule, got {type(deployable_module)}"
+        )
+
+    constant_folding_info = constant_folding_info or get_constant_folding_info(
+        deployable_module
+    )
+    if constant_folding_info is None:
+        return
+
+    torch_module: torch.nn.Module = deployable_module._torch_module
+    for submodule in torch_module.modules():
+        if isinstance(submodule, torch.nn.Conv2d) and hasattr(
+            submodule, GRAPH_RELATED_TENSOR_ATTR
+        ):
+            delattr(submodule, GRAPH_RELATED_TENSOR_ATTR)
+
+    for weight_name, weight_tensor in constant_folding_info.items():
+        submodule = deployable_module._torch_module.get_submodule(
+            weight_name.removesuffix(".weight")
+        )
+        object.__setattr__(submodule, GRAPH_RELATED_TENSOR_ATTR, weight_tensor)
 
 def generate_constant_folding_info(
     deployable_module, torch_module: torch.nn.Module = None
@@ -58,15 +92,20 @@ def generate_constant_folding_info(
         if k.startswith("variable_")
     }
     setattr(deployable_module, CONSTANT_FOLDING_INFO_ATTR, result)
+    set_constant_folded_conv_attr(deployable_module, result)
 
 
 def update_graph_with_constant_folding_info(
-    module: torch.nn.Module, info: Dict[str, flow.Tensor]
+    module: torch.nn.Module, info: Dict[str, flow.Tensor] = None
 ) -> None:
     from onediff.infer_compiler.deployable_module import DeployableModule
 
     if isinstance(module, DeployableModule):
+        if info is None:
+            info = get_constant_folding_info(module)
         module = module._torch_module
+    if info is None:
+        return
 
     for k in info:
         orig_tensor = module.get_parameter(k)
@@ -77,6 +116,15 @@ def update_graph_with_constant_folding_info(
             flow.utils.tensor.from_torch(orig_tensor.permute(0, 2, 3, 1))
         )
 
+def update_graph_related_tensor(module: torch.nn.Conv2d) -> None:
+    if not isinstance(module, torch.nn.Conv2d):
+        return
+    target_tensor = getattr(module, GRAPH_RELATED_TENSOR_ATTR, None)
+    if target_tensor is None:
+        return
+    target_tensor.copy_(
+        flow.utils.tensor.from_torch(module.weight.data.permute(0, 2, 3, 1))
+    )
 
 def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
     from onediff.infer_compiler.deployable_module import DeployableModule
@@ -85,21 +133,13 @@ def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
         raise TypeError(f"module must be a DeployableModule, got {type(module)}")
     return getattr(module, CONSTANT_FOLDING_INFO_ATTR, None)
 
-
-# hooks for constant folding conv weights
-
-STATE_UPDATED_ATTR = "_onediff_state_updated"
-CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
-
-
 def state_update_hook(module, incompatible_keys):
     if not hasattr(module, STATE_UPDATED_ATTR):
         return
     logger.info(f"load_state_dict called, set {STATE_UPDATED_ATTR} to True")
     setattr(module, STATE_UPDATED_ATTR, True)
 
-
-def forward_generate_constant_folding_info_hook(module):
+def forward_generate_constant_folding_info_hook(module, args, output):
     if module._deployable_module_dpl_graph is None:
         return
 
@@ -108,8 +148,7 @@ def forward_generate_constant_folding_info_hook(module):
 
     generate_constant_folding_info(module)
 
-
-def forward_pre_check_and_update_state_hook(module):
+def forward_pre_check_and_update_state_hook(module, args):
     if module._deployable_module_dpl_graph is None:
         return
 

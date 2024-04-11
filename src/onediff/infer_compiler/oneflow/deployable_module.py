@@ -46,6 +46,8 @@ class OneflowDeployableModule(DeployableModule):
         # for checking state dict update of torch_module
         torch_module.register_load_state_dict_post_hook(state_update_hook)
         setattr(torch_module, STATE_UPDATED_ATTR, False)
+        self.register_forward_pre_hook(forward_pre_check_and_update_state_hook)
+        self.register_forward_hook(forward_generate_constant_folding_info_hook)
 
     @classmethod
     def from_existing(cls, existing_module, dynamic=True, options=None):
@@ -101,10 +103,7 @@ class OneflowDeployableModule(DeployableModule):
     @input_output_processor
     @handle_deployable_exception
     @graph_file_management
-    def __call__(self, *args, **kwargs):
-        # pre hooks
-        forward_pre_check_and_update_state_hook(self)
-
+    def forward(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
@@ -112,10 +111,6 @@ class OneflowDeployableModule(DeployableModule):
         else:
             with oneflow_exec_mode():
                 output = self._deployable_module_model.oneflow_module(*args, **kwargs)
-
-        # post hooks
-        forward_generate_constant_folding_info_hook(self)
-
         return output
 
     def to(self, *args, **kwargs):
