@@ -174,7 +174,7 @@ class OneflowDeployableModule(DeployableModule):
         del self._deployable_module_model.oneflow_module
 
     def get_graph_file(self):
-        return self._deployable_module_options.get("graph_file", None)
+        return self._deployable_module_options.graph_file
 
     def apply_online_quant(self, quant_config):
         """
@@ -196,4 +196,3 @@ class OneflowDeployableModule(DeployableModule):
             >>> model.apply_online_quant(quant_config)
         """
         self._deployable_module_quant_config = quant_config
-        return self._deployable_module_options.graph_file
