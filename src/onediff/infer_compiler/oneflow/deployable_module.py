@@ -50,7 +50,9 @@ class OneflowDeployableModule(DeployableModule):
         instance._deployable_module_input_count = (
             existing_module._deployable_module_input_count
         )
-        instance._deployable_module_quant_config = existing_module._deployable_module_quant_config
+        instance._deployable_module_quant_config = (
+            existing_module._deployable_module_quant_config
+        )
 
         return instance
 
@@ -85,12 +87,12 @@ class OneflowDeployableModule(DeployableModule):
                     *args, **kwargs
                 )
         return output
-    
+
     @quantize_and_deploy_wrapper
     @input_output_processor
     @handle_deployable_exception
     @graph_file_management
-    def __call__(self, *args, **kwargs):
+    def forward(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
             with oneflow_exec_mode():
