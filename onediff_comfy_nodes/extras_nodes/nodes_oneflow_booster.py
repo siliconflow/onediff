@@ -23,8 +23,7 @@ from ..modules import BoosterScheduler
 from ..utils.import_utils import is_onediff_quant_available
 
 if is_onediff_quant_available() and not is_community_version():
-    from ..modules.oneflow import \
-        OnelineQuantizationBoosterExecutor
+    from ..modules.oneflow.booster_quantization import OnelineQuantizationBoosterExecutor  # type: ignore
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -102,6 +101,7 @@ class OneFlowDeepcacheBooster:
             ),
         )
 
+
 class ModuleDeepCacheSpeedup:
     @classmethod
     def INPUT_TYPES(s):
@@ -159,13 +159,18 @@ class ModuleDeepCacheSpeedup:
         start_step,
         end_step,
     ):
-        booster = BoosterScheduler(DeepcacheBoosterExecutor(cache_interval=cache_interval,
-            cache_layer_id=cache_layer_id,
-            cache_block_id=cache_block_id,
-            start_step=start_step,
-            end_step=end_step,))
-        
+        booster = BoosterScheduler(
+            DeepcacheBoosterExecutor(
+                cache_interval=cache_interval,
+                cache_layer_id=cache_layer_id,
+                cache_block_id=cache_block_id,
+                start_step=start_step,
+                end_step=end_step,
+            )
+        )
+
         return (booster(model),)
+
 
 class OneDiffOnlineQuantizationBooster:
     @classmethod
@@ -192,8 +197,8 @@ class OneDiffOnlineQuantizationBooster:
                         "display": "slider",  # Cosmetic only: display as "number" or "slider"
                     },
                 ),
-                "conv_compute_density_threshold":(
-                   "INT",
+                "conv_compute_density_threshold": (
+                    "INT",
                     {
                         "default": 100,
                         "min": 0,  # Minimum value
@@ -202,7 +207,7 @@ class OneDiffOnlineQuantizationBooster:
                         "display": "number",  # Cosmetic only: display as "number" or "slider"
                     },
                 ),
-                "linear_compute_density_threshold":(
+                "linear_compute_density_threshold": (
                     "INT",
                     {
                         "default": 300,
@@ -211,7 +216,7 @@ class OneDiffOnlineQuantizationBooster:
                         "step": 10,  # Slider's step
                         "display": "number",  # Cosmetic only: display as "number" or "slider"
                     },
-                )
+                ),
             },
         }
 
@@ -220,22 +225,31 @@ class OneDiffOnlineQuantizationBooster:
     FUNCTION = "apply"
 
     @torch.no_grad()
-    def apply(self, quantized_conv_percentage=0, quantized_linear_percentage=0, conv_compute_density_threshold=0, linear_compute_density_threshold=0):
+    def apply(
+        self,
+        quantized_conv_percentage=0,
+        quantized_linear_percentage=0,
+        conv_compute_density_threshold=0,
+        linear_compute_density_threshold=0,
+    ):
         if not is_onediff_quant_available() and is_community_version():
-            raise RuntimeError(f'OneDiff quantization and community version are not available. '
-                       f'Please refer to the documentation for reinstalling OneDiff Enterprise: '
-                       f'https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise\n'
-                       f'is_community_version={is_community_version()}\n'
-                       f'is_onediff_quant_available={is_onediff_quant_available()}')
+            raise RuntimeError(
+                f"OneDiff quantization and community version are not available. "
+                f"Please refer to the documentation for reinstalling OneDiff Enterprise: "
+                f"https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise\n"
+                f"is_community_version={is_community_version()}\n"
+                f"is_onediff_quant_available={is_onediff_quant_available()}"
+            )
 
         return (
             OnelineQuantizationBoosterExecutor(
                 conv_percentage=quantized_conv_percentage,
                 linear_percentage=quantized_linear_percentage,
-                conv_compute_density_threshold = conv_compute_density_threshold,
-                linear_compute_density_threshold = linear_compute_density_threshold,
+                conv_compute_density_threshold=conv_compute_density_threshold,
+                linear_compute_density_threshold=linear_compute_density_threshold,
             ),
         )
+
 
 class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
     @classmethod
@@ -301,31 +315,32 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-        booster = BoosterScheduler(DeepcacheBoosterExecutor(
-               cache_interval=cache_interval,
+        booster = BoosterScheduler(
+            DeepcacheBoosterExecutor(
+                cache_interval=cache_interval,
                 cache_layer_id=cache_layer_id,
                 cache_block_id=cache_block_id,
                 start_step=start_step,
                 end_step=end_step,
-        ))
+            )
+        )
 
         modelpatcher = booster(modelpatcher, ckpt_name=ckpt_name)
         if vae_speedup == "enable":
-            vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(vae, ckpt_name=ckpt_name)
-            
+            vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(
+                vae, ckpt_name=ckpt_name
+            )
 
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
 
+
 class BatchSizePatcher:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {
-                "model": ("MODEL",),
-                "latent_image": ("LATENT", ),
-            },
+            "required": {"model": ("MODEL",), "latent_image": ("LATENT",),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -338,20 +353,23 @@ class BatchSizePatcher:
         model = booster(model=model, latent_image=latent_image)
         return (model,)
 
+
 class SVDSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"model": ("MODEL",), 
-                        "inplace": ([False, True],),
-                        "cache_name": ("STRING", {
-                            "multiline": False, #True if you want the field to look like the one on the ClipTextEncode node
-                            "default": "svd"}),
+            "required": {
+                "model": ("MODEL",),
+                "inplace": ([False, True],),
+                "cache_name": (
+                    "STRING",
+                    {
+                        "multiline": False,  # True if you want the field to look like the one on the ClipTextEncode node
+                        "default": "svd",
+                    },
+                ),
             },
-            "optional": {
-                "custom_booster": ("CUSTOM_BOOSTER",),
-            }
-
+            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -359,7 +377,13 @@ class SVDSpeedup:
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self, model, inplace=False, cache_name = "svd", custom_booster: BoosterScheduler=None):
+    def speedup(
+        self,
+        model,
+        inplace=False,
+        cache_name="svd",
+        custom_booster: BoosterScheduler = None,
+    ):
         if custom_booster:
             booster = custom_booster
             booster.inplace = inplace
@@ -368,6 +392,7 @@ class SVDSpeedup:
 
         optimized_model = booster.compile(model, ckpt_name=cache_name)
         return (optimized_model,)
+
 
 ########################## For downward compatibility, it is retained ###################
 class VaeGraphLoader:
@@ -393,6 +418,7 @@ class VaeGraphLoader:
         load_graph(vae_model, graph, device, subfolder="vae")
         return (vae,)
 
+
 class VaeGraphSaver:
     @classmethod
     def INPUT_TYPES(s):
@@ -415,6 +441,7 @@ class VaeGraphSaver:
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
 
         return {}
+
 
 class ModelGraphLoader:
     @classmethod
@@ -440,6 +467,7 @@ class ModelGraphLoader:
         load_graph(diffusion_model, graph, "cuda", subfolder="unet")
         return (model,)
 
+
 class ModelGraphSaver:
     @classmethod
     def INPUT_TYPES(s):
@@ -461,18 +489,18 @@ class ModelGraphSaver:
         save_graph(diffusion_model, filename_prefix, "cuda", subfolder="unet")
         return {}
 
-  
+
 NODE_CLASS_MAPPINGS = {
-   "ModelGraphLoader": ModelGraphLoader,
-   "ModelGraphSaver": ModelGraphSaver,
-   "VaeGraphSaver": VaeGraphSaver,
-   "VaeGraphLoader": VaeGraphLoader,
-   "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
-   "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
-   "BatchSizePatcher": BatchSizePatcher,
-   "OneDiffOnlineQuantizationBooster": OneDiffOnlineQuantizationBooster,
-   "SVDSpeedup": SVDSpeedup,
-   "OneFlowDeepcacheBooster": OneFlowDeepcacheBooster, 
+    "ModelGraphLoader": ModelGraphLoader,
+    "ModelGraphSaver": ModelGraphSaver,
+    "VaeGraphSaver": VaeGraphSaver,
+    "VaeGraphLoader": VaeGraphLoader,
+    "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
+    "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
+    "BatchSizePatcher": BatchSizePatcher,
+    "OneDiffOnlineQuantizationBooster": OneDiffOnlineQuantizationBooster,
+    "SVDSpeedup": SVDSpeedup,
+    "OneFlowDeepcacheBooster": OneFlowDeepcacheBooster,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -486,11 +514,12 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "BatchSizePatcher": "Batch Size Patcher",
     "OneDiffOnlineQuantizationBooster": "Online OneFlow Quantizer - OneDiff",
-    "OneFlowDeepcacheBooster": "OneFlow Deepcache Booster - OneDiff"
+    "OneFlowDeepcacheBooster": "OneFlow Deepcache Booster - OneDiff",
 }
 
 
 if is_onediff_quant_available() and not is_community_version():
+
     class UNETLoaderInt8:
         @classmethod
         def INPUT_TYPES(cls):
@@ -509,9 +538,9 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff"
 
         def load_unet_int8(self, model_path):
-            from ..modules.oneflow.utils.onediff_quant_utils import \
-                replace_module_with_quantizable_module
-        
+            from ..modules.oneflow.utils.onediff_quant_utils import (
+                replace_module_with_quantizable_module,
+            )
 
             for search_path in folder_paths.get_folder_paths("unet_int8"):
                 if os.path.exists(search_path):
@@ -547,7 +576,7 @@ if is_onediff_quant_available() and not is_community_version():
         OUTPUT_NODE = True
 
         def quantize_model(self, model, output_dir, conv, linear):
-            from ..modules.oneflow.utils import quantize_and_save_model 
+            from ..modules.oneflow.utils import quantize_and_save_model
 
             diffusion_model = model.model.diffusion_model
             output_dir = os.path.join(folder_paths.models_dir, "unet_int8", output_dir)
@@ -561,7 +590,7 @@ if is_onediff_quant_available() and not is_community_version():
                 verbose=False,
             )
             return {}
-    
+
     class OneDiffQuantCheckpointLoaderSimple(CheckpointLoaderSimple):
         @classmethod
         def INPUT_TYPES(s):
@@ -581,15 +610,19 @@ if is_onediff_quant_available() and not is_community_version():
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )
-            booster = BoosterScheduler(OnelineQuantizationBoosterExecutor(
+            booster = BoosterScheduler(
+                OnelineQuantizationBoosterExecutor(
                     conv_percentage=100,
                     linear_percentage=100,
-                    conv_compute_density_threshold = 600,
-                    linear_compute_density_threshold = 900,
-                ))
+                    conv_compute_density_threshold=600,
+                    linear_compute_density_threshold=900,
+                )
+            )
             modelpatcher = booster.compile(modelpatcher, ckpt_name=ckpt_name)
             if vae_speedup == "enable":
-                vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(vae, ckpt_name=ckpt_name)
+                vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(
+                    vae, ckpt_name=ckpt_name
+                )
 
             # set inplace update
             modelpatcher.weight_inplace_update = True
@@ -638,14 +671,16 @@ if is_onediff_quant_available() and not is_community_version():
                 ckpt_name, output_vae, output_clip
             )
             # TODO fix by op.compile
-            from ..modules.oneflow.utils.onediff_load_utils import \
-                onediff_load_quant_checkpoint_advanced
+            from ..modules.oneflow.utils.onediff_load_utils import (
+                onediff_load_quant_checkpoint_advanced,
+            )
+
             modelpatcher, vae = onediff_load_quant_checkpoint_advanced(
                 ckpt_name, model_path, need_compile, vae_speedup, modelpatcher, vae
             )
 
             return modelpatcher, clip, vae
-    
+
     class ImageOnlyOneDiffQuantCheckpointLoaderAdvanced(
         comfy_extras.nodes_video_model.ImageOnlyCheckpointLoader
     ):
@@ -691,7 +726,9 @@ if is_onediff_quant_available() and not is_community_version():
             booster = BoosterScheduler(BasicOneFlowBoosterExecutor())
             modelpatcher = booster(modelpatcher, ckpt_name=ckpt_name)
             if vae_speedup:
-                vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(vae, ckpt_name=ckpt_name)
+                vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(
+                    vae, ckpt_name=ckpt_name
+                )
             return modelpatcher, clip, vae
 
     NODE_CLASS_MAPPINGS.update(
