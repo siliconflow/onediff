@@ -35,6 +35,16 @@ STATE_UPDATED_ATTR = "_onediff_state_updated"
 CONSTANT_FOLDING_INFO_ATTR = "_onediff_constant_folding_info"
 GRAPH_RELATED_TENSOR_ATTR = "_onediff_graph_related_tensor"
 
+def init_state_update_attr(module: torch.nn.Module):
+    from onediff.infer_compiler.deployable_module import DeployableModule
+    if isinstance(module, DeployableModule):
+        module = module._torch_module
+    if not isinstance(module, torch.nn.Module):
+        raise TypeError(
+            f"module must be a torch.nn.Module, got {type(module)}"
+        )
+    setattr(module, STATE_UPDATED_ATTR, False)
+
 def set_constant_folded_conv_attr(
     deployable_module, constant_folding_info: Dict[str, flow.Tensor] = None
 ) -> None:
