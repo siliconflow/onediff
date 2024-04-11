@@ -6,7 +6,7 @@ from onediff.infer_compiler.utils import set_boolean_env_var
 from register_comfy import DeepCacheUNet, FastDeepCacheUNet
 
 from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
-from .optimization_tools import set_environment_for_svd_img2vid
+from .booster_utils import set_environment_for_svd_img2vid
 
 
 def deep_cache_speedup(

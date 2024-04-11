@@ -1,13 +1,13 @@
 """OneDiff ComfyUI Speedup Module"""
 from ._config import *
-from ._nodes import (ModelSpeedup, OneDiffApplyModelOptimizer,
+from ._nodes import (ModelSpeedup, OneDiffApplyModelBooster,
                      OneDiffCheckpointLoaderSimple, OneDiffControlNetLoader,
                      VaeSpeedup)
 
 NODE_CLASS_MAPPINGS = {
     "ModelSpeedup": ModelSpeedup,
     "VaeSpeedup": VaeSpeedup,
-    "OneDiffModelOptimizer": OneDiffApplyModelOptimizer, 
+    "OneDiffModelBooster": OneDiffApplyModelBooster, 
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
 
@@ -16,14 +16,13 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ModelSpeedup": "Model Speedup",
     "VaeSpeedup": "VAE Speedup",
-    "OneDiffModelOptimizer": "Apply Model Optimizer - OneDff",
+    "OneDiffModelBooster": "Apply Model Booster - OneDff",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
-from .extras_nodes import (nodes_compare, nodes_oneflow_optimizer,
-                           nodes_torch_compile_optimizer)
+from .extras_nodes import (nodes_compare, nodes_oneflow_booster, nodes_torch_compile_booster)
 
-extras = [nodes_compare, nodes_oneflow_optimizer, nodes_torch_compile_optimizer]
+extras = [nodes_compare, nodes_oneflow_booster, nodes_torch_compile_booster]
 for node in extras:
     NODE_CLASS_MAPPINGS.update(node.NODE_CLASS_MAPPINGS)
     NODE_DISPLAY_NAME_MAPPINGS.update(node.NODE_DISPLAY_NAME_MAPPINGS)

@@ -4,14 +4,14 @@ from typing import Optional
 
 from comfy.model_patcher import ModelPatcher
 
-from ..optimizer_interface import OptimizerExecutor
+from ..booster_interface import BoosterExecutor
 from .utils.deep_cache_speedup import deep_cache_speedup
 from .utils.graph_path import generate_graph_path
-from .utils.optimization_tools import set_compiled_options
+from .utils.booster_utils import set_compiled_options
 
 
 @dataclass
-class DeepcacheOptimizerExecutor(OptimizerExecutor):
+class DeepcacheBoosterExecutor(BoosterExecutor):
     cache_interval: int = 3
     cache_layer_id: int = 0
     cache_block_id: int = 1
@@ -20,7 +20,7 @@ class DeepcacheOptimizerExecutor(OptimizerExecutor):
 
     @singledispatchmethod
     def execute(self, model):
-        print("Warning: DeepcacheOptimizerExecutor.apply is not implemented for model type:", type(model))
+        print("Warning: DeepcacheBoosterExecutor.apply is not implemented for model type:", type(model))
         return model
 
     @execute.register(ModelPatcher)

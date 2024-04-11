@@ -9,10 +9,10 @@ from comfy.sd import VAE
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
 
-from ..optimizer_interface import OptimizerExecutor
+from ..booster_interface import BoosterExecutor
 from .onediff_controlnet import OneDiffControlLora
 from .utils.graph_path import generate_graph_path
-from .utils.optimization_tools import (
+from .utils.booster_utils import (
     get_model_type,
     is_fp16_model,
     set_compiled_options,
@@ -20,7 +20,7 @@ from .utils.optimization_tools import (
 )
 
 
-class BasicOneFlowOptimizerExecutor(OptimizerExecutor):
+class BasicOneFlowBoosterExecutor(BoosterExecutor):
     @singledispatchmethod
     def execute(self, model, ckpt_name=None, **kwargs):
         raise NotImplementedError(f"Cannot execute {type(model)=}")

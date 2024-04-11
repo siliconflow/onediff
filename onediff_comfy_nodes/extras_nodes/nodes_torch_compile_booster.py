@@ -1,9 +1,6 @@
-from ..modules.torch_compile.optimizer_basic import (
-    TorchCompileOptimizerExecutor,
-)  # type: ignore
+from ..modules.torch_compile.booster_basic import TorchCompileBoosterExecutor # type: ignore
 
-
-class OneDiffTorchCompileOptimizer:
+class OneDiffTorchCompileBooster:
     @classmethod
     def INPUT_TYPES(s):
         # [docs]https://pytorch.org/docs/stable/_modules/torch.html#compile
@@ -31,8 +28,8 @@ class OneDiffTorchCompileOptimizer:
             }
         }
 
-    CATEGORY = "OneDiff/Optimizer"
-    RETURN_TYPES = ("TorchCompileOptimizer",)
+    CATEGORY = "OneDiff/Booster"
+    RETURN_TYPES = ("TorchCompileBooster",)
     FUNCTION = "apply"
 
     def apply(
@@ -46,7 +43,7 @@ class OneDiffTorchCompileOptimizer:
         docs_link=None,
     ):
         return (
-            TorchCompileOptimizerExecutor(
+            TorchCompileBoosterExecutor(
                 fullgraph=fullgraph,
                 dynamic=dynamic,
                 backend=backend,
@@ -58,9 +55,9 @@ class OneDiffTorchCompileOptimizer:
 
 
 NODE_CLASS_MAPPINGS = {
-    "OneDiffTorchCompileOptimizer": OneDiffTorchCompileOptimizer,
+    "OneDiffTorchCompileBooster": OneDiffTorchCompileBooster,
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
-    "OneDiffTorchCompileOptimizer": "Torch Compile Optimizer - OneDiff"
+    "OneDiffTorchCompileBooster": "Torch Compile Booster - OneDiff"
 }

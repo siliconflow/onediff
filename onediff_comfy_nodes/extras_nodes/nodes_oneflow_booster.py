@@ -15,16 +15,16 @@ from ..modules.oneflow.hijack_ipadapter_plus import ipadapter_plus_hijacker
 from ..modules.oneflow.hijack_model_management import model_management_hijacker
 from ..modules.oneflow.hijack_nodes import nodes_hijacker
 from ..modules.oneflow.hijack_samplers import samplers_hijack
-from ..modules.oneflow.optimizer_basic import BasicOneFlowOptimizerExecutor
-from ..modules.oneflow.optimizer_deepcache import DeepcacheOptimizerExecutor
-from ..modules.oneflow.optimizer_patch import PatchOptimizerExecutor
+from ..modules.oneflow import BasicOneFlowBoosterExecutor
+from ..modules.oneflow import DeepcacheBoosterExecutor
+from ..modules.oneflow import PatchBoosterExecutor
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
-from ..modules.optimizer_scheduler import OptimizerScheduler
+from ..modules import BoosterScheduler
 from ..utils.import_utils import is_onediff_quant_available
 
 if is_onediff_quant_available() and not is_community_version():
-    from ..modules.oneflow.optimizer_quantization import \
-        OnelineQuantizationOptimizerExecutor
+    from ..modules.oneflow import \
+        OnelineQuantizationBoosterExecutor
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -39,7 +39,7 @@ if not args.dont_upcast_attention:
     os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
-class OneFlowDeepcacheOptimizer:
+class OneFlowDeepcacheBooster:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -79,8 +79,8 @@ class OneFlowDeepcacheOptimizer:
             },
         }
 
-    CATEGORY = "OneDiff/Optimizer"
-    RETURN_TYPES = ("DeepCacheOptimizer",)
+    CATEGORY = "OneDiff/Booster"
+    RETURN_TYPES = ("DeepCacheBooster",)
     FUNCTION = "apply"
 
     @torch.no_grad()
@@ -93,7 +93,7 @@ class OneFlowDeepcacheOptimizer:
         end_step=1000,
     ):
         return (
-            DeepcacheOptimizerExecutor(
+            DeepcacheBoosterExecutor(
                 cache_interval=cache_interval,
                 cache_layer_id=cache_layer_id,
                 cache_block_id=cache_block_id,
@@ -159,16 +159,15 @@ class ModuleDeepCacheSpeedup:
         start_step,
         end_step,
     ):
-        op = OptimizerScheduler(DeepcacheOptimizerExecutor(cache_interval=cache_interval,
+        booster = BoosterScheduler(DeepcacheBoosterExecutor(cache_interval=cache_interval,
             cache_layer_id=cache_layer_id,
             cache_block_id=cache_block_id,
             start_step=start_step,
             end_step=end_step,))
         
-        optimized_model = op.compile(model)
-        return (optimized_model,)
+        return (booster(model),)
 
-class OneDiffOnlineQuantizationOptimizer:
+class OneDiffOnlineQuantizationBooster:
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -216,8 +215,8 @@ class OneDiffOnlineQuantizationOptimizer:
             },
         }
 
-    CATEGORY = "OneDiff/Optimizer"
-    RETURN_TYPES = ("QuantizationOptimizer",)
+    CATEGORY = "OneDiff/Booster"
+    RETURN_TYPES = ("QuantizationBooster",)
     FUNCTION = "apply"
 
     @torch.no_grad()
@@ -230,7 +229,7 @@ class OneDiffOnlineQuantizationOptimizer:
                        f'is_onediff_quant_available={is_onediff_quant_available()}')
 
         return (
-            OnelineQuantizationOptimizerExecutor(
+            OnelineQuantizationBoosterExecutor(
                 conv_percentage=quantized_conv_percentage,
                 linear_percentage=quantized_linear_percentage,
                 conv_compute_density_threshold = conv_compute_density_threshold,
@@ -302,7 +301,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-        op = OptimizerScheduler(DeepcacheOptimizerExecutor(
+        booster = BoosterScheduler(DeepcacheBoosterExecutor(
                cache_interval=cache_interval,
                 cache_layer_id=cache_layer_id,
                 cache_block_id=cache_block_id,
@@ -310,10 +309,10 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
                 end_step=end_step,
         ))
 
-        modelpatcher = op.compile(modelpatcher, ckpt_name=ckpt_name)
+        modelpatcher = booster(modelpatcher, ckpt_name=ckpt_name)
         if vae_speedup == "enable":
-            vae_op = OptimizerScheduler(BasicOneFlowOptimizerExecutor())
-            vae = vae_op.compile(vae, ckpt_name=ckpt_name)
+            vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(vae, ckpt_name=ckpt_name)
+            
 
         # set inplace update
         modelpatcher.weight_inplace_update = True
@@ -335,8 +334,8 @@ class BatchSizePatcher:
 
     @torch.no_grad()
     def set_cache_filename(self, model, latent_image):
-        op = OptimizerScheduler(PatchOptimizerExecutor())
-        model = op(model=model, latent_image=latent_image)
+        booster = BoosterScheduler(PatchBoosterExecutor())
+        model = booster(model=model, latent_image=latent_image)
         return (model,)
 
 class SVDSpeedup:
@@ -350,7 +349,7 @@ class SVDSpeedup:
                             "default": "svd"}),
             },
             "optional": {
-                "custom_optimizer": ("CUSTOM_OPTIMIZER",),
+                "custom_booster": ("CUSTOM_BOOSTER",),
             }
 
         }
@@ -360,14 +359,14 @@ class SVDSpeedup:
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self, model, inplace=False, cache_name = "svd", custom_optimizer: OptimizerScheduler=None):
-        if custom_optimizer:
-            op = custom_optimizer
-            op.inplace = inplace
+    def speedup(self, model, inplace=False, cache_name = "svd", custom_booster: BoosterScheduler=None):
+        if custom_booster:
+            booster = custom_booster
+            booster.inplace = inplace
         else:
-            op = OptimizerScheduler(BasicOneFlowOptimizerExecutor(), inplace=inplace)
+            booster = BoosterScheduler(BasicOneFlowBoosterExecutor(), inplace=inplace)
 
-        optimized_model = op.compile(model, ckpt_name=cache_name)
+        optimized_model = booster.compile(model, ckpt_name=cache_name)
         return (optimized_model,)
 
 ########################## For downward compatibility, it is retained ###################
@@ -471,9 +470,9 @@ NODE_CLASS_MAPPINGS = {
    "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
    "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
    "BatchSizePatcher": BatchSizePatcher,
-   "OneDiffOnlineQuantizationOptimizer": OneDiffOnlineQuantizationOptimizer,
+   "OneDiffOnlineQuantizationBooster": OneDiffOnlineQuantizationBooster,
    "SVDSpeedup": SVDSpeedup,
-   "OneFlowDeepcacheOptimizer": OneFlowDeepcacheOptimizer, 
+   "OneFlowDeepcacheBooster": OneFlowDeepcacheBooster, 
 }
 
 NODE_DISPLAY_NAME_MAPPINGS = {
@@ -486,8 +485,8 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "BatchSizePatcher": "Batch Size Patcher",
-    "OneDiffOnlineQuantizationOptimizer": "Online OneFlow Quantizer - OneDiff",
-    "OneFlowDeepcacheOptimizer": "OneFlow Deepcache Optimizer - OneDiff"
+    "OneDiffOnlineQuantizationBooster": "Online OneFlow Quantizer - OneDiff",
+    "OneFlowDeepcacheBooster": "OneFlow Deepcache Booster - OneDiff"
 }
 
 
@@ -582,16 +581,15 @@ if is_onediff_quant_available() and not is_community_version():
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )
-            op = OptimizerScheduler(OnelineQuantizationOptimizerExecutor(
+            booster = BoosterScheduler(OnelineQuantizationBoosterExecutor(
                     conv_percentage=100,
                     linear_percentage=100,
                     conv_compute_density_threshold = 600,
                     linear_compute_density_threshold = 900,
                 ))
-            modelpatcher = op.compile(modelpatcher, ckpt_name=ckpt_name)
+            modelpatcher = booster.compile(modelpatcher, ckpt_name=ckpt_name)
             if vae_speedup == "enable":
-                vae_op = OptimizerScheduler(BasicOneFlowOptimizerExecutor())
-                vae = vae_op.compile(vae, ckpt_name=ckpt_name)
+                vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(vae, ckpt_name=ckpt_name)
 
             # set inplace update
             modelpatcher.weight_inplace_update = True
@@ -690,11 +688,10 @@ if is_onediff_quant_available() and not is_community_version():
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )
-            op = OptimizerScheduler(BasicOneFlowOptimizerExecutor())
-            modelpatcher = op.compile(modelpatcher, ckpt_name=ckpt_name)
+            booster = BoosterScheduler(BasicOneFlowBoosterExecutor())
+            modelpatcher = booster(modelpatcher, ckpt_name=ckpt_name)
             if vae_speedup:
-                vae_op = OptimizerScheduler(BasicOneFlowOptimizerExecutor())
-                vae = vae_op.compile(vae, ckpt_name=ckpt_name)
+                vae = BoosterScheduler(BasicOneFlowBoosterExecutor())(vae, ckpt_name=ckpt_name)
             return modelpatcher, clip, vae
 
     NODE_CLASS_MAPPINGS.update(

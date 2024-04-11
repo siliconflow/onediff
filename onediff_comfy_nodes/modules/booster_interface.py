@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 # from comfy.model_patcher import ModelPatcher
 # from comfy.sd import VAE
 
-class OptimizerExecutor(ABC):
+class BoosterExecutor(ABC):
     """Interface for optimization."""
 
     @abstractmethod

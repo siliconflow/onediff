@@ -4,10 +4,10 @@ from functools import singledispatchmethod
 from comfy.model_patcher import ModelPatcher
 from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
 
-from ..optimizer_interface import OptimizerExecutor
+from ..booster_interface import BoosterExecutor
 
 
-class PatchOptimizerExecutor(OptimizerExecutor):
+class PatchBoosterExecutor(BoosterExecutor):
     @singledispatchmethod
     def execute(self, model, ckpt_name=None):
         return model

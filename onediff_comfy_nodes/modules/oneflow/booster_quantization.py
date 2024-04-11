@@ -16,9 +16,9 @@ from onediff_quant.quantization.quantize_calibrators import \
     QuantizationMetricsCalculator
 from onediff_quant.quantization.quantize_config import Metric
 
-from .optimizer_basic import OptimizerExecutor
+from .booster_basic import BoosterExecutor
 from .utils.graph_path import generate_graph_path
-from .utils.optimization_tools import (is_fp16_model, set_compiled_options,
+from .utils.booster_utils import (is_fp16_model, set_compiled_options,
                                        set_environment_for_svd_img2vid)
 
 
@@ -98,7 +98,7 @@ class SubQuantizationPercentileCalculator(QuantizationMetricsCalculator):
 
 
 @dataclass
-class OnelineQuantizationOptimizerExecutor(OptimizerExecutor):
+class OnelineQuantizationBoosterExecutor(BoosterExecutor):
     conv_percentage: int = 60
     linear_percentage: int = 70
     conv_compute_density_threshold: int = 100

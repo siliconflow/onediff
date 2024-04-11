@@ -1,15 +1,15 @@
 from functools import partial, singledispatchmethod
 from typing import Optional
 
+import torch
 from comfy.controlnet import ControlLora, ControlNet
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
-from onediff.infer_compiler import CompileOptions, NexfortCompileOptions, compile
 
-from ..optimizer_interface import OptimizerExecutor
+from ..booster_interface import BoosterExecutor
 
 
-class NexFortOptimizerExecutor(OptimizerExecutor):
+class TorchCompileBoosterExecutor(BoosterExecutor):
     # https://pytorch.org/docs/stable/_modules/torch.html#compile
     def __init__(
         self,
@@ -29,17 +29,19 @@ class NexFortOptimizerExecutor(OptimizerExecutor):
             "mode": mode,
             "disable": disable,
         }
-        compiled_options = CompileOptions()
-        compiled_options.nexfort = NexfortCompileOptions(**self.compile_kwargs)
-        self.compile_fn = partial(compile, options=compiled_options)
+        self.compile_fn = partial(torch.compile, **self.compile_kwargs)
 
     @singledispatchmethod
     def execute(self, model, ckpt_name=None, **kwargs):
         raise NotImplementedError(f"Cannot execute {type(model)=}")
 
+    @execute.register(ModelPatcher)
+    def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
+        model.model.diffusion_model = self.compile_fn(model.model.diffusion_model)
+        return model
+
     @execute.register(VAE)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
-        # model.first_stage_model = torch.compile(model.first_stage_model, **self.compile_kwargs)
         model.first_stage_model = self.compile_fn(model.first_stage_model)
         return model
 

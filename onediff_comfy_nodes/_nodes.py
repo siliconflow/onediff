@@ -2,13 +2,13 @@ import folder_paths
 import torch
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 
-from .modules.optimizer_scheduler import OptimizerScheduler
+from .modules import BoosterScheduler, BoosterExecutor
 from .utils.import_utils import is_nexfort_available  # type: ignore
 from .utils.import_utils import is_oneflow_available
 
 if is_oneflow_available():
-    from .modules.oneflow.optimizer_basic import BasicOneFlowOptimizerExecutor
-    BasicOptimizerExecutor = BasicOneFlowOptimizerExecutor
+    from .modules.oneflow import BasicOneFlowBoosterExecutor
+    BasicBoosterExecutor = BasicOneFlowBoosterExecutor
 elif is_nexfort_available():
     pass 
 else:
@@ -18,7 +18,7 @@ __all__ = [
     "ModelSpeedup",
     "VaeSpeedup",
     "ControlnetSpeedup",
-    "OneDiffApplyModelOptimizer"
+    "OneDiffApplyModelBooster"
     "OneDiffControlNetLoader",
     "OneDiffCheckpointLoaderSimple"
 ]
@@ -29,7 +29,7 @@ class ModelSpeedup:
         return {
             "required": {"model": ("MODEL",), "inplace": ([False, True],),},
             "optional": {
-                "custom_optimizer": ("CUSTOM_OPTIMIZER",),
+                "custom_booster": ("CUSTOM_BOOSTER",),
             }
 
         }
@@ -39,15 +39,14 @@ class ModelSpeedup:
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self, model, inplace=False, custom_optimizer: OptimizerScheduler=None):
-        if custom_optimizer:
-            op = custom_optimizer
-            op.inplace = False
+    def speedup(self, model, inplace=False, custom_booster: BoosterScheduler=None):
+        if custom_booster:
+            booster = custom_booster
+            booster.inplace = False
         else:
-            op = OptimizerScheduler(BasicOptimizerExecutor(), inplace=inplace)
+            booster = BoosterScheduler(BasicBoosterExecutor(), inplace=inplace)
 
-        optimized_model = op.compile(model)
-        return (optimized_model,)
+        return (booster(model),)
 
 class VaeSpeedup:
     @classmethod
@@ -55,7 +54,7 @@ class VaeSpeedup:
         return {
             "required": {"vae": ("VAE",),},
             "optional": {
-                "custom_optimizer": ("CUSTOM_OPTIMIZER",),
+                "custom_booster": ("CUSTOM_BOOSTER",),
             }
         }
 
@@ -64,13 +63,13 @@ class VaeSpeedup:
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self, vae, custom_optimizer=None):
-        if custom_optimizer:
-            op = custom_optimizer
+    def speedup(self, vae, custom_booster=None):
+        if custom_booster:
+            booster = custom_booster
         else:
-            op = OptimizerScheduler(BasicOptimizerExecutor())
+            booster = BoosterScheduler(BasicBoosterExecutor())
 
-        new_vae = op(vae)
+        new_vae = booster(vae)
         return (new_vae,)
     
 class ControlnetSpeedup:
@@ -81,7 +80,7 @@ class ControlnetSpeedup:
             "optional": {
                 "control_net": ("CONTROL_NET",),
                 "cnet_stack": ("CONTROL_NET_STACK",),
-                "custom_optimizer": ("CUSTOM_OPTIMIZER",),
+                "custom_booster": ("CUSTOM_BOOSTER",),
             }
         }
 
@@ -90,22 +89,22 @@ class ControlnetSpeedup:
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self,control_net=None, cnet_stack=[], custom_optimizer=None):
-        if custom_optimizer:
-            op = custom_optimizer
+    def speedup(self,control_net=None, cnet_stack=[], custom_booster: BoosterScheduler=None):
+        if custom_booster:
+            booster = custom_booster
         else:
-            op = OptimizerScheduler(BasicOptimizerExecutor(), inplace=True)
+            booster = BoosterScheduler(BasicBoosterExecutor(), inplace=True)
 
         if control_net:
-            control_net = op.compile(control_net)
+            control_net = booster(control_net)
 
         new_cnet_stack =[]
         for cnet in cnet_stack:
-            new_cnet = tuple([op.compile(cnet[0])]+list(cnet[1:]))
+            new_cnet = tuple([booster(cnet[0])]+list(cnet[1:]))
             new_cnet_stack.append(new_cnet)
         return (control_net, new_cnet_stack,)
     
-class OneDiffApplyModelOptimizer:
+class OneDiffApplyModelBooster:
     """Main class responsible for optimizing models."""
 
     @classmethod
@@ -113,36 +112,36 @@ class OneDiffApplyModelOptimizer:
         return {
             "required": {},
             "optional": {
-                "quantization_optimizer": ("QuantizationOptimizer",),
-                "deepcache_optimizer": ("DeepCacheOptimizer",),
-                "torchcompile_optimizer":("TorchCompileOptimizer",),
+                "quantization_booster": ("QuantizationBooster",),
+                "deepcache_booster": ("DeepCacheBooster",),
+                "torchcompile_booster":("TorchCompileBooster",),
             },
         }
 
-    CATEGORY = "OneDiff/Optimization"
-    RETURN_TYPES = ("CUSTOM_OPTIMIZER",)
-    FUNCTION = "optimize_model"
+    CATEGORY = "OneDiff/Booster"
+    RETURN_TYPES = ("CUSTOM_BOOSTER",)
+    FUNCTION = "speedup_module"
 
     @torch.no_grad()
-    def optimize_model(self, quantization_optimizer=None, deepcache_optimizer=None, torchcompile_optimizer=None):
+    def speedup_module(self, quantization_booster: BoosterExecutor =None, deepcache_booster=None, torchcompile_booster=None):
         """Apply the optimization technique to the model."""
-        optimizers = []
-        if quantization_optimizer:
-            optimizers.append(quantization_optimizer)
-        if deepcache_optimizer:
-            optimizers.append(deepcache_optimizer)
-        if torchcompile_optimizer:
-            optimizers.append(torchcompile_optimizer)
+        booster_executors = []
+        if quantization_booster:
+            booster_executors.append(quantization_booster)
+        if deepcache_booster:
+            booster_executors.append(deepcache_booster)
+        if torchcompile_booster:
+            booster_executors.append(torchcompile_booster)
 
-        assert len(optimizers) > 0
-        return (OptimizerScheduler(optimizers),)
+        assert len(booster_executors) > 0
+        return (BoosterScheduler(booster_executors),)
 
 class OneDiffControlNetLoader(ControlNetLoader):
     @classmethod
     def INPUT_TYPES(s):
         ret = super().INPUT_TYPES()
         ret.update({"optional": {
-                    "model_optimizer": ("MODEL_OPTIMIZER",),}
+                    "custom_booster": ("CUSTOM_BOOSTER",),}
         })
         return ret 
 
@@ -150,10 +149,9 @@ class OneDiffControlNetLoader(ControlNetLoader):
     FUNCTION = "onediff_load_controlnet"
 
     @torch.no_grad()
-    def onediff_load_controlnet(self, control_net_name, custom_optimizer=None):
+    def onediff_load_controlnet(self, control_net_name, custom_booster=None):
         controlnet = super().load_controlnet(control_net_name)[0]
-        op = OptimizerScheduler(BasicOptimizerExecutor())
-        controlnet = op.compile(controlnet, ckpt_name=control_net_name)
+        controlnet = BoosterScheduler(BasicBoosterExecutor())(controlnet, ckpt_name=control_net_name)
         return (controlnet,)
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
@@ -165,7 +163,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
                 "vae_speedup": (["disable", "enable"],),
             },
             "optional": {
-                    "custom_optimizer": ("CUSTOM_OPTIMIZER",),
+                    "custom_booster": ("CUSTOM_BOOSTER",),
             }
         }
 
@@ -174,18 +172,17 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
 
     @torch.no_grad()
     def onediff_load_checkpoint(
-        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, custom_optimizer: OptimizerScheduler=None,
+        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, custom_booster: BoosterScheduler=None,
     ):
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
         )
-        if custom_optimizer is None:
-            custom_optimizer = OptimizerScheduler(BasicOptimizerExecutor())
-        modelpatcher = custom_optimizer.compile(modelpatcher, ckpt_name=ckpt_name)
+        if custom_booster is None:
+            custom_booster = BoosterScheduler(BasicBoosterExecutor())
+        modelpatcher = custom_booster(modelpatcher, ckpt_name=ckpt_name)
         if vae_speedup == "enable":
-            vae_optimizer = OptimizerScheduler(BasicOptimizerExecutor())
-            vae = vae_optimizer.compile(vae, ckpt_name=ckpt_name)
+            vae = BoosterScheduler(BasicBoosterExecutor())(vae, ckpt_name=ckpt_name)
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
