@@ -8,28 +8,29 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
 
 **Note**: Before proceeding with this document, please ensure you are familiar with the [OneDiff Community](./README.md) features and OneDiff ENTERPRISE  by referring to the  [ENTERPRISE Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 
+
+You need to complete the following environment dependency installation
 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
-3.Install plotly
+3.Install plotly 
 ```bash
 python3 -m pip install plotly 
 ```
-
 ## Online Quant
 
 First, you need to download [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) model.
 If you are a multi card user, please select the graphics card that executes the program
 1. Set CUDA device using export CUDA_VISIBLE_DEVICES=7.
 
-2. The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
+**Note**: The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
 
 # Baseline (non-optimized)
 **Note: You can obtain the baseline by running the following command**
 
- ```bash
+```bash
 python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
-        --model_id  /share_nfs/hf_models/stable-diffusion-xl-base-1.0  \
+        --model_id  /PATH/TO/YOU/MODEL  \
         --seed 1 \
         --backend torch  --height 1024 --width 1024 --output_file sdxl_torch.png
 ```
@@ -39,9 +40,9 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
 
 **Note: You can run it using the following command**
 
- ```bash
+```bash
 python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
-        --model_id  /share_nfs/hf_models/stable-diffusion-xl-base-1.0  \
+        --model_id  /PATH/TO/YOU/MODEL  \
         --seed 1 \
         --backend onediff \
         --cache_dir ./run_sdxl_quant \
@@ -54,6 +55,7 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
         --conv_compute_density_threshold 900 \
         --linear_compute_density_threshold 300
 ```
+The parameters of the preceding command are shown in the following table
 | Option                                 | Range  | Default | Description                                                                  |
 | -------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------- |
 | --conv_mae_threshold 0.1               | [0, 1] | 0.1     | MAE threshold for quantizing convolutional modules to 0.1.                   |
@@ -63,8 +65,31 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
 
 ## Offline Quant
 
-要load a quantized model. 实现自定义模型的量化，load a floating model that to be quantized as int8 请参考如下脚本
+To load the quantized model, run the script like this
+```bash
+python ./src/onediff/quantization/load_quantized_model.py \
+        --prompt "a photo of an astronaut riding a horse on mars" \
+        --height 1024 \
+        --width 1024 \
+        --num_inference_steps 30 \
+        --quantized_model ./quantized_model
+```
 
+To quantify a custom model as int 8, run the following script
+```bash
+python ./src/onediff/quantization/quant_pipeline_test.py \
+        --prompt "a photo of an astronaut riding a horse on mars" \
+        --height 1024 \
+        --width 1024 \
+        --num_inference_steps 30 \
+        --conv_compute_density_threshold 900 \
+        --linear_compute_density_threshold 300 \
+        --conv_ssim_threshold 0.985 \
+        --linear_ssim_threshold 0.991 \
+        --save_as_float False \
+        --cache_dir "./run_sd-v1-5" \
+        --quantized_model ./quantized_model 
+```
 
 ## Quant a custom model
 
@@ -78,8 +103,3 @@ python tests/test_quantize_custom_model.py
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for Enterprise Edition or other business inquiries: contact@siliconflow.com
-
-- [How to use Online Quant](../../../onediff_diffusers_extensions/examples/text_to_image_online_quant.py)
-- [How to use Offline Quant](./quantize_pipeline.py)
-- [How to Quant a custom model](../../../tests/test_quantize_custom_model.py)
-- [Community and Support](https://github.com/siliconflow/onediff?tab=readme-ov-file#community-and-support)
