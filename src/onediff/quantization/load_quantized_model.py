@@ -10,7 +10,7 @@ def parse_args():
     parser.add_argument("--height", type= int,default=1024)
     parser.add_argument("--width", type= int, default=1024)
     parser.add_argument("--num_inference_steps", type=int, default=30)
-    parser.add_argument("--quantized_model", default="./quantized_model")
+    parser.add_argument("--quantized_model", type=str, required=True)
     return parser.parse_args()
 
 args = parse_args()
