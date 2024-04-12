@@ -38,6 +38,24 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
 
 # OneDiff Quant(optimized)
 
+Here's the optimized results, Timings for 30 steps in Diffusers-SDXL at 1024x1024
+| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| ----------------------- | ------------------------ | ------------------ | ------------------------ |
+| NVIDIA GeForce RTX 3090 | 8.03 s                   | 4.44 s ( ~44.7%)   | 3.34 s ( ~58.4%)         |
+
+- torch   {version: 2.2.1+cu121}
+- oneflow {git_commit: 710818c, version: 0.9.1.dev20240406+cu121, enterprise: True}
+
+
+Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1024
+| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| ----------------------- | ------------------------ | ------------------ | ------------------------ |
+| NVIDIA GeForce RTX 3090 | 6.87 s                   | 3.41 s ( ~50.3%)   | 3.13 s ( ~54.4%)         |
+
+- torch   {version: 2.2.2+cu121}
+- oneflow {git_commit: 710818c, version:  0.9.1.dev20240403+cu122, enterprise: True}
+
+
 **Note: You can run it using the following command**
 
 ```bash
@@ -98,6 +116,7 @@ To achieve quantization of custom models, please refer to the following script
 ```bash
 python tests/test_quantize_custom_model.py
 ```
+
 
 ## Community and Support
 [Here is the introduction of OneDiff Community.](https://github.com/siliconflow/onediff/wiki#onediff-community)
