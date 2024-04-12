@@ -97,7 +97,7 @@ OneDiff supports the acceleration for SOTA models.
 * beta: release for professional usage, and has long-term support;
 * alpha: early release for expert usage, and is **under active development**;
 
-| AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
+| GenAI Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
 | Image     | SD 1.5                      | stable       | stable     | stable    | stable     | beta      | beta       |
