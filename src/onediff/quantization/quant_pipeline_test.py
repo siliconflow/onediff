@@ -33,7 +33,7 @@ pipe_kwargs = dict(
     width=args.width,
     num_inference_steps=args.num_inference_steps,
 )
-# import pdb;pdb.set_trace()
+
 pipe.quantize(**pipe_kwargs,
     conv_compute_density_threshold=args.conv_compute_density_threshold,
     linear_compute_density_threshold=args.linear_compute_density_threshold,
