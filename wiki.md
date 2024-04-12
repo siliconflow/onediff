@@ -4,7 +4,7 @@
 
 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
-3. Before use, please confirm with `$ python -m oneflow --doctor` to confirm the argument `enterprise: True`. If the argument `enterprise: False`, then uninstall oneflow through the following command`pip uninstall oneflow -y`, and then reinstall oneflow with the following command`python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant`
+3. Before use, please confirm with `$ python -m oneflow --doctor` to confirm the argument `enterprise: True`. If the argument `enterprise: False`, then run the following command`pip uninstall oneflow -y  && pip uninstall onediff_quant -y`, and then follow the installation instructions for the Enterprise version to reinstall the OneDiff Enterprise version. You can find the relevant installation instructions through the following link: [OneDiff Enterprise Installation Instructions](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 
 ## Usage:
 | Option                                 | Range  | Default | Description                                                                  |
