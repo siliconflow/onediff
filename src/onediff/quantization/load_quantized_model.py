@@ -3,6 +3,7 @@ from onediff.quantization.quantize_pipeline import QuantPipeline
 import argparse 
 import torch
 
+
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--prompt", default="a photo of an astronaut riding a horse on mars")
@@ -17,6 +18,7 @@ args = parse_args()
 pipe = QuantPipeline.from_quantized(
     AutoPipelineForText2Image, args.quantized_model, torch_dtype=torch.float16, variant="fp16", use_safetensors=True
 )
+pipe = pipe.to("cuda")
 
 pipe_kwargs = dict(
     prompt=args.prompt,
@@ -24,4 +26,5 @@ pipe_kwargs = dict(
     width=args.width,
     num_inference_steps=args.num_inference_steps,
 )
+
 pipe(**pipe_kwargs)

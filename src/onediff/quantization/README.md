@@ -78,6 +78,7 @@ python ./src/onediff/quantization/load_quantized_model.py \
 To quantify a custom model as int 8, run the following script
 ```bash
 python ./src/onediff/quantization/quant_pipeline_test.py \
+        --floatting_model_path "stabilityai/stable-diffusion-xl-base-1.0" \
         --prompt "a photo of an astronaut riding a horse on mars" \
         --height 1024 \
         --width 1024 \

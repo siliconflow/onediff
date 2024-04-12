@@ -3,17 +3,13 @@ from onediff.quantization.quantize_pipeline import QuantPipeline
 import torch
 import argparse 
 
-floatting_model_path = "/share_nfs/hf_models/stable-diffusion-xl-base-1.0"
-pipe = QuantPipeline.from_pretrained(
-    AutoPipelineForText2Image, floatting_model_path, torch_dtype=torch.float16, variant="fp16", use_safetensors=True
-)
-pipe.to("cuda")
 
 def parse_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument("--floatting_model_path", default="stabilityai/stable-diffusion-xl-base-1.0")
     parser.add_argument("--prompt", default="a photo of an astronaut riding a horse on mars")
-    parser.add_argument("--height", default=1024)
-    parser.add_argument("--width", default=1024)
+    parser.add_argument("--height",type=int, default=1024)
+    parser.add_argument("--width", type=int,default=1024)
     parser.add_argument("--num_inference_steps", type=int, default=30)
     parser.add_argument("--conv_compute_density_threshold", type=int, default=900)
     parser.add_argument("--linear_compute_density_threshold", type=int, default=300)
@@ -25,12 +21,19 @@ def parse_args():
     return parser.parse_args()
 
 args = parse_args()
+
+pipe = QuantPipeline.from_pretrained(
+    AutoPipelineForText2Image, args.floatting_model_path, torch_dtype=torch.float16, variant="fp16", use_safetensors=True
+)
+pipe.to("cuda")
+
 pipe_kwargs = dict(
     prompt=args.prompt,
     height=args.height,
     width=args.width,
     num_inference_steps=args.num_inference_steps,
 )
+# import pdb;pdb.set_trace()
 pipe.quantize(**pipe_kwargs,
     conv_compute_density_threshold=args.conv_compute_density_threshold,
     linear_compute_density_threshold=args.linear_compute_density_threshold,
