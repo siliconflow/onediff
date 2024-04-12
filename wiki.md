@@ -85,7 +85,7 @@ Note that you can download all images in this page and then drag or load them on
 ```
 cd ComfyUI
 
-wget -O  ComfyUI/models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
+wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
 
 ```
 
@@ -93,7 +93,7 @@ wget -O  ComfyUI/models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwaym
 ```
 cd ComfyUI
 
-wget -O  ComfyUI/models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
+wget -O  models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
 ```
 
 </details>
