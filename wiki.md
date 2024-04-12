@@ -129,18 +129,18 @@ Note that you can download all images in this page and then drag or load them on
 ```
 cd ComfyUI
 
-wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
+wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 
-wget -O models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
+wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
 ```
 
 ##### For CN users
 ```
 cd ComfyUI
 
-wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
+wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 
-wget -O models/checkpoints/svd_xt_1_1.safetensors https://hf-mirror.com/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
+wget -O  models/checkpoints/svd_xt_1_1.safetensors https://hf-mirror.com/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
 ```
 
 </details>
