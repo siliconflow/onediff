@@ -102,7 +102,7 @@ def generate_constant_folding_info(
     result = {
         convert_var_name(k): v
         for k, v in zip(*graph._c_nn_graph.get_runtime_var_states())
-        if k.startswith("variable_")
+        if k.startswith("variable_transpose_") and v.ndim == 4
     }
     setattr(deployable_module, CONSTANT_FOLDING_INFO_ATTR, result)
     set_constant_folded_conv_attr(deployable_module, result)
