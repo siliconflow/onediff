@@ -47,7 +47,7 @@ The Full Introduction of OneDiff:
   - [Features](#features)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [Acceleration for production environment](#acceleration-for-production-environment)
-  - [OneDiff Quality Evalution](#onediff-quality-evalution)
+  - [OneDiff Quality Evalution](#onediff-quality-evaluation)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
 - [Release](#release)
