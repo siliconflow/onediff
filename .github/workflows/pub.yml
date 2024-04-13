@@ -24,8 +24,8 @@ jobs:
           sed -i '1d' "src/onediff/__init__.py"
           sed -i '1d' "onediff_diffusers_extensions/onediffx/__init__.py"
           formatted_date=$(date +'%Y%m%d%H%M')
-          echo "__version__ = \"0.13.0.dev${formatted_date}\"" >> src/onediff/__init__.py
-          echo "__version__ = \"0.13.0.dev${formatted_date}\"" >> onediff_diffusers_extensions/onediffx/__init__.py
+          echo "__version__ = \"1.0.0.dev${formatted_date}\"" >> src/onediff/__init__.py
+          echo "__version__ = \"1.0.0.dev${formatted_date}\"" >> onediff_diffusers_extensions/onediffx/__init__.py
       - run: cat src/onediff/__init__.py
       - run: python3 -m pip install build
       - run: python3 -m build
