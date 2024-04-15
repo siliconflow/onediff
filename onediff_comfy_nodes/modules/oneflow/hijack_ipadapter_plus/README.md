@@ -14,7 +14,6 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
   
 - OneDiff:
   - github: https://github.com/siliconflow/onediff 
-  - branch: `git checkout dev_support_ipadapter_b`
 
 ### Quick Start
 

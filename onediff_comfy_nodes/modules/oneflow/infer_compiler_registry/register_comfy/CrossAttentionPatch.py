@@ -1,20 +1,26 @@
-import oneflow as torch
+"""align attention with ipadapter
+https://github.com/cubiq/ComfyUI_InstantID/blob/main/CrossAttentionPatch.py
+https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/main/CrossAttentionPatch.py
+"""
 import math
+
+import oneflow as torch
 import oneflow.nn.functional as F
-# from comfy.ldm.modules.attention import optimized_attention
-# from .utils import tensor_to_size
+
+
 def tensor_to_size(source, dest_size):
     if isinstance(dest_size, torch.Tensor):
         dest_size = dest_size.shape[0]
     source_size = source.shape[0]
 
     if source_size < dest_size:
-        shape = [dest_size - source_size] + [1]*(source.dim()-1)
+        shape = [dest_size - source_size] + [1] * (source.dim() - 1)
         source = torch.cat((source, source[-1:].repeat(shape)), dim=0)
     elif source_size > dest_size:
         source = source[:dest_size]
 
     return source
+
 
 def attention_pytorch(q, k, v, heads, mask=None):
     b, _, dim_head = q.shape
@@ -46,9 +52,11 @@ def attention_pytorch(q, k, v, heads, mask=None):
 
 optimized_attention = attention_pytorch
 
+
 class CrossAttentionPatch:
     # forward for patching
     def __init__(self, ipadapter=None, number=0, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
+        super().__init__()
         self.weights = [weight]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
@@ -218,6 +226,25 @@ class CrossAttentionPatch:
                 out = out + out_ip
 
         return out.to(dtype=dtype)
-
+    
     def to(self, *args,**kwargs):
         return self
+
+    def update(self, patch_kwargs):
+        weight = patch_kwargs.pop("weight")
+        self.weights[0].copy_(torch.Tensor(weight))
+
+        cond = patch_kwargs.pop("cond")
+        self.conds[0].copy_(cond)
+
+        uncond = patch_kwargs.pop("uncond")
+        self.unconds[0].copy_(uncond)
+
+        # TODO support 
+        # patch_weight_type = patch_kwargs.pop("weight_type")
+
+        # sigma_start = patch_kwargs.pop("sigma_start")
+        # self.sigma_start[0] = sigma_start
+
+        # sigma_end = patch_kwargs.pop("sigma_end")
+        # self.sigma_end[0] = sigma_end
