@@ -1,8 +1,8 @@
 """Hijack utils for stable-diffusion."""
-from types import FunctionType
-from typing import Union, Callable
 import importlib
 import inspect
+from types import FunctionType
+from typing import Callable, Union
 
 __all__ = ["Hijacker", "hijack_func"]
 

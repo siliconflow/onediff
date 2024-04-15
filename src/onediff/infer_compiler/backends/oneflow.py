@@ -1,6 +1,5 @@
 import torch
 from .registry import register_backend
-from ..options import CompileOptions
 
 
 @register_backend("oneflow")
@@ -24,6 +23,9 @@ def compile(torch_module: torch.nn.Module, *, options=None):
     from ..transform.custom_transform import set_default_registry
     from ..oneflow.deployable_module import OneflowDeployableModule
     from ..oneflow.utils import get_mixed_deployable_module
+    from ..options import CompileOptions
+    from ..utils.param_utils import state_update_hook, init_state_update_attr, forward_pre_check_and_update_state_hook, forward_generate_constant_folding_info_hook
+
 
     set_default_registry()
 
@@ -58,5 +60,13 @@ def compile(torch_module: torch.nn.Module, *, options=None):
         return new_state_dict
 
     model._register_state_dict_hook(state_dict_hook)
+
+    # for checking state dict update of torch_module
+    model._torch_module.register_load_state_dict_post_hook(state_update_hook)
+    init_state_update_attr(model._torch_module)
+
+    # hooks for constant folding
+    model.register_forward_pre_hook(forward_pre_check_and_update_state_hook)
+    model.register_forward_hook(forward_generate_constant_folding_info_hook)
 
     return model
