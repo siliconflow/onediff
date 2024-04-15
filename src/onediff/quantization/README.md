@@ -3,29 +3,28 @@
 <img src="../../../imgs/onediff_logo.png" height="100">
 </p>
 
-## <div align="center">OneDiff Quant 🚀 NEW Documentation</div>
+# <div align="center">OneDiff Quant 🚀 NEW Documentation</div>
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
-**Note**: Before proceeding with this document, please ensure you are familiar with the [OneDiff Community](./README.md) features and OneDiff ENTERPRISE  by referring to the  [ENTERPRISE Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
+**Note**: Before proceeding with this document, please ensure you are familiar with the [OneDiff Community](../../../README.md) features and OneDiff ENTERPRISE  by referring to the  [ENTERPRISE Guide](../../../README_ENTERPRISE.md#install-onediff-enterprise)
 
 
 You need to complete the following environment dependency installation
 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
-3.Install plotly 
+3.Install requirements 
 ```bash
-python3 -m pip install plotly 
+pip install -r requirements.txt
 ```
 ## Online Quant
 
 First, you need to download [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) model.
 If you are a multi card user, please select the graphics card that executes the program
-1. Set CUDA device using export CUDA_VISIBLE_DEVICES=7.
 
-**Note**: The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
+**Note**: The log `*.pt` file is cached. Quantization result information can be found in `cache_dir/quantization_stats.json`.
 
-# Baseline (non-optimized)
+## Baseline (non-optimized)
 **Note: You can obtain the baseline by running the following command**
 
 ```bash
@@ -36,7 +35,7 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
 ```
 
 
-# OneDiff Quant(optimized)
+## OneDiff Quant(optimized)
 
 Here's the optimized results, Timings for 30 steps in Diffusers-SDXL at 1024x1024
 | Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
@@ -44,7 +43,7 @@ Here's the optimized results, Timings for 30 steps in Diffusers-SDXL at 1024x102
 | NVIDIA GeForce RTX 3090 | 8.03 s                   | 4.44 s ( ~44.7%)   | 3.34 s ( ~58.4%)         |
 
 - torch   {version: 2.2.1+cu121}
-- oneflow {git_commit: 710818c, version: 0.9.1.dev20240406+cu121, enterprise: True}
+- oneflow {version: 0.9.1.dev20240406+cu121, enterprise: True}
 
 
 Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1024
@@ -53,7 +52,7 @@ Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1
 | NVIDIA GeForce RTX 3090 | 6.87 s                   | 3.41 s ( ~50.3%)   | 3.13 s ( ~54.4%)         |
 
 - torch   {version: 2.2.2+cu121}
-- oneflow {git_commit: 710818c, version:  0.9.1.dev20240403+cu122, enterprise: True}
+- oneflow {version:  0.9.1.dev20240403+cu122, enterprise: True}
 
 
 **Note: You can run it using the following command**
@@ -110,7 +109,7 @@ python ./src/onediff/quantization/quant_pipeline_test.py \
         --quantized_model ./quantized_model 
 ```
 
-## Quant a custom model
+## Quantify  a custom model
 
 To achieve quantization of custom models, please refer to the following script
 ```bash
