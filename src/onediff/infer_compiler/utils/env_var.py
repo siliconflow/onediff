@@ -3,7 +3,36 @@ import os
 from typing import Optional
 
 
-def _populate_env_var(field2env_var, options):
+def parse_boolean_from_env(env_var, default_value=None):
+    env_var = os.getenv(env_var)
+    if env_var is None:
+        return default_value
+    env_var = env_var.lower()
+    return env_var in ("1", "true", "yes", "on", "y")
+
+
+def set_boolean_env_var(env_var: str, val: Optional[bool]):
+    if val is None:
+        os.environ.pop(env_var, None)
+    else:
+        os.environ[env_var] = "1" if val else "0"
+
+
+def parse_integer_from_env(env_var, default_value=None):
+    env_var = os.getenv(env_var)
+    if env_var is None:
+        return default_value
+    return int(env_var)
+
+
+def set_integer_env_var(env_var: str, val: Optional[int]):
+    if val is None:
+        os.environ.pop(env_var, None)
+    else:
+        os.environ[env_var] = str(int(val))
+
+
+def _set_env_vars(field2env_var, options):
     from .utils import (
         parse_boolean_from_env,
         set_boolean_env_var,
@@ -27,7 +56,7 @@ def _populate_env_var(field2env_var, options):
         set_env_var(env_var, field_value)
 
 
-def populate_oneflow_env_var(options):
+def set_oneflow_env_vars(options):
     field2env_var = {
         "run_graph_by_vm": "ONEFLOW_RUN_GRAPH_BY_VM",
         "graph_delay_variable_op_execution": "ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION",
@@ -54,10 +83,10 @@ def populate_oneflow_env_var(options):
         "attention_allow_half_precision_accumulation": "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
         "attention_allow_half_precision_score_accumulation_max_m": "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M",
     }
-    _populate_env_var(field2env_var, options)
+    _set_env_vars(field2env_var, options)
 
 
-def populate_oneflow_default_env_var():
+def set_oneflow_default_env_vars():
     # ONEFLOW_RUN_GRAPH_BY_VM must set here to enable nn.Graph init with vm run
     os.environ.setdefault("ONEFLOW_RUN_GRAPH_BY_VM", "1")
     os.environ.setdefault("ONEFLOW_GRAPH_DELAY_VARIABLE_OP_EXECUTION", "1")
@@ -95,15 +124,15 @@ def populate_oneflow_default_env_var():
     # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
 
 
-def populate_nexfort_env_var(options):
+def set_nexfort_env_vars(options):
     field2env_var = {}
-    _populate_env_var(field2env_var, options)
+    _set_env_vars(field2env_var, options)
 
 
-def populate_nexfort_default_env_var():
+def set_nexfort_default_env_vars():
     pass
 
 
-def populate_default_env_var():
-    populate_oneflow_default_env_var()
-    populate_nexfort_default_env_var()
+def set_default_env_vars():
+    set_oneflow_default_env_vars()
+    set_nexfort_default_env_vars()

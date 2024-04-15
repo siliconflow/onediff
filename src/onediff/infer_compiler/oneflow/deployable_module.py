@@ -2,6 +2,7 @@ import types
 import torch
 import oneflow as flow
 
+from ..core.deployable_module import DeployableModule
 from ..transform.manager import transform_mgr
 from ..utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from ..utils.args_tree_util import input_output_processor
@@ -9,8 +10,7 @@ from ..utils.log_utils import logger
 from ..utils.param_utils import parse_device, check_device
 from ..utils.graph_management_utils import graph_file_management
 from ..utils.online_quantization_utils import quantize_and_deploy_wrapper
-from ..options import OneflowCompileOptions
-from ..deployable_module import DeployableModule
+from ..utils.options import OneflowCompileOptions
 
 from .utils import handle_deployable_exception, get_mixed_dual_module, get_oneflow_graph
 

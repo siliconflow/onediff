@@ -2,11 +2,10 @@
 import os
 from pathlib import Path
 
-from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler import DeployableModule
 from onediff.infer_compiler.transform import torch2oflow
 
-from ._config import (ipadapter_plus_hijacker, ipadapter_plus_of,
-                      ipadapter_plus_pt)
+from ._config import ipadapter_plus_hijacker, ipadapter_plus_of, ipadapter_plus_pt
 from .CrossAttentionPatch import CrossAttentionPatch as CrossAttentionPatch_OF
 
 set_model_patch_replace_fn_pt = ipadapter_plus_pt.IPAdapterPlus.set_model_patch_replace

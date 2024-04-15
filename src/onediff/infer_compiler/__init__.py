@@ -1,17 +1,12 @@
 import os
 import torch
 
-from .deployable_module import DeployableModule
-from .env_var import populate_default_env_var
-from .options import *
-from .options import _GLOBAL_compile_options as compile_options
-from .with_onediff_compile import compile, oneflow_compile
-
-from .with_fx_interpreter import OneFlowInterpreter
-from .with_fx_graph import fx_node_tranform
+from .core import *
+from .utils import set_default_env_vars
+from .utils.options import _GLOBAL_compile_options as compile_options
 
 
-populate_default_env_var()
+set_default_env_vars()
 
 
 def oneflow_backend(gm, example_inputs, *args, **kwargs):

@@ -2,13 +2,17 @@ import os
 import re
 import time
 
-from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler import DeployableModule
 
-from .model_patcher import (OneFlowDeepCacheSpeedUpModelPatcher,
-                            OneFlowSpeedUpModelPatcher)
+from .model_patcher import (
+    OneFlowDeepCacheSpeedUpModelPatcher,
+    OneFlowSpeedUpModelPatcher,
+)
 from .onediff_load_utils import onediff_load_quant_checkpoint_advanced
-from .onediff_quant_utils import (quantize_and_save_model,
-                                  replace_module_with_quantizable_module)
+from .onediff_quant_utils import (
+    quantize_and_save_model,
+    replace_module_with_quantizable_module,
+)
 
 OUTPUT_FOLDER = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "..", "graphs"

@@ -5,11 +5,11 @@ import oneflow as flow
 from pathlib import Path
 from functools import wraps
 from oneflow.framework.args_tree import ArgsTree
-from ..options import OneflowCompileOptions
 from ..transform.builtin_transform import torch2oflow
 from ..transform.manager import transform_mgr
 from .log_utils import logger
 from .cost_util import cost_time
+from .options import OneflowCompileOptions
 
 
 def calculate_model_hash(model):

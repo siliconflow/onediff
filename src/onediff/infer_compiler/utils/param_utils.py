@@ -38,7 +38,7 @@ GRAPH_RELATED_TENSOR_ATTR = "_onediff_graph_related_tensor"
 
 
 def init_state_update_attr(module: torch.nn.Module):
-    from onediff.infer_compiler.deployable_module import DeployableModule
+    from onediff.infer_compiler import DeployableModule
 
     if isinstance(module, DeployableModule):
         module = module._torch_module
@@ -50,7 +50,7 @@ def init_state_update_attr(module: torch.nn.Module):
 def set_constant_folded_conv_attr(
     deployable_module, constant_folding_info: Dict[str, flow.Tensor] = None
 ) -> None:
-    from onediff.infer_compiler.deployable_module import DeployableModule
+    from onediff.infer_compiler import DeployableModule
 
     if not isinstance(deployable_module, DeployableModule):
         raise TypeError(
@@ -86,7 +86,7 @@ def generate_constant_folding_info(
         s = re.sub(r"_[0-9]+$", "", s.removeprefix(prefix)).removeprefix("model.")
         return s
 
-    from onediff.infer_compiler.deployable_module import DeployableModule
+    from onediff.infer_compiler import DeployableModule
 
     if not isinstance(deployable_module, DeployableModule):
         raise TypeError(
@@ -111,7 +111,7 @@ def generate_constant_folding_info(
 def update_graph_with_constant_folding_info(
     module: torch.nn.Module, info: Dict[str, flow.Tensor] = None
 ) -> None:
-    from onediff.infer_compiler.deployable_module import DeployableModule
+    from onediff.infer_compiler import DeployableModule
 
     if isinstance(module, DeployableModule):
         if info is None:
@@ -142,7 +142,7 @@ def update_graph_related_tensor(module: torch.nn.Conv2d) -> None:
 
 
 def get_constant_folding_info(module) -> Union[Dict[str, flow.Tensor], None]:
-    from onediff.infer_compiler.deployable_module import DeployableModule
+    from onediff.infer_compiler import DeployableModule
 
     if not isinstance(module, DeployableModule):
         raise TypeError(f"module must be a DeployableModule, got {type(module)}")

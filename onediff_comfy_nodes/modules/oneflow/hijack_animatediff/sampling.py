@@ -1,12 +1,11 @@
 # /ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/sampling.py
 import oneflow as flow
 from einops import rearrange
-from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler import DeployableModule
 from onediff.infer_compiler.transform import register
 from oneflow.nn.functional import group_norm
 
-from ._config import (animatediff_hijacker, animatediff_of, animatediff_pt,
-                      comfy_of)
+from ._config import animatediff_hijacker, animatediff_of, animatediff_pt, comfy_of
 
 FunctionInjectionHolder = animatediff_pt.animatediff.sampling.FunctionInjectionHolder
 

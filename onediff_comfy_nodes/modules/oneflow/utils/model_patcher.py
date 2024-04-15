@@ -32,8 +32,11 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         graph_path=None,
         graph_device=None,
     ):
-        from onediff.infer_compiler import CompileOptions, oneflow_compile
-        from onediff.infer_compiler.deployable_module import DeployableModule
+        from onediff.infer_compiler import (
+            CompileOptions,
+            oneflow_compile,
+            DeployableModule,
+        )
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}
@@ -502,8 +505,11 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         use_graph=None,
         gen_compile_options=None,
     ):
-        from onediff.infer_compiler import CompileOptions, oneflow_compile
-        from onediff.infer_compiler.deployable_module import DeployableModule
+        from onediff.infer_compiler import (
+            CompileOptions,
+            oneflow_compile,
+            DeployableModule,
+        )
 
         self.weight_inplace_update = weight_inplace_update
         self.object_patches = {}

@@ -3,7 +3,7 @@ from typing import Union, Dict
 from collections import defaultdict
 
 import torch
-from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
 from diffusers.models.lora import (
     LoRACompatibleConv,
