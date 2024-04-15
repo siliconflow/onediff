@@ -8,30 +8,41 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
 
 **Note**: Before proceeding with this document, please ensure you are familiar with the OneDiff Community features by referring to the [OneDiff Community README](./README.md).
 
-- [Get the license key](#get-the-license-key)
-- [Install OneDiff Enterprise](#install-onediff-enterprise)
+- [OneDiff Enterprise](#onediff-enterprise)
+  - [Get the license key](#get-the-license-key)
+  - [Install OneDiff Enterprise](#install-onediff-enterprise)
     - [For NA/EU users](#for-naeu-users)
     - [For CN users](#for-cn-users)
-- [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
-    - [ComfyUI SD 1.5](#comfyui-sd-1-5)
-    - [ComfyUI SD 2.1](#comfyui-sd-2-1)    
+  - [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
+    - [ComfyUI SD 1.5](#comfyui-sd-15)
+    - [ComfyUI SD 2.1](#comfyui-sd-21)
     - [ComfyUI SDXL](#comfyui-sdxl)
     - [ComfyUI SVD](#comfyui-svd)
-- [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
+  - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
     - [Online Quantization](#online-quantization)
     - [Offline Quantization](#offline-quantization)
-- [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
-    - [Diffusers SD 1.5](#diffusers-sd-1-5)
-    - [Diffusers SD 2.1](#diffusers-sd-2-1)
+  - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
+    - [Accessing Diffusers Models](#accessing-diffusers-models)
+      - [Diffusers-SD-1.5](#diffusers-sd-15)
+      - [Scripts](#scripts)
+      - [Diffusers-SD-2.1](#diffusers-sd-21)
+      - [Diffusers-SD-1.5 + DeepCache](#diffusers-sd-15--deepcache)
     - [Diffusers SDXL](#diffusers-sdxl)
+      - [Accessing Diffusers Models](#accessing-diffusers-models-1)
+      - [Scripts](#scripts-1)
+      - [SDXL + DeepCache](#sdxl--deepcache)
     - [Diffusers SVD](#diffusers-svd)
+      - [Accessing Diffusers Models](#accessing-diffusers-models-2)
+      - [Scripts](#scripts-2)
+      - [SVD + DeepCache](#svd--deepcache)
+  - [Contact](#contact)
 
 
 ## Get the license key
 
-Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.
+Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
-Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+Once you have got **ONEDIFF_LICENSE_KEY** , you can execute the following export ``` SILICON_ONEDIFF_LICENSE_KEY= $YOUR_KEY ``` in the terminal
 
 ## Install OneDiff Enterprise
 
