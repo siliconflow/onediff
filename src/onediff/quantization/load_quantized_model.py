@@ -2,7 +2,7 @@ from diffusers import AutoPipelineForText2Image
 from onediff.quantization.quantize_pipeline import QuantPipeline
 import argparse 
 import torch
-
+from onediff.infer_compiler import oneflow_compile
 
 def parse_args():
     parser = argparse.ArgumentParser()
@@ -27,4 +27,5 @@ pipe_kwargs = dict(
     num_inference_steps=args.num_inference_steps,
 )
 
-pipe(**pipe_kwargs)
+pipe.unet = oneflow_compile(pipe.unet)
+pipe(**pipe_kwargs).images[0].save("test.png")

@@ -6,7 +6,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--floatting_model_path", default="stabilityai/stable-diffusion-xl-base-1.0")
+    parser.add_argument("--floatting_model_path", default="stabilityai/stable-diffusion-v1-5")
     parser.add_argument("--prompt", default="a photo of an astronaut riding a horse on mars")
     parser.add_argument("--height",type=int, default=1024)
     parser.add_argument("--width", type=int,default=1024)
@@ -40,6 +40,7 @@ pipe.quantize(**pipe_kwargs,
     conv_ssim_threshold=args.conv_ssim_threshold,
     linear_ssim_threshold=args.linear_ssim_threshold,
     save_as_float=args.save_as_float,
+    plot_calibrate_info=True,
     cache_dir=args.cache_dir)
 
 pipe.save_quantized(args.quantized_model, safe_serialization=True)
