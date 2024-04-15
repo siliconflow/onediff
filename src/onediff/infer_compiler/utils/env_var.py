@@ -33,13 +33,6 @@ def set_integer_env_var(env_var: str, val: Optional[int]):
 
 
 def _set_env_vars(field2env_var, options):
-    from .utils import (
-        parse_boolean_from_env,
-        set_boolean_env_var,
-        parse_integer_from_env,
-        set_integer_env_var,
-    )
-
     for field in dataclasses.fields(options):
         field_name = field.name
         field_value = getattr(options, field_name)

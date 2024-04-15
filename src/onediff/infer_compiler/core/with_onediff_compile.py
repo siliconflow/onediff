@@ -5,7 +5,7 @@ from .deployable_module import DeployableModule
 def compile(
     torch_module: torch.nn.Module, *, backend="nexfort", options=None
 ) -> DeployableModule:
-    from .backends.registry import lookup_backend
+    from ..backends.registry import lookup_backend
 
     backend = lookup_backend(backend)
     model = backend(torch_module, options=options)

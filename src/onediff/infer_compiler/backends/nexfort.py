@@ -1,7 +1,6 @@
 import dataclasses
 import torch
 from .registry import register_backend
-from ..options import CompileOptions
 
 
 def make_inductor_options(options):
@@ -19,6 +18,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
     from nexfort.utils.memory_format import apply_memory_format
     from nexfort.compilers import nexfort_compile
     from ..nexfort.deployable_module import NexfortDeployableModule
+    from ..utils import CompileOptions
 
     options = options if options is not None else CompileOptions()
     nexfort_options = options.nexfort
