@@ -4,7 +4,6 @@ import argparse
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.oneflow import oneflow_compiler_config
 from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
 
@@ -62,7 +61,6 @@ base = StableDiffusionXLPipeline.from_pretrained(
 base.to("cuda")
 
 
-oneflow_compiler_config.mlir_enable_inference_optimization = False
 # Compile unet with oneflow
 if args.compile_unet:
     print("Compiling unet with oneflow.")

@@ -47,7 +47,7 @@ The Full Introduction of OneDiff:
   - [Features](#features)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [Acceleration for production environment](#acceleration-for-production-environment)
-  - [OneDiff Quality Evalution](#onediff-quality-evalution)
+  - [OneDiff Quality Evalution](#onediff-quality-evaluation)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
 - [Release](#release)
@@ -124,9 +124,8 @@ Compile and save the compiled result offline, then load it online for serving
 - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
 - [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
   - Compile at one device(such as device 0), then use the compiled result to other device(such as device 1~7).
-  - This is for special scenes and is in the Enterprise Edition.
 
-### OneDiff Quality Evalution
+### OneDiff Quality Evaluation
 
 We also maintain a repository for benchmarking the quality of generation after acceleration using OneDiff:
 [OneDiffGenMetrics](https://github.com/siliconflow/OneDiffGenMetrics)

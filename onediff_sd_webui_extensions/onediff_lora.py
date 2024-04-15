@@ -1,13 +1,11 @@
 import torch
-import oneflow as flow
 from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler.utils.param_utils import update_graph_related_tensor
 
 
 class HijackLoraActivate:
-    def __init__(self, conv_dict=None):
+    def __init__(self):
         from modules import extra_networks
-
-        self.conv_dict = conv_dict
 
         if "lora" in extra_networks.extra_network_registry:
             cls_extra_network_lora = type(extra_networks.extra_network_registry["lora"])
@@ -19,9 +17,7 @@ class HijackLoraActivate:
         if self.lora_class is None:
             return
         self.orig_func = self.lora_class.activate
-        self.lora_class.activate = hijacked_activate(
-            self.lora_class.activate, conv_dict=self.conv_dict
-        )
+        self.lora_class.activate = hijacked_activate(self.lora_class.activate)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if self.lora_class is None:
@@ -31,7 +27,7 @@ class HijackLoraActivate:
         self.orig_func = None
 
 
-def hijacked_activate(activate_func, *, conv_dict=None):
+def hijacked_activate(activate_func):
     import networks
 
     if hasattr(activate_func, "_onediff_hijacked"):
@@ -53,17 +49,8 @@ def hijacked_activate(activate_func, *, conv_dict=None):
                 ):
                     continue
                 networks.network_apply_weights(sub_module)
-
-                # for LyCORIS cases
-                if conv_dict is not None and isinstance(sub_module, torch.nn.Conv2d):
-                    target_tensor = conv_dict.get(name + ".weight", None)
-                    if target_tensor is None:
-                        continue
-                    target_tensor.copy_(
-                        flow.utils.tensor.from_torch(
-                            sub_module.weight.permute(0, 2, 3, 1)
-                        )
-                    )
+                if isinstance(sub_module, torch.nn.Conv2d):
+                    update_graph_related_tensor(sub_module)
 
     activate._onediff_hijacked = True
     return activate
