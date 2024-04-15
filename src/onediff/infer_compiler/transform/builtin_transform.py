@@ -3,6 +3,7 @@
 import os
 import importlib
 import types
+import traceback
 from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -54,7 +55,12 @@ def singledispatch_proxy(func):
 
 
 def proxy_class(cls: type):
-    return transform_mgr.transform_cls(cls)
+    try:
+        out = transform_mgr.transform_cls(cls)
+        return out 
+    except Exception as e:
+        # If an exception occurs during transformation, print traceback for debugging
+        raise RuntimeError(f"An exception occurred during class transformation:\n{traceback.format_exc()}\nException: {e}")
 
 
 def reverse_proxy_class(cls: type):
