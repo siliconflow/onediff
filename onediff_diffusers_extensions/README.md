@@ -279,13 +279,21 @@ Set the LoRA layers of `adapter_name` for the unet and text-encoder(s) with rela
 - adapter_names(`str` or `List[str]`): The adapter name(s) of LoRA(s) to be set for the pipeline, must appear in the `adapter_name` parameter of the `load_and_fuse_lora` function, otherwise it will be ignored.
 - adapter_weights(`float` or `List[float]`, optional): The weight(s) of adapter(s), if is None, it will be set to 1.0.
 
-#### `onediffx.lora.delete_adapters``
+#### `onediffx.lora.delete_adapters`
 
 `onediffx.lora.delete_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str])`
 
 Deletes the LoRA layers of `adapter_name` for the unet and text-encoder(s).
 
 - adapter_names (`str` or `List[str]`): The names of the adapter to delete. Can be a single string or a list of strings
+
+#### `onediffx.lora.update_graph_with_constant_folding_info`
+
+`onediffx.lora.update_graph_with_constant_folding_info(module: torch.nn.Module, info: Dict[str, flow.Tensor] = None)`
+
+Update the weights of graph after loading LoRA. (If OneDiff has enabled constant folding optimization during compilation, some parameters in the static graph may not be updated correctly after loading lora. Invoke this function manually to update the weights of the static graph correctly.)
+
+> **Note**: If you are using onediffx instead of diffusers and PEFT to load LoRA, there is no need to call this function, as onediffx will handle all the necessary work.
 
 ### Example
 
@@ -413,16 +421,6 @@ We tested the performance of `set_adapters`, still using the five LoRA models me
 
 1. OneDiff extensions for LoRA is currently only supported for limited PEFT APIs, and only supports diffusers of at least version 0.21.0.
 
-2. If your LoRA model only contains the weights of the Linear module, you can directly use OneDiffX without any modifications. But if your LoRA model includes the weights of the Conv module (such as LyCORIS), you need to disable constant folding optimization by above methods (which may cause a performance drop of around 4.4%), otherwise the weights of the Conv module may not be loaded into the model.
-    - Set the env var `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to 0
-    - Set compiler_config.mlir_enable_inference_optimization to 0 before invoking `oneflow_compile` as the code below
-        ```
-        from onediffx import compiler_config
-        compiler_config.mlir_enable_inference_optimization = 0
-        ...
-        pipe.unet = oneflow_compile(pipe.unet)
-        ...
-        ```
 ### Optimization
 - When not using the PEFT backend, diffusers will replace the module corresponding to LoRA with the LoRACompatible module, incurring additional parameter initialization time overhead. In OneDiffX, the LoRA parameters are directly fused into the model, bypassing the step of replacing the module, thereby reducing the time overhead.
 
@@ -453,7 +451,7 @@ new_base.unet = compiled_unet
 new_base(prompt)
 ```
 
-> Note: Please make sure that your PyTorch version is **at least 2.1.0**, and set the environment variable `ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION` to **0**. And the feature is not supported for quantized model.
+> Note: Please make sure that your PyTorch version is **at least 2.1.0**, and the feature is not supported for quantized model.
 
 
 ## Quantization

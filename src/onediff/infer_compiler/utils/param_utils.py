@@ -102,7 +102,7 @@ def generate_constant_folding_info(
     result = {
         convert_var_name(k): v
         for k, v in zip(*graph._c_nn_graph.get_runtime_var_states())
-        if k.startswith("variable_")
+        if k.startswith("variable_transpose_") and v.ndim == 4
     }
     setattr(deployable_module, CONSTANT_FOLDING_INFO_ATTR, result)
     set_constant_folded_conv_attr(deployable_module, result)
@@ -163,6 +163,7 @@ def forward_generate_constant_folding_info_hook(module, args, output):
     if getattr(module, CONSTANT_FOLDING_INFO_ATTR, None) is not None:
         return
 
+    logger.info(f"generate constant folding info")
     generate_constant_folding_info(module)
 
 
@@ -177,5 +178,6 @@ def forward_pre_check_and_update_state_hook(module, args):
     if constant_folding_info is None:
         return
 
+    logger.info(f"state_dict updated, modify the related weight in graph")
     update_graph_with_constant_folding_info(module, constant_folding_info)
     setattr(module._torch_module, STATE_UPDATED_ATTR, False)
