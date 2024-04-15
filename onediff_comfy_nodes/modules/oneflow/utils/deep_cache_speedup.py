@@ -48,6 +48,8 @@ def deep_cache_speedup(
             model_patcher.fast_deep_cache_unet
         )
 
+        model_patcher.model.use_deep_cache_unet = True
+
     current_t = -1
     current_step = -1
     cache_h = None

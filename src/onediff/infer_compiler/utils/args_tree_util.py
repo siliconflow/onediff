@@ -3,6 +3,7 @@ import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
 from .log_utils import logger
 
+from ..transform import torch2oflow 
 
 def input_output_processor(func):
     def process_input(*args, **kwargs):
@@ -11,7 +12,7 @@ def input_output_processor(func):
                 # TODO: https://github.com/siliconflow/sd-team/issues/109
                 return flow.utils.tensor.from_torch(value.contiguous())
             else:
-                return value
+                return torch2oflow(value)
 
         args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
         input_count = len(

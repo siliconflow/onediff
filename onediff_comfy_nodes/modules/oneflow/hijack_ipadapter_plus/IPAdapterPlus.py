@@ -8,20 +8,22 @@ from onediff.infer_compiler.transform import torch2oflow
 from ._config import (ipadapter_plus_hijacker, ipadapter_plus_of,
                       ipadapter_plus_pt)
 from .CrossAttentionPatch import CrossAttentionPatch as CrossAttentionPatch_OF
+from ..utils.booster_utils import is_using_oneflow_backend
 
 set_model_patch_replace_fn_pt = ipadapter_plus_pt.IPAdapterPlus.set_model_patch_replace
 
 
 def get_patches_replace_attn2(diff_model):
-    if not hasattr(diff_model._deployable_module_model, "patches_replace_attn2"):
-        diff_model._deployable_module_model.patches_replace_attn2 = {}
-    return diff_model._deployable_module_model.patches_replace_attn2
+    if not hasattr(diff_model, "patches_replace_attn2"):
+        diff_model.patches_replace_attn2 = {}
+    return diff_model.patches_replace_attn2
 
 
 def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
 
     patch_kwargs = torch2oflow(patch_kwargs)
     diff_model = model.model.diffusion_model
+    diff_model.use_cross_attention_patch = True
     patches_replace_attn2 = get_patches_replace_attn2(diff_model)
 
     to = model.model_options["transformer_options"]
@@ -37,14 +39,13 @@ def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
         else:
             patch = CrossAttentionPatch_OF(**patch_kwargs)
             patches_replace_attn2[key] = patch
-
         to["patches_replace"]["attn2"][key] = patch
     else:
         to["patches_replace"]["attn2"][key].set_new_condition(**patch_kwargs)
 
 
 def cond_func(org_fn, model, *args, **kwargs):
-    return isinstance(model.model.diffusion_model, DeployableModule)
+    return is_using_oneflow_backend(model)
 
 
 ipadapter_plus_hijacker.register(
