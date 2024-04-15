@@ -87,7 +87,7 @@ python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing
 python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=onediff
 ```
 
-## [ComfyUI with OneDiff Enterprise](https://github.com/siliconflow/onediff/blob/wiki/ComfyUI_Online_Quantization.md)
+## ComfyUI with OneDiff Enterprise
 
 Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
 
@@ -95,6 +95,10 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 
 **NOTE2**: It should be noted that you need to make sure you are logged in to [Hugging Face](https://huggingface.co/) before clicking the "Workflow" link below.
 
+<a id="Online quantization for comfyUI"></a>
+### Online quantization for comfyui
+
+  We provide ComfyUI with an online quantification tool, which has significant acceleration effects. We provide detailed documentation tutorials [ComfyUI online quantitative usage documentation in wiki](https://github.com/siliconflow/onediff/blob/wiki/ComfyUI_Online_Quantization.md) for users who want to use.
 
 <a id="comfyui-sd-1-5"></a>
 ### ComfyUI SD 1.5
