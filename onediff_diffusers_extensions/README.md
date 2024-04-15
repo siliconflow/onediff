@@ -293,6 +293,8 @@ Deletes the LoRA layers of `adapter_name` for the unet and text-encoder(s).
 
 Update the weights of graph after loading LoRA. (If OneDiff has enabled constant folding optimization during compilation, some parameters in the static graph may not be updated correctly after loading lora. Invoke this function manually to update the weights of the static graph correctly.)
 
+Check [text_to_image_sdxl_lora.py](./examples/text_to_image_sdxl_lora.py) for more details.
+
 > **Note**: If you are using onediffx instead of diffusers and PEFT to load LoRA, there is no need to call this function, as onediffx will handle all the necessary work.
 
 ### Example
