@@ -5,7 +5,6 @@ We combined [OneDiff DeepCache](https://github.com/siliconflow/onediff/tree/main
 
 For the Aether Cloud style of LoRA, it can be downloaded from https://civitai.com/models/141029/aether-cloud-lora-for-sdxl.
 
-
 #### Performance of Community Edition:
 
 Updated on Jan 11, 2024. Device: A100 GPU
