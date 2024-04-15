@@ -87,7 +87,7 @@ python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing
 python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=onediff
 ```
 
-## ComfyUI with OneDiff Enterprise
+##[ComfyUI with OneDiff Enterprise](https://github.com/siliconflow/onediff/blob/wiki/ComfyUI_Online_Quantization.md)
 
 Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
 
