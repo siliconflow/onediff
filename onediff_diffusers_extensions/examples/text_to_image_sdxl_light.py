@@ -8,6 +8,11 @@ from diffusers import StableDiffusionXLPipeline
 from onediffx import compile_pipe, compiler_config, save_pipe, load_pipe
 from huggingface_hub import hf_hub_download
 
+try:
+    USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
+except Exception as e:
+    USE_PEFT_BACKEND = False
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
@@ -50,6 +55,9 @@ else:
     from diffusers import EulerDiscreteScheduler
 
 if is_lora_cpkt:
+    if not USE_PEFT_BACKEND:
+        print("PEFT backend is required for load_lora_weights")
+        exit(0)
     pipe = StableDiffusionXLPipeline.from_pretrained(
         args.base, torch_dtype=torch.float16, variant="fp16"
     ).to("cuda")

@@ -4,10 +4,10 @@
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile, CompileOptions
 from diffusers import DiffusionPipeline
 
 parser = argparse.ArgumentParser()
@@ -41,22 +41,21 @@ base = DiffusionPipeline.from_pretrained(
 )
 base.to("cuda")
 
-# To temporarily fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
+# To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
 if base.vae.dtype == torch.float16 and base.vae.config.force_upcast:
     base.upcast_vae()
 
 # Compile unet and vae
 print("unet and vae is compiled to oneflow.")
-base.unet = oneflow_compile(
-    base.unet, options={"size": cmd_args.num_dynamic_input_size}
-)
-base.vae.decoder = oneflow_compile(
-    base.vae.decoder, options={"size": cmd_args.num_dynamic_input_size}
-)
+compile_options = CompileOptions()
+compile_options.oneflow.max_cached_graph_size = cmd_args.num_dynamic_input_size
+
+base.unet = oneflow_compile(base.unet, options=compile_options)
+base.vae.decoder = oneflow_compile(base.vae.decoder, options=compile_options)
 if base.text_encoder is not None:
-    base.text_encoder = oneflow_compile(base.text_encoder)
+    base.text_encoder = oneflow_compile(base.text_encoder, options=compile_options)
 if base.text_encoder_2 is not None:
-    base.text_encoder_2 = oneflow_compile(base.text_encoder_2)
+    base.text_encoder_2 = oneflow_compile(base.text_encoder_2, options=compile_options)
 
 if cmd_args.load:
     print("Loading graphs to avoid compilation...")

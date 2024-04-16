@@ -14,7 +14,9 @@ def get_sub_module(module, sub_module_name) -> nn.Module:
     Returns:
         nn.Module: The requested submodule.
     """
-
+    if sub_module_name == "":
+        return module
+    
     parts = sub_module_name.split(".")
     current_module = module
 

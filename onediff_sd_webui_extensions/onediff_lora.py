@@ -1,5 +1,6 @@
 import torch
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler.utils.param_utils import update_graph_related_tensor
 
 
 class HijackLoraActivate:
@@ -36,7 +37,7 @@ def hijacked_activate(activate_func):
         activate_func(self, p, params_list)
         if isinstance(p.sd_model.model.diffusion_model, DeployableModule):
             onediff_sd_model: DeployableModule = p.sd_model.model.diffusion_model
-            for sub_module in onediff_sd_model.modules():
+            for name, sub_module in onediff_sd_model.named_modules():
                 if not isinstance(
                     sub_module,
                     (
@@ -48,6 +49,8 @@ def hijacked_activate(activate_func):
                 ):
                     continue
                 networks.network_apply_weights(sub_module)
+                if isinstance(sub_module, torch.nn.Conv2d):
+                    update_graph_related_tensor(sub_module)
 
     activate._onediff_hijacked = True
     return activate

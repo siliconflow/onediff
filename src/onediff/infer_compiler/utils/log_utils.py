@@ -40,6 +40,7 @@ class ConfigurableLogger:
             fmt="%(levelname)s [%(asctime)s] %(pathname)s:%(lineno)d - %(message)s",
             datefmt="%Y-%m-%d %H:%M:%S",
         )
+
         console_handler = logging.StreamHandler()
         console_handler.setFormatter(console_formatter)
         logger.addHandler(console_handler)

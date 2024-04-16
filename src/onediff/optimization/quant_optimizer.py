@@ -3,10 +3,7 @@ import torch
 import torch.nn as nn
 from copy import deepcopy
 from ..infer_compiler.utils.log_utils import logger
-from ..infer_compiler.utils.version_util import (
-    get_support_message,
-    is_quantization_enabled,
-)
+from ..infer_compiler.utils.version_util import is_quantization_enabled
 from ..infer_compiler.utils.cost_util import cost_cnt
 from ..infer_compiler.utils.module_operations import modify_sub_module
 from ..infer_compiler.transform.manager import transform_mgr
@@ -110,3 +107,4 @@ def quantize_model(
     )
 
     return model
+

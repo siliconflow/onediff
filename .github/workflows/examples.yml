@@ -1,4 +1,4 @@
-name: Run examples
+name: CI testing
 
 on:
   pull_request:
@@ -197,6 +197,8 @@ jobs:
 
           run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json" 200
           run_comfy_test "workflows/sdxl-control-lora-speedup.json" 200
+          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache.json" 600
+          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
           # run_comfy_test "workflows/text-to-video-speedup.json" 5000
 
       - name: Show ComfyUI Log
@@ -208,9 +210,13 @@ jobs:
         run: |
           docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantize_custom_model.py
+      - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_enterprise.py --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0-int8 --width 512 --height 512 --saved_image output_enterprise_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --width 512 --height 512 --saved_image output_enterprise_deepcache_sdxl.png
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sd_sdxl_enterprise.py --model /share_nfs/stable-diffusion-xl-base-1.0-int8-deep-cache --model_type sdxl --width 512 --height 512 --saved_image output_enterprise_deepcache_sdxl.png
+      - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --width 512 --height 512 --run_multiple_resolutions true --saved_image deepcache_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
@@ -229,7 +235,13 @@ jobs:
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_turbo.py --compile true --base /share_nfs/hf_models/sdxl-turbo
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py
-
+      # - if: matrix.test-suite == 'diffusers_examples'
+      #   run: docker exec -w /src/onediff/onediff_diffusers_extensions -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_reuse_pipe.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --new_base /share_nfs/hf_models/dataautogpt3-OpenDalleV1.1
+      - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
+        run: |
+          docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /share_nfs/hf_models/stable-diffusion-v1-5-int8 --width 512 --height 512 --saved_image /src/onediff/output_enterprise_sd.png
+          docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantitative_quality.py
+      
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |

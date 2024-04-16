@@ -8,26 +8,43 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
 
 **Note**: Before proceeding with this document, please ensure you are familiar with the OneDiff Community features by referring to the [OneDiff Community README](./README.md).
 
-- [Get the license key](#get-the-license-key)
-- [Install OneDiff Enterprise](#install-onediff-enterprise)
+- [OneDiff Enterprise](#onediff-enterprise)
+  - [Get the license key](#get-the-license-key)
+  - [Install OneDiff Enterprise](#install-onediff-enterprise)
     - [For NA/EU users](#for-naeu-users)
     - [For CN users](#for-cn-users)
-- [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
-    - [SD-1.5](#SD-1.5)
-    - [SDXL](#SDXL)
-    - [SVD](#SVD)
-- [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
-    - [SD-1.5](#SD-1.5)
-- [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
-    - [SDXL](#SDXL)
-    - [SVD](#SVD)
+  - [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
+    - [ComfyUI SD 1.5](#comfyui-sd-15)
+    - [ComfyUI SD 2.1](#comfyui-sd-21)
+    - [ComfyUI SDXL](#comfyui-sdxl)
+    - [ComfyUI SVD](#comfyui-svd)
+  - [Stable Diffusion WebUI with OneDiff Enterprise](#stable-diffusion-webui-with-onediff-enterprise)
+    - [Online Quantization](#online-quantization)
+    - [Offline Quantization](#offline-quantization)
+  - [Diffusers with OneDiff Enterprise](#diffusers-with-onediff-enterprise)
+    - [Accessing Diffusers Models](#accessing-diffusers-models)
+      - [Diffusers-SD-1.5](#diffusers-sd-15)
+      - [Scripts](#scripts)
+      - [Diffusers-SD-2.1](#diffusers-sd-21)
+      - [Diffusers-SD-1.5 + DeepCache](#diffusers-sd-15--deepcache)
+    - [Diffusers SDXL](#diffusers-sdxl)
+      - [Accessing Diffusers Models](#accessing-diffusers-models-1)
+      - [Scripts](#scripts-1)
+      - [SDXL + DeepCache](#sdxl--deepcache)
+    - [Diffusers SVD](#diffusers-svd)
+      - [Accessing Diffusers Models](#accessing-diffusers-models-2)
+      - [Scripts](#scripts-2)
+      - [SVD + DeepCache](#svd--deepcache)
+  - [Contact](#contact)
 
 
 ## Get the license key
 
-Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.
+Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
-Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+Once you have completed your purchase, you can execute the following\
+```export SILICON_ONEDIFF_LICENSE_KEY= $YOUR_KEY ```\
+in the terminal
 
 ## Install OneDiff Enterprise
 
@@ -87,12 +104,16 @@ python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=o
 
 Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/README.md#setup-enterprise-edition) and follow the instructions below.
 
-**NOTE**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
+**NOTE1**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
 
-### SD-1.5
+**NOTE2**: It should be noted that you need to make sure you are logged in to [Hugging Face](https://huggingface.co/) before clicking the "Workflow" link below.
 
 
-  For more information and to access the model, visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
+<a id="comfyui-sd-1-5"></a>
+### ComfyUI SD 1.5
+
+
+  For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
 
 <details> 
 <summary> Download the required model files </summary>
@@ -113,11 +134,38 @@ wget https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-ente
 
 Click the links below to view the workflow images, or load them directly into ComfyUI.
 
-  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
+  - Workflow: [SD 1.5](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/blob/main/comfyui_screenshots/onediff_quant_advanced.png)
 
-### SDXL
+<a id="comfyui-sd-2-1"></a>
+### ComfyUI SD 2.1
 
-  For model details, visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
+
+  For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v2-1-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/tree/main).
+
+<details> 
+<summary> Download the required model files </summary>
+
+1. Download the [`v2-1_768-ema-pruned.zip`](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/v2-1_768-ema-pruned.zip) file and unzip ,then place the .safetensors in the `ComfyUI/models/checkpoints/` directory:
+
+```bash
+wget https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/v2-1_768-ema-pruned.zip -O ComfyUI/models/checkpoints/v2-1_768-ema-pruned.zip
+```
+
+2. Download the [`v2-1-onediff-comfy-enterprise.pt`](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/v2-1_768-ema-pruned.pt) file and place it in the `ComfyUI/models/onediff_quant/` directory:
+
+```bash
+wget https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/v2-1_768-ema-pruned.pt -O ComfyUI/models/onediff_quant/v1-5-pruned_quantize_info.pt
+```
+
+</details>
+
+Click the links below to view the workflow images, or load them directly into ComfyUI. 
+
+  - Workflow: [SD 2.1](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/onediff_stable_diffusion_2_1.png)
+
+### ComfyUI SDXL
+
+  For model details and to **access the model files and Workflow below**, please  visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
 
 <details> 
 <summary> Download the required model files </summary>
@@ -139,16 +187,16 @@ wget https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v
   - Workflow: [SDXL](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_base.png)
   - Workflow: [SDXL + DeepCache](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/blob/main/onediff_quant_deepcache.png)
 
-### SVD
+### ComfyUI SVD
 
 
-  For model details, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
+  For model details and to **access the model files and Workflow below**, visit [Hugging Face - stable-video-diffusion-xt-comfyui-deepcache-int8](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8).
 
 
 <details>
 <summary> Download the required model files </summary>
 
-1. Download the [`svd_xt.safetensors`](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolve/main/svd_xt.safetensors) file and place it in the `ComfyUI/models/checkpoints/` directory:
+1. Download the [`svd_xt.safetensors`](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolve/main/svd_xt.safetensors) or [`svd_xt_1_1.safetensors`](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt-1-1/blob/main/svd_xt_1_1.safetensors) file and place it in the `ComfyUI/models/checkpoints/` directory:
 
 ```bash
 wget https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolve/main/svd_xt.safetensors -O ComfyUI/models/checkpoints/svd_xt.safetensors
@@ -168,59 +216,122 @@ wget https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepca
 
 
   - Workflow: [SVD](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-workflow.png)
+
   - Workflow: [SVD + DeepCache](https://huggingface.co/siliconflow/stable-video-diffusion-xt-comfyui-deepcache-int8/blob/main/svd-int8-deepcache-workflow.png)
 
 
 ## Stable Diffusion WebUI with OneDiff Enterprise
 
-If you are using the official weight of StableDiffusionXL, just tick the **Model Quantization(int8) Speed Up** option.
+We provide two types of quantization methods, online quantization and offline quantization.
+
+Online quantization will quantize all Conv2d and Linear modules. Its advantages are as follows:
+
+- Easy to use: The only thing you need to do is just ticking the **Model Quantization(int8) Speed Up** option.
+- Fast: It can finish the quantification in a few seconds
+
+Offline quantization requires you to manually run the quantization script we provide to obtain a quantized model, which can then be used in the WebUI. Its advantages are as follows:
+
+- Better image quality: It can identify and quantize modules with high computational costs yet minimal impact on image quality, to achieve the optimal balance between computational costs and image quality.
+
+### Online Quantization
+
+Select *onediff_diffusion_model* in script, and a checkbox labeled *Model Quantization(int8) Speed Up* will appear below (as shown in the figure). By ticking this checkbox, you can use the online quantization function.
 
 <img src="./imgs/Enterprise_Tutorial_WebUI.png">
 
-### SD-1.5
+> Note: If you can't see the checkbox and instead see a message with the content *Hints: Enterprise function is not supported on your system*, it means that you do not have installed the onediff enterprise correctly. Please follow the instructions in the [Install OneDiff Enterprise](#install-onediff-enterprise) to install it.
 
-#### Scripts
+### Offline Quantization
 
-Run quantize-sd-fast.py by command to get quantized model:
+1. Enter the directory where OneDiff is installed and run the script as follows to quantize the model
+    ```python
+    python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
+      --model /path/to/your/model \
+      --quantized_model /path/to/save/quantized/model \
+      --height 512 \
+      --width 512 \
+      --conv_ssim_threshold 0.991 \
+      --linear_ssim_threshold 0.991 \
+      --conv_compute_density_threshold 0 \
+      --linear_compute_density_threshold 0 \
+      --save_as_float true \
+      --cache_dir /path/to/save/quantized/cache
+    ```
 
-```python3
-python3 quantize-sd-fast.py \
-  --model /path/to/your/sd/model \
-  --quantized_model /path/to/save/quantized/model \
-  --height 512 \
-  --width 512 \
-  --conv_ssim_threshold 0.985 \
-  --linear_ssim_threshold 0.991 \
-  --linear_compute_density_threshold 900 \
-  --format sd
-```
+    The meaning of each parameter is as follows:
 
-The meaning of each parameter is as follows:
+    `--model` Specifies the path of the model to be quantified, can be a diffusers format model (which is a folder containing unet, vae, text_encoder and etc.) or a single safetensors file
 
-`--model` Specifies the path of the model to be quantified
+    `--quantized_model` Specifies the path to save the quantized model
 
-`--quantized_model` Specifies the path to save the quantized model
+    `--height --width` Specify the height and width of the output image which are the most commonly used height and width in your WebUI usage
 
-`--height --width` Specify the size of the output image when quantizing
+    `--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--conv_ssim_threshold` A similarity threshold that quantize convolution. The higher the threshold, the lower the accuracy loss caused by quantization
+    `--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization, should be greater than 0 and smaller than 1
 
-`--linear_ssim_threshold` A similarity threshold that quantize linear. The higher the threshold, the lower the accuracy loss caused by quantization
+    `--conv_compute_density_threshold` The conv modules whose computational density is higher than the threshold will be quantized. Default to 900
 
-`--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized
+    `--linear_compute_density_threshold` The linear modules whose computational density is higher than the threshold will be quantized. Default to 300
 
-`--format` must be one of ['diffusers', 'sd'], and defaults to 'sd'. If set to 'diffusers', the model will be saved in the format of huggingface diffusers; if set to 'sd', the model will be saved in the format of Stable Diffusion single safetensors
+    `--save_as_float` If save model with floating point weights. If set to true, the weight of quantized modules will be saved as floating point dtype, otherwise int dtype.
 
-After the script has finished running, you will obtain the quantized model named `model.safetensors` in the folder specified by --quant_model, and now you can load the quantized model in Stable Diffusion WebUI.
+    `--cache_dir` Specifies the path to save the cache when quantizing. You can use the cache to re-quantize one model without re-computing
 
-<img src="./imgs/Enterprise_Tutorial_WebUI_Script.png">
+2. convert quantized model to origial Stable Diffusion single safetensors file by running the scirpt (if you want to convert SDXL model, use `onediff_sd_webui_extensions/tools/convert_diffusers_to_sdxl.py` instead)
+    ```python
+    python3 onediff_sd_webui_extensions/tools/convert_diffusers_to_sd.py \
+      --model_path /path/to/saved/quantized/model \
+      --checkpoint_path /path/to/save/quantized/safetensors \
+      --use_safetensors
+    ```
+Then you can get the offline quantized model in the path specified by `--checkpoint_path`and use it in WebUI (remember to tick the **Model Quantization(int8) Speed Up** option).
 
-> Note: When you are using a quantized model, you should **not** tick the **Model Quantization(int8) Speed Up** option.
+> Note:
+> - Make sure that the safetensors file and the {model_name}_sd_calibrate_info.txt file are in the same folder, so that the OneDiff script can read the calibration file for this offline quantization model.
+>
+> - When you set conv_ssim_threshold and linear_ssim_threshold to a too high value, the number of quantized modules will be very few, and you will obtain too low acceleration benefits.
+>
+> - When you set conv_ssim_threshold and linear_ssim_threshold to a too low value, the number of quantized modules will be very large, and you will obtain a higher acceleration benefits, but the quality of generated image may decrease significantly
+>
+> - When you are using offline quantized model, do remember to tick the **Model Quantization(int8) Speed Up** option, otherwise abnormal image may be generated.
 
 
 ## Diffusers with OneDiff Enterprise
 
-### SDXL
+### Accessing Diffusers Models
+
+To download the necessary models, please visit the [siliconflow/stable-diffusion-v1-5-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-enterprise) on HuggingFace. Please visit [Hugging Face - stable-diffusion-v2-1-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-enterprise). Additionally, to use the quantized model customized for DeepCache, please visit the [siliconflow/stable-diffusion-v1-5-onediff-deepcache-int8](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-deepcache-int8).
+
+<a id="diffusers-sd-1-5"></a>
+#### Diffusers-SD-1.5
+
+#### Scripts
+
+Run [text_to_image_sd_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py) by command:
+
+```bash
+python text_to_image_sd_enterprise.py --model $model_path --saved_image output_sd.png
+```
+
+Type `python3 text_to_image_sd_enterprise.py -h` for more options.
+
+<a id="diffusers-sd-2-1"></a>
+#### Diffusers-SD-2.1
+
+```bash
+python text_to_image_sd_enterprise.py --model $model_path --saved_image output_sd.png
+```
+
+#### Diffusers-SD-1.5 + DeepCache
+
+Ensure that you have installed [OneDiffX](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sd_sdxl_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_deep_cache_sd_sdxl_enterprise.py) by command:
+
+```bash
+python text_to_image_deep_cache_sd_sdxl_enterprise.py --model $model_path --model_type sd --saved_image output_deepcache_sd.png
+```
+
+### Diffusers SDXL
 
 #### Accessing Diffusers Models
 
@@ -238,13 +349,13 @@ Type `python3 text_to_image_sdxl_enterprise.py -h` for more options.
 
 #### SDXL + DeepCache
 
-Ensure that you have installed [OneDiffX](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sdxl_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_deep_cache_sdxl_enterprise.py) by command:
+Ensure that you have installed [OneDiffX](onediff_diffusers_extensions/README.md#install-and-setup) and then run [text_to_image_deep_cache_sd_sdxl_enterprise.py](onediff_diffusers_extensions/examples/text_to_image_deep_cache_sd_sdxl_enterprise.py) by command:
 
 ```bash
-python text_to_image_deep_cache_sdxl_enterprise.py --model $model_path --saved_image output_deepcache.png
+python text_to_image_deep_cache_sd_sdxl_enterprise.py --model $model_path --model_type sdxl --saved_image output_deepcache.png
 ```
 
-### SVD
+### Diffusers SVD
 
 #### Accessing Diffusers Models
 

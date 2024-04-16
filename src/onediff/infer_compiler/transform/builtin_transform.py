@@ -3,7 +3,7 @@
 import os
 import importlib
 import types
-import inspect
+import traceback
 from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
@@ -15,8 +15,8 @@ from .manager import transform_mgr
 from ..utils.log_utils import logger
 from ..utils.patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
-from functools import singledispatch
 
+from .patch_for_comfy import PatchForComfy
 __all__ = [
     "proxy_class",
     "ProxySubmodule",
@@ -25,7 +25,6 @@ __all__ = [
     "torch2oflow",
     "default_converter",
 ]
-
 
 def singledispatch_proxy(func):
     dispatcher = singledispatch(func)
@@ -41,6 +40,8 @@ def singledispatch_proxy(func):
             raise NotImplementedError(f"Transform failed of {type(first_param)}: {e}")
         after = result.__class__.__name__
 
+        # path for comfyui
+        PatchForComfy(result)(first_param)
         description = f"{before} transformed to  {after}"
 
         if before not in after and description not in _warning_set:
@@ -54,7 +55,12 @@ def singledispatch_proxy(func):
 
 
 def proxy_class(cls: type):
-    return transform_mgr.transform_cls(cls)
+    try:
+        out = transform_mgr.transform_cls(cls)
+        return out 
+    except Exception as e:
+        # If an exception occurs during transformation, print traceback for debugging
+        raise RuntimeError(f"An exception occurred during class transformation:\n{traceback.format_exc()}\nException: {e}")
 
 
 def reverse_proxy_class(cls: type):
@@ -375,20 +381,9 @@ def _(mod: torch.Tensor, verbose=False) -> flow.Tensor:
     return flow.utils.tensor.from_torch(mod)
 
 
-_dtype_map = {
-    "torch.float16": flow.float16,
-    "torch.float32": flow.float32,
-    "torch.double": flow.double,
-    "torch.int8": flow.int8,
-    "torch.int32": flow.int32,
-    "torch.int64": flow.int64,
-    "torch.uint8": flow.uint8,
-}
-
-
 @torch2oflow.register
 def _(mod: torch.dtype, verbose=False) -> flow.dtype:
-    return _dtype_map[str(mod)]
+    return getattr(flow, mod.__str__().replace("torch.", ""))
 
 
 @torch2oflow.register

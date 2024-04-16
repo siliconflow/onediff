@@ -1,18 +1,16 @@
+from packaging import version
 from typing import Union, Dict
 from collections import defaultdict
 
 import torch
-from onediff.infer_compiler.with_oneflow_compile import DeployableModule
+from onediff.infer_compiler.deployable_module import DeployableModule
 from onediff.infer_compiler.utils.log_utils import logger
 from diffusers.models.lora import (
     LoRACompatibleConv,
     LoRACompatibleLinear,
 )
-
-from .utils import fuse_lora, get_adapter_names
-
+from .utils import fuse_lora, get_adapter_names, is_peft_available
 from diffusers.utils import is_accelerate_available
-from diffusers.utils.import_utils import is_peft_available
 
 if is_peft_available():
     import peft
@@ -97,6 +95,48 @@ def load_lora_into_unet(
     )
 
 
+# The code is referenced from https://github.com/huggingface/diffusers/blob/ce9825b56bd8a6849e68b9590022e935400659e6/src/diffusers/loaders/unet.py#L383
+def _convert_state_dict_legacy_attn_format(self, state_dict, network_alphas):
+    is_new_lora_format = all(
+        key.startswith(self.unet_name) or key.startswith(self.text_encoder_name)
+        for key in state_dict.keys()
+    )
+    if is_new_lora_format:
+        # Strip the `"unet"` prefix.
+        is_text_encoder_present = any(
+            key.startswith(self.text_encoder_name) for key in state_dict.keys()
+        )
+        if is_text_encoder_present:
+            warn_message = "The state_dict contains LoRA params corresponding to the text encoder which are not being used here. To use both UNet and text encoder related LoRA params, use [`pipe.load_lora_weights()`](https://huggingface.co/docs/diffusers/main/en/api/loaders#diffusers.loaders.LoraLoaderMixin.load_lora_weights)."
+            logger.warning(warn_message)
+        unet_keys = [k for k in state_dict.keys() if k.startswith(self.unet_name)]
+        state_dict = {
+            k.replace(f"{self.unet_name}.", ""): v
+            for k, v in state_dict.items()
+            if k in unet_keys
+        }
+
+    # change processor format to 'pure' LoRACompatibleLinear format
+    if any("processor" in k.split(".") for k in state_dict.keys()):
+
+        def format_to_lora_compatible(key):
+            if "processor" not in key.split("."):
+                return key
+            return (
+                key.replace(".processor", "")
+                .replace("to_out_lora", "to_out.0.lora")
+                .replace("_lora", ".lora")
+            )
+
+        state_dict = {format_to_lora_compatible(k): v for k, v in state_dict.items()}
+
+        if network_alphas is not None:
+            network_alphas = {
+                format_to_lora_compatible(k): v for k, v in network_alphas.items()
+            }
+    return state_dict, network_alphas
+
+
 def _load_attn_procs(
     self,
     pretrained_model_name_or_path_or_dict: Union[str, Dict[str, torch.Tensor]],
@@ -120,9 +160,14 @@ def _load_attn_procs(
 
     if is_lora:
         # correct keys
-        state_dict, network_alphas = self.convert_state_dict_legacy_attn_format(
-            state_dict, network_alphas
-        )
+        if hasattr(self, "convert_state_dict_legacy_attn_format"):
+            state_dict, network_alphas = self.convert_state_dict_legacy_attn_format(
+                state_dict, network_alphas
+            )
+        else:
+            state_dict, network_alphas = _convert_state_dict_legacy_attn_format(
+                self, state_dict, network_alphas
+            )
 
         if network_alphas is not None:
             network_alphas_keys = list(network_alphas.keys())

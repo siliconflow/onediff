@@ -1,15 +1,22 @@
 import os
+import re
 import warnings
 import gradio as gr
+from pathlib import Path
+from typing import Union, Dict
 import modules.scripts as scripts
 import modules.shared as shared
+from modules.sd_models import select_checkpoint
 from modules.processing import process_images
 
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
+from onediff_hijack import do_hijack as onediff_do_hijack
 
+from onediff.infer_compiler.utils.log_utils import logger
+from onediff.infer_compiler.utils.param_utils import get_constant_folding_info
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -34,31 +41,49 @@ def generate_graph_path(ckpt_name: str, model_name: str) -> str:
     return graph_file_path
 
 
-def is_compiled(ckpt_name):
-    global compiled_unet, compiled_ckpt_name
+def get_calibrate_info(filename: str) -> Union[None, Dict]:
+    calibration_path = Path(select_checkpoint().filename).parent / filename
+    if not calibration_path.exists():
+        return None
 
-    return compiled_unet is not None and compiled_ckpt_name == ckpt_name
+    logger.info(f"Got calibrate info at {str(calibration_path)}")
+    calibrate_info = {}
+    with open(calibration_path, "r") as f:
+        for line in f.readlines():
+            line = line.strip()
+            items = line.split(" ")
+            calibrate_info[items[0]] = [
+                float(items[1]),
+                int(items[2]),
+                [float(x) for x in items[3].split(",")],
+            ]
+    return calibrate_info
 
 
 def compile_unet(
-    unet_model, quantization=False, *, use_graph=True, options={},
+    unet_model, quantization=False, *, options=None,
 ):
     from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
     from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
 
-    if quantization:
-        unet_model = quantize_model(unet_model, inplace=False)
-
     if isinstance(unet_model, UNetModelLDM):
-        return compile_ldm_unet(unet_model, use_graph=use_graph, options=options)
+        compiled_unet = compile_ldm_unet(unet_model, options=options)
     elif isinstance(unet_model, UNetModelSGM):
-        return compile_sgm_unet(unet_model, use_graph=use_graph, options=options)
+        compiled_unet = compile_sgm_unet(unet_model, options=options)
     else:
         warnings.warn(
             f"Unsupported model type: {type(unet_model)} for compilation , skip",
             RuntimeWarning,
         )
-        return unet_model
+        compiled_unet = unet_model
+    if quantization:
+        calibrate_info = get_calibrate_info(
+            f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt"
+        )
+        compiled_unet = quantize_model(
+            compiled_unet, inplace=False, calibrate_info=calibrate_info
+        )
+    return compiled_unet
 
 
 class UnetCompileCtx(object):
@@ -78,6 +103,8 @@ class UnetCompileCtx(object):
 
 
 class Script(scripts.Script):
+    current_type = None
+
     def title(self):
         return "onediff_diffusion_model"
 
@@ -117,7 +144,34 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
+    def check_model_structure_change(self, model):
+        is_changed = False
+
+        def get_model_type(model):
+            return {
+                "is_sdxl": model.is_sdxl,
+                "is_sd2": model.is_sd2,
+                "is_sd1": model.is_sd1,
+                "is_ssd": model.is_ssd,
+            }
+
+        if self.current_type == None:
+            is_changed = True
+        else:
+            for key, v in self.current_type.items():
+                if v != getattr(model, key):
+                    is_changed = True
+                    break
+
+        if is_changed == True:
+            self.current_type = get_model_type(model)
+        return is_changed
+
     def run(self, p, quantization=False):
+        # For OneDiff Community, the input param `quantization` is a HTML string
+        if isinstance(quantization, str):
+            quantization = False
+
         global compiled_unet, compiled_ckpt_name
         current_checkpoint = shared.opts.sd_model_checkpoint
         original_diffusion_model = shared.sd_model.model.diffusion_model
@@ -126,25 +180,23 @@ class Script(scripts.Script):
             current_checkpoint + "_quantized" if quantization else current_checkpoint
         )
 
-        if not is_compiled(ckpt_name):
-            # graph_file = generate_graph_path(
-            #     ckpt_name, original_diffusion_model.__class__.__name__
-            # )
-            # graph_file_device = shared.device
-            # compile_options = {
-            #     "graph_file_device": graph_file_device,
-            #     "graph_file": graph_file,
-            # }
-            # TODO: fix compile_options
-            compile_options = {}
+        model_changed = ckpt_name != compiled_ckpt_name
+        model_structure_changed = self.check_model_structure_change(shared.sd_model)
+        need_recompile = (quantization and model_changed) or model_structure_changed
 
+        if need_recompile:
             compiled_unet = compile_unet(
-                original_diffusion_model,
-                quantization=quantization,
-                options=compile_options,
+                original_diffusion_model, quantization=quantization
             )
             compiled_ckpt_name = ckpt_name
+        else:
+            logger.info(
+                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
+            )
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         return proc
+
+
+onediff_do_hijack()

@@ -22,10 +22,11 @@ setup(
     python_requires=">=3.7.0",
     install_requires=[
         "transformers>=4.27.1",
-        "diffusers>=0.24.0,<=0.26.2",
+        "diffusers>=0.19.3,<=0.27.0",
         "accelerate",
         "torch",
         "onefx",
+        "omegaconf",
     ],
     classifiers=[
         "Development Status :: 5 - Production/Stable",

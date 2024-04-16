@@ -6,11 +6,11 @@ torch.compile example: python examples/text_to_image_sdxl.py --compile_with_dyna
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 from diffusers import DiffusionPipeline
-from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile, CompileOptions
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -53,9 +53,9 @@ base.to("cuda")
 # Compile unet with oneflow
 if cmd_args.compile:
     print("unet is compiled to oneflow.")
-    base.unet = oneflow_compile(
-        base.unet, options={"size": cmd_args.num_dynamic_input_size}
-    )
+    compile_options = CompileOptions()
+    compile_options.oneflow.max_cached_graph_size = cmd_args.num_dynamic_input_size
+    base.unet = oneflow_compile(base.unet, options=compile_options)
 
 # Compile unet with torch.compile to oneflow.
 # Note this is at alpha stage(experimental) and may be changed later.

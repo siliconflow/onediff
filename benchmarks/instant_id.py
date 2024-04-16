@@ -1,8 +1,10 @@
+# Requirements: diffusers==0.25.1.
+# Reference: https://github.com/InstantID/InstantID/blob/main/gradio_demo/requirements.txt
 REPO = None
 FACE_ANALYSIS_ROOT = None
 MODEL = "wangqixun/YamerMIX_v8"
 VARIANT = None
-CUSTOM_PIPELINE = None
+CUSTOM_PIPELINE = "pipeline_stable_diffusion_xl_instantid"
 SCHEDULER = "EulerAncestralDiscreteScheduler"
 LORA = None
 CONTROLNET = "InstantX/InstantID"
@@ -98,15 +100,16 @@ def load_pipe(
             controlnet, torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
-    is_quantized_model = False
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
-        is_quantized_model = True
-        from onediff.quantization import setup_onediff_quant
+        from onediff.quantization import QuantPipeline
 
-        setup_onediff_quant()
-    pipe = pipeline_cls.from_pretrained(
-        model_name, torch_dtype=torch.float16, **extra_kwargs
-    )
+        pipe = QuantPipeline.from_pretrained(
+            pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
+        )
+    else:
+        pipe = pipeline_cls.from_pretrained(
+            model_name, torch_dtype=torch.float16, **extra_kwargs
+        )
     if scheduler is not None:
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
@@ -115,14 +118,6 @@ def load_pipe(
         pipe.fuse_lora()
     pipe.safety_checker = None
     pipe.to(torch.device("cuda"))
-
-    # Replace quantizable modules by QuantModule.
-    if is_quantized_model:
-        from onediff.quantization import load_calibration_and_quantize_pipeline
-
-        load_calibration_and_quantize_pipeline(
-            os.path.join(model_name, "calibrate_info.txt"), pipe
-        )
     return pipe
 
 
@@ -156,9 +151,6 @@ def main():
     args = parse_args()
 
     assert (
-        args.repo is not None
-    ), "Please set `--repo` to the local path of the cloned repo of https://github.com/InstantID/InstantID"
-    assert (
         args.controlnet is not None
     ), "Please set `--controlnet` to the name or path of the controlnet"
     assert (
@@ -186,12 +178,19 @@ def main():
             with open(attention_processor_path, "w") as f:
                 f.write(content)
 
-    sys.path.insert(0, args.repo)
+    custom_pipeline = None
+    draw_kps = None
+    if args.repo is None:
+        custom_pipeline = args.custom_pipeline
+        from diffusers import DiffusionPipeline
+        pipeline_cls = DiffusionPipeline
+    else:
+        sys.path.insert(0, args.repo)
 
-    from pipeline_stable_diffusion_xl_instantid import (
-        StableDiffusionXLInstantIDPipeline,
-        draw_kps,
-    )
+        from pipeline_stable_diffusion_xl_instantid import (
+            StableDiffusionXLInstantIDPipeline as pipeline_cls,
+            draw_kps,
+        )
 
     if os.path.exists(args.controlnet):
         controlnet = args.controlnet
@@ -209,19 +208,20 @@ def main():
     controlnet_path = os.path.join(controlnet, "ControlNetModel")
 
     pipe = load_pipe(
-        StableDiffusionXLInstantIDPipeline,
+        pipeline_cls,
         args.model,
         variant=args.variant,
-        custom_pipeline=args.custom_pipeline,
+        custom_pipeline=custom_pipeline,
         scheduler=args.scheduler,
         lora=args.lora,
         controlnet=controlnet_path,
     )
 
+    if draw_kps is None:
+        draw_kps = sys.modules[pipe.__module__].draw_kps
+
     pipe.load_ip_adapter_instantid(face_adapter)
 
-    height = args.height
-    width = args.width
     height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
     width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
 
@@ -289,12 +289,10 @@ def main():
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
     kwarg_inputs = get_kwarg_inputs()
-    iter_profiler = None
+    iter_profiler = IterationProfiler()
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
-        iter_profiler = IterationProfiler()
         kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
     elif "callback" in inspect.signature(pipe).parameters:
-        iter_profiler = IterationProfiler()
         kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
     begin = time.time()
     output_images = pipe(**kwarg_inputs).images
