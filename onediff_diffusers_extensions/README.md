@@ -281,11 +281,11 @@ Set the LoRA layers of `adapter_name` for the unet and text-encoder(s) with rela
 
 #### `onediffx.lora.delete_adapters``
 
-`onediffx.lora.delete_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str])`
+`onediffx.lora.delete_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str] = None)`
 
 Deletes the LoRA layers of `adapter_name` for the unet and text-encoder(s).
 
-- adapter_names (`str` or `List[str]`): The names of the adapter to delete. Can be a single string or a list of strings
+- adapter_names (`str` or `List[str]`, *optional*): The names of the adapter to delete. Can be a single string or a list of strings. If is None, all adapters will be deleted.
 
 ### Example
 
