@@ -149,7 +149,7 @@ def set_and_fuse_adapters(
         pipeline.text_encoder_2.apply(set_adapters_apply)
 
 
-def delete_adapters(self, adapter_names: Union[List[str], str]):
+def delete_adapters(self, adapter_names: Union[List[str], str] = None):
     if isinstance(adapter_names, str):
         adapter_names = [adapter_names]
 

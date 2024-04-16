@@ -40,6 +40,8 @@ def init_lora_infos(self: torch.nn.Module):
 
 
 def delete_lora_infos(self, adapter_names):
+    if adapter_names is None:
+        adapter_names = list(self.adapter_names.copy())
     curr_adapter_names = self.adapter_names.copy()
     for adapter_name in adapter_names:
         if adapter_name not in curr_adapter_names:
