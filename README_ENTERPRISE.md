@@ -13,6 +13,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [For NA/EU users](#for-naeu-users)
     - [For CN users](#for-cn-users)
 - [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
+    - [Online Quantization for ComfyUI](#online-quantization-for-comfyUI)
     - [ComfyUI SD 1.5](#comfyui-sd-1-5)
     - [ComfyUI SD 2.1](#comfyui-sd-2-1)    
     - [ComfyUI SDXL](#comfyui-sdxl)
@@ -95,8 +96,8 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 
 **NOTE2**: It should be noted that you need to make sure you are logged in to [Hugging Face](https://huggingface.co/) before clicking the "Workflow" link below.
 
-<a id="Online quantization for comfyUI"></a>
-### Online quantization for comfyUI
+<a id="online-quantization-for-comfyUI"></a>
+### Online Quantization for ComfyUI
 
   We provide ComfyUI with an online quantification tool, which has significant acceleration effects. We provide detailed documentation tutorials [ComfyUI online quantitative usage documentation in wiki](https://github.com/siliconflow/onediff/blob/wiki/ComfyUI_Online_Quantization.md) for users who want to use.
 
