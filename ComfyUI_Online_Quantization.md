@@ -9,7 +9,7 @@
 ## Usage:
 | Option                                 | Range  | Default | Description                                                                  |
 | -------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------- |
-| quantized_conv_percentage                | [0, 100] | 100     |  Example value representing 100% quantization for linear layers｜
+| quantized_conv_percentage                | [0, 100] | 100     |  Example value representing 100% quantization for linear layers     |
 | quantized_linear_percentage           | [0, 100] | 100     | Example value representing 100% quantization for convolutional layers  |
 | conv_compute_density_threshold    | [0, ∞) | 100     | Computational density threshold for quantizing convolutional modules to 100. |
 | linear_compute_density_threshold  | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
