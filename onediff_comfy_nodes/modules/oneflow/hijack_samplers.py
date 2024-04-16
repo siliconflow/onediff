@@ -8,8 +8,7 @@ from comfy.samplers import (can_concat_cond, cond_cat,
 
 from ..sd_hijack_utils import Hijacker
 from .utils.booster_utils import is_using_oneflow_backend
-
-
+from .patch_management import PatchType, create_patch_executor
 
 def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
     out_conds = []
@@ -93,7 +92,8 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
 
         diff_model = model.diffusion_model
-        if getattr(diff_model, "use_cross_attention_patch", False):
+        
+        if create_patch_executor(PatchType.C_C_Patch).check_patch(diff_model):
             transformer_options["sigmas"] = timestep[0].item()
         else:
             transformer_options["sigmas"] = timestep

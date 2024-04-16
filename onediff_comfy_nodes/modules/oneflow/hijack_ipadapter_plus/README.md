@@ -4,13 +4,13 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 
 - ComfyUI:
   - github: https://github.com/comfyanonymous/ComfyUI
-  - commit: 5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1 
-  - Date:   Wed Mar 20 20:48:54 2024 -0400
-
+  - commit: 4bd7d55b9028d79829a645edfe8259f7b7a049c0 
+  - Date: Thu Apr 11 22:43:05 2024 -0400
+  
 - ComfyUI_IPAdapter_plus:
   - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
-  - commit: 477217b364de427827f181cf11404bfc34181c41 
-  - Date:   Tue Mar 26 15:02:27 2024 +0100
+  - commit 417d806e7a2153c98613e86407c1941b2b348e88 
+  - Date:  Wed Apr 10 13:28:41 2024 +0200
   
 - OneDiff:
   - github: https://github.com/siliconflow/onediff 
@@ -25,7 +25,8 @@ Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 
-![ipadapter_example](https://github.com/siliconflow/onediff/assets/109639975/a5f9478b-930a-41e3-92a8-fc54ddf9e9ba)
+![ipadapter_example](https://github.com/siliconflow/onediff/assets/109639975/adb2df92-b0f0-4650-ae02-5fd458209b92)
+
 
 
  | PyTorch                                                                                                | OneDiff                                                                                                  |
@@ -49,7 +50,7 @@ As follows:
 | Dynamic Batch Size | No        |
 | Vae Speed Up       | Yes       |
 
-<div style="display: flex;">
+<!-- <div style="display: flex;">
 <div style="flex: 1;">
         <img width="645" alt="image" src="https://github.com/siliconflow/onediff/assets/109639975/339e489e-aec7-488a-a242-276abfcf1cc3">
     </div>
@@ -64,11 +65,11 @@ As follows:
             <tbody>
                 <tr>
                     <td>weight</td>
-                    <td>Yes</td>
+                    <td>No</td>
                 </tr>
                 <tr>
                     <td>noise</td>
-                    <td>Yes</td>
+                    <td>No</td>
                 </tr>
                 <tr>
                     <td>weight_type</td>
@@ -88,7 +89,7 @@ As follows:
             </tbody>
         </table>
   </div>
-</div>
+</div> -->
 
 ## Contact
 

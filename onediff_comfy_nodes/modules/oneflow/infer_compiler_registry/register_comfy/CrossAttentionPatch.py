@@ -3,7 +3,7 @@ https://github.com/cubiq/ComfyUI_InstantID/blob/main/CrossAttentionPatch.py
 https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/main/CrossAttentionPatch.py
 """
 import math
-
+import copy
 import oneflow as torch
 import oneflow.nn.functional as F
 
@@ -57,7 +57,7 @@ class CrossAttentionPatch:
     # forward for patching
     def __init__(self, ipadapter=None, number=0, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
         super().__init__()
-        self.weights = [weight]
+        self.weights = [torch.tensor(weight)]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
         self.conds_alt = [cond_alt]
@@ -74,8 +74,10 @@ class CrossAttentionPatch:
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
 
+        self.cache_map = {}
+
     def set_new_condition(self, ipadapter=None, number=0, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
-        self.weights.append(weight)
+        self.weights.append(torch.tensor(weight))
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
         self.conds_alt.append(cond_alt)
@@ -132,8 +134,8 @@ class CrossAttentionPatch:
                         cond = cond_alt[t_idx]
                         del cond_alt
 
-                if weight == 0:
-                    continue
+                # if weight == 0:
+                #     continue
 
                 if unfold_batch and cond.shape[0] > 1:
                     # Check AnimateDiff context window
@@ -229,18 +231,27 @@ class CrossAttentionPatch:
     
     def to(self, *args,**kwargs):
         return self
+    
+    
+    def set_cache(self, key, value):
+        self.cache_map[key] = value
 
-    def update(self, patch_kwargs):
+    def retrieve_from_cache(self, key, default=None):
+        return self.cache_map.get(key, default)
+    
+    def update(self, idx=0, patch_kwargs={}):
+        # TODO support 
+        print(f"Warning: {type(self)} Dynamic modification is not supported.")
+
         weight = patch_kwargs.pop("weight")
-        self.weights[0].copy_(torch.Tensor(weight))
+        self.weights[idx].copy_(torch.tensor(weight))
 
         cond = patch_kwargs.pop("cond")
-        self.conds[0].copy_(cond)
+        self.conds[idx].copy_(cond)
 
         uncond = patch_kwargs.pop("uncond")
-        self.unconds[0].copy_(uncond)
+        self.unconds[idx].copy_(uncond)
 
-        # TODO support 
         # patch_weight_type = patch_kwargs.pop("weight_type")
 
         # sigma_start = patch_kwargs.pop("sigma_start")

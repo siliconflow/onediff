@@ -4,9 +4,10 @@ from comfy.model_base import SVD_img2vid
 from comfy.model_patcher import ModelPatcher
 from comfy.model_base import BaseModel
 
-from onediff.infer_compiler.oneflow import \
-    OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
 from onediff.infer_compiler.utils import set_boolean_env_var
+from ..patch_management import create_patch_executor, PatchType
+
 
 def set_compiled_options(module: DeployableModule, graph_file="unet"):
     assert isinstance(module, DeployableModule)
@@ -30,6 +31,7 @@ def is_fp16_model(model):
             return True
     return False
 
+
 def get_model_type(model):
     """
     Get the types of the parameters in the model.
@@ -45,6 +47,7 @@ def get_model_type(model):
         type_set.add(param.dtype)
     return type_set
 
+
 def set_environment_for_svd_img2vid(model: ModelPatcher):
     if isinstance(model, ModelPatcher) and isinstance(model.model, SVD_img2vid):
         # TODO(fengwen) check it affect performance
@@ -54,26 +57,22 @@ def set_environment_for_svd_img2vid(model: ModelPatcher):
             "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M", False
         )
 
-    
+
 def is_using_oneflow_backend(module):
+    dc_patch_executor = create_patch_executor(PatchType.DCUNetExecutorPatch)
     if isinstance(module, ModelPatcher):
-        deep_cache_module = getattr(module,"deep_cache_unet", None)
-        if deep_cache_module and  isinstance(deep_cache_module, DeployableModule):
+        deep_cache_module = dc_patch_executor.get_patch(module)
+        if deep_cache_module[0] and isinstance(deep_cache_module[0], DeployableModule):
             return True
         diff_model = module.model.diffusion_model
         return isinstance(diff_model, DeployableModule)
-    
+
     if isinstance(module, BaseModel):
-        if getattr(module, "use_deep_cache_unet", False):
+        if dc_patch_executor.is_use_deep_cache_unet(module):
             return True
         return isinstance(module.diffusion_model, DeployableModule)
 
     if isinstance(module, DeployableModule):
         return True
-    
+
     raise RuntimeError("")
-        
-
-
-
-

@@ -5,7 +5,7 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 - ComfyUI:
   - github: https://github.com/comfyanonymous/ComfyUI
   - commit: 4bd7d55b9028d79829a645edfe8259f7b7a049c0 
-  - Date:   Date:   Thu Apr 11 22:43:05 2024 -0400
+  - Date:   Thu Apr 11 22:43:05 2024 -0400
   
 - ComfyUI_InstantID:
   - github: https://github.com/cubiq/ComfyUI_InstantID

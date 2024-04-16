@@ -12,4 +12,5 @@ class PatchNamedArg(NamedArg):
         name = getattr(self, "_name", None)
         setattr(self, "_name", str(name) if name is not None else None)
 
+
 flow.framework.args_tree.NamedArg = PatchNamedArg
