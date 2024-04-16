@@ -6,9 +6,36 @@
 # <div align="center">OneDiff Quant 🚀 NEW Documentation</div>
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
+Here's the optimized results, Timings for 30 steps in Diffusers-SDXL at 1024x1024
+| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| ----------------------- | ------------------------ | ------------------ | ------------------------ |
+| NVIDIA GeForce RTX 3090 | 8.03 s                   | 4.44 s ( ~44.7%)   | **3.34 s ( ~58.4%)**         |
+
+- torch   {version: 2.2.1+cu121}
+- oneflow {version: 0.9.1.dev20240406+cu121, enterprise: True}
+
+
+Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1024
+| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| ----------------------- | ------------------------ | ------------------ | ------------------------ |
+| NVIDIA GeForce RTX 3090 | 6.87 s                   | 3.41 s ( ~50.3%)   | **3.13 s ( ~54.4%)**         |
+
+- torch   {version: 2.2.2+cu121}
+- oneflow {version:  0.9.1.dev20240403+cu122, enterprise: True}
+
 **Note**: Before proceeding with this document, please ensure you are familiar with the [OneDiff Community](../../../README.md) features and OneDiff ENTERPRISE  by referring to the  [ENTERPRISE Guide](../../../README_ENTERPRISE.md#install-onediff-enterprise)
 
 
+- [OneDiff Quant 🚀 NEW Documentation](#onediff-quant--new-documentation)
+  - [Prepare environment](#prepare-environment)
+  - [Online Quant](#online-quant)
+  - [Offline Quant](#offline-quant)
+  - [Baseline (non-optimized)](#baseline-non-optimized)
+  - [OneDiff Quant(optimized)](#onediff-quantoptimized)
+  - [Quantify a custom model](#quantify-a-custom-model)
+  - [Community and Support](#community-and-support)
+
+## Prepare environment
 You need to complete the following environment dependency installation
 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
@@ -24,61 +51,6 @@ If you are a multi card user, please select the graphics card that executes the 
 
 **Note**: The log `*.pt` file is cached. Quantization result information can be found in `cache_dir/quantization_stats.json`.
 
-## Baseline (non-optimized)
-**Note: You can obtain the baseline by running the following command**
-
-```bash
-python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
-        --model_id  /PATH/TO/YOU/MODEL  \
-        --seed 1 \
-        --backend torch  --height 1024 --width 1024 --output_file sdxl_torch.png
-```
-
-
-## OneDiff Quant(optimized)
-
-Here's the optimized results, Timings for 30 steps in Diffusers-SDXL at 1024x1024
-| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
-| ----------------------- | ------------------------ | ------------------ | ------------------------ |
-| NVIDIA GeForce RTX 3090 | 8.03 s                   | 4.44 s ( ~44.7%)   | 3.34 s ( ~58.4%)         |
-
-- torch   {version: 2.2.1+cu121}
-- oneflow {version: 0.9.1.dev20240406+cu121, enterprise: True}
-
-
-Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1024
-| Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
-| ----------------------- | ------------------------ | ------------------ | ------------------------ |
-| NVIDIA GeForce RTX 3090 | 6.87 s                   | 3.41 s ( ~50.3%)   | 3.13 s ( ~54.4%)         |
-
-- torch   {version: 2.2.2+cu121}
-- oneflow {version:  0.9.1.dev20240403+cu122, enterprise: True}
-
-
-**Note: You can run it using the following command**
-
-```bash
-python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
-        --model_id  /PATH/TO/YOU/MODEL  \
-        --seed 1 \
-        --backend onediff \
-        --cache_dir ./run_sdxl_quant \
-        --height 1024 \
-        --width 1024 \
-        --output_file sdxl_quant.png   \
-        --quantize \
-        --conv_mae_threshold 0.1 \
-        --linear_mae_threshold 0.2 \
-        --conv_compute_density_threshold 900 \
-        --linear_compute_density_threshold 300
-```
-The parameters of the preceding command are shown in the following table
-| Option                                 | Range  | Default | Description                                                                  |
-| -------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------- |
-| --conv_mae_threshold 0.1               | [0, 1] | 0.1     | MAE threshold for quantizing convolutional modules to 0.1.                   |
-| --linear_mae_threshold 0.2             | [0, 1] | 0.2     | MAE threshold for quantizing linear modules to 0.2.                          |
-| --conv_compute_density_threshold 900   | [0, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
-| --linear_compute_density_threshold 300 | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
 
 ## Offline Quant
 
@@ -109,7 +81,43 @@ python ./src/onediff/quantization/quant_pipeline_test.py \
         --quantized_model ./quantized_model 
 ```
 
-## Quantify  a custom model
+## Baseline (non-optimized)
+**Note: You can obtain the baseline by running the following command**
+
+```bash
+python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
+        --model_id  /PATH/TO/YOU/MODEL  \
+        --seed 1 \
+        --backend torch  --height 1024 --width 1024 --output_file sdxl_torch.png
+```
+## OneDiff Quant(optimized)
+
+**Note: You can run it using the following command**
+
+```bash
+python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
+        --model_id  /PATH/TO/YOU/MODEL  \
+        --seed 1 \
+        --backend onediff \
+        --cache_dir ./run_sdxl_quant \
+        --height 1024 \
+        --width 1024 \
+        --output_file sdxl_quant.png   \
+        --quantize \
+        --conv_mae_threshold 0.1 \
+        --linear_mae_threshold 0.2 \
+        --conv_compute_density_threshold 900 \
+        --linear_compute_density_threshold 300
+```
+The parameters of the preceding command are shown in the following table
+| Option                                 | Range  | Default | Description                                                                  |
+| -------------------------------------- | ------ | ------- | ---------------------------------------------------------------------------- |
+| --conv_mae_threshold 0.1               | [0, 1] | 0.1     | MAE threshold for quantizing convolutional modules to 0.1.                   |
+| --linear_mae_threshold 0.2             | [0, 1] | 0.2     | MAE threshold for quantizing linear modules to 0.2.                          |
+| --conv_compute_density_threshold 900   | [0, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
+| --linear_compute_density_threshold 300 | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
+
+## Quantify a custom model
 
 To achieve quantization of custom models, please refer to the following script
 ```bash
