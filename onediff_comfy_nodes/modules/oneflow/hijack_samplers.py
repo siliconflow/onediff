@@ -1,14 +1,16 @@
 """hijack ComfyUI/comfy/samplers.py
-commit 4bd7d55b9028d79829a645edfe8259f7b7a049c0 
+commit: 4bd7d55b9028d79829a645edfe8259f7b7a049c0
+Date:   Thu Apr 11 22:43:05 2024 -0400
 """
 
 import torch
-from comfy.samplers import (can_concat_cond, cond_cat,
-                            get_area_and_mult, calc_cond_batch)
+from comfy.samplers import (calc_cond_batch, can_concat_cond, cond_cat,
+                            get_area_and_mult)
 
 from ..sd_hijack_utils import Hijacker
-from .utils.booster_utils import is_using_oneflow_backend
 from .patch_management import PatchType, create_patch_executor
+from .utils.booster_utils import is_using_oneflow_backend
+
 
 def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
     out_conds = []

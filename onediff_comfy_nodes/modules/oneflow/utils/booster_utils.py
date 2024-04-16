@@ -1,12 +1,12 @@
 import torch
 from comfy import model_management
-from comfy.model_base import SVD_img2vid
+from comfy.model_base import BaseModel, SVD_img2vid
 from comfy.model_patcher import ModelPatcher
-from comfy.model_base import BaseModel
 
 from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
 from onediff.infer_compiler.utils import set_boolean_env_var
-from ..patch_management import create_patch_executor, PatchType
+
+from ..patch_management import PatchType, create_patch_executor
 
 
 def set_compiled_options(module: DeployableModule, graph_file="unet"):

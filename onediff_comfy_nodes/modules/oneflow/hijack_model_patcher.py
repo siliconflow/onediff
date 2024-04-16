@@ -1,18 +1,19 @@
 import copy
+
 from comfy.model_patcher import ModelPatcher
-from ..sd_hijack_utils import Hijacker
-from .utils.booster_utils import is_using_oneflow_backend
 from register_comfy.CrossAttentionPatch import CrossAttentionPatch
+
+from ..sd_hijack_utils import Hijacker
 from .patch_management import PatchType, create_patch_executor
+from .utils.booster_utils import is_using_oneflow_backend
+
 
 def extract_and_clone_non_cross_attention(original_dict):
     # Initialize a new dictionary for storing extracted values
     new_dict = {}
 
-    # Iterate over the original dictionary
     for key, value in original_dict.items():
         if isinstance(value, dict):
-            # If the value is a dictionary, recursively process it
             new_value = extract_and_clone_non_cross_attention(value)
         elif isinstance(value, CrossAttentionPatch):
             new_value = value

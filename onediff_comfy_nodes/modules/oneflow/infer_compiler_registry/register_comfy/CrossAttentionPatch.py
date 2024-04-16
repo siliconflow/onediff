@@ -333,7 +333,6 @@ class CrossAttentionPatch:
         return self.cache_map.get(key, default)
 
     def update(self, key, patch_kwargs={}):
-        # TODO support
         idx = self.retrieve_from_cache(key)
 
         weight = patch_kwargs.pop("weight")
@@ -344,6 +343,11 @@ class CrossAttentionPatch:
 
         uncond = patch_kwargs.pop("uncond")
         self.unconds[idx].copy_(uncond)
+
+        mask = patch_kwargs.pop("mask")
+        if mask:
+            self.masks[idx].copy_(mask)
+            
 
         # patch_weight_type = patch_kwargs.pop("weight_type")
 
