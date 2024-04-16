@@ -25,22 +25,17 @@ def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
         to["patches_replace"] = {}
     if "attn2" not in to["patches_replace"]:
         to["patches_replace"]["attn2"] = {}
-        
-    if key in cache_dict:
-        patch: CrossAttentionPatch_OF = cache_dict[key]
-        value = patch.retrieve_from_cache(id(patch), None)
-        if value is not None:
-            patch.update(value, patch_kwargs)
-            return 
-        
+
     if key not in to["patches_replace"]["attn2"]:
-        patch = CrossAttentionPatch_OF(**patch_kwargs)
+        if key not in cache_dict:
+            patch = CrossAttentionPatch_OF(**patch_kwargs)
+            cache_dict[key] = patch
+
+        patch: CrossAttentionPatch_OF = cache_dict[key]
+
         to["patches_replace"]["attn2"][key] = patch
-        patch.set_cache(id(patch), len(patch.weights) - 1)
-        cache_dict[key] = patch
     else:
         to["patches_replace"]["attn2"][key].set_new_condition(**patch_kwargs)
-        patch.set_cache(id(patch), len(patch.weights) - 1)
 
 
 
