@@ -332,9 +332,9 @@ class CrossAttentionPatch:
     def retrieve_from_cache(self, key, default=None):
         return self.cache_map.get(key, default)
 
-    def update(self, idx=0, patch_kwargs={}):
+    def update(self, key, patch_kwargs={}):
         # TODO support
-        print(f"Warning: {type(self)} Dynamic modification is not supported.")
+        idx = self.retrieve_from_cache(key)
 
         weight = patch_kwargs.pop("weight")
         self.weights[idx].copy_(torch.tensor(weight))

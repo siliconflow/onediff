@@ -6,6 +6,7 @@ from register_comfy.CrossAttentionPatch import CrossAttentionPatch
 
 
 class PatchExecutorBase(ABC):
+
     @abstractmethod
     def check_patch(self):
         pass
@@ -17,6 +18,25 @@ class PatchExecutorBase(ABC):
     @abstractmethod
     def get_patch(self):
         pass
+
+class CrossAttentionUpdatePatch(PatchExecutorBase):
+    def __init__(self) -> None:
+        self.patch_name = type(self).__name__
+    
+    def check_patch(self, module: ModelPatcher)->bool:
+        return hasattr(module, self.patch_name)
+    
+    def set_patch(self, module: ModelPatcher, value: int):
+        setattr(module, self.patch_name, value)
+    
+    def get_patch(self, module: ModelPatcher)->int:
+        if not self.check_patch(module):
+            return -1 
+        return getattr(module, self.patch_name) 
+    
+    def copy_to(self, old_model: ModelPatcher, new_model: ModelPatcher):
+        value = self.get_patch(old_model)
+        self.set_patch(new_model, value + 1)
 
 
 class CachedCrossAttentionPatch(PatchExecutorBase):

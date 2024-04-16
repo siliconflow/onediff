@@ -38,6 +38,9 @@ def clone_oneflow(org_fn, self):
         n.model_options = extract_and_clone_non_cross_attention(self.model_options)
     else:
         n.model_options = copy.deepcopy(self.model_options)
+    
+    create_patch_executor(PatchType.CrossAttentionUpdatePatch).copy_to(self, n)
+    
     n.model_keys = self.model_keys
     n.backup = self.backup
     n.object_patches_backup = self.object_patches_backup
