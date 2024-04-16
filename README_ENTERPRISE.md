@@ -42,7 +42,9 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
 
 Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
-Once you have completed your purchase, you can execute the following  ```export SILICON_ONEDIFF_LICENSE_KEY= $YOUR_KEY ``` in the terminal
+Once you have completed your purchase, you can execute the following\
+```export SILICON_ONEDIFF_LICENSE_KEY= $YOUR_KEY ```\
+in the terminal
 
 ## Install OneDiff Enterprise
 
