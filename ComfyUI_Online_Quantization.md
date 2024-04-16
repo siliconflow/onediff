@@ -17,7 +17,7 @@
 Notes:
 
 1. Specify the directory for saving graphsusing export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs".
-2. The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
+2. The log `*.pt` file is cached. Quantization result information can be found in `cache_dir/quantization_stats.json`.
 
 ## Performance Comparison
 
