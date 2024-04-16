@@ -18,7 +18,7 @@ __all__ = [
     "ModelSpeedup",
     "VaeSpeedup",
     "ControlnetSpeedup",
-    "OneDiffApplyModelBooster"
+    "OneDiffApplyModelBooster",
     "OneDiffControlNetLoader",
     "OneDiffCheckpointLoaderSimple"
 ]

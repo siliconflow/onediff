@@ -30,9 +30,7 @@ class CrossAttentionUpdatePatch(PatchExecutorBase):
         setattr(module, self.patch_name, value)
     
     def get_patch(self, module: ModelPatcher)->int:
-        if not self.check_patch(module):
-            return -1 
-        return getattr(module, self.patch_name) 
+        return getattr(module, self.patch_name, -1) 
     
     def copy_to(self, old_model: ModelPatcher, new_model: ModelPatcher):
         value = self.get_patch(old_model)

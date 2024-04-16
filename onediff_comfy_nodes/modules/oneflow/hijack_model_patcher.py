@@ -49,6 +49,7 @@ def clone_oneflow(org_fn, self):
     dc_patch_executor = create_patch_executor(PatchType.DCUNetExecutorPatch)
     if dc_patch_executor.check_patch(self):
         dc_patch_executor.copy_to(self, n)
+        
     return n
 
 def cond_func(org_fn, self):

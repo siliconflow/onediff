@@ -23,6 +23,7 @@ def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
 
     cache_key = cau_patch_executor.get_patch(model)
     to = model.model_options["transformer_options"]
+    # print(f'ipa {cache_key=}')
 
     if "patches_replace" not in to:
         to["patches_replace"] = {}
@@ -31,7 +32,9 @@ def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
 
     if key in cache_dict:
         patch: CrossAttentionPatch_OF = cache_dict[key]
-        patch.update(cache_key, patch_kwargs)
+        if patch.retrieve_from_cache(cache_key) is not None:
+            patch.update(cache_key, patch_kwargs)
+            return 
 
     if key not in to["patches_replace"]["attn2"]:
         if key not in cache_dict:
