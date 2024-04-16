@@ -1,4 +1,4 @@
-# Online Quantization for comfyui
+# Online Quantization for Comfyui
 
 ## Install
 
