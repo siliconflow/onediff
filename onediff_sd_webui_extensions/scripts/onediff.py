@@ -1,11 +1,8 @@
-import torch
 import os
-import re
 import warnings
 import gradio as gr
 from pathlib import Path
 from typing import Union, Dict
-from packaging.version import parse
 import modules.scripts as scripts
 import modules.shared as shared
 from modules.sd_models import select_checkpoint
@@ -29,8 +26,6 @@ from oneflow import __version__ as oneflow_version
 """oneflow_compiled UNetModel"""
 compiled_unet = None
 compiled_ckpt_name = None
-
-reuse_graph_available = parse(torch.__version__) >= parse("2.1.0")
 
 def generate_graph_path(ckpt_name: str, model_name: str) -> str:
     base_output_dir = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
@@ -186,7 +181,6 @@ class Script(scripts.Script):
         model_changed = ckpt_name != compiled_ckpt_name
         model_structure_changed = self.check_model_structure_change(shared.sd_model)
         need_recompile = (quantization and model_changed) or model_structure_changed
-        need_recompile = need_recompile or (not reuse_graph_available)
 
         if need_recompile:
             compiled_unet = compile_unet(
