@@ -24,15 +24,14 @@ Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1
 
 **Note**: Before proceeding with this document, please ensure you are familiar with the [OneDiff Community](../../../README.md) features and OneDiff ENTERPRISE  by referring to the  [ENTERPRISE Guide](../../../README_ENTERPRISE.md#install-onediff-enterprise).
 
-- [OneDiff Quant 🚀 Documentation](#onediff-quant--documentation)
-  - [Prepare environment](#prepare-environment)
-  - [Baseline (non-optimized)](#baseline-non-optimized)
-  - [How to use onediff quantization](#how-to-use-onediff-quantization)
-    - [Online quantification](#online-quantification)
-      - [Online quantification (optimized)](#online-quantification-optimized)
-    - [Offline quantification](#offline-quantification)
-  - [Quantify a custom model](#quantify-a-custom-model)
-  - [Community and Support](#community-and-support)
+- [Prepare environment](#prepare-environment)
+- [Baseline (non-optimized)](#baseline-non-optimized)
+- [How to use onediff quantization](#how-to-use-onediff-quantization)
+  - [Online quantification](#online-quantification)
+    - [Online quantification (optimized)](#online-quantification-optimized)
+  - [Offline quantification](#offline-quantification)
+- [Quantify a custom model](#quantify-a-custom-model)
+- [Community and Support](#community-and-support)
 
 ## Prepare environment
 
