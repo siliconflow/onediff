@@ -31,7 +31,7 @@ The following table shows the workflows used separately：
 
 Note that you can download all images in this page and then drag or load them on ComfyUI to get the workflow embedded in the image.
 
-### Examples
+#### Examples
 
 | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
 | ------------------------ | ------------------ | ------------------------ |
@@ -73,6 +73,8 @@ The following table shows the workflows used separately：
 
 Note that you can download all images in this page and then drag or load them on ComfyUI to get the workflow embedded in the image.
 
+#### Examples
+
 | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
 | ------------------------ | ------------------ | ------------------------ |
 |![image](https://github.com/fmk345/pythonProject/assets/74238139/948271d2-24db-483f-9f33-81a64ae44c9e)|![image](https://github.com/fmk345/pythonProject/assets/74238139/08495a75-03f5-4e7d-93a2-b206ea755901)|![image](https://github.com/fmk345/pythonProject/assets/74238139/10c00186-fe72-4cca-92d2-2a672b8ffac5)|
@@ -111,6 +113,9 @@ python main.py --gpu-only
 The following table shows the workflows used separately：
 
 Note that you can download all images in this page and then drag or load them on ComfyUI to get the workflow embedded in the image.
+
+
+#### Examples
 
 | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
 | ------------------------ | ------------------ | ------------------------ |
