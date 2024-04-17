@@ -24,14 +24,15 @@ Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1
 
 **Note**: Before proceeding with this document, please ensure you are familiar with the [OneDiff Community](../../../README.md) features and OneDiff ENTERPRISE  by referring to the  [ENTERPRISE Guide](../../../README_ENTERPRISE.md#install-onediff-enterprise).
 
-- [Prepare environment](#prepare-environment)
-- [Baseline (non-optimized)](#baseline-non-optimized)
-- [How to use onediff quantization](#how-to-use-onediff-quantization)
-  - [Online Quant](#online-quant)
-    - [OneDiff Quant(optimized)](#onediff-quantoptimized)
-  - [Offline Quant](#offline-quant)
-- [Quantify a custom model](#quantify-a-custom-model)
-- [Community and Support](#community-and-support)
+- [OneDiff Quant 🚀 Documentation](#onediff-quant--documentation)
+  - [Prepare environment](#prepare-environment)
+  - [Baseline (non-optimized)](#baseline-non-optimized)
+  - [How to use onediff quantization](#how-to-use-onediff-quantization)
+    - [Online quantification](#online-quantification)
+      - [Online quantification (optimized)](#online-quantification-optimized)
+    - [Offline quantification](#offline-quantification)
+  - [Quantify a custom model](#quantify-a-custom-model)
+  - [Community and Support](#community-and-support)
 
 ## Prepare environment
 
@@ -40,7 +41,7 @@ You need to complete the following environment dependency installation.
 - 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 - 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
-#### Baseline (non-optimized)
+## Baseline (non-optimized)
 
 You can obtain the baseline by running the following command.
 
@@ -55,11 +56,11 @@ python onediff_diffusers_extensions/examples/text_to_image_online_quant.py \
 
 Onediff quantization supports acceleration of all diffusion models. This document will be explained based on the SDXL model.First, you can download [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0) model.
 
-### Online Quant
+### Online quantification
 
 **Note**: When performing quantification for the first time, it is necessary to perform dependency analysis of the data and determine the parameters required for quantification, such as the maximum and minimum values of the data, which require additional computing time. Once these parameters are determined and cached, subsequent quantization processes can use these parameters directly, thus speeding up processing.When quantization is performed for the second time, the log `*.pt` file is cached. Quantization result information can be found in `cache_dir/quantization_stats.json`.
 
-#### OneDiff Quant (optimized)
+#### Online quantification (optimized)
 
 You can run it using the following command.
 
@@ -87,7 +88,7 @@ The parameters of the preceding command are shown in the following table.
 | --conv_compute_density_threshold 900   | [0, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
 | --linear_compute_density_threshold 300 | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
 
-### Offline Quant
+### Offline quantification
 
 To quantify a custom model as int8, run the following script.
 
