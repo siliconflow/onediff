@@ -6,7 +6,7 @@ import argparse
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--floatting_model_path", default="stabilityai/stable-diffusion-v1-5")
+    parser.add_argument("--floatting_model_path", default="runwayml/stable-diffusion-v1-5")
     parser.add_argument("--prompt", default="a photo of an astronaut riding a horse on mars")
     parser.add_argument("--height",type=int, default=1024)
     parser.add_argument("--width", type=int,default=1024)
