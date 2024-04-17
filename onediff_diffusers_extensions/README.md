@@ -453,7 +453,7 @@ new_base.unet = compiled_unet
 new_base(prompt)
 ```
 
-> Note: Please make sure that your PyTorch version is **at least 2.1.0**, and the feature is not supported for quantized model.
+> Note: The feature is not supported for quantized model.
 
 
 ## Quantization
