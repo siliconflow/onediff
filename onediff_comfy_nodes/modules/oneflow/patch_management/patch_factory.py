@@ -1,11 +1,11 @@
 from enum import Enum
-from .patch_executor import CachedCrossAttentionPatch, DeepCacheUNetExecutorPatch, CrossAttentionUpdatePatch
+from .patch_executor import CachedCrossAttentionPatch, DeepCacheUNetExecutorPatch, UiNodeWithIndexPatch
 
 
 class PatchType(Enum):
-    C_C_Patch = CachedCrossAttentionPatch
+    CachedCrossAttentionPatch = CachedCrossAttentionPatch
     DCUNetExecutorPatch = DeepCacheUNetExecutorPatch
-    CrossAttentionUpdatePatch = CrossAttentionUpdatePatch
+    UiNodeWithIndexPatch = UiNodeWithIndexPatch
 
 
 def create_patch_executor(selected_patch_type):
@@ -16,5 +16,5 @@ def create_patch_executor(selected_patch_type):
 
 
 if __name__ == "__main__":
-    patch_executor = create_patch_executor(PatchType.C_C_Patch)
+    patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
     print(patch_executor)

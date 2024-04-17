@@ -19,7 +19,10 @@ class PatchExecutorBase(ABC):
     def get_patch(self):
         pass
 
-class CrossAttentionUpdatePatch(PatchExecutorBase):
+class UiNodeWithIndexPatch(PatchExecutorBase):
+    DEFAULT_VALUE = -1
+    INCREMENT_VALUE = 1
+    
     def __init__(self) -> None:
         self.patch_name = type(self).__name__
     
@@ -30,11 +33,11 @@ class CrossAttentionUpdatePatch(PatchExecutorBase):
         setattr(module, self.patch_name, value)
     
     def get_patch(self, module: ModelPatcher)->int:
-        return getattr(module, self.patch_name, -1) 
+        return getattr(module, self.patch_name, self.DEFAULT_VALUE) 
     
     def copy_to(self, old_model: ModelPatcher, new_model: ModelPatcher):
         value = self.get_patch(old_model)
-        self.set_patch(new_model, value + 1)
+        self.set_patch(new_model, value + self.INCREMENT_VALUE)
 
 
 class CachedCrossAttentionPatch(PatchExecutorBase):

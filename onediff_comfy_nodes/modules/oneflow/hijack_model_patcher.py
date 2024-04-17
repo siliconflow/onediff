@@ -34,13 +34,13 @@ def clone_oneflow(org_fn, self):
 
     n.object_patches = self.object_patches.copy()
     diff_model = self.model.diffusion_model
-    cc_patch_executor = create_patch_executor(PatchType.C_C_Patch)
+    cc_patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
     if cc_patch_executor.check_patch(diff_model):
         n.model_options = extract_and_clone_non_cross_attention(self.model_options)
     else:
         n.model_options = copy.deepcopy(self.model_options)
     
-    create_patch_executor(PatchType.CrossAttentionUpdatePatch).copy_to(self, n)
+    create_patch_executor(PatchType.UiNodeWithIndexPatch).copy_to(self, n)
     
     n.model_keys = self.model_keys
     n.backup = self.backup

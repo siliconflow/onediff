@@ -17,11 +17,10 @@ def set_model_patch_replace_fn_of(org_fn, model, patch_kwargs, key):
 
     patch_kwargs = torch2oflow(patch_kwargs)
     diff_model = model.model.diffusion_model
-    cache_patch_executor = create_patch_executor(PatchType.C_C_Patch)
+    cache_patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
     cache_dict = cache_patch_executor.get_patch(diff_model)
-    cau_patch_executor = create_patch_executor(PatchType.CrossAttentionUpdatePatch)
 
-    cache_key = cau_patch_executor.get_patch(model)
+    cache_key = create_patch_executor(PatchType.UiNodeWithIndexPatch).get_patch(model)
     to = model.model_options["transformer_options"]
     # print(f'ipa {cache_key=}')
 

@@ -10,9 +10,10 @@ if is_oneflow_available():
     from .modules.oneflow import BasicOneFlowBoosterExecutor
     BasicBoosterExecutor = BasicOneFlowBoosterExecutor
 elif is_nexfort_available():
-    pass 
+    from .modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
+    BasicBoosterExecutor = BasicNexFortBoosterExecutor
 else:
-    raise RuntimeError()
+    raise RuntimeError("Neither OneFlow nor Nexfort is available. Please ensure at least one of them is installed.")
 
 __all__ = [
     "ModelSpeedup",

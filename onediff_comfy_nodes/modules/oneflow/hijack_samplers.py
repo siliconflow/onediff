@@ -95,7 +95,7 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
 
         diff_model = model.diffusion_model
         
-        if create_patch_executor(PatchType.C_C_Patch).check_patch(diff_model):
+        if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(diff_model):
             transformer_options["sigmas"] = timestep[0].item()
         else:
             transformer_options["sigmas"] = timestep

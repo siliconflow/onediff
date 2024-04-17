@@ -50,47 +50,6 @@ As follows:
 | Dynamic Batch Size | No        |
 | Vae Speed Up       | Yes       |
 
-<!-- <div style="display: flex;">
-<div style="flex: 1;">
-        <img width="645" alt="image" src="https://github.com/siliconflow/onediff/assets/109639975/339e489e-aec7-488a-a242-276abfcf1cc3">
-    </div>
-    <div style="flex: 1;">
-        <table>
-            <thead>
-                <tr>
-                    <th>dynamic_modify</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>weight</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td>noise</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td>weight_type</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td>start_at</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td>end_at</td>
-                    <td>No</td>
-                </tr>
-                <tr> 
-                    <td> unflod_batch </td>
-                    <td> Untested </td>
-            </tbody>
-        </table>
-  </div>
-</div> -->
-
 ## Contact
 
 For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
