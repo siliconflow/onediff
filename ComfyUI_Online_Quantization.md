@@ -52,14 +52,16 @@ wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/sta
 cd ComfyUI
 wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 ```
+
+#### Start ComfyUI
+```
+python main.py --gpu-only
+```
+
+
 </details>
 
-#### Environment
-- torch : {version: 2.2.1+cu121}
-- oneflow  : {git_commit: 8e20ea9, version: 0.9.1.dev20240410+cu122, enterprise: True}
-- ComfyUI Tue Apr 9 commit: 4201181b35402e0a992b861f8d2f0e0b267f52fa
-- Start comfyui command: `python main.py --gpu-only`
-- Python 3.10.13
+
 
 ### SD1.5
 
@@ -83,7 +85,6 @@ Note that you can download all images in this page and then drag or load them on
 ```
 cd ComfyUI
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
-
 ```
 
 #### For CN users
@@ -92,14 +93,13 @@ cd ComfyUI
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
 ```
 
+#### Start ComfyUI
+```
+python main.py --gpu-only
+```
+
 </details>
 
-#### Environment
-- torch : {version: 2.2.1+cu121}
-- oneflow  : {git_commit: 8e20ea9, version: 0.9.1.dev20240410+cu122, enterprise: True}
-- ComfyUI Tue Apr 9 commit: 4201181b35402e0a992b861f8d2f0e0b267f52fa
-- Start comfyui command: `python main.py --gpu-only`
-- Python 3.10.13
 
 ### SVD
 
@@ -125,7 +125,6 @@ Note that you can download all images in this page and then drag or load them on
 ```
 cd ComfyUI
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
-
 wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
 ```
 
@@ -133,15 +132,12 @@ wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/st
 ```
 cd ComfyUI
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
-
 wget -O  models/checkpoints/svd_xt_1_1.safetensors https://hf-mirror.com/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
 ```
 
-</details>
+#### Start ComfyUI
+```
+python main.py --gpu-only
+```
 
-#### Environment
-- torch : {version: 2.2.1+cu121}
-- oneflow  : {git_commit: 8e20ea9, version: 0.9.1.dev20240410+cu122, enterprise: True}
-- ComfyUI Tue Apr 9 commit: 4201181b35402e0a992b861f8d2f0e0b267f52fa
-- Start comfyui command: `python main.py --gpu-only`
-- Python 3.10.13
+</details>
