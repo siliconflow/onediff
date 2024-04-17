@@ -13,7 +13,7 @@ from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
-from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters, update_graph_with_constant_folding_info, delete_adapters
+from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters, delete_adapters
 
 
 HEIGHT = 1024
