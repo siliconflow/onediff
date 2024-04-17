@@ -112,15 +112,15 @@ OneDiff supports the acceleration for SOTA models.
 | AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
-| Image     | SD 1.5                      | stable       | stable     | stable    | stable     | stable    | stable       |
-|           | SD 2.1                      | stable       | stable     | stable    | stable     | stable     | stable       |
-|           | SDXL                        | stable       | stable     | stable    | stable     | stable    | stable      |
+| Image     | SD 1.5                      | stable       | stable     | stable    | stable     | stable    | stable     |
+|           | SD 2.1                      | stable       | stable     | stable    | stable     | stable    | stable     |
+|           | SDXL                        | stable       | stable     | stable    | stable     | stable    | stable     |
 |           | LoRA                        | stable       |            | stable    |            | stable    |            |
 |           | ControlNet                  | stable       |            | stable    |            |           |            |
 |           | SDXL Turbo                  | stable       |            | stable    |            |           |            |
 |           | LCM                         | stable       |            | stable    |            |           |            |
 |           | SDXL DeepCache              | alpha        | alpha      | alpha     | alpha      |           |            |
-|           | InstantID                   | stable       |            | stable    |            |           |            |
+|           | InstantID                   | beta         |            | beta      |            |           |            |
 | Video     | SVD(stable Video Diffusion) | stable       | stable     | stable    | stable     |           |            |
 |           | SVD DeepCache               | alpha        | alpha      | alpha     | alpha      |           |            |
 
