@@ -35,6 +35,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
       - [Accessing Diffusers Models](#accessing-diffusers-models-2)
       - [Scripts](#scripts-2)
       - [SVD + DeepCache](#svd--deepcache)
+  - [Quantitative model](#quantitative-model)
   - [Contact](#contact)
 
 
@@ -382,6 +383,8 @@ python3 benchmarks/image_to_video.py \
   --output-video path/to/output_image.mp4 
 ```
 
+## Quantitative model
+Due to space limitations, specific quantification-related documents can be found in the [quantization document](./src/onediff/quantization/README.md#how-to-use-onediff-quantization).
 
 ## Contact
 
