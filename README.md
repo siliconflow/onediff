@@ -40,6 +40,12 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for Enterprise Edition or other business inquiries: contact@siliconflow.com
 
+## OS and GPU Compatibility
+- Linux
+  - If you want to use OneDiff on Windows, please use it under WSL.
+- NVIDIA GPUs
+  - [Compatibility with Nvidia GPUs](https://github.com/siliconflow/onediff/wiki/Compatibility-with-Nvidia-GPUs).
+
 ---
 The Full Introduction of OneDiff:
 <!-- toc -->
@@ -148,11 +154,6 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Get the experimental features                                                                             | Yes                                     |                                         |
 
 ## Installation
-### OS and GPU support
-- Linux
-  - If you want to use OneDiff on Windows, please use it under WSL.
-- NVIDIA GPUs
-
 ### OneDiff Installation
 
 #### 1. Install OneFlow
