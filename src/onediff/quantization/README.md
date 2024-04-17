@@ -36,14 +36,14 @@ Here's the optimized results, Timings for 30 steps in Diffusers-SD-1.5 at 1024x1
 ## Prepare environment
 
 You need to complete the following environment dependency installation.
-1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
-2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
-3.Install requirements
-```bash
-cd ./src/onediff/quantization #When you are in the onediff root directory
-pip install -r requirements.txt
-```
+- 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
+- 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
+- 3. Install requirements
+        ```bash
+        cd ./src/onediff/quantization #When you are in the onediff root directory
+        pip install -r requirements.txt
+        ```
 
 #### Baseline (non-optimized)
 
@@ -63,7 +63,6 @@ Onediff quantization supports acceleration of all diffusion models. This documen
 ### Online Quant
 
 **Note**: When performing quantification for the first time, it is necessary to perform dependency analysis of the data and determine the parameters required for quantification, such as the maximum and minimum values of the data, which require additional computing time. Once these parameters are determined and cached, subsequent quantization processes can use these parameters directly, thus speeding up processing.When quantization is performed for the second time, the log `*.pt` file is cached. Quantization result information can be found in `cache_dir/quantization_stats.json`.
-
 
 #### OneDiff Quant (optimized)
 
