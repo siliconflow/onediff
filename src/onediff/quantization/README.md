@@ -39,11 +39,6 @@ You need to complete the following environment dependency installation.
 
 - 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 - 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
-- 3. Install requirements
-        ```bash
-        cd ./src/onediff/quantization #When you are in the onediff root directory
-        pip install -r requirements.txt
-        ```
 
 #### Baseline (non-optimized)
 
@@ -91,6 +86,7 @@ The parameters of the preceding command are shown in the following table.
 | --linear_mae_threshold 0.2             | [0, 1] | 0.2     | MAE threshold for quantizing linear modules to 0.2.                          |
 | --conv_compute_density_threshold 900   | [0, ∞) | 900     | Computational density threshold for quantizing convolutional modules to 900. |
 | --linear_compute_density_threshold 300 | [0, ∞) | 300     | Computational density threshold for quantizing linear modules to 300.        |
+
 ### Offline Quant
 
 To quantify a custom model as int8, run the following script.
@@ -131,6 +127,7 @@ python tests/test_quantize_custom_model.py
 ```
 
 ## Community and Support
+
 [Here is the introduction of OneDiff Community.](https://github.com/siliconflow/onediff/wiki#onediff-community)
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)

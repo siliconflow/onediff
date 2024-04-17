@@ -40,7 +40,7 @@ pipe.quantize(**pipe_kwargs,
     conv_ssim_threshold=args.conv_ssim_threshold,
     linear_ssim_threshold=args.linear_ssim_threshold,
     save_as_float=args.save_as_float,
-    plot_calibrate_info=True,
+    plot_calibrate_info=False,
     cache_dir=args.cache_dir)
 
 pipe.save_quantized(args.quantized_model, safe_serialization=True)
