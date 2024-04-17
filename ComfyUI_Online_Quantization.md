@@ -44,17 +44,14 @@ Note that you can download all images in this page and then drag or load them on
 #### For NA/EU users
 ```
 cd ComfyUI
-
 wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 ```
 
 #### For CN users
 ```
 cd ComfyUI
-
 wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 ```
-
 </details>
 
 #### Environment
@@ -85,7 +82,6 @@ Note that you can download all images in this page and then drag or load them on
 #### For NA/EU users
 ```
 cd ComfyUI
-
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
 
 ```
@@ -93,7 +89,6 @@ wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable
 #### For CN users
 ```
 cd ComfyUI
-
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
 ```
 
@@ -129,7 +124,6 @@ Note that you can download all images in this page and then drag or load them on
 #### For NA/EU users
 ```
 cd ComfyUI
-
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 
 wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
@@ -138,7 +132,6 @@ wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/st
 #### For CN users
 ```
 cd ComfyUI
-
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 
 wget -O  models/checkpoints/svd_xt_1_1.safetensors https://hf-mirror.com/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
