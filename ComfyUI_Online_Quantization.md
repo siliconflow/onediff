@@ -1,4 +1,22 @@
-# Online Quantization for Comfyui
+# Online Quantization for ComfyUI
+
+- [Install](#install)
+- [Usage](#usage)
+- [Performance Comparison](#performance-comparison)
+  - [SDXL](#sdxl)
+    - [Examples](#examples)
+    - [Download the required model files](#download-the-required-model-files)
+    - [Start ComfyUI](#start-comfyui)
+  - [SD1.5](#sd15)
+    - [Examples](#examples-1)
+    - [Download the required model files](#download-the-required-model-files-1)
+    - [Start ComfyUI](#start-comfyui-1)
+  - [SVD](#svd)
+    - [Examples](#examples-2)
+    - [Download the required model files](#download-the-required-model-files-2)
+    - [Start ComfyUI](#start-comfyui-2)
+
+
 
 ## Install
 
@@ -37,17 +55,17 @@ Note that you can download all images in this page and then drag or load them on
 | ------------------------ | ------------------ | ------------------------ |
 |![image](https://github.com/fmk345/pythonProject/assets/74238139/d5499822-e0b0-4186-831c-18f4c8921ec4)|![image](https://github.com/fmk345/pythonProject/assets/74238139/14feaaf4-6672-430c-85ff-d8c7d8b4d5a2)|![image](https://github.com/fmk345/pythonProject/assets/74238139/cb99f5d7-fb4f-421c-9783-a3adc4375759)|
 
-<details open>
-<summary> Download the required model files </summary>
 
 
-#### For NA/EU users
+#### Download the required model files
+
+##### For NA/EU users
 ```
 cd ComfyUI
 wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 ```
 
-#### For CN users
+##### For CN users
 ```
 cd ComfyUI
 wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
@@ -59,7 +77,6 @@ python main.py --gpu-only
 ```
 
 
-</details>
 
 
 
@@ -79,17 +96,17 @@ Note that you can download all images in this page and then drag or load them on
 | ------------------------ | ------------------ | ------------------------ |
 |![image](https://github.com/fmk345/pythonProject/assets/74238139/948271d2-24db-483f-9f33-81a64ae44c9e)|![image](https://github.com/fmk345/pythonProject/assets/74238139/08495a75-03f5-4e7d-93a2-b206ea755901)|![image](https://github.com/fmk345/pythonProject/assets/74238139/10c00186-fe72-4cca-92d2-2a672b8ffac5)|
 
-<details open>
-<summary> Download the required model files </summary>
+
+#### Download the required model files
 
 
-#### For NA/EU users
+##### For NA/EU users
 ```
 cd ComfyUI
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
 ```
 
-#### For CN users
+##### For CN users
 ```
 cd ComfyUI
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
@@ -100,7 +117,6 @@ wget -O  models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-
 python main.py --gpu-only
 ```
 
-</details>
 
 
 ### SVD
@@ -122,18 +138,18 @@ Note that you can download all images in this page and then drag or load them on
 |![svd_baseline](https://github.com/siliconflow/onediff/assets/109639975/9c8871cf-088a-4606-8eae-e26994a08252)|![OneDiff(optimized)](https://github.com/siliconflow/onediff/assets/109639975/c8677c18-0d42-4ec0-8b1b-cb84e4c5aed9)|![OneDiff Quant(optimized)](https://github.com/siliconflow/onediff/assets/109639975/da8ff2d8-579e-42a5-b0db-390d20100889)|
 
 
-<details open>
-<summary> Download the required model files </summary>
+
+#### Download the required model files 
 
 
-#### For NA/EU users
+##### For NA/EU users
 ```
 cd ComfyUI
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
 ```
 
-#### For CN users
+##### For CN users
 ```
 cd ComfyUI
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
@@ -144,5 +160,3 @@ wget -O  models/checkpoints/svd_xt_1_1.safetensors https://hf-mirror.com/vdo/sta
 ```
 python main.py --gpu-only
 ```
-
-</details>
