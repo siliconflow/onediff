@@ -39,7 +39,7 @@ You need to complete the following environment dependency installation.
 1. [OneDiff Installation Guide](https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#install-onediff-enterprise)
 2. [OneDiffx Installation Guide](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions#install-and-setup)
 
-3.Install requirements  
+3.Install requirements
 ```bash
 cd ./src/onediff/quantization #When you are in the onediff root directory
 pip install -r requirements.txt
