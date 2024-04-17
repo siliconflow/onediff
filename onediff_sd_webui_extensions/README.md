@@ -67,6 +67,29 @@ When switching models, if the new model has the same structure as the old model,
 
 > Note: Please make sure that your PyTorch version is at least 2.1.0. And the feature is not supported for quantized model.
 
+
+### Graph saving and loading
+
+OneDiff supports saving compiled graph to disk and loading graph from disk. In scenarios where recompiling is required after switching model, you can skip the compilation process by loading the compiled graph from the disk, to saving time of model switching.
+
+
+#### Graph saving
+
+After selecting onediff, a text box named `Saved graph name` will appear at the bottom right. You can input the file name of the compiled graph you want to save here. After generating the image, the compiled graph will be saved in the `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/your-compiled-graph-name` path.
+
+![Graph saving](./images/saved_graph_name.jpg)
+
+> Note: When the text box is empty or the file with the specified name already exists, the static graph will not be saved.
+
+
+#### Graph loading
+
+After selecting onediff, a dropdown menu named `Graph Checkpoints` will appear at the bottom left. Here, you can select the static graph you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/`.
+
+![Graph loading](./images/graph_checkpoints.jpg)
+
+> Note: To properly use this feature, please ensure that you have added the `--disable-safe-unpickle` parameter when launching sd-webui.
+
 ### LoRA
 
 OneDiff supports the complete functionality related to LoRA. You can use OneDiff-based LoRA just like the native LoRA in sd-webui.

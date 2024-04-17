@@ -1,5 +1,5 @@
 import os
-import re
+import zipfile
 import warnings
 import gradio as gr
 from pathlib import Path
@@ -8,7 +8,9 @@ import modules.scripts as scripts
 import modules.shared as shared
 from modules.sd_models import select_checkpoint
 from modules.processing import process_images
+from modules.ui_common import create_refresh_button
 
+from ui_utils import hints_message, get_graph_checkpoints, refresh_graph_checkpoints, graph_checkpoints_path
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
@@ -16,7 +18,6 @@ from onediff_lora import HijackLoraActivate
 from onediff_hijack import do_hijack as onediff_do_hijack
 
 from onediff.infer_compiler.utils.log_utils import logger
-from onediff.infer_compiler.utils.param_utils import get_constant_folding_info
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
@@ -113,33 +114,15 @@ class Script(scripts.Script):
         The return value should be an array of all components that are used in processing.
         Values of those returned components will be passed to run() and process() functions.
         """
+        with gr.Row():
+            # TODO: set choices as Tuple[str, str] after the version of gradio specified webui upgrades
+            graph_checkpoint = gr.Dropdown(label="Graph checkpoints", choices=["None"] + get_graph_checkpoints(), value="None", elem_id="onediff_graph_checkpoint")
+            refresh_button = create_refresh_button(graph_checkpoint, refresh_graph_checkpoints, lambda: {"choices": ["None"] + get_graph_checkpoints()}, "onediff_refresh_graph")
+            save_graph_name = gr.Textbox(label="Saved graph name")
         if not varify_can_use_quantization():
-            ret = gr.HTML(
-                """
-                    <div style="padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px; background-color: #f9f9f9;">
-                        <div style="font-size: 18px; font-weight: bold; margin-bottom: 15px; color: #31708f;">
-                            Hints Message
-                        </div>
-                        <div style="padding: 10px; border: 1px solid #31708f; border-radius: 5px; background-color: #f9f9f9;">
-                            Hints: Enterprise function is not supported on your system.
-                        </div>
-                        <p style="margin-top: 15px;">
-                            If you need Enterprise Level Support for your system or business, please send an email to 
-                            <a href="mailto:business@siliconflow.com" style="color: #31708f; text-decoration: none;">business@siliconflow.com</a>.
-                            <br>
-                            Tell us about your use case, deployment scale, and requirements.
-                        </p>
-                        <p>
-                            <strong>GitHub Issue:</strong>
-                            <a href="https://github.com/siliconflow/onediff/issues" style="color: #31708f; text-decoration: none;">https://github.com/siliconflow/onediff/issues</a>
-                        </p>
-                    </div>
-                    """
-            )
-
-        else:
-            ret = gr.components.Checkbox(label="Model Quantization(int8) Speed Up")
-        return [ret]
+            gr.HTML(hints_message)
+        is_quantized = gr.components.Checkbox(label="Model Quantization(int8) Speed Up", visible=varify_can_use_quantization())
+        return [is_quantized, graph_checkpoint, save_graph_name]
 
     def show(self, is_img2img):
         return True
@@ -167,10 +150,7 @@ class Script(scripts.Script):
             self.current_type = get_model_type(model)
         return is_changed
 
-    def run(self, p, quantization=False):
-        # For OneDiff Community, the input param `quantization` is a HTML string
-        if isinstance(quantization, str):
-            quantization = False
+    def run(self, p, quantization=False, graph_checkpoint=None, saved_graph_name=""):
 
         global compiled_unet, compiled_ckpt_name
         current_checkpoint = shared.opts.sd_model_checkpoint
@@ -183,12 +163,21 @@ class Script(scripts.Script):
         model_changed = ckpt_name != compiled_ckpt_name
         model_structure_changed = self.check_model_structure_change(shared.sd_model)
         need_recompile = (quantization and model_changed) or model_structure_changed
+        import ipdb; ipdb.set_trace()
 
         if need_recompile:
             compiled_unet = compile_unet(
                 original_diffusion_model, quantization=quantization
             )
             compiled_ckpt_name = ckpt_name
+
+            if graph_checkpoint != "None":
+                try:
+                    compiled_unet.load_graph(graph_checkpoints_path() + f"/{graph_checkpoint}", run_warmup=True)
+                except zipfile.BadZipFile as e:
+                    print("Load graph failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
+                except Exception as e:
+                    print("Load graph failed. Please make sure graph checkpoint has the same sd version (or unet architure) with current checkpoint")
         else:
             logger.info(
                 f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
@@ -196,6 +185,12 @@ class Script(scripts.Script):
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
+
+        if saved_graph_name != "":
+            saved_graph_name = graph_checkpoints_path() + f"/{saved_graph_name}"
+            if not Path(saved_graph_name).exists():
+                compiled_unet.save_graph(graph_checkpoints_path() + f"/{saved_graph_name}")
+
         return proc
 
 
