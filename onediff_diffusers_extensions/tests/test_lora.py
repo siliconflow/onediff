@@ -11,7 +11,6 @@ import numpy as np
 import safetensors.torch
 from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
-from diffusers.utils import USE_PEFT_BACKEND
 from onediff.infer_compiler import oneflow_compile
 
 from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters, update_graph_with_constant_folding_info, delete_adapters
@@ -24,7 +23,6 @@ LORA_SCALE = 0.5
 LATENTS = torch.randn(1, 4, 128, 128, generator=torch.cuda.manual_seed(0), dtype=torch.float16, device="cuda")
 
 image_file_prefix = "/share_nfs/onediff_ci/diffusers/images/1.0"
-# image_file_prefix = "/data/home/wangyi/workspace/temp"
 
 @pytest.fixture
 def prepare_loras() -> Dict[str, Dict[str, Tensor]]:
@@ -149,7 +147,6 @@ def test_lora_loading(pipe, get_loras):
 
 def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
     pipe.unet = oneflow_compile(pipe.unet)
-    print(f"using peft backend? {USE_PEFT_BACKEND}")
     multi_loras = get_multi_loras()
     loras = get_loras()
     prepare_target_images_multi_lora(pipe, loras, multi_loras)
