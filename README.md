@@ -107,22 +107,22 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 OneDiff supports the acceleration for SOTA models.
 * stable: release for public usage, and has long-term support;
 * beta: release for professional usage, and has long-term support;
-* alpha: early release for expert usage, and is **under active development**;
+* alpha: early release for expert usage, and should be careful to use;
 
 | AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
-| Image     | SD 1.5                      | stable       | stable     | stable    | stable     | beta      | beta       |
-|           | SD 2.1                      | stable       | stable     | stable    | stable     | beta      | beta       |
-|           | SDXL                        | stable       | stable     | stable    | stable     | beta      | beta       |
-|           | LoRA                        | stable       |            | stable    |            | beta      |            |
+| Image     | SD 1.5                      | stable       | stable     | stable    | stable     | stable    | stable       |
+|           | SD 2.1                      | stable       | stable     | stable    | stable     | stable     | stable       |
+|           | SDXL                        | stable       | stable     | stable    | stable     | stable    | stable      |
+|           | LoRA                        | stable       |            | stable    |            | stable    |            |
 |           | ControlNet                  | stable       |            | stable    |            |           |            |
 |           | SDXL Turbo                  | stable       |            | stable    |            |           |            |
 |           | LCM                         | stable       |            | stable    |            |           |            |
-|           | SDXL DeepCache              | stable       | beta       | stable    | beta       |           |            |
+|           | SDXL DeepCache              | alpha        | alpha      | alpha     | alpha      |           |            |
 |           | InstantID                   | stable       |            | stable    |            |           |            |
-| Video     | SVD(stable Video Diffusion) | stable       | beta       | stable    | beta       |           |            |
-|           | SVD DeepCache               | stable       | beta       | stable    | beta       |           |            |
+| Video     | SVD(stable Video Diffusion) | stable       | stable     | stable    | stable     |           |            |
+|           | SVD DeepCache               | alpha        | alpha      | alpha     | alpha      |           |            |
 
 **Note: Enterprise Edition contains all the functionality in Community Edition.**
 
