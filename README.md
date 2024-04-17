@@ -30,12 +30,13 @@ For example:
 
 <img src="imgs/replace_a100.png" height="300">
 
-## News
-OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
+OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
+## News
+The latest news:
+- :rocket:[OneDiff 1.0 is out! (Acceleration of SD & SVD with one line of code)](https://www.reddit.com/r/StableDiffusion/comments/1c5gy1e/onediff_10_is_out_acceleration_of_sd_svd_with_one/)
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
-- :rocket:[InstantID can run 1.8x Faster with OneDiff](https://www.reddit.com/r/StableDiffusion/comments/1al19ek/instantid_can_run_18x_faster_with_onediff/)
 
 ## Community and Support
 [Here is the introduction of OneDiff Community.](https://github.com/siliconflow/onediff/wiki#onediff-community)
