@@ -41,7 +41,7 @@ Updated on January 23, 2024. Device: RTX 3090
     - [Installation Guide](#installation-guide)
       - [Setup Community Edition](#setup-community-edition)
       - [Setup Enterprise Edition](#setup-enterprise-edition)
-    - [Basical Nodes Usage](#basical-nodes-usage)
+    - [Basic Node Usage](#basic-node-usage)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Quantization](#quantization)
   - [OneDiff Community Examples](#onediff-community-examples)
@@ -103,7 +103,7 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 </details>
 
 
-### Basical Nodes Usage
+### Basic Node Usage
 
 **Note** All the images in this section can be loaded directly into ComfyUI. You can load them in ComfyUI to get the full workflow.
 
