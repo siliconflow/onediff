@@ -112,7 +112,8 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 <a id="online-quantization-for-comfyUI"></a>
 ### Online Quantization for ComfyUI
 
-  We provide ComfyUI with an online quantification tool, which has significant acceleration effects. We provide detailed documentation tutorials [ComfyUI online quantitative usage documentation in wiki](https://github.com/siliconflow/onediff/blob/wiki/ComfyUI_Online_Quantization.md) for users who want to use.
+  We provide ComfyUI with an online quantification tool, which has significant acceleration effects. We provide detailed documentation tutorials [ComfyUI online quantitative usage documentation in wiki](./onediff_comfy_nodes/ComfyUI_Online_Quantization.md) for users who want to use.
+
 
 <a id="comfyui-sd-1-5"></a>
 ### ComfyUI SD 1.5
