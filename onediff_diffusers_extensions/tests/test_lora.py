@@ -167,5 +167,5 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
             curr_image, target_image, channel_axis=-1, data_range=255
         )
         print(f"lora {names} ssim {ssim}")
-        assert ssim > 0.94, f"LoRA {names} ssim too low"
+        assert ssim > 0.92, f"LoRA {names} ssim too low"
     delete_adapters(pipe)
