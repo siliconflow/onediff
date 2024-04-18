@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from functools import singledispatchmethod
+from functools import partial, singledispatchmethod
 from typing import Any, Dict, Optional, Union
 
 import torch
@@ -205,8 +205,8 @@ class OnelineQuantizationBoosterExecutor(BoosterExecutor):
         return model
 
     def _set_optimized_model_for_deepcace(self, model: ModelPatcher):
-        # TODO 
-        # module = model
-        # module.fast_deep_cache_unet._torch_module = quant_optimizer.quantize_model(module.fast_deep_cache_unet._torch_module, quantize_conv=False)
-        # module.fast_deep_cache_unet._torch_module = quant_optimizer.quantize_model(module.fast_deep_cache_unet._torch_module, quantize_conv=False)
+        # TODO
+        print("Warning: DeepCache + OnelineQuantization only support default configurations:")
+        model.fast_deep_cache_unet.quantize = partial(quant_optimizer.quantize_model, model.fast_deep_cache_unet, quantize_conv=False)
+        model.deep_cache_unet.quantize = partial(quant_optimizer.quantize_model, model.deep_cache_unet, quantize_conv=False)
         
