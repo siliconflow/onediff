@@ -50,6 +50,7 @@ def deep_cache_speedup(
     current_step = -1
     cache_h = None
 
+    
     def apply_model(model_function, kwargs):
         if isinstance(model_patcher.model, SVD_img2vid):
             set_environment_for_svd_img2vid(model_patcher)

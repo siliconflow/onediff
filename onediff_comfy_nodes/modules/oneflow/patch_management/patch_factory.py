@@ -1,11 +1,12 @@
 from enum import Enum
 from .patch_executor import CachedCrossAttentionPatch, DeepCacheUNetExecutorPatch, UiNodeWithIndexPatch
-
+from .quantized_input_patch import QuantizedInputPatch
 
 class PatchType(Enum):
     CachedCrossAttentionPatch = CachedCrossAttentionPatch
     DCUNetExecutorPatch = DeepCacheUNetExecutorPatch
     UiNodeWithIndexPatch = UiNodeWithIndexPatch
+    QuantizedInputPatch = QuantizedInputPatch
 
 
 def create_patch_executor(selected_patch_type):

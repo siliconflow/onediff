@@ -1,7 +1,7 @@
 import copy
 
 from comfy.model_patcher import ModelPatcher
-from register_comfy.CrossAttentionPatch import CrossAttentionPatch
+from register_comfy.CrossAttentionPatch import is_crossAttention_patch
 
 from ..sd_hijack_utils import Hijacker
 from .patch_management import PatchType, create_patch_executor
@@ -15,7 +15,7 @@ def extract_and_clone_non_cross_attention(original_dict):
     for key, value in original_dict.items():
         if isinstance(value, dict):
             new_value = extract_and_clone_non_cross_attention(value)
-        elif isinstance(value, CrossAttentionPatch):
+        elif is_crossAttention_patch(value):
             new_value = value
         else:
             # Otherwise, perform a deep copy of the value

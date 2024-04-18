@@ -54,7 +54,7 @@ class CachedCrossAttentionPatch(PatchExecutorBase):
         if not self.check_patch(module):
             self.set_patch(module, {})
         return getattr(module, self.patch_name)
-
+          
 
 class DeepCacheUNetExecutorPatch(PatchExecutorBase):
     def __init__(self) -> None:

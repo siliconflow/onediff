@@ -127,10 +127,10 @@ class OneDiffApplyModelBooster:
     def speedup_module(self, quantization_booster: BoosterExecutor =None, deepcache_booster=None, torchcompile_booster=None):
         """Apply the optimization technique to the model."""
         booster_executors = []
-        if quantization_booster:
-            booster_executors.append(quantization_booster)
         if deepcache_booster:
             booster_executors.append(deepcache_booster)
+        if quantization_booster:
+            booster_executors.append(quantization_booster)
         if torchcompile_booster:
             booster_executors.append(torchcompile_booster)
 
@@ -152,7 +152,10 @@ class OneDiffControlNetLoader(ControlNetLoader):
     @torch.no_grad()
     def onediff_load_controlnet(self, control_net_name, custom_booster=None):
         controlnet = super().load_controlnet(control_net_name)[0]
-        controlnet = BoosterScheduler(BasicBoosterExecutor())(controlnet, ckpt_name=control_net_name)
+        if custom_booster is None:
+            custom_booster = BoosterScheduler(BasicBoosterExecutor())
+        controlnet = custom_booster(controlnet, ckpt_name=control_net_name)
+        
         return (controlnet,)
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
