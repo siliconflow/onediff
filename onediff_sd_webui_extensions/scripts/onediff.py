@@ -29,7 +29,6 @@ from oneflow import __version__ as oneflow_version
 compiled_unet = None
 compiled_ckpt_name = None
 
-
 def generate_graph_path(ckpt_name: str, model_name: str) -> str:
     base_output_dir = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
     save_ckpt_graphs_path = os.path.join(base_output_dir, "graphs", ckpt_name)
