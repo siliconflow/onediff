@@ -57,17 +57,13 @@ Model parameters can be referred to [Parameter Description](#parameter-descripti
 
 #### Download the required model files
 
-##### For NA/EU users
+
 ```
 cd ComfyUI
 wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 ```
 
-##### For CN users
-```
-cd ComfyUI
-wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
-```
+
 
 #### Start ComfyUI
 ```
@@ -101,17 +97,13 @@ Model parameters can be referred to [Parameter Description](#parameter-descripti
 #### Download the required model files
 
 
-##### For NA/EU users
+
 ```
 cd ComfyUI
 wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
 ```
 
-##### For CN users
-```
-cd ComfyUI
-wget -O  models/v1-5-pruned-emaonly.ckpt  https://hf-mirror.com/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.ckpt
-```
+
 
 #### Start ComfyUI
 ```
@@ -145,19 +137,14 @@ Model parameters can be referred to [Parameter Description](#parameter-descripti
 #### Download the required model files 
 
 
-##### For NA/EU users
+
 ```
 cd ComfyUI
 wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
 wget -O  models/checkpoints/svd_xt_1_1.safetensors https://huggingface.co/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
 ```
 
-##### For CN users
-```
-cd ComfyUI
-wget -O  models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors
-wget -O  models/checkpoints/svd_xt_1_1.safetensors https://hf-mirror.com/vdo/stable-video-diffusion-img2vid-xt-1-1/resolve/main/svd_xt_1_1.safetensors
-```
+
 
 #### Start ComfyUI
 ```
