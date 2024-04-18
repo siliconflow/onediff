@@ -31,7 +31,7 @@
 Notes:
 
 1. Specify the directory for saving graphs using `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
-2. The log `*.pt` file is cached. These files can contain trained model weights, saved tensor data, or snapshots of the entire model. Quantization result information can be found in `cache_dir/quantization_stats.json`.
+2. When carrying out quantization for the first time, it is essential to analyze the data dependencies and identify the necessary parameters for quantification, such as the data's maximum and minimum values, which require additional computation time. Once these parameters are established and stored in cache, future quantization processes can directly utilize these parameters, thereby accelerating the processing speed. When quantization is performed a second time, the log file `*.pt` is cached. Information about the quantization results can be found in `cache_dir/quantization_stats.json`.
 
 ## Performance Comparison
 
