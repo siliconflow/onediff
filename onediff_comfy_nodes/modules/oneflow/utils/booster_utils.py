@@ -1,9 +1,12 @@
+from typing import Union
+
 import torch
 from comfy import model_management
 from comfy.model_base import BaseModel, SVD_img2vid
 from comfy.model_patcher import ModelPatcher
 
-from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.oneflow import \
+    OneflowDeployableModule as DeployableModule
 from onediff.infer_compiler.utils import set_boolean_env_var
 
 from ..patch_management import PatchType, create_patch_executor
@@ -76,3 +79,28 @@ def is_using_oneflow_backend(module):
         return True
 
     raise RuntimeError("")
+
+
+def clear_deployable_module_cache_and_unbind(
+    module: Union[ModelPatcher, DeployableModule]
+):
+    if isinstance(module, ModelPatcher):
+        dcu_patch = create_patch_executor(PatchType.DCUNetExecutorPatch)
+        if dcu_patch.check_patch(module):
+            for sub_module in dcu_patch.get_patch(module):
+                sub_module._clear_old_graph()
+
+        diff_model = module.model.diffusion_model
+        if isinstance(diff_model, DeployableModule):
+            diff_model._clear_old_graph()
+        create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
+            diff_model
+        )
+    elif isinstance(module, DeployableModule):
+        diff_model = module
+        diff_model._clear_old_graph()
+        create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
+            diff_model
+        )
+    else:
+        raise RuntimeError(f"Unexpected module type: {type(module)}.")

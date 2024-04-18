@@ -243,10 +243,10 @@ class CrossAttentionPatch(torch.nn.Module):
     def retrieve_from_cache(self, key, default=None):
         return self.cache_map.get(key, default)
 
-    def update(self, key, patch_kwargs={})->bool:
+    def update(self, key, patch_kwargs: dict)->bool:
         idx = self.retrieve_from_cache(key)
-
-        if not isinstance(patch_kwargs['ipadapter'], type(self.ipadapters[idx])):
+        if not isinstance(patch_kwargs['ipadapter'], self.ipadapters[idx].__class__.__bases__):
+            print("Warning: Changing the IP adapter will trigger recompilation.")
             return False
 
         weight = patch_kwargs.get("weight")

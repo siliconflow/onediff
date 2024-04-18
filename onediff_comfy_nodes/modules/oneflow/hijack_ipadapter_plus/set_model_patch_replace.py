@@ -3,7 +3,7 @@ from register_comfy.CrossAttentionPatch import \
     CrossAttentionPatch as CrossAttentionPatch_PT
 
 from onediff.infer_compiler.transform import torch2oflow
-
+from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
 
 
@@ -18,20 +18,14 @@ def set_model_patch_replace(org_fn, model, patch_kwargs, key):
         to["patches_replace"] = {}
     if "attn2" not in to["patches_replace"]:
         to["patches_replace"]["attn2"] = {}
-
+    
     if key in cache_dict:
         patch: CrossAttentionPatch_PT = cache_dict[key]
         if patch.retrieve_from_cache(cache_key) is not None:
-            # TODO fix 
-            patch.update(cache_key, **torch2oflow(patch_kwargs))
-            # cache_patch_executor.set_patch(diff_model, {})
-            # diff_model._clear_old_graph()
-            # del cache_dict
-            # cache_dict = cache_patch_executor.get_patch(diff_model)
-            return 
-                
-
-
+            if patch.update(cache_key, torch2oflow(patch_kwargs)):
+                return 
+            else:
+                clear_deployable_module_cache_and_unbind(model)
 
     if key not in to["patches_replace"]["attn2"]:
         if key not in cache_dict:

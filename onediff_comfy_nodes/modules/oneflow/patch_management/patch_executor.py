@@ -40,13 +40,14 @@ class UiNodeWithIndexPatch(PatchExecutorBase):
         self.set_patch(new_model, value + self.INCREMENT_VALUE)
 
 
+
 class CachedCrossAttentionPatch(PatchExecutorBase):
     def __init__(self) -> None:
         self.patch_name = type(self).__name__
 
     def check_patch(self, module):
         return hasattr(module, self.patch_name)
-
+    
     def set_patch(self, module, value: dict):
         setattr(module, self.patch_name, value)
 
@@ -54,6 +55,11 @@ class CachedCrossAttentionPatch(PatchExecutorBase):
         if not self.check_patch(module):
             self.set_patch(module, {})
         return getattr(module, self.patch_name)
+    
+    def clear_patch(self, module):
+        if self.check_patch(module):
+            self.get_patch(module).clear()
+
           
 
 class DeepCacheUNetExecutorPatch(PatchExecutorBase):
@@ -76,6 +82,7 @@ class DeepCacheUNetExecutorPatch(PatchExecutorBase):
         values = self.get_patch(old_model)
         self.set_patch(new_model, values)
         new_model.model.use_deep_cache_unet = True
+
 
     def is_use_deep_cache_unet(self, module: BaseModel):
         return getattr(module, "use_deep_cache_unet", False)
