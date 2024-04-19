@@ -115,9 +115,9 @@ class Script(scripts.Script):
         """
         with gr.Row():
             # TODO: set choices as Tuple[str, str] after the version of gradio specified webui upgrades
-            graph_checkpoint = gr.Dropdown(label="Graph checkpoints", choices=["None"] + get_graph_checkpoints(), value="None", elem_id="onediff_graph_checkpoint")
+            graph_checkpoint = gr.Dropdown(label="Graph checkpoints (Beta)", choices=["None"] + get_graph_checkpoints(), value="None", elem_id="onediff_graph_checkpoint")
             refresh_button = create_refresh_button(graph_checkpoint, refresh_graph_checkpoints, lambda: {"choices": ["None"] + get_graph_checkpoints()}, "onediff_refresh_graph")
-            save_graph_name = gr.Textbox(label="Saved graph name")
+            save_graph_name = gr.Textbox(label="Saved graph name (Beta)")
         if not varify_can_use_quantization():
             gr.HTML(hints_message)
         is_quantized = gr.components.Checkbox(label="Model Quantization(int8) Speed Up", visible=varify_can_use_quantization())
