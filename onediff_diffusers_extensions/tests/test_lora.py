@@ -99,7 +99,7 @@ for name, lora in loras.items():
     )
     unfuse_lora(pipe)
 
-# @pytest.mark.skip
+
 @pytest.mark.parametrize("multi_lora", multi_loras)
 def test_lora_adapter_name(multi_lora):
     set_and_fuse_adapters(pipe, multi_lora, [0.5, ] * len(multi_lora))
@@ -122,7 +122,7 @@ def test_lora_adapter_name(multi_lora):
     print(f"lora {multi_lora} ssim {ssim}")
     assert ssim > 0.94
 
-@pytest.mark.skip
+
 @pytest.mark.parametrize("lora", loras.values())
 def test_lora_switching(lora):
     device = random.choice(["cpu", "cuda"])
@@ -133,7 +133,7 @@ def test_lora_switching(lora):
     unfuse_lora(pipe)
     assert check_param(pipe, original_weights)
 
-@pytest.mark.skip
+
 @pytest.mark.parametrize("name, lora", loras_to_load.items())
 def test_lora_loading(name, lora):
     load_and_fuse_lora(pipe, lora.copy())
