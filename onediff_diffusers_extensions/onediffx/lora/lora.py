@@ -49,11 +49,6 @@ def load_and_fuse_lora(
             "onediffx.lora only supports diffusers of at least version 0.19.3"
         )
 
-    if lora_scale != 1.0 and adapter_name is not None:
-        raise RuntimeError(
-            "only support lora_scale == 1.0 when specified adapter_name"
-        )
-
     _init_adapters_info(pipeline)
     pipeline._adapter_names.add(adapter_name)
     pipeline._active_adapter_names[adapter_name] = 1.0
