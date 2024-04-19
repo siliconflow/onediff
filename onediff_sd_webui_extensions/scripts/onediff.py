@@ -27,6 +27,7 @@ from oneflow import __version__ as oneflow_version
 
 """oneflow_compiled UNetModel"""
 compiled_unet = None
+is_compiled_unet_quantized = False
 compiled_ckpt_name = None
 
 def generate_graph_path(ckpt_name: str, model_name: str) -> str:
@@ -76,7 +77,8 @@ def compile_unet(
             RuntimeWarning,
         )
         compiled_unet = unet_model
-    if quantization:
+    # In OneDiff Community, quantization can be True when called by api
+    if quantization and varify_can_use_quantization():
         calibrate_info = get_calibrate_info(
             f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt"
         )
@@ -126,7 +128,7 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
-    def check_model_structure_change(self, model):
+    def check_model_change(self, model):
         is_changed = False
 
         def get_model_type(model):
@@ -151,18 +153,21 @@ class Script(scripts.Script):
 
     def run(self, p, quantization=False, graph_checkpoint=None, saved_graph_name=""):
 
-        global compiled_unet, compiled_ckpt_name
+        global compiled_unet, compiled_ckpt_name, is_unet_quantized
         current_checkpoint = shared.opts.sd_model_checkpoint
         original_diffusion_model = shared.sd_model.model.diffusion_model
 
-        ckpt_name = (
-            current_checkpoint + "_quantized" if quantization else current_checkpoint
+        ckpt_changed = current_checkpoint != compiled_ckpt_name
+        model_changed = self.check_model_change(shared.sd_model)
+        quantization_changed = quantization != is_compiled_unet_quantized
+        need_recompile = (
+            (quantization and ckpt_changed) # always recompile when switching ckpt with 'int8 speed model' enabled
+            or model_changed                # always recompile when switching model to another structure
+            or quantization_changed         # always recompile when switching model from non-quantized to quantized (and vice versa) 
         )
 
-        model_changed = ckpt_name != compiled_ckpt_name
-        model_structure_changed = self.check_model_structure_change(shared.sd_model)
-        need_recompile = (quantization and model_changed) or model_structure_changed
-
+        is_unet_quantized = quantization
+        compiled_ckpt_name = current_checkpoint
         if need_recompile:
             compiled_unet = compile_unet(
                 original_diffusion_model, quantization=quantization
@@ -176,6 +181,7 @@ class Script(scripts.Script):
                     print("Load graph failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
                 except Exception as e:
                     print("Load graph failed. Please make sure graph checkpoint has the same sd version (or unet architure) with current checkpoint")
+
         else:
             logger.info(
                 f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
