@@ -49,6 +49,15 @@ def load_and_fuse_lora(
             "onediffx.lora only supports diffusers of at least version 0.19.3"
         )
 
+    if lora_scale != 1.0 and adapter_name is not None:
+        raise RuntimeError(
+            "only support lora_scale == 1.0 when specified adapter_name"
+        )
+
+    _init_adapters_info(pipeline)
+    pipeline._adapter_names.add(adapter_name)
+    pipeline._active_adapter_names[adapter_name] = 1.0
+
     self = pipeline
 
     if use_cache:
@@ -119,6 +128,9 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
         ):
             _unfuse_lora(m.base_layer)
 
+    pipeline._adapter_names.clear()
+    pipeline._active_adapter_names.clear()
+
     pipeline.unet.apply(_unfuse_lora_apply)
     if hasattr(pipeline, "text_encoder"):
         pipeline.text_encoder.apply(_unfuse_lora_apply)
@@ -133,6 +145,15 @@ def set_and_fuse_adapters(
 ):
     if isinstance(adapter_names, str):
         adapter_names = [adapter_names]
+
+    if adapter_weights is None:
+        adapter_weights = [1.0, ] * len(adapter_names)
+    elif isinstance(adapter_weights, float):
+        adapter_weights = [adapter_weights, ] * len(adapter_names)
+
+    _init_adapters_info(pipeline)
+    pipeline._adapter_names |= set(adapter_names)
+    pipeline._active_adapter_names = {k: v for k, v in zip(adapter_names, adapter_weights)}
 
     def set_adapters_apply(m):
         if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
@@ -149,9 +170,15 @@ def set_and_fuse_adapters(
         pipeline.text_encoder_2.apply(set_adapters_apply)
 
 
-def delete_adapters(self, adapter_names: Union[List[str], str]):
-    if isinstance(adapter_names, str):
+def delete_adapters(self, adapter_names: Union[List[str], str] = None):
+    if adapter_names is None:
+        adapter_names = list(self._adapter_names)
+    elif isinstance(adapter_names, str):
         adapter_names = [adapter_names]
+
+    for adapter_name in adapter_names:
+        self._adapter_names.remove(adapter_name)
+        self._active_adapter_names.pop(adapter_name, None)
 
     def delete_adapters_apply(m):
         if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
@@ -166,6 +193,19 @@ def delete_adapters(self, adapter_names: Union[List[str], str]):
         self.text_encoder.apply(delete_adapters_apply)
     if hasattr(self, "text_encoder_2"):
         self.text_encoder_2.apply(delete_adapters_apply)
+
+
+def get_active_adapters(self) -> List[str]:
+    if hasattr(self, "_adapter_names"):
+        return list(self._active_adapter_names.keys())
+    else:
+        return []
+
+
+def _init_adapters_info(self: torch.nn.Module):
+    if not hasattr(self, "_adapter_names"):
+        setattr(self, "_adapter_names", set())
+        setattr(self, "_active_adapter_names", {})
 
 
 class LRUCacheDict(OrderedDict):
