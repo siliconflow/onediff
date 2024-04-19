@@ -162,7 +162,6 @@ class Script(scripts.Script):
         model_changed = ckpt_name != compiled_ckpt_name
         model_structure_changed = self.check_model_structure_change(shared.sd_model)
         need_recompile = (quantization and model_changed) or model_structure_changed
-        import ipdb; ipdb.set_trace()
 
         if need_recompile:
             compiled_unet = compile_unet(
