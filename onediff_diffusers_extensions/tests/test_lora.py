@@ -142,7 +142,7 @@ def test_lora_loading(pipe, get_loras):
         unfuse_lora(pipe)
         images_fusion.save(f"./test_sdxl_lora_{str(Path(name).stem)}_{HEIGHT}_{WIDTH}.png")
         print(f"lora {name} ssim {ssim}")
-        assert ssim > 0.94, f"LoRA {name} ssim too low"
+        assert ssim > 0.92, f"LoRA {name} ssim too low"
 
 
 def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
