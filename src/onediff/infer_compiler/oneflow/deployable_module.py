@@ -14,6 +14,11 @@ from ..deployable_module import DeployableModule
 
 from .utils import handle_deployable_exception, get_mixed_dual_module, get_oneflow_graph
 
+def get_module_device(module):
+    # Get the device of the first parameter (assuming all parameters are on the same device)
+    device = next(module.parameters()).device
+    return device
+
 
 class OneflowDeployableModule(DeployableModule):
     def __init__(
@@ -150,9 +155,22 @@ class OneflowDeployableModule(DeployableModule):
         self.get_graph().save_graph(file_path)
 
     def offload(self):
+        device = get_module_device(self._torch_module)
+        if device.type != "cuda":
+            return
+        self._original_device = device
+        # TODO(strint): can't offload torch module, weried.
+        #import pdb; pdb.set_trace()
         self.get_graph().offload()
+        self._torch_module.to("cpu")
+        torch.cuda.empty_cache()
 
     def load(self):
+        assert hasattr(self, "_original_device")
+        if self._original_device.type != "cuda":
+            return
+        # No need to use torch module now, so no need to load it.
+        # self._torch_module.to(self._original_device)
         self.get_graph().load()
 
     def extra_repr(self) -> str:

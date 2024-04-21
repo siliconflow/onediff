@@ -8,8 +8,8 @@ ONEDIFF_DEBUG=1 python text_to_image_sd_offload.py --base /share_nfs/hf_models/s
 import os
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
