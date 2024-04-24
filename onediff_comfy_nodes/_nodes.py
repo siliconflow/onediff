@@ -1,15 +1,15 @@
 import folder_paths
 import torch
 from nodes import CheckpointLoaderSimple, ControlNetLoader
-
+from ._config import is_default_using_nexfort_backend, is_default_using_oneflow_backend
 from .modules import BoosterScheduler, BoosterExecutor
 from .utils.import_utils import is_nexfort_available  # type: ignore
 from .utils.import_utils import is_oneflow_available
 
-if is_oneflow_available():
+if is_oneflow_available() and is_default_using_oneflow_backend():
     from .modules.oneflow import BasicOneFlowBoosterExecutor
     BasicBoosterExecutor = BasicOneFlowBoosterExecutor
-elif is_nexfort_available():
+elif is_nexfort_available() and is_default_using_nexfort_backend():
     from .modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
     BasicBoosterExecutor = BasicNexFortBoosterExecutor
 else:

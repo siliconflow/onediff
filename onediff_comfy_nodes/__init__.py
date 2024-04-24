@@ -1,5 +1,5 @@
 """OneDiff ComfyUI Speedup Module"""
-from ._config import *
+from ._config import is_disable_oneflow_backend
 from ._nodes import (ModelSpeedup, OneDiffApplyModelBooster,
                      OneDiffCheckpointLoaderSimple, OneDiffControlNetLoader,
                      VaeSpeedup)
@@ -30,7 +30,7 @@ def lazy_load_extra_nodes():
     from .extras_nodes import nodes_torch_compile_booster
     update_node_mappings(nodes_torch_compile_booster)
 
-    if is_oneflow_available():
+    if is_oneflow_available() and not is_disable_oneflow_backend():
         from .extras_nodes import nodes_oneflow_booster, nodes_compare
         update_node_mappings(nodes_oneflow_booster)
         update_node_mappings(nodes_compare)
