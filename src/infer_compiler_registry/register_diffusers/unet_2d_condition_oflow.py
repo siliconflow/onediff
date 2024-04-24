@@ -6,6 +6,7 @@ from onediff.infer_compiler.transform import transform_mgr
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
+diffusers_0270_v = version.parse("0.27.0")
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 UNet2DConditionOutput = (
@@ -488,3 +489,8 @@ class UNet2DConditionModel(
             return (sample,)
 
         return UNet2DConditionOutput(sample=sample)
+
+
+
+if diffusers_version >= diffusers_0270_v:
+    UNet2DConditionModel = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
