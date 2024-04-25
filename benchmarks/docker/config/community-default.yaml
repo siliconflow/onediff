@@ -6,8 +6,9 @@ repos:
       repo_url: https://github.com/siliconflow/onediff.git
       branch: main
       cmds:
-        - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.19.3"
+        - "python3 -m pip install transformers==4.27.1 diffusers[torch]==0.25.0"
         - "python3 -m pip install -e ."
+        - "cd onediff_diffusers_extensions && python3 -m pip install -e ."
   # - ComfyUI:
   #     repo_url: "https://github.com/comfyanonymous/ComfyUI.git"
   #     branch: master
