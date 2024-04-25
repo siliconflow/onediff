@@ -87,6 +87,8 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 
 <img src="imgs/0_12_svd.png" height="400">
 
+Note that we haven't got the way to run SVD with TensorRT on Feb 29 2024.
+
 ### Features
 
 | Main Function | Details |
