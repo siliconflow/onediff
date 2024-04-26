@@ -14,7 +14,7 @@ You can follow this URL to install wsl2
 https://learn.microsoft.com/en-us/windows/wsl/install-manual.
 
 >**_NOTE:_**If you run into such a problem `` Prompt when WSL2 starts: The referenced object type does not support the attempted operation``Here are some things you can try\
-https://github.com/microsoft/WSL/issues/4177#issuecomment-1429113508 \
+https://github.com/microsoft/WSL/issues/4177#issuecomment-1429113508 
 
 After preparing the system, you can use anaconda and miniconda to manage the environment, use python 3.10 to create the environment, and install torch 2.22 in the environment after finishing.
 
