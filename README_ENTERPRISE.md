@@ -14,6 +14,7 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
     - [For NA/EU users](#for-naeu-users)
     - [For CN users](#for-cn-users)
   - [ComfyUI with OneDiff Enterprise](#comfyui-with-onediff-enterprise)
+    - [Online Quantization for ComfyUI](#online-quantization-for-comfyUI)
     - [ComfyUI SD 1.5](#comfyui-sd-15)
     - [ComfyUI SD 2.1](#comfyui-sd-21)
     - [ComfyUI SDXL](#comfyui-sdxl)
@@ -35,14 +36,17 @@ OneDiff Enterprise offers a quantization method that reduces memory usage, incre
       - [Accessing Diffusers Models](#accessing-diffusers-models-2)
       - [Scripts](#scripts-2)
       - [SVD + DeepCache](#svd--deepcache)
+  - [Quantitative model](#quantitative-model)
   - [Contact](#contact)
 
 
 ## Get the license key
 
-Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.
+Purchase license key from [SiliconFlow website](https://www.siliconflow.com/onediff.html) or contact contact@siliconflow.com if you encounter any issues.Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
-Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+Once you have completed your purchase, you can execute the following\
+```export SILICON_ONEDIFF_LICENSE_KEY= $YOUR_KEY ```\
+in the terminal
 
 ## Install OneDiff Enterprise
 
@@ -105,6 +109,11 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 **NOTE1**: Place the `*.pt` files from the HuggingFace repositories into the `ComfyUI/models/onediff_quant` subfolder. If the `onediff_quant` folder does not exist, please create it.
 
 **NOTE2**: It should be noted that you need to make sure you are logged in to [Hugging Face](https://huggingface.co/) before clicking the "Workflow" link below.
+
+<a id="online-quantization-for-comfyUI"></a>
+### Online Quantization for ComfyUI
+
+  We provide ComfyUI with an online quantification tool, which has significant acceleration effects. We provide detailed documentation tutorials [ComfyUI online quantization usage documentation](./onediff_comfy_nodes/ComfyUI_Online_Quantization.md) for users who want to use.
 
 
 <a id="comfyui-sd-1-5"></a>
@@ -380,6 +389,8 @@ python3 benchmarks/image_to_video.py \
   --output-video path/to/output_image.mp4 
 ```
 
+## Quantitative model
+Due to space limitations, specific quantification-related documents can be found in the [quantization document](./src/onediff/quantization/README.md#how-to-use-onediff-quantization).
 
 ## Contact
 

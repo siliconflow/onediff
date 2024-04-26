@@ -3,15 +3,21 @@
 </p>
 
 ---
-<a href="https://github.com/siliconflow/onediff/wiki" target="_blank"><img src="https://img.shields.io/badge/OneDiff-Community-green"></a>
-<a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Github Stars"></a>
-[![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square)](https://discord.gg/RKJTjZMcPQ)
-<a href="https://pypistats.org/packages/onediff" target="_blank"><img src="https://img.shields.io/pypi/dw/onediff?style=square&label=Pip Downloads"></a>
-<a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-green?logo=twitter&amp"></a>
+<p align="center">
+  <a href="https://pypistats.org/packages/onediff" target="_blank"><img src="https://img.shields.io/pypi/dw/onediff?style=square&label=Pip install"></a>
+  <a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Stars&color=green"></a>
+  <a href="https://github.com/siliconflow/onediff/wiki" target="_blank"><img src="https://img.shields.io/badge/OneDiff-Community wiki-green"></a>
+  <a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-green?logo=twitter&amp"></a>
+  <a href="https://discord.gg/RKJTjZMcPQ" target="_blank"><img src="https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square"></a>
+</p>
 
-[![Docker image build](https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg)](https://github.com/siliconflow/onediff/actions/workflows/sd.yml)
-[![CI testing](https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule)](https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule)
-
+<p align="center">
+  <a href="https://github.com/siliconflow/onediff/milestone/3" target="_blank"><img src="https://img.shields.io/github/milestones/progress/siliconflow/onediff/3"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aopen+is%3Aissue" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aissue+is%3Aclosed" target="_blank"><img src="https://img.shields.io/github/issues-closed/siliconflow/onediff?color=blue"></a>
+  <a href="https://github.com/siliconflow/onediff/actions/workflows/sd.yml" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg"></a>
+  <a href="https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule"></a>
+</p>
 
 ## OneDiff
 OneDiff is an out-of-the-box acceleration library for diffusion models, it provides:
@@ -25,18 +31,25 @@ For example:
 
 <img src="imgs/replace_a100.png" height="300">
 
-## News
-OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models". Here is the latest news:
+OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
+## News
+The latest news:
+- :rocket:[OneDiff 1.0 is out! (Acceleration of SD & SVD with one line of code)](https://www.reddit.com/r/StableDiffusion/comments/1c5gy1e/onediff_10_is_out_acceleration_of_sd_svd_with_one/)
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
-- :rocket:[InstantID can run 1.8x Faster with OneDiff](https://www.reddit.com/r/StableDiffusion/comments/1al19ek/instantid_can_run_18x_faster_with_onediff/)
 
 ## Community and Support
 [Here is the introduction of OneDiff Community.](https://github.com/siliconflow/onediff/wiki#onediff-community)
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
 - Email for Enterprise Edition or other business inquiries: contact@siliconflow.com
+
+## OS and GPU Compatibility
+- Linux
+  - If you want to use OneDiff on Windows, please use it under WSL.
+- NVIDIA GPUs
+  - [Compatibility with Nvidia GPUs](https://github.com/siliconflow/onediff/wiki/Compatibility-with-Nvidia-GPUs).
 
 ---
 The Full Introduction of OneDiff:
@@ -75,6 +88,8 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 
 <img src="imgs/0_12_svd.png" height="400">
 
+Note that we haven't got the way to run SVD with TensorRT on Feb 29 2024.
+
 ### Features
 
 | Main Function | Details |
@@ -95,22 +110,22 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 OneDiff supports the acceleration for SOTA models.
 * stable: release for public usage, and has long-term support;
 * beta: release for professional usage, and has long-term support;
-* alpha: early release for expert usage, and is **under active development**;
+* alpha: early release for expert usage, and should be careful to use;
 
 | AIGC Type | Models                      | HF diffusers |            | ComfyUI   |            | SD web UI |            |
 | --------- | --------------------------- | ------------ | ---------- | --------- | ---------- | --------- | ---------- |
 |           |                             | Community    | Enterprise | Community | Enterprise | Community | Enterprise |
-| Image     | SD 1.5                      | stable       | stable     | stable    | stable     | beta      | beta       |
-|           | SD 2.1                      | stable       | stable     | stable    | stable     | beta      | beta       |
-|           | SDXL                        | stable       | stable     | stable    | stable     | beta      | beta       |
-|           | LoRA                        | stable       |            | stable    |            | beta      |            |
+| Image     | SD 1.5                      | stable       | stable     | stable    | stable     | stable    | stable     |
+|           | SD 2.1                      | stable       | stable     | stable    | stable     | stable    | stable     |
+|           | SDXL                        | stable       | stable     | stable    | stable     | stable    | stable     |
+|           | LoRA                        | stable       |            | stable    |            | stable    |            |
 |           | ControlNet                  | stable       |            | stable    |            |           |            |
 |           | SDXL Turbo                  | stable       |            | stable    |            |           |            |
 |           | LCM                         | stable       |            | stable    |            |           |            |
-|           | SDXL DeepCache              | stable       | beta       | stable    | beta       |           |            |
-|           | InstantID                   | stable       |            | stable    |            |           |            |
-| Video     | SVD(stable Video Diffusion) | stable       | beta       | stable    | beta       |           |            |
-|           | SVD DeepCache               | stable       | beta       | stable    | beta       |           |            |
+|           | SDXL DeepCache              | alpha        | alpha      | alpha     | alpha      |           |            |
+|           | InstantID                   | beta         |            | beta      |            |           |            |
+| Video     | SVD(stable Video Diffusion) | stable       | stable     | stable    | stable     |           |            |
+|           | SVD DeepCache               | alpha        | alpha      | alpha     | alpha      |           |            |
 
 **Note: Enterprise Edition contains all the functionality in Community Edition.**
 
@@ -146,11 +161,6 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Get the experimental features                                                                             | Yes                                     |                                         |
 
 ## Installation
-### OS and GPU support
-- Linux
-  - If you want to use OneDiff on Windows, please use it under WSL.
-- NVIDIA GPUs
-
 ### OneDiff Installation
 
 #### 1. Install OneFlow
