@@ -227,6 +227,11 @@ class CrossAttentionPatch(torch.nn.Module):
                 out = out + out_ip
 
         return out.to(dtype=dtype)
+    
+    def __deepcopy__(self, memo):
+        # print("Warning: CrossAttentionPatch is not deepcopiable.", '-'*20)
+        return self
+
 
     def to(self, *args, **kwargs):
         return self
