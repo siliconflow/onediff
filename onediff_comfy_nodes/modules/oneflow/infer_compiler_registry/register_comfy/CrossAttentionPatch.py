@@ -46,6 +46,8 @@ def attention_pytorch_oneflow(q, k, v, heads, mask=None):
 
     return out
 
+
+
 class CrossAttentionPatch(torch.nn.Module):
     # forward for patching
     def __init__(self, ipadapter=None, number=0, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
@@ -66,6 +68,8 @@ class CrossAttentionPatch(torch.nn.Module):
 
         self.k_key = str(self.number*2+1) + "_to_k_ip"
         self.v_key = str(self.number*2+1) + "_to_v_ip"
+
+        self.forward_patch_key = id(self)
 
         self.optimized_attention = attention_pytorch_oneflow
         self.cache_map = {}
@@ -94,6 +98,9 @@ class CrossAttentionPatch(torch.nn.Module):
         block_type = extra_options["block"][0]
         #block_id = extra_options["block"][1]
         t_idx = extra_options["transformer_index"]
+        
+        # extra input for CrossAttentionPatch patch 
+        self_masks = extra_options["_masks"].get(self.forward_patch_key, self.masks)
 
         # extra options for AnimateDiff
         ad_params = extra_options['ad_params'] if "ad_params" in extra_options else None
@@ -105,7 +112,7 @@ class CrossAttentionPatch(torch.nn.Module):
         out = optimized_attention(q, k, v, extra_options["n_heads"])
         _, _, oh, ow = extra_options["original_shape"]
 
-        for weight, cond, cond_alt, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch, embeds_scaling in zip(self.weights, self.conds, self.conds_alt, self.unconds, self.ipadapters, self.masks, self.weight_types, self.sigma_starts, self.sigma_ends, self.unfold_batch, self.embeds_scaling):
+        for weight, cond, cond_alt, uncond, ipadapter, mask, weight_type, sigma_start, sigma_end, unfold_batch, embeds_scaling in zip(self.weights, self.conds, self.conds_alt, self.unconds, self.ipadapters, self_masks, self.weight_types, self.sigma_starts, self.sigma_ends, self.unfold_batch, self.embeds_scaling):
             if sigma <= sigma_start and sigma >= sigma_end:
                 if weight_type == 'ease in':
                     weight = weight * (0.05 + 0.95 * (1 - t_idx / self.layers))
@@ -263,11 +270,9 @@ class CrossAttentionPatch(torch.nn.Module):
         uncond = patch_kwargs.get("uncond")
         self.unconds[idx].copy_(uncond)
 
-        mask = patch_kwargs.get("mask", None)
-        if mask:
-            self.masks[idx].copy_(mask)
-            
-
+        # mask = patch_kwargs.get("mask", None)
+        # if mask is not None:
+        #     self.masks[idx] = mask
         # patch_weight_type = patch_kwargs.pop("weight_type")
 
         # sigma_start = patch_kwargs.pop("sigma_start")
@@ -276,6 +281,14 @@ class CrossAttentionPatch(torch.nn.Module):
         # sigma_end = patch_kwargs.pop("sigma_end")
         # self.sigma_end[0] = sigma_end
         return True
+
+    def update_mask(self, key, masks_dict: dict, mask):
+        idx = self.retrieve_from_cache(key)
+        masks_dict[self.forward_patch_key][idx] = mask
+
+    def append_mask(self, masks_dict: dict, mask):
+        masks = masks_dict.setdefault(self.forward_patch_key, [])
+        masks.append(mask)
 
 def is_crossAttention_patch(module)->bool:
     return getattr(module, "_use_crossAttention_patch", False)

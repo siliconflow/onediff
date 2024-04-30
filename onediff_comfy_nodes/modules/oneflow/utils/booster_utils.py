@@ -96,10 +96,16 @@ def clear_deployable_module_cache_and_unbind(
         create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
             diff_model
         )
+        create_patch_executor(PatchType.CrossAttentionForwardMasksPatch).clear_patch(
+            diff_model
+        )
     elif isinstance(module, DeployableModule):
         diff_model = module
         diff_model._clear_old_graph()
         create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
+            diff_model
+        )
+        create_patch_executor(PatchType.CrossAttentionForwardMasksPatch).clear_patch(
             diff_model
         )
     else:

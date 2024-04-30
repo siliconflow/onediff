@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
+
+import torch
 from comfy.model_patcher import ModelPatcher
 from comfy.model_base import BaseModel
 from register_comfy.CrossAttentionPatch import CrossAttentionPatch
@@ -40,7 +42,6 @@ class UiNodeWithIndexPatch(PatchExecutorBase):
         self.set_patch(new_model, value + self.INCREMENT_VALUE)
 
 
-
 class CachedCrossAttentionPatch(PatchExecutorBase):
     def __init__(self) -> None:
         self.patch_name = type(self).__name__
@@ -60,7 +61,26 @@ class CachedCrossAttentionPatch(PatchExecutorBase):
         if self.check_patch(module):
             self.get_patch(module).clear()
 
-          
+
+class CrossAttentionForwardMasksPatch(PatchExecutorBase):
+    def __init__(self) -> None:
+        self.patch_name = "forward_masks"
+
+    def check_patch(self, module):
+        return hasattr(module, self.patch_name)
+
+    def set_patch(self, module, value):
+        raise NotImplementedError()
+    
+    def get_patch(self, module) -> Dict:
+        if not self.check_patch(module):
+            setattr(module, self.patch_name, {})
+        return getattr(module, self.patch_name)
+
+    def clear_patch(self, module):
+        if self.check_patch(module):
+            self.get_patch(module).clear()
+
 
 class DeepCacheUNetExecutorPatch(PatchExecutorBase):
     def __init__(self) -> None:

@@ -11,12 +11,11 @@ from ..sd_hijack_utils import Hijacker
 from .patch_management import PatchType, create_patch_executor
 from .utils.booster_utils import is_using_oneflow_backend
 
-
 def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
     out_conds = []
     out_counts = []
     to_run = []
-
+    
     for i in range(len(conds)):
         out_conds.append(torch.zeros_like(x_in))
         out_counts.append(torch.ones_like(x_in) * 1e-37)
@@ -97,27 +96,28 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         
         if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(diff_model):
             transformer_options["sigmas"] = timestep[0].item()
+            masks_patch_executor = create_patch_executor(PatchType.CrossAttentionForwardMasksPatch)
+            transformer_options["_masks"] = masks_patch_executor.get_patch(diff_model)
         else:
             transformer_options["sigmas"] = timestep
+
         
         c['transformer_options'] = transformer_options
-
         if 'model_function_wrapper' in model_options:
             output = model_options['model_function_wrapper'](model.apply_model, {"input": input_x, "timestep": timestep_, "c": c, "cond_or_uncond": cond_or_uncond}).chunk(batch_chunks)
         else:
             output = model.apply_model(input_x, timestep_, **c).chunk(batch_chunks)
 
+ 
         for o in range(batch_chunks):
             cond_index = cond_or_uncond[o]
             out_conds[cond_index][:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += output[o] * mult[o]
             out_counts[cond_index][:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += mult[o]
-
+    
     for i in range(len(out_conds)):
         out_conds[i] /= out_counts[i]
 
     return out_conds
-
-
 
 
 def cond_func(orig_func, model, *args, **kwargs):
