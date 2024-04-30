@@ -239,6 +239,10 @@ python3 -m pip install huggingface_hub
  ~/.local/bin/huggingface-cli login
 ```
 
+### Install OneDiff on Windows using WSL2
+
+If you want to install OneDiff in WSL2, please consult our [installation guide on the Wiki](https://github.com/siliconflow/onediff/wiki/Run-OneDiff-on-Windows-by-WSL2).
+
 ## Release
 
 - run examples to check it works
