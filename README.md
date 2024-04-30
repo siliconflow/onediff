@@ -161,9 +161,15 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 | Get the experimental features                                                                             | Yes                                     |                                         |
 
 ## Installation
+
+### Install OneDiff on Windows using WSL2
+
+If you want to install OneDiff in WSL2, please consult our [installation guide on the Wiki](https://github.com/siliconflow/onediff/wiki/Run-OneDiff-on-Windows-by-WSL2).
+
 ### OneDiff Installation
 
 #### 1. Install OneFlow
+
 > **_NOTE:_** We have updated OneFlow frequently for OneDiff, so please install OneFlow by the links below.
 
 - **CUDA 11.8**
