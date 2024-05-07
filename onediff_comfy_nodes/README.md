@@ -44,7 +44,7 @@ Updated on January 23, 2024. Device: RTX 3090
     - [Basic Node Usage](#basic-node-usage)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Quantization](#quantization)
-    - [Notes](#notes)
+    - [Compilation Cache](#compilation-cache)
       - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
   - [OneDiff Community Examples](#onediff-community-examples)
     - [LoRA](#lora)
@@ -128,7 +128,7 @@ If you possess a OneDiff Enterprise license key, you can access instructions on 
 
 ![](workflows/onediff_quant_base.png)
 
-### Notes
+### Compilation Cache 
 #### Avoid compilation time for online serving
 The `"Load Checkpoint - OneDiff"` node automatically caches compiled results locally in the default directory `ComfyUI/input/graphs`. To save graphs in a custom directory, utilize `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
 
