@@ -44,6 +44,8 @@ Updated on January 23, 2024. Device: RTX 3090
     - [Basic Node Usage](#basic-node-usage)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Quantization](#quantization)
+    - [Notes](#notes)
+      - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
   - [OneDiff Community Examples](#onediff-community-examples)
     - [LoRA](#lora)
     - [ControlNet](#controlnet)
@@ -113,10 +115,7 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 ![](workflows/model-speedup.png)
 
-Notes:
-
-- Specify the directory for saving graphs using `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
-- The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
+The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
 
 ### Quantization
@@ -129,6 +128,9 @@ If you possess a OneDiff Enterprise license key, you can access instructions on 
 
 ![](workflows/onediff_quant_base.png)
 
+### Notes
+#### Avoid compilation time for online serving
+The `"Load Checkpoint - OneDiff"` node automatically caches compiled results locally in the default directory `ComfyUI/input/graphs`. To save graphs in a custom directory, utilize `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
 
 ## OneDiff Community Examples 
 
