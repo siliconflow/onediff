@@ -113,8 +113,10 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 ![](workflows/model-speedup.png)
 
+Notes:
 
-The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
+- Specify the directory for saving graphs using `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
+- The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
 
 ### Quantization
@@ -123,7 +125,7 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
-If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
 ![](workflows/onediff_quant_base.png)
 
