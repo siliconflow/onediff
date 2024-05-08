@@ -201,6 +201,8 @@ class Script(scripts.Script):
             if not os.access(str(graph_checkpoints_path()), os.W_OK):
                 raise PermissionError(f"The directory {graph_checkpoints_path()} does not have write permissions, and graph cannot be written to this directory. \
                                       Please change it in the settings to a directory with write permissions")
+            if not Path(graph_checkpoint_path()).exists():
+                Path(graph_checkpoint_path()).mkdir()
             saved_graph_name = graph_checkpoints_path() + f"/{saved_graph_name}"
             if not Path(saved_graph_name).exists():
                 compiled_unet.save_graph(saved_graph_name)
@@ -209,8 +211,8 @@ class Script(scripts.Script):
 
 def on_ui_settings():
     section = ('onediff', "OneDiff")
-    shared.opts.add_option("onediff_graph_save_path", shared.OptionInfo(
-        str(Path(__file__).parent.parent / "models"), "Directory for saving onediff compiled graph", section=section))
+    shared.opts.add_option("onediff_graph_path", shared.OptionInfo(
+        str(Path(__file__).parent.parent / "graph_checkpoints"), "Directory for onediff compiled graph", section=section))
 
 script_callbacks.on_ui_settings(on_ui_settings)
 onediff_do_hijack()

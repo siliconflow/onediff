@@ -72,6 +72,9 @@ When switching models, if the new model has the same structure as the old model,
 
 OneDiff supports saving compiled graph to disk and loading graph from disk. In scenarios where recompiling is required after switching model, you can skip the compilation process by loading the compiled graph from the disk, to saving time of model switching.
 
+The compiled graph will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/graph_checkpoints/` by default. If you want to specify the path, you can modify it in webui settings.
+
+![Path to save graph in Settings](./images/onediff_settings_dir_to_save_graph.png)
 
 #### Graph saving
 
@@ -82,9 +85,6 @@ After selecting onediff, a text box named `Saved graph name` will appear at the 
 
 > Note: When the text box is empty or the file with the specified name already exists, the static graph will not be saved.
 
-The compiled graph will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/` by default. If this address does not have write permission, you can modify the default saving path in webui settings.
-
-![Path to save graph in Settings](./images/onediff_settings_dir_to_save_graph.png)
 
 #### Graph loading
 

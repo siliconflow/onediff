@@ -25,7 +25,10 @@ graph_checkpoints = []
 
 def graph_checkpoints_path():
     import modules.shared as shared
-    return shared.opts.onediff_graph_save_path
+    graph_path = Path(shared.opts.onediff_graph_path)
+    if not graph_path.exists():
+        graph_path.mkdir(parents=True)
+    return shared.opts.onediff_graph_path
 
 def get_graph_checkpoints():
     global graph_checkpoints
