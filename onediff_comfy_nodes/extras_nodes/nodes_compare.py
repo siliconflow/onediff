@@ -66,9 +66,11 @@ class CompareModel:
             )
             return {}
 
+        removeprefix = lambda ss, prefix: ss[len(prefix):] if ss.startswith(prefix) else ss
+        
         cnt = 0
         for key, _ in oflow_unet.named_parameters():
-            key = key.removeprefix("_deployable_module_model._torch_module.")
+            key = removeprefix(key, "_deployable_module_model._torch_module.")
             torch_value = torch_unet.get_parameter(key).cuda()
             oflow_value = oflow_unet._deployable_module_model._oneflow_module.get_parameter(
                 key
