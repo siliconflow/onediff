@@ -25,7 +25,7 @@ from oneflow import __version__ as oneflow_version
 
 """oneflow_compiled UNetModel"""
 compiled_unet = None
-is_compiled_unet_quantized = False
+is_unet_quantized = False
 compiled_ckpt_name = None
 
 def generate_graph_path(ckpt_name: str, model_name: str) -> str:
@@ -178,7 +178,7 @@ class Script(scripts.Script):
 
         ckpt_changed = current_checkpoint != compiled_ckpt_name
         model_changed = self.check_model_change(shared.sd_model)
-        quantization_changed = quantization != is_compiled_unet_quantized
+        quantization_changed = quantization != is_unet_quantized
         need_recompile = (
             (quantization and ckpt_changed) # always recompile when switching ckpt with 'int8 speed model' enabled
             or model_changed                # always recompile when switching model to another structure
