@@ -13,7 +13,8 @@
 
 <p align="center">
   <a href="https://github.com/siliconflow/onediff/milestone/3" target="_blank"><img src="https://img.shields.io/github/milestones/progress/siliconflow/onediff/3"></a>
-  <a href="https://github.com/siliconflow/onediff/issues" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff?label=Issues"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aopen+is%3Aissue" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aissue+is%3Aclosed" target="_blank"><img src="https://img.shields.io/github/issues-closed/siliconflow/onediff?color=blue"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/sd.yml" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule"></a>
 </p>
@@ -47,6 +48,8 @@ The latest news:
 ## OS and GPU Compatibility
 - Linux
   - If you want to use OneDiff on Windows, please use it under WSL.
+  - [The guide to install OneDiff in WSL2](https://github.com/siliconflow/onediff/wiki/Run-OneDiff-on-Windows-by-WSL2).
+
 - NVIDIA GPUs
   - [Compatibility with Nvidia GPUs](https://github.com/siliconflow/onediff/wiki/Compatibility-with-Nvidia-GPUs).
 
@@ -86,6 +89,8 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 - NVIDIA A100 80G SXM4;
 
 <img src="imgs/0_12_svd.png" height="400">
+
+Note that we haven't got the way to run SVD with TensorRT on Feb 29 2024.
 
 ### Features
 

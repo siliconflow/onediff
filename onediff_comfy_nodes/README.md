@@ -44,6 +44,8 @@ Updated on January 23, 2024. Device: RTX 3090
     - [Basic Node Usage](#basic-node-usage)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Quantization](#quantization)
+    - [Compilation Cache](#compilation-cache)
+      - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
   - [OneDiff Community Examples](#onediff-community-examples)
     - [LoRA](#lora)
     - [ControlNet](#controlnet)
@@ -113,7 +115,6 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 ![](workflows/model-speedup.png)
 
-
 The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
 
@@ -123,10 +124,13 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
-If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
 ![](workflows/onediff_quant_base.png)
 
+### Compilation Cache 
+#### Avoid compilation time for online serving
+The `"Load Checkpoint - OneDiff"` node automatically caches compiled results locally in the default directory `ComfyUI/input/graphs`. To save graphs in a custom directory, utilize `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
 
 ## OneDiff Community Examples 
 

@@ -14,6 +14,8 @@ if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
 else:
     is_peft_available = lambda: False
 
+from onediff.infer_compiler.utils.param_utils import update_graph_related_tensor
+
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
@@ -136,6 +138,7 @@ def _set_adapter(self, adapter_names, adapter_weights):
     if delta_weight is not None:
         fused_weight = self.weight.data.float() + delta_weight
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+        update_graph_related_tensor(self)
 
 
 def _delete_adapter(self, adapter_names):
@@ -224,6 +227,7 @@ def fuse_lora(
         lora_weight = get_delta_weight(self, w_up, w_down, 1.0)
         fused_weight = self.weight.data.float() + lora_weight
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
+        update_graph_related_tensor(self)
 
 
 def _unfuse_lora(
@@ -263,6 +267,7 @@ def _unfuse_lora(
 
     if delta_weight is not None:
         self.weight.data -= delta_weight
+        update_graph_related_tensor(self)
 
 
 # the code is referenced from https://github.com/huggingface/diffusers/blob/ce9825b56bd8a6849e68b9590022e935400659e6/src/diffusers/loaders/lora_conversion_utils.py#L24
