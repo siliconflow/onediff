@@ -9,6 +9,7 @@ import modules.shared as shared
 from modules.sd_models import select_checkpoint
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
+from modules import script_callbacks
 
 from ui_utils import hints_message, get_graph_checkpoints, refresh_graph_checkpoints, graph_checkpoints_path
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
@@ -22,6 +23,7 @@ from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
 )
+from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
 from onediff import __version__ as onediff_version
 from oneflow import __version__ as oneflow_version
 
@@ -120,10 +122,12 @@ class Script(scripts.Script):
             graph_checkpoint = gr.Dropdown(label="Graph checkpoints (Beta)", choices=["None"] + get_graph_checkpoints(), value="None", elem_id="onediff_graph_checkpoint")
             refresh_button = create_refresh_button(graph_checkpoint, refresh_graph_checkpoints, lambda: {"choices": ["None"] + get_graph_checkpoints()}, "onediff_refresh_graph")
             save_graph_name = gr.Textbox(label="Saved graph name (Beta)")
+        with gr.Row():
+            always_recompile = gr.components.Checkbox(label="always_recompile", visible=parse_boolean_from_env("ONEDIFF_DEBUG"))
         if not varify_can_use_quantization():
             gr.HTML(hints_message)
         is_quantized = gr.components.Checkbox(label="Model Quantization(int8) Speed Up", visible=varify_can_use_quantization())
-        return [is_quantized, graph_checkpoint, save_graph_name]
+        return [is_quantized, graph_checkpoint, save_graph_name, always_recompile]
 
     def show(self, is_img2img):
         return True
@@ -151,7 +155,7 @@ class Script(scripts.Script):
             self.current_type = get_model_type(model)
         return is_changed
 
-    def run(self, p, quantization=False, graph_checkpoint=None, saved_graph_name=""):
+    def run(self, p, quantization=False, graph_checkpoint=None, saved_graph_name="", always_recompile=False):
 
         global compiled_unet, compiled_ckpt_name, is_unet_quantized
         current_checkpoint = shared.opts.sd_model_checkpoint
@@ -164,6 +168,7 @@ class Script(scripts.Script):
             (quantization and ckpt_changed) # always recompile when switching ckpt with 'int8 speed model' enabled
             or model_changed                # always recompile when switching model to another structure
             or quantization_changed         # always recompile when switching model from non-quantized to quantized (and vice versa) 
+            or always_recompile
         )
 
         is_unet_quantized = quantization
@@ -172,15 +177,17 @@ class Script(scripts.Script):
             compiled_unet = compile_unet(
                 original_diffusion_model, quantization=quantization
             )
-            compiled_ckpt_name = ckpt_name
 
             if graph_checkpoint != "None":
+                graph_checkpoint_path = graph_checkpoints_path() + f"/{graph_checkpoint}"
+                if not Path(graph_checkpoint_path).exists():
+                    raise FileNotFoundError(f"Cannot find graph {graph_checkpoint_path}, please make sure it exists")
                 try:
-                    compiled_unet.load_graph(graph_checkpoints_path() + f"/{graph_checkpoint}", run_warmup=True)
+                    compiled_unet.load_graph(graph_checkpoint_path, run_warmup=True)
                 except zipfile.BadZipFile as e:
-                    print("Load graph failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
+                    raise RuntimeError("Load graph failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
                 except Exception as e:
-                    print("Load graph failed. Please make sure graph checkpoint has the same sd version (or unet architure) with current checkpoint")
+                    raise RuntimeError("Load graph failed. Please make sure graph checkpoint has the same sd version (or unet architure) with current checkpoint")
 
         else:
             logger.info(
@@ -191,11 +198,19 @@ class Script(scripts.Script):
             proc = process_images(p)
 
         if saved_graph_name != "":
+            if not os.access(str(graph_checkpoints_path()), os.W_OK):
+                raise PermissionError(f"The directory {graph_checkpoints_path()} does not have write permissions, and graph cannot be written to this directory. \
+                                      Please change it in the settings to a directory with write permissions")
             saved_graph_name = graph_checkpoints_path() + f"/{saved_graph_name}"
             if not Path(saved_graph_name).exists():
-                compiled_unet.save_graph(graph_checkpoints_path() + f"/{saved_graph_name}")
+                compiled_unet.save_graph(saved_graph_name)
 
         return proc
 
+def on_ui_settings():
+    section = ('onediff', "OneDiff")
+    shared.opts.add_option("onediff_graph_save_path", shared.OptionInfo(
+        str(Path(__file__).parent.parent / "models"), "Directory for saving onediff compiled graph", section=section))
 
+script_callbacks.on_ui_settings(on_ui_settings)
 onediff_do_hijack()

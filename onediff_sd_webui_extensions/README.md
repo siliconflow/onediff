@@ -79,8 +79,12 @@ After selecting onediff, a text box named `Saved graph name` will appear at the 
 
 ![Graph saving](./images/saved_graph_name.jpg)
 
+
 > Note: When the text box is empty or the file with the specified name already exists, the static graph will not be saved.
 
+The compiled graph will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/` by default. If this address does not have write permission, you can modify the default saving path in webui settings.
+
+![Path to save graph in Settings](./images/onediff_settings_dir_to_save_graph.png)
 
 #### Graph loading
 

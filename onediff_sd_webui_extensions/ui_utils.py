@@ -24,7 +24,8 @@ hints_message = """
 graph_checkpoints = []
 
 def graph_checkpoints_path():
-    return str(Path(__file__).parent / "models")
+    import modules.shared as shared
+    return shared.opts.onediff_graph_save_path
 
 def get_graph_checkpoints():
     global graph_checkpoints
