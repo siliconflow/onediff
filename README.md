@@ -236,7 +236,7 @@ cd onediff && python3 -m pip install -e .
 
 #### 4. (Optional)Login huggingface-cli
 
-```
+```bash
 python3 -m pip install huggingface_hub
 huggingface-cli login
 ```
