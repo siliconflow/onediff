@@ -26,6 +26,7 @@ class SVDBenchmark(BaseBenchmark):
         save_graph=False,
         load_graph=False,
         variant="fp16",
+        device="cuda",
         custom_pipeline=None,
         scheduler=None,
         lora=None,
@@ -82,6 +83,8 @@ class SVDBenchmark(BaseBenchmark):
         self.attention_fp16_score_accum_max_m = attention_fp16_score_accum_max_m
         self.alter_height = alter_height
         self.alter_width = alter_width
+
+        self.device = get_device(device)
 
     def load_pipeline_from_diffusers(self):
         if self.deepcache:
@@ -217,6 +220,7 @@ class SVDBenchmark(BaseBenchmark):
         end = time.time()
         self.results = {}
         print(f"Inference time: {end - begin:.3f}s")
+        self.results["inference_time"] = end - begin
         iter_per_sec = iter_profiler.get_iter_per_sec()
         self.results["iter_per_sec"] = iter_per_sec
         if iter_per_sec is not None:

@@ -84,23 +84,6 @@ class SDXLLightBenchmark(BaseBenchmark):
         for key, value in kwargs.items():
             setattr(self, key, value)
 
-        self.kwarg_inputs = get_kwarg_inputs(
-            prompt,
-            negative_prompt,
-            height,
-            width,
-            steps,
-            batch,
-            seed,
-            extra_call_kwargs,
-            deepcache,
-            cache_interval,
-            cache_layer_id,
-            cache_block_id,
-            input_image,
-            control_image,
-        )
-
     def load_pipeline_from_diffusers(self):
         if self.model_dir is not None:
             print("Use Local Model.")
@@ -165,6 +148,22 @@ class SDXLLightBenchmark(BaseBenchmark):
 
     def benchmark_model(self):
         self.results = {}
+        self.kwarg_inputs = get_kwarg_inputs(
+            prompt=self.prompt,
+            negative_prompt=self.negative_prompt,
+            height=self.height,
+            width=self.width,
+            steps=self.steps,
+            batch=self.batch,
+            seed=self.seed,
+            extra_call_kwargs=self.extra_call_kwargs,
+            deepcache=self.deepcache,
+            cache_interval=self.cache_interval,
+            cache_layer_id=self.cache_layer_id,
+            cache_block_id=self.cache_block_id,
+            input_image=self.input_image,
+            control_image=self.control_image,
+        )
         if self.warmups > 0:
             print("Begin warmup")
             for _ in range(self.warmups):
@@ -185,6 +184,7 @@ class SDXLLightBenchmark(BaseBenchmark):
 
         print("=======================================")
         print(f"Inference time: {end - begin:.3f}s")
+        self.results["inference_time"] = end - begin
         iter_per_sec = iter_profiler.get_iter_per_sec()
         if iter_per_sec is not None:
             print(f"Iterations per second: {iter_per_sec:.3f}")
@@ -206,3 +206,4 @@ if __name__ == "__main__":
     benchmark.load_pipeline_from_diffusers()
     benchmark.compile_pipeline()
     benchmark.benchmark_model()
+    print(benchmark.results)
