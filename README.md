@@ -149,10 +149,10 @@ We also maintain a repository for benchmarking the quality of generation after a
 
 ### OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can
-- subscribe to Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
-- or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+- Subscribe to the OneDiff Enterprise Edition directly through our website. Upon purchase, you'll gain immediate access to comprehensive support: https://siliconflow.com/onediff.html
+- For a more personalized approach, please email us at contact@siliconflow.com. Include details about your use case, deployment size, and any specific needs you might have.
 
-OneDiff Enterprise Edition can be **subscribed to for one month with one GPU** and the cost is low.
+The OneDiff Enterprise Edition is available for a monthly subscription and is designed to be cost-effective, even for systems utilizing a **single GPU**.
 
 |                                                                                                           | OneDiff Enterprise Edition              | OneDiff Community Edition               |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
