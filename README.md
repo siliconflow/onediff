@@ -259,7 +259,7 @@ huggingface-cli login
 
 - install build package
   ```bash
-  python3 -m pip install build
+  python3 -m pip install build twine
   ```
 
 - build wheel
