@@ -94,7 +94,7 @@ Note that we haven't got the way to run SVD with TensorRT on Feb 29 2024.
 
 ### Features
 
-| Main Function | Details |
+| Functionality | Details |
 |----------------|----------------------------|
 | Compiling Time   | About 1 minute (SDXL) |
 | Deployment Methods              | Plug and Play |
