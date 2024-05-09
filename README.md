@@ -238,7 +238,7 @@ cd onediff && python3 -m pip install -e .
 
 ```
 python3 -m pip install huggingface_hub
- ~/.local/bin/huggingface-cli login
+huggingface-cli login
 ```
 
 ## Release
