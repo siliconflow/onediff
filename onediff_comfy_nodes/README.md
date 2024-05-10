@@ -86,7 +86,9 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
     ```bash
     cd onediff
-    cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    # or
+    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
     ```
 
 </details>

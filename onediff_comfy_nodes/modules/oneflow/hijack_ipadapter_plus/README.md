@@ -11,7 +11,15 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
   - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
   - commit 417d806e7a2153c98613e86407c1941b2b348e88 
   - Date:  Wed Apr 10 13:28:41 2024 +0200
-  
+
+- ComfyUI_InstantID$ git log
+  - commit e9cc7597b2a7cd441065418a975a2de4aa2450df 
+  - Date:   Tue Apr 9 14:05:15 2024 +0200
+
+- ComfyUI-AnimateDiff-Evolved$ git log
+  - commit f9e0343f4c4606ee6365a9af4a7e16118f1c45e1 
+  - Date:   Sat Apr 6 17:32:15 2024 -0500
+
 - OneDiff:
   - github: https://github.com/siliconflow/onediff 
 
@@ -27,7 +35,7 @@ As follows:
 
 ![ipadapter_example](https://github.com/siliconflow/onediff/assets/109639975/adb2df92-b0f0-4650-ae02-5fd458209b92)
 
-
+![ipadapter_example int8](https://github.com/siliconflow/onediff/assets/109639975/009b2f84-37f2-4b29-a2be-d1091da00b98)
 
  | PyTorch                                                                                                | OneDiff                                                                                                  |
  | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
@@ -37,9 +45,9 @@ As follows:
 - batch_size 4
 - warmup 4
 - e2e
-  - torch: 2.08 s
-  - onediff: 1.35 s
-  - percentage improvement：～35% 
+  - torch: 2.08 s (baseline)
+  - onediff: 1.36 s (percentage improvement ~34.6%)
+  - onediff int8: 1.20 s (percentage improvement ~42.3%) 
 
 
 ### Compatibility
