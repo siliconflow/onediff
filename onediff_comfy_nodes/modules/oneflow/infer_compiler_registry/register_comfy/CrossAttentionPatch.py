@@ -73,7 +73,7 @@ class CrossAttentionPatch(torch.nn.Module):
 
         self.optimized_attention = attention_pytorch_oneflow
         self.cache_map = {}
-        self._bind_model = None
+        object.__setattr__(self, "_bind_model", None)
         self._use_crossAttention_patch = True
 
     def set_new_condition(self, ipadapter=None, number=0, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only'):
@@ -244,7 +244,9 @@ class CrossAttentionPatch(torch.nn.Module):
         return self
     
     def bind_model(self, model: torch.nn.Module):
-        self._bind_model = model
+        # self._bind_model = model
+        object.__setattr__(self, "_bind_model", model)
+
 
     def get_bind_model(self):
         return self._bind_model
