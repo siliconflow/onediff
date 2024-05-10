@@ -138,7 +138,7 @@ The `"Load Checkpoint - OneDiff"` node automatically caches compiled results loc
 ## OneDiff Community Examples 
 
 ### IPAdapter
-> doc link: Accelerating [ComfyUI_IPAdapter_plus](https://github.com/cubiq/ComfyUI_IPAdapter_plus) [with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md)
+> doc link: [Accelerating cubiq/ComfyUI_IPAdapter_plus with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md)
 
 ### LoRA                  
 
@@ -177,8 +177,8 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 ### InstantID 
 
-> doc link: Accelerating [ZHO-ZHO-ZHO/ComfyUI-InstantID](https://github.com/ZHO-ZHO-ZHO/ComfyUI-InstantID) [with OneDiff](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ComfyUI_InstantID_OneDiff.md)
-> doc link: Accelerating [cubiq/ComfyUI_InstantID](https://github.com/cubiq/ComfyUI_InstantID)  [with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
+> doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
+> doc link: [Accelerating ZHO-ZHO-ZHO/ComfyUI-InstantID with OneDiff](./workflows/ComfyUI_InstantID_OneDiff.md)
 
 
 ## Contact
