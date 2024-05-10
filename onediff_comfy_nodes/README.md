@@ -47,6 +47,7 @@ Updated on January 23, 2024. Device: RTX 3090
     - [Compilation Cache](#compilation-cache)
       - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
   - [OneDiff Community Examples](#onediff-community-examples)
+    - [IPAdapter](#ipadapter)
     - [LoRA](#lora)
     - [ControlNet](#controlnet)
     - [SVD](#svd)
@@ -86,7 +87,9 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
     ```bash
     cd onediff
-    cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    # or
+    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
     ```
 
 </details>
@@ -134,6 +137,9 @@ The `"Load Checkpoint - OneDiff"` node automatically caches compiled results loc
 
 ## OneDiff Community Examples 
 
+### IPAdapter
+> doc link: [Accelerating cubiq/ComfyUI_IPAdapter_plus with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md)
+
 ### LoRA                  
 
 This example demonstrates how to utilize LoRAs. You have the flexibility to modify the LoRA models or adjust their strength without the need for recompilation.
@@ -168,9 +174,13 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 [Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
 
-### InstantID
 
-> [doc link](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ComfyUI_InstantID_OneDiff.md)
+### InstantID 
+
+> doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
+
+> doc link: [Accelerating ZHO-ZHO-ZHO/ComfyUI-InstantID with OneDiff](./workflows/ComfyUI_InstantID_OneDiff.md)
+
 
 ## Contact
 
