@@ -8,12 +8,16 @@ from .utils.import_utils import is_oneflow_available
 
 if is_oneflow_available() and is_default_using_oneflow_backend():
     from .modules.oneflow import BasicOneFlowBoosterExecutor
+
     BasicBoosterExecutor = BasicOneFlowBoosterExecutor
 elif is_nexfort_available() and is_default_using_nexfort_backend():
     from .modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
+
     BasicBoosterExecutor = BasicNexFortBoosterExecutor
 else:
-    raise RuntimeError("Neither OneFlow nor Nexfort is available. Please ensure at least one of them is installed.")
+    raise RuntimeError(
+        "Neither OneFlow nor Nexfort is available. Please ensure at least one of them is installed."
+    )
 
 __all__ = [
     "ModelSpeedup",
@@ -21,18 +25,16 @@ __all__ = [
     "ControlnetSpeedup",
     "OneDiffApplyModelBooster",
     "OneDiffControlNetLoader",
-    "OneDiffCheckpointLoaderSimple"
+    "OneDiffCheckpointLoaderSimple",
 ]
+
 
 class ModelSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {"model": ("MODEL",), "inplace": ([False, True],),},
-            "optional": {
-                "custom_booster": ("CUSTOM_BOOSTER",),
-            }
-
+            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -40,7 +42,7 @@ class ModelSpeedup:
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self, model, inplace=False, custom_booster: BoosterScheduler=None):
+    def speedup(self, model, inplace=False, custom_booster: BoosterScheduler = None):
         if custom_booster:
             booster = custom_booster
             booster.inplace = False
@@ -49,14 +51,13 @@ class ModelSpeedup:
 
         return (booster(model),)
 
+
 class VaeSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
             "required": {"vae": ("VAE",),},
-            "optional": {
-                "custom_booster": ("CUSTOM_BOOSTER",),
-            }
+            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
         }
 
     RETURN_TYPES = ("VAE",)
@@ -72,7 +73,8 @@ class VaeSpeedup:
 
         new_vae = booster(vae)
         return (new_vae,)
-    
+
+
 class ControlnetSpeedup:
     @classmethod
     def INPUT_TYPES(s):
@@ -82,15 +84,20 @@ class ControlnetSpeedup:
                 "control_net": ("CONTROL_NET",),
                 "cnet_stack": ("CONTROL_NET_STACK",),
                 "custom_booster": ("CUSTOM_BOOSTER",),
-            }
+            },
         }
 
-    RETURN_TYPES = ("CONTROL_NET", "CONTROL_NET_STACK",)
+    RETURN_TYPES = (
+        "CONTROL_NET",
+        "CONTROL_NET_STACK",
+    )
     FUNCTION = "speedup"
     CATEGORY = "OneDiff"
 
     @torch.no_grad()
-    def speedup(self,control_net=None, cnet_stack=[], custom_booster: BoosterScheduler=None):
+    def speedup(
+        self, control_net=None, cnet_stack=[], custom_booster: BoosterScheduler = None
+    ):
         if custom_booster:
             booster = custom_booster
         else:
@@ -99,12 +106,16 @@ class ControlnetSpeedup:
         if control_net:
             control_net = booster(control_net)
 
-        new_cnet_stack =[]
+        new_cnet_stack = []
         for cnet in cnet_stack:
-            new_cnet = tuple([booster(cnet[0])]+list(cnet[1:]))
+            new_cnet = tuple([booster(cnet[0])] + list(cnet[1:]))
             new_cnet_stack.append(new_cnet)
-        return (control_net, new_cnet_stack,)
-    
+        return (
+            control_net,
+            new_cnet_stack,
+        )
+
+
 class OneDiffApplyModelBooster:
     """Main class responsible for optimizing models."""
 
@@ -115,7 +126,7 @@ class OneDiffApplyModelBooster:
             "optional": {
                 "quantization_booster": ("QuantizationBooster",),
                 "deepcache_booster": ("DeepCacheBooster",),
-                "torchcompile_booster":("TorchCompileBooster",),
+                "torchcompile_booster": ("TorchCompileBooster",),
             },
         }
 
@@ -124,7 +135,12 @@ class OneDiffApplyModelBooster:
     FUNCTION = "speedup_module"
 
     @torch.no_grad()
-    def speedup_module(self, quantization_booster: BoosterExecutor =None, deepcache_booster=None, torchcompile_booster=None):
+    def speedup_module(
+        self,
+        quantization_booster: BoosterExecutor = None,
+        deepcache_booster=None,
+        torchcompile_booster=None,
+    ):
         """Apply the optimization technique to the model."""
         booster_executors = []
         if deepcache_booster:
@@ -137,14 +153,13 @@ class OneDiffApplyModelBooster:
         assert len(booster_executors) > 0
         return (BoosterScheduler(booster_executors),)
 
+
 class OneDiffControlNetLoader(ControlNetLoader):
     @classmethod
     def INPUT_TYPES(s):
         ret = super().INPUT_TYPES()
-        ret.update({"optional": {
-                    "custom_booster": ("CUSTOM_BOOSTER",),}
-        })
-        return ret 
+        ret.update({"optional": {"custom_booster": ("CUSTOM_BOOSTER",),}})
+        return ret
 
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_controlnet"
@@ -155,8 +170,9 @@ class OneDiffControlNetLoader(ControlNetLoader):
         if custom_booster is None:
             custom_booster = BoosterScheduler(BasicBoosterExecutor())
         controlnet = custom_booster(controlnet, ckpt_name=control_net_name)
-        
+
         return (controlnet,)
+
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     @classmethod
@@ -166,9 +182,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "vae_speedup": (["disable", "enable"],),
             },
-            "optional": {
-                    "custom_booster": ("CUSTOM_BOOSTER",),
-            }
+            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
         }
 
     CATEGORY = "OneDiff/Loaders"
@@ -176,7 +190,12 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
 
     @torch.no_grad()
     def onediff_load_checkpoint(
-        self, ckpt_name, vae_speedup="disable", output_vae=True, output_clip=True, custom_booster: BoosterScheduler=None,
+        self,
+        ckpt_name,
+        vae_speedup="disable",
+        output_vae=True,
+        output_clip=True,
+        custom_booster: BoosterScheduler = None,
     ):
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
@@ -190,6 +209,3 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
         # set inplace update
         modelpatcher.weight_inplace_update = True
         return modelpatcher, clip, vae
-
-
-

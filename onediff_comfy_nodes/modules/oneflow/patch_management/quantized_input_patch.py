@@ -15,10 +15,11 @@ def convert_to_nested(original_dict):
             new_value = value.get_bind_model()
         else:
             new_value = value
-        
+
         # Update the new dictionary with the processed value
         new_dict[key] = new_value
     return new_dict
+
 
 class QuantizedInputPatch(PatchExecutorBase):
     def __init__(self):
@@ -26,16 +27,16 @@ class QuantizedInputPatch(PatchExecutorBase):
 
     def set_patch(self):
         if self.check_patch():
-            return 
-        
+            return
+
         def new_patch_input_adapter(in_args, in_kwargs):
             return in_args, convert_to_nested(in_kwargs)
-        
+
         self.is_use_patch = True
         online_quantization_utils.patch_input_adapter = new_patch_input_adapter
 
     def get_patch(self, module):
-        pass 
+        pass
 
     def check_patch(self):
-        return self.is_use_patch   
+        return self.is_use_patch
