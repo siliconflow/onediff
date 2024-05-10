@@ -178,6 +178,7 @@ Here are the example of applying DeepCache to SD and SVD models.
 ### InstantID 
 
 > doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
+
 > doc link: [Accelerating ZHO-ZHO-ZHO/ComfyUI-InstantID with OneDiff](./workflows/ComfyUI_InstantID_OneDiff.md)
 
 
