@@ -244,7 +244,6 @@ class CrossAttentionPatch(torch.nn.Module):
         return self
     
     def bind_model(self, model: torch.nn.Module):
-        # self._bind_model = model
         object.__setattr__(self, "_bind_model", model)
 
 
