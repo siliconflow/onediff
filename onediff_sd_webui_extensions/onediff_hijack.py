@@ -8,24 +8,18 @@ class OneFlowHijackForUnet:
     This is oneflow, but with cat that resizes tensors to appropriate dimensions if they do not match;
     this makes it possible to create pictures with dimensions that are multiples of 8 rather than 64
     """
-
     def __getattr__(self, item):
         if item == 'cat':
             return self.cat
-
         if hasattr(oneflow, item):
             return getattr(oneflow, item)
-
         raise AttributeError(f"'{type(self).__name__}' object has no attribute '{item}'")
 
     def cat(self, tensors, *args, **kwargs):
         if len(tensors) == 2:
             a, b = tensors
-            if a.shape[-2:] != b.shape[-2:]:
-                a = oneflow.nn.functional.interpolate(a, b.shape[-2:], mode="nearest")
-
+            a = oneflow.nn.functional.interpolate_like(a, like=b, mode="nearest")
             tensors = (a, b)
-
         return oneflow.cat(tensors, *args, **kwargs)
 
 hijack_flow = OneFlowHijackForUnet()
