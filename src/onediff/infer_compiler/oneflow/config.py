@@ -78,6 +78,7 @@ class OneFlowCompilerConfig:
     attention_allow_half_precision_accumulation: Optional[bool] = None
     attention_allow_half_precision_score_accumulation_max_m: Optional[int] = None
     attention_allow_quantization: Optional[bool] = None
+    conv2d_kernel_enable_tuning_warmup: Optional[bool] = None
 
     attr2env_var = {
         "run_graph_by_vm": "ONEFLOW_RUN_GRAPH_BY_VM",
@@ -105,6 +106,7 @@ class OneFlowCompilerConfig:
         "linear_embedding_skip_init": "ONEFLOW_LINEAR_EMBEDDING_SKIP_INIT",
         "attention_allow_half_precision_accumulation": "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION",
         "attention_allow_half_precision_score_accumulation_max_m": "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M",
+        "conv2d_kernel_enable_tuning_warmup":'ONEFLOW_CONV2D_KERNEL_ENABLE_TUNING_WARMUP',
     }
 
     def __post_init__(self):
