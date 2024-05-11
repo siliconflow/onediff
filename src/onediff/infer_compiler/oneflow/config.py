@@ -41,7 +41,7 @@ def init_default_env():
     # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_QUANTIZATION", "1")
 
     os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
-
+    os.environ.setdefault("ONEFLOW_CONV2D_KERNEL_ENABLE_TUNING_WARMUP", "1")
     # TODO: enable this will cause the failure of multi resolution warmup
     # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")
     # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
