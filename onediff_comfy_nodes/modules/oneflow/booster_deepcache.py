@@ -20,11 +20,16 @@ class DeepcacheBoosterExecutor(BoosterExecutor):
 
     @singledispatchmethod
     def execute(self, model):
-        print("Warning: DeepcacheBoosterExecutor.apply is not implemented for model type:", type(model))
+        print(
+            "Warning: DeepcacheBoosterExecutor.apply is not implemented for model type:",
+            type(model),
+        )
         return model
 
     @execute.register(ModelPatcher)
-    def _(self, model, ckpt_name: Optional[str] = None, use_graph=True, **kwargs) -> ModelPatcher:
+    def _(
+        self, model, ckpt_name: Optional[str] = None, use_graph=True, **kwargs
+    ) -> ModelPatcher:
         model = deep_cache_speedup(
             model=model,
             use_graph=use_graph,
@@ -40,6 +45,9 @@ class DeepcacheBoosterExecutor(BoosterExecutor):
                 ckpt_name, model.fast_deep_cache_unet._torch_module
             )
             set_compiled_options(model.fast_deep_cache_unet, graph_file)
-            graph_file = generate_graph_path(ckpt_name, model.deep_cache_unet._torch_module)
+            graph_file = generate_graph_path(
+                ckpt_name, model.deep_cache_unet._torch_module
+            )
             set_compiled_options(model.deep_cache_unet, graph_file)
+
         return model

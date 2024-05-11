@@ -1,11 +1,29 @@
 import importlib
-import importlib.util
+import platform
 
-_oneflow_available = importlib.util.find_spec("oneflow") is not None
+system = platform.system()
 
-try:
-    import oneflow
-except ImportError as e:
+
+def check_module_availability(module_name):
+    spec = importlib.util.find_spec(module_name)
+
+    if spec:
+        try:
+            importlib.import_module(module_name)
+        except ImportError:
+            return False
+    else:
+        return False
+
+    return True
+
+
+_oneflow_available = check_module_availability("oneflow")
+_onediff_quant_available = check_module_availability("onediff_quant")
+_nexfort_available = check_module_availability("nexfort")
+
+if system != "Linux":
+    print(f"Warning: OneFlow is only supported on Linux. Current system: {system}")
     _oneflow_available = False
 
 
@@ -13,25 +31,9 @@ def is_oneflow_available():
     return _oneflow_available
 
 
-_onediff_quant_available = importlib.util.find_spec("onediff_quant") is not None
-try:
-    import onediff_quant
-except ImportError as e:
-    _onediff_quant_available = False
-
 def is_onediff_quant_available():
     return _onediff_quant_available
 
 
-
-_nexfort_available = importlib.util.find_spec("nexfort") is not None
-try:
-    import nexfort
-except ImportError as e:
-    _nexfort_available = False
-
 def is_nexfort_available():
     return _nexfort_available
-
-
-

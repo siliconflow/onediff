@@ -80,10 +80,14 @@ def set_constant_folded_conv_attr(
 def generate_constant_folding_info(
     deployable_module, torch_module: torch.nn.Module = None
 ) -> Dict[str, flow.Tensor]:
+    removeprefix = lambda ss, prefix: ss[len(prefix):] if ss.startswith(prefix) else ss
+    
     # convert str like 'variable_transpose_model.input_blocks.10.0.in_layers.2.weight_239'
     # to 'input_blocks.10.0.in_layers.2.weight'
     def convert_var_name(s: str, prefix="variable_transpose_"):
-        s = re.sub(r"_[0-9]+$", "", s.removeprefix(prefix)).removeprefix("model.")
+        s = removeprefix(s, prefix)
+        s = re.sub(r"_[0-9]+$", "", s)
+        s = removeprefix(s, "model.")
         return s
 
     from onediff.infer_compiler.deployable_module import DeployableModule
