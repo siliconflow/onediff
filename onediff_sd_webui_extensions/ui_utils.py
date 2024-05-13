@@ -21,22 +21,22 @@ hints_message = """
                     </div>
                     """
 
-graph_checkpoints = []
+all_compiler_caches = []
 
-def graph_checkpoints_path():
+def all_compiler_caches_path():
     import modules.shared as shared
-    graph_path = Path(shared.opts.onediff_graph_path)
-    if not graph_path.exists():
-        graph_path.mkdir(parents=True)
-    return shared.opts.onediff_graph_path
+    caches_path = Path(shared.opts.onediff_compiler_caches_path)
+    if not caches_path.exists():
+        caches_path.mkdir(parents=True)
+    return shared.opts.onediff_compiler_caches_path
 
-def get_graph_checkpoints():
-    global graph_checkpoints
-    if len(graph_checkpoints) == 0:
-        refresh_graph_checkpoints()
-    return graph_checkpoints
+def get_all_compiler_caches():
+    global all_compiler_caches
+    if len(all_compiler_caches) == 0:
+        refresh_all_compiler_caches()
+    return all_compiler_caches
 
-def refresh_graph_checkpoints(path: Path = None):
-    global graph_checkpoints
-    path = path or graph_checkpoints_path()
-    graph_checkpoints = [f.stem for f in Path(path).iterdir() if f.is_file()]  
+def refresh_all_compiler_caches(path: Path = None):
+    global all_compiler_caches
+    path = path or all_compiler_caches_path()
+    all_compiler_caches = [f.stem for f in Path(path).iterdir() if f.is_file()]  

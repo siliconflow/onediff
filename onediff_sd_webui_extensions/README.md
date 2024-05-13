@@ -88,7 +88,7 @@ After selecting onediff, a text box named `Saved graph name` will appear at the 
 
 #### Graph loading
 
-After selecting onediff, a dropdown menu named `Graph Checkpoints` will appear at the bottom left. Here, you can select the static graph you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/`.
+After selecting onediff, a dropdown menu named `Compile cache` will appear at the bottom left. Here, you can select the static graph you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/`.
 
 ![Graph loading](./images/graph_checkpoints.jpg)
 

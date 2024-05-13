@@ -11,7 +11,7 @@ from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from modules import script_callbacks
 
-from ui_utils import hints_message, get_graph_checkpoints, refresh_graph_checkpoints, graph_checkpoints_path
+from ui_utils import hints_message, get_all_compiler_caches, refresh_all_compiler_caches, all_compiler_caches_path
 from compile_ldm import compile_ldm_unet, SD21CompileCtx
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
@@ -119,15 +119,15 @@ class Script(scripts.Script):
         """
         with gr.Row():
             # TODO: set choices as Tuple[str, str] after the version of gradio specified webui upgrades
-            graph_checkpoint = gr.Dropdown(label="Graph checkpoints (Beta)", choices=["None"] + get_graph_checkpoints(), value="None", elem_id="onediff_graph_checkpoint")
-            refresh_button = create_refresh_button(graph_checkpoint, refresh_graph_checkpoints, lambda: {"choices": ["None"] + get_graph_checkpoints()}, "onediff_refresh_graph")
-            save_graph_name = gr.Textbox(label="Saved graph name (Beta)")
+            compiler_cache = gr.Dropdown(label="Compiler caches (Beta)", choices=["None"] + get_all_compiler_caches(), value="None", elem_id="onediff_compiler_cache")
+            refresh_button = create_refresh_button(compiler_cache, refresh_all_compiler_caches, lambda: {"choices": ["None"] + get_all_compiler_caches()}, "onediff_refresh_compiler_caches")
+            save_cache_name = gr.Textbox(label="Saved cache name (Beta)")
         with gr.Row():
             always_recompile = gr.components.Checkbox(label="always_recompile", visible=parse_boolean_from_env("ONEDIFF_DEBUG"))
         if not varify_can_use_quantization():
             gr.HTML(hints_message)
         is_quantized = gr.components.Checkbox(label="Model Quantization(int8) Speed Up", visible=varify_can_use_quantization())
-        return [is_quantized, graph_checkpoint, save_graph_name, always_recompile]
+        return [is_quantized, compiler_cache, save_cache_name, always_recompile]
 
     def show(self, is_img2img):
         return True
@@ -155,7 +155,7 @@ class Script(scripts.Script):
             self.current_type = get_model_type(model)
         return is_changed
 
-    def run(self, p, quantization=False, graph_checkpoint=None, saved_graph_name="", always_recompile=False):
+    def run(self, p, quantization=False, compiler_cache=None, saved_cache_name="", always_recompile=False):
 
         global compiled_unet, compiled_ckpt_name, is_unet_quantized
         current_checkpoint = shared.opts.sd_model_checkpoint
@@ -178,16 +178,16 @@ class Script(scripts.Script):
                 original_diffusion_model, quantization=quantization
             )
 
-            if graph_checkpoint != "None":
-                graph_checkpoint_path = graph_checkpoints_path() + f"/{graph_checkpoint}"
-                if not Path(graph_checkpoint_path).exists():
-                    raise FileNotFoundError(f"Cannot find graph {graph_checkpoint_path}, please make sure it exists")
+            if compiler_cache != "None":
+                compiler_cache_path = all_compiler_caches_path() + f"/{compiler_cache}"
+                if not Path(compiler_cache_path).exists():
+                    raise FileNotFoundError(f"Cannot find cache {compiler_cache_path}, please make sure it exists")
                 try:
-                    compiled_unet.load_graph(graph_checkpoint_path, run_warmup=True)
+                    compiled_unet.load_graph(compiler_cache_path, run_warmup=True)
                 except zipfile.BadZipFile as e:
-                    raise RuntimeError("Load graph failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
+                    raise RuntimeError("Load cache failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
                 except Exception as e:
-                    raise RuntimeError("Load graph failed. Please make sure graph checkpoint has the same sd version (or unet architure) with current checkpoint")
+                    raise RuntimeError("Load cache failed. Please make sure cache has the same sd version (or unet architure) with current checkpoint")
 
         else:
             logger.info(
@@ -197,22 +197,22 @@ class Script(scripts.Script):
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
 
-        if saved_graph_name != "":
-            if not os.access(str(graph_checkpoints_path()), os.W_OK):
-                raise PermissionError(f"The directory {graph_checkpoints_path()} does not have write permissions, and graph cannot be written to this directory. \
+        if saved_cache_name != "":
+            if not os.access(str(all_compiler_caches_path()), os.W_OK):
+                raise PermissionError(f"The directory {all_compiler_caches_path()} does not have write permissions, and compiled cache cannot be written to this directory. \
                                       Please change it in the settings to a directory with write permissions")
-            if not Path(graph_checkpoint_path()).exists():
-                Path(graph_checkpoint_path()).mkdir()
-            saved_graph_name = graph_checkpoints_path() + f"/{saved_graph_name}"
-            if not Path(saved_graph_name).exists():
-                compiled_unet.save_graph(saved_graph_name)
+            if not Path(all_compiler_caches_path()).exists():
+                Path(all_compiler_caches_path()).mkdir()
+            saved_cache_name = all_compiler_caches_path() + f"/{saved_cache_name}"
+            if not Path(saved_cache_name).exists():
+                compiled_unet.save_graph(saved_cache_name)
 
         return proc
 
 def on_ui_settings():
     section = ('onediff', "OneDiff")
-    shared.opts.add_option("onediff_graph_path", shared.OptionInfo(
-        str(Path(__file__).parent.parent / "graph_checkpoints"), "Directory for onediff compiled graph", section=section))
+    shared.opts.add_option("onediff_compiler_caches_path", shared.OptionInfo(
+        str(Path(__file__).parent.parent / "compiled_caches"), "Directory for onediff compiled caches", section=section))
 
 script_callbacks.on_ui_settings(on_ui_settings)
 onediff_do_hijack()
