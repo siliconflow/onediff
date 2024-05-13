@@ -193,11 +193,8 @@ jobs:
           docker compose -f tests/webui-docker-compose.yml up -d
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
-          ACR_ORG: ${{ env.ACR_ORG }}
           MATRIX_IMAGE: ${{ matrix.image }}
           WEBUI_SRC_DIR: ${{ env.WEBUI_SRC_DIR }}
-          SDXL_BASE: ${{ env.SDXL_BASE }}
-          UNET_INT8: ${{ env.UNET_INT8 }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
@@ -285,6 +282,23 @@ jobs:
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /share_nfs/hf_models/stable-diffusion-v1-5-int8 --width 512 --height 512 --saved_image /src/onediff/output_enterprise_sd.png
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantitative_quality.py
       
+      - name: Install Requirements for WebUI & Test
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker exec sed -i 's/KEEP_GOING=1/KEEP_GOING=0/g' stable-diffusion-webui/webui.sh
+          docker exec -e venv_dir=- bash webui.sh
+
+      - name: Start WebUI Web Service
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/stable-diffusion-webui/webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
+          sleep 30
+      # print to check if webui is launched successfully
+      - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
+
+      - if: matrix.test-suite == 'webui'
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
+
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
@@ -310,4 +324,17 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+
+      - name: Shutdown docker for WebUI Test
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker compose -f tests/webui-docker-compose.yml down
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          WEBUI_SRC_DIR: ${{ env.WEBUI_SRC_DIR }}
+          SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+          SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}

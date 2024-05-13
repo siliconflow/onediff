@@ -16,15 +16,13 @@ def url_set_config(base_url):
 @pytest.fixture()
 def simple_txt2img_request():
     return {
-        "prompt": "masterpiece, (best quality:1.1), 1girl",
-        # "prompt": "masterpiece, (best quality:1.1), 1girl <lora:lora_model:1>",  # extra networks also in prompts
+        "prompt": "1girl",
         "negative_prompt": "",
         "seed": 1,
         "steps": 20,
         "width": 1024,
         "height": 1024,
         "cfg_scale": 7,
-        "sampler_name": "DPM++ 2M Karras",
         "n_iter": 1,
         "batch_size": 1,
 
@@ -42,7 +40,6 @@ def simple_txt2img_request():
 def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
     assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
 
-@pytest.mark.skip
 def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
