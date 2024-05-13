@@ -15,6 +15,7 @@ env:
   REGION_ID: cn-beijing
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
+  WEBUI_SRC_DIR: stable-diffusion-webui
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
@@ -46,6 +47,11 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
+      - name: Checkout Stable Diffusion WebUI
+        uses: actions/checkout@v4
+        with:
+          repository: AUTOMATIC1111/stable-diffusion-webui
+          path: stable-diffusion-webui
       - name: Pack src
         working-directory: onediff
         run: |
@@ -58,15 +64,24 @@ jobs:
           git reset --hard
           git clean -f
           git archive --prefix ${{ env.COMFYUI_SRC_DIR }}/ --format zip HEAD > comfyui-src.zip
+      - name: Pack webui
+        working-directory: stable-diffusion-webui
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --prefix ${{ env.WEBUI_SRC_DIR }}/ --format zip HEAD > webui-src.zip
       - name: Upload src
         id: upload_to_oss
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
+          WEBUI_DST="oss://gh-src-cache/onediff/${{ github.sha }}/webui-src.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
           ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
+          ./ossutil64 cp --disable-ignore-error --update stable-diffusion-webui/webui-src.zip ${WEBUI_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
+          echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
@@ -81,6 +96,7 @@ jobs:
         test-suite:
           - diffusers_examples
           - comfy
+          - webui
     steps:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
@@ -110,6 +126,11 @@ jobs:
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.comfy_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
+      - name: Checkout WebUI vis OSS
+        if: matrix.test-suite == 'webui' && github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
+          unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }})
       - name: Checkout
         if: github.repository != 'siliconflow/onediff'
         uses: actions/checkout@v4
@@ -119,6 +140,12 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
+      - name: Checkout WebUI
+        if: matrix.test-suite == 'webui' && github.repository != 'siliconflow/onediff'
+        uses: actions/checkout@v4
+        with:
+          repository: AUTOMATIC1111/stable-diffusion-webui
+          path: ${{ env.WEBUI_SRC_DIR }}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
@@ -157,6 +184,22 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+          
+      - name: Setup docker for WebUI Test
+        if: matrix.test-suite == 'webui'
+        run: |
+          env
+          docker compose -f tests/webui-docker-compose.yml up -d
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          WEBUI_SRC_DIR: ${{ env.WEBUI_SRC_DIR }}
+          SDXL_BASE: ${{ env.SDXL_BASE }}
+          UNET_INT8: ${{ env.UNET_INT8 }}
+          SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+          SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
 
       - run: nvidia-smi
