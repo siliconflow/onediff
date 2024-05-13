@@ -68,29 +68,29 @@ When switching models, if the new model has the same structure as the old model,
 > Note: The feature is not supported for quantized model.
 
 
-### Graph saving and loading
+### Compiler cache saving and loading
 
-OneDiff supports saving compiled graph to disk and loading graph from disk. In scenarios where recompiling is required after switching model, you can skip the compilation process by loading the compiled graph from the disk, to saving time of model switching.
+OneDiff supports saving compiler cache to disk and loading cache from disk. In scenarios where recompiling is required after switching model, you can skip the compilation process by loading the compiler cache from the disk, to saving time of model switching.
 
-The compiled graph will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/graph_checkpoints/` by default. If you want to specify the path, you can modify it in webui settings.
+The compiler cache will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/` by default. If you want to specify the path, you can modify it in webui settings.
 
-![Path to save graph in Settings](./images/onediff_settings_dir_to_save_graph.png)
+![Path to save compiler cache in Settings](./images/setting_dir_of_compiler_cache.png)
 
-#### Graph saving
+#### Compiler cache saving
 
-After selecting onediff, a text box named `Saved graph name` will appear at the bottom right. You can input the file name of the compiled graph you want to save here. After generating the image, the compiled graph will be saved in the `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/your-compiled-graph-name` path.
+After selecting onediff, a text box named `Saved cache name` will appear at the bottom right. You can input the file name of the compiler cache you want to save here. After generating the image, the compiler cache will be saved in the `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/your-compiler-cache-name` path.
 
-![Graph saving](./images/saved_graph_name.jpg)
-
-
-> Note: When the text box is empty or the file with the specified name already exists, the static graph will not be saved.
+![Compiler caches](./images/saved_cache_name.png)
 
 
-#### Graph loading
+> Note: When the text box is empty or the file with the specified name already exists, the compiler cache will not be saved.
 
-After selecting onediff, a dropdown menu named `Compile cache` will appear at the bottom left. Here, you can select the static graph you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/models/`.
 
-![Graph loading](./images/graph_checkpoints.jpg)
+#### Compiler cache loading
+
+After selecting onediff, a dropdown menu named `Compile cache` will appear at the bottom left. Here, you can select the compiler cache you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/`. And click the button on the right side to refresh the `Compile cache` list.
+
+![Compiler cache loading](./images/compiler_caches.png)
 
 > Note: To properly use this feature, please ensure that you have added the `--disable-safe-unpickle` parameter when launching sd-webui.
 

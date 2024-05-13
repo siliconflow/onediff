@@ -199,7 +199,7 @@ class Script(scripts.Script):
 
         if saved_cache_name != "":
             if not os.access(str(all_compiler_caches_path()), os.W_OK):
-                raise PermissionError(f"The directory {all_compiler_caches_path()} does not have write permissions, and compiled cache cannot be written to this directory. \
+                raise PermissionError(f"The directory {all_compiler_caches_path()} does not have write permissions, and compiler cache cannot be written to this directory. \
                                       Please change it in the settings to a directory with write permissions")
             if not Path(all_compiler_caches_path()).exists():
                 Path(all_compiler_caches_path()).mkdir()
@@ -212,7 +212,7 @@ class Script(scripts.Script):
 def on_ui_settings():
     section = ('onediff', "OneDiff")
     shared.opts.add_option("onediff_compiler_caches_path", shared.OptionInfo(
-        str(Path(__file__).parent.parent / "compiled_caches"), "Directory for onediff compiled caches", section=section))
+        str(Path(__file__).parent.parent / "compiler_caches"), "Directory for onediff compiler caches", section=section))
 
 script_callbacks.on_ui_settings(on_ui_settings)
 onediff_do_hijack()
