@@ -32,6 +32,7 @@ jobs:
     outputs:
       onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
       comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
+      webui_src_url: ${{ steps.upload_to_oss.outputs.webui_src_url }}
     steps:
       - name: Setup ossutil
         run: |
