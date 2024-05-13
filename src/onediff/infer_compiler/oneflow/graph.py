@@ -22,12 +22,14 @@ class OneflowGraph(flow.nn.Graph):
     def load_graph(self, file_path, device=None, run_warmup=True):
         state_dict = flow.load(file_path)
         self.graph_state_dict = state_dict  # used for OneflowGraph.save_graph
+
         if device is not None:
             state_dict = flow.nn.Graph.runtime_state_dict_to(state_dict, device)
+
         self.load_runtime_state_dict(state_dict, warmup_with_run=run_warmup)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def save_graph(self, file_path):
+    def save_graph(self, file_path, *, process_state_dict: lambda x: x):
         if hasattr(self, "graph_state_dict"):
             flow.save(self.graph_state_dict, file_path)
             return
@@ -59,4 +61,5 @@ class OneflowGraph(flow.nn.Graph):
 
         args_tree._is_dataclass = original_is_dataclass
 
+        state_dict = process_state_dict(state_dict)
         flow.save(state_dict, file_path)

@@ -1,7 +1,9 @@
 import hashlib
 import os
+from typing import Dict
 import torch
 import oneflow as flow
+import pickle
 from pathlib import Path
 from functools import wraps
 from oneflow.framework.args_tree import ArgsTree
@@ -53,6 +55,75 @@ def graph_file_management(func):
             )
             setattr(self, "_load_graph_first_run", False)
 
+        def apply_patch_after_loading_state_dict():
+            nonlocal self, args, kwargs
+            graph = self.get_graph()
+
+            try:
+                attn2_patches = (
+                    kwargs.get("transformer_options", {})
+                    .get("patches_replace", {})
+                    .get("attn2")
+                )
+                if attn2_patches:
+                    patch_file_name = f"{Path(graph_file).name}.patch"
+                    new_file_path = Path(graph_file).with_name(patch_file_name)
+
+                    with open(new_file_path, "rb") as fp:
+                        idx_mapping = pickle.load(fp)
+
+                    for k, attn_module in attn2_patches.items():
+                        for attn_key, attn_tensor in attn_module.state_dict().items():
+                            idx = idx_mapping.get(f"{k}-{attn_key}")
+                            if idx is not None:
+                                graph._state_tensor_tuple[idx].copy_(attn_tensor)
+                                attn_module.set_attr(
+                                    attn_key, graph._state_tensor_tuple[idx]
+                                )
+                                logger.debug(
+                                    f"{graph._state_tensor_tuple[idx].shape} {attn_tensor.shape}"
+                                )
+            except Exception as e:
+                logger.warning(f"Failed to apply patch after loading state dict: {e}")
+
+        def process_state_dict_before_saving(state_dict: Dict):
+            nonlocal self, args, kwargs, graph_file
+            graph = self.get_graph()
+
+            try:
+                attn2_patches = (
+                    state_dict.get("OneflowGraph_0", {})
+                    .get("inputs_original", [])[1]
+                    .get("transformer_options", {})
+                    .get("patches_replace", {})
+                    .get("attn2")
+                )
+                if attn2_patches:
+                    id_index_map = {
+                        id(t): i for i, t in enumerate(graph._state_tensor_tuple)
+                    }
+
+                    name_idx = {
+                        f"{k}-{attn_k}": id_index_map[id(attn_t)]
+                        for k, attn_m in attn2_patches.items()
+                        for attn_k, attn_t in attn_m.state_dict().items()
+                        if id(attn_t) in id_index_map
+                    }
+
+                    patch_file_name = f"{Path(graph_file).name}.patch"
+                    new_file_path = Path(graph_file).with_name(patch_file_name)
+                    with open(new_file_path, "wb") as fp:
+                        pickle.dump(name_idx, fp)
+
+                    del state_dict["OneflowGraph_0"]["inputs_original"][1][
+                        "transformer_options"
+                    ]["patches_replace"]["attn2"]
+
+            except Exception as e:
+                logger.debug(f"Failed to process state dict before saving: {e}")
+
+            return state_dict
+
         def handle_graph_loading():
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
@@ -65,6 +136,7 @@ def graph_file_management(func):
             else:
                 graph_device = compile_options.graph_file_device
                 self.load_graph(graph_file, torch2oflow(graph_device))
+                apply_patch_after_loading_state_dict()
                 logger.info(f"Loaded graph file: {graph_file}")
                 is_first_load = False
 
@@ -77,7 +149,9 @@ def graph_file_management(func):
                 if parent_dir != "":
                     os.makedirs(parent_dir, exist_ok=True)
 
-                self.save_graph(graph_file)
+                self.save_graph(
+                    graph_file, process_state_dict=process_state_dict_before_saving
+                )
                 logger.info(f"Saved graph file: {graph_file}")
 
             except Exception as e:

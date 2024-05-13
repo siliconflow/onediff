@@ -148,8 +148,8 @@ class OneflowDeployableModule(DeployableModule):
     def load_graph(self, file_path, device=None, run_warmup=True):
         self.get_graph().load_graph(file_path, device, run_warmup)
 
-    def save_graph(self, file_path):
-        self.get_graph().save_graph(file_path)
+    def save_graph(self, file_path, *, process_state_dict=lambda x: x):
+        self.get_graph().save_graph(file_path, process_state_dict=process_state_dict)
 
     def extra_repr(self) -> str:
         return self._deployable_module_model.extra_repr()
