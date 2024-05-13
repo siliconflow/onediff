@@ -23,12 +23,8 @@ services:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
-      - ${PWD}/${WEBUI_SRC_DIR}:/app/stable-diffsion-webui
-      - ${PWD}/onediff_sd_webui_extensions:/app/stable-diffsion-webui/extensions/onediff_sd_webui_extensions
-      # - ${PWD}/onediff_sd_webui_extensions:/app/stable-diffsion-webui/extensions/onediff_sd_webui_extensions
-      # - ${SDXL_BASE}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro
-      # - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
-      # - $PWD/tests/comfyui/workflows/input/control:/app/ComfyUI/input/control:ro
+      - ${PWD}/${WEBUI_SRC_DIR}:/app/stable-diffusion-webui
+      - ${PWD}/onediff_sd_webui_extensions:/app/stable-diffusion-webui/extensions/onediff_sd_webui_extensions
       - $PWD:/src/onediff
     working_dir: /src/onediff
     restart: "no"
