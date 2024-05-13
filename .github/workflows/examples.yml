@@ -287,7 +287,7 @@ jobs:
         if: matrix.test-suite == 'webui'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} sed -i 's/KEEP_GOING=1/KEEP_GOING=0/g' stable-diffusion-webui/webui.sh
-          docker exec -e venv_dir=- ${{ env.CONTAINER_NAME }} bash webui.sh
+          docker exec -e venv_dir=- ${{ env.CONTAINER_NAME }} bash stable-diffusion-webui/webui.sh
 
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
