@@ -185,7 +185,7 @@ class DynamicMockModule(ModuleType):
             if not _importer.enable:
                 _update_module([fullname] + org_delete_list, self._main_pkg_enable)
         except Exception as e:
-            logger.warning(f"Failed to update obj_entity in place. Exception: {e}")
+            logger.debug(f"Failed to update obj_entity in place. Exception: {e}")
 
         if ismodule(obj_entity):
             return DynamicMockModule(self._pkg_name, obj_entity, self._main_pkg_enable)

@@ -34,6 +34,7 @@ class OneflowCompileOptions:
     kernel_enable_fused_conv_bias: bool = None
     kernel_enable_fused_linear: bool = None
     kernel_conv_cutlass_impl_enable_tuning_warmup: bool = None
+    kernel_enable_conv2d_tuning_warmup: bool = None
     kernel_gemm_cutlass_impl_enable_tuning_warmup: bool = None
     kernel_conv_enable_cutlass_impl: bool = None
     kernel_gemm_enable_cutlass_impl: bool = None

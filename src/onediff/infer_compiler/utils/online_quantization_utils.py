@@ -1,3 +1,6 @@
+def patch_input_adapter(in_args, in_kwargs):
+    return in_args, in_kwargs
+
 def online_quantize_model(
     model, input_args, input_kwargs,
     seed=1, inplace=True,
@@ -24,9 +27,9 @@ def online_quantize_model(
             calibration_info=calibration_info,
         )
     module = OnlineQuantModule(calculator, False, inplace=inplace)
-
+    in_args , in_kwargs = patch_input_adapter(input_args, input_kwargs)
     quantized_model,  info = module.quantize_with_calibration(
-        *input_args, **input_kwargs
+        *in_args, **in_kwargs
     )
     status = module.collect_quantization_status(model, info)
 

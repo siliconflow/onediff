@@ -80,10 +80,14 @@ def set_constant_folded_conv_attr(
 def generate_constant_folding_info(
     deployable_module, torch_module: torch.nn.Module = None
 ) -> Dict[str, flow.Tensor]:
+    removeprefix = lambda ss, prefix: ss[len(prefix):] if ss.startswith(prefix) else ss
+    
     # convert str like 'variable_transpose_model.input_blocks.10.0.in_layers.2.weight_239'
     # to 'input_blocks.10.0.in_layers.2.weight'
     def convert_var_name(s: str, prefix="variable_transpose_"):
-        s = re.sub(r"_[0-9]+$", "", s.removeprefix(prefix)).removeprefix("model.")
+        s = removeprefix(s, prefix)
+        s = re.sub(r"_[0-9]+$", "", s)
+        s = removeprefix(s, "model.")
         return s
 
     from onediff.infer_compiler import DeployableModule
@@ -163,6 +167,7 @@ def forward_generate_constant_folding_info_hook(module, args, output):
     if getattr(module, CONSTANT_FOLDING_INFO_ATTR, None) is not None:
         return
 
+    logger.info(f"generate constant folding info")
     generate_constant_folding_info(module)
 
 
@@ -177,5 +182,6 @@ def forward_pre_check_and_update_state_hook(module, args):
     if constant_folding_info is None:
         return
 
+    logger.info(f"state_dict updated, modify the related weight in graph")
     update_graph_with_constant_folding_info(module, constant_folding_info)
     setattr(module._torch_module, STATE_UPDATED_ATTR, False)

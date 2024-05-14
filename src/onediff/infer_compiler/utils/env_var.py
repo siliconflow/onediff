@@ -67,6 +67,7 @@ def set_oneflow_env_vars(options):
         "kernel_conv_cutlass_impl_enable_tuning_warmup": "ONEFLOW_KERNEL_CONV_CUTLASS_IMPL_ENABLE_TUNING_WARMUP",
         "kernel_gemm_cutlass_impl_enable_tuning_warmup": "ONEFLOW_KERNEL_GEMM_CUTLASS_IMPL_ENABLE_TUNING_WARMUP",
         "kernel_conv_enable_cutlass_impl": "ONEFLOW_KERNEL_CONV_ENABLE_CUTLASS_IMPL",
+        "kernel_enable_conv2d_tuning_warmup": "ONEFLOW_CONV2D_KERNEL_ENABLE_TUNING_WARMUP",
         "kernel_gemm_enable_cutlass_impl": "ONEFLOW_KERNEL_GEMM_ENABLE_CUTLASS_IMPL",
         "kernel_glu_enable_dual_gemm_impl": "ONEFLOW_KERNEL_GLU_ENABLE_DUAL_GEMM_IMPL",
         "kernel_glu_enable_y_gemm_impl": "ONEFLOW_KERNEL_GLU_ENABLE_Y_GEMM_IMPL",
@@ -111,6 +112,7 @@ def set_oneflow_default_env_vars():
     # os.environ.setdefault("ONEFLOW_ATTENTION_ALLOW_QUANTIZATION", "1")
 
     os.environ.setdefault("ONEFLOW_MLIR_GROUP_MATMUL_QUANT", "1")
+    os.environ.setdefault("ONEFLOW_CONV2D_KERNEL_ENABLE_TUNING_WARMUP", "1")
 
     # TODO: enable this will cause the failure of multi resolution warmup
     # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")

@@ -134,6 +134,8 @@ if args.compile:
         pipe.upcast_vae()
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=compile_options)
 
+torch.manual_seed(args.seed)
+
 if args.load_graph:
     print("Loading graphs to avoid compilation...")
     start_t = time.time()
@@ -153,8 +155,6 @@ else:
         image = pipe(**infer_args).images[0]
     end_t = time.time()
     print(f"warmup with run elapsed: {end_t - start_t} s")
-
-torch.manual_seed(args.seed)
 
 start_t = time.time()
 
