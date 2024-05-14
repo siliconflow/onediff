@@ -288,6 +288,8 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} sed -i 's/KEEP_GOING=1/KEEP_GOING=0/g' stable-diffusion-webui/webui.sh
           docker exec -e venv_dir=- ${{ env.CONTAINER_NAME }} bash stable-diffusion-webui/webui.sh -f
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning
 
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
