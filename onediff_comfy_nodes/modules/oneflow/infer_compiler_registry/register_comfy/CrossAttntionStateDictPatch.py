@@ -2,7 +2,6 @@ from typing import Dict
 
 
 def process_state_dict_before_saving(state_dict: Dict, graph=None):
-    # graph = self.get_graph()
     assert graph is not None
 
     try:
@@ -61,8 +60,6 @@ def apply_patch_after_loading_state_dict(state_dict, input_kwargs=None, graph=No
                             attn_module.set_attr(
                                 attn_key, graph._state_tensor_tuple[idx]
                             )
-                            # print(
-                            #     f"{graph._state_tensor_tuple[idx].shape} {attn_tensor.shape}"
-                            # )
+                        
     except Exception as e:
         print(f"Warning: Failed to apply patch after loading state dict: {e}")
