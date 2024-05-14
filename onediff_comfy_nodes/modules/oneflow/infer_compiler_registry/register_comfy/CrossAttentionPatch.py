@@ -1,7 +1,10 @@
+"""align attention with ipadapter
+https://github.com/cubiq/ComfyUI_InstantID/blob/main/CrossAttentionPatch.py
+https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/main/CrossAttentionPatch.py
+"""
 import math
-
-import oneflow as torch
-import oneflow.nn.functional as F
+import torch
+import torch.nn.functional as F
 
 
 def tensor_to_size(source, dest_size):
@@ -18,7 +21,7 @@ def tensor_to_size(source, dest_size):
     return source
 
 
-def attention_pytorch(q, k, v, heads, mask=None):
+def attention_pytorch_oneflow(q, k, v, heads, mask=None):
     b, _, dim_head = q.shape
     dim_head //= heads
     # q, k, v = map(
@@ -46,9 +49,6 @@ def attention_pytorch(q, k, v, heads, mask=None):
     return out
 
 
-optimized_attention = attention_pytorch
-
-
 class CrossAttentionPatch(torch.nn.Module):
     # forward for patching
     def __init__(
@@ -57,6 +57,7 @@ class CrossAttentionPatch(torch.nn.Module):
         number=0,
         weight=1.0,
         cond=None,
+        cond_alt=None,
         uncond=None,
         weight_type="linear",
         mask=None,
@@ -69,6 +70,7 @@ class CrossAttentionPatch(torch.nn.Module):
         self.weights = [torch.tensor(weight)]
         self.ipadapters = [ipadapter]
         self.conds = [cond]
+        self.conds_alt = [cond_alt]
         self.unconds = [uncond]
         self.weight_types = [weight_type]
         self.masks = [mask]
@@ -77,10 +79,19 @@ class CrossAttentionPatch(torch.nn.Module):
         self.unfold_batch = [unfold_batch]
         self.embeds_scaling = [embeds_scaling]
         self.number = number
-        self.layers = 10 if "101_to_k_ip" in ipadapter.ip_layers.to_kvs else 15
+        self.layers = (
+            11 if "101_to_k_ip" in ipadapter.ip_layers.to_kvs else 16
+        )  # TODO: check if this is a valid condition to detect all models
 
         self.k_key = str(self.number * 2 + 1) + "_to_k_ip"
         self.v_key = str(self.number * 2 + 1) + "_to_v_ip"
+
+        self.forward_patch_key = id(self)
+
+        self.optimized_attention = attention_pytorch_oneflow
+        self.cache_map = {}
+        self._bind_model = None
+        self._use_crossAttention_patch = True
 
     def set_new_condition(
         self,
@@ -88,6 +99,7 @@ class CrossAttentionPatch(torch.nn.Module):
         number=0,
         weight=1.0,
         cond=None,
+        cond_alt=None,
         uncond=None,
         weight_type="linear",
         mask=None,
@@ -96,9 +108,10 @@ class CrossAttentionPatch(torch.nn.Module):
         unfold_batch=False,
         embeds_scaling="V only",
     ):
-        self.weights.append(weight)
+        self.weights.append(torch.tensor(weight))
         self.ipadapters.append(ipadapter)
         self.conds.append(cond)
+        self.conds_alt.append(cond_alt)
         self.unconds.append(uncond)
         self.weight_types.append(weight_type)
         self.masks.append(mask)
@@ -110,12 +123,13 @@ class CrossAttentionPatch(torch.nn.Module):
     def forward(self, q, k, v, extra_options):
         dtype = q.dtype
         cond_or_uncond = extra_options["cond_or_uncond"]
-        # sigma = extra_options["sigmas"][0].item() if "sigmas" in extra_options else 999999999.9
         sigma = extra_options["sigmas"] if "sigmas" in extra_options else 999999999.9
-        
         block_type = extra_options["block"][0]
         # block_id = extra_options["block"][1]
         t_idx = extra_options["transformer_index"]
+
+        # extra input for CrossAttentionPatch patch
+        self_masks = extra_options["_masks"].get(self.forward_patch_key, self.masks)
 
         # extra options for AnimateDiff
         ad_params = extra_options["ad_params"] if "ad_params" in extra_options else None
@@ -123,12 +137,14 @@ class CrossAttentionPatch(torch.nn.Module):
         b = q.shape[0]
         seq_len = q.shape[1]
         batch_prompt = b // len(cond_or_uncond)
+        optimized_attention = self.optimized_attention
         out = optimized_attention(q, k, v, extra_options["n_heads"])
         _, _, oh, ow = extra_options["original_shape"]
 
         for (
             weight,
             cond,
+            cond_alt,
             uncond,
             ipadapter,
             mask,
@@ -140,9 +156,10 @@ class CrossAttentionPatch(torch.nn.Module):
         ) in zip(
             self.weights,
             self.conds,
+            self.conds_alt,
             self.unconds,
             self.ipadapters,
-            self.masks,
+            self_masks,
             self.weight_types,
             self.sigma_starts,
             self.sigma_ends,
@@ -150,6 +167,44 @@ class CrossAttentionPatch(torch.nn.Module):
             self.embeds_scaling,
         ):
             if sigma <= sigma_start and sigma >= sigma_end:
+                if weight_type == "ease in":
+                    weight = weight * (0.05 + 0.95 * (1 - t_idx / self.layers))
+                elif weight_type == "ease out":
+                    weight = weight * (0.05 + 0.95 * (t_idx / self.layers))
+                elif weight_type == "ease in-out":
+                    weight = weight * (
+                        0.05
+                        + 0.95
+                        * (1 - abs(t_idx - (self.layers / 2)) / (self.layers / 2))
+                    )
+                elif weight_type == "reverse in-out":
+                    weight = weight * (
+                        0.05
+                        + 0.95 * (abs(t_idx - (self.layers / 2)) / (self.layers / 2))
+                    )
+                elif weight_type == "weak input" and block_type == "input":
+                    weight = weight * 0.2
+                elif weight_type == "weak middle" and block_type == "middle":
+                    weight = weight * 0.2
+                elif weight_type == "weak output" and block_type == "output":
+                    weight = weight * 0.2
+                elif weight_type == "strong middle" and (
+                    block_type == "input" or block_type == "output"
+                ):
+                    weight = weight * 0.2
+                elif isinstance(weight, dict):
+                    if t_idx not in weight:
+                        continue
+
+                    weight = weight[t_idx]
+
+                    if cond_alt is not None and t_idx in cond_alt:
+                        cond = cond_alt[t_idx]
+                        del cond_alt
+
+                # if weight == 0:
+                #     continue
+
                 if unfold_batch and cond.shape[0] > 1:
                     # Check AnimateDiff context window
                     if ad_params is not None and ad_params["sub_idxs"] is not None:
@@ -184,32 +239,6 @@ class CrossAttentionPatch(torch.nn.Module):
                     v_uncond = ipadapter.ip_layers.to_kvs[self.v_key](uncond).repeat(
                         batch_prompt, 1, 1
                     )
-
-                if weight_type == "ease in":
-                    weight = weight * (0.05 + 0.95 * (1 - t_idx / self.layers))
-                elif weight_type == "ease out":
-                    weight = weight * (0.05 + 0.95 * (t_idx / self.layers))
-                elif weight_type == "ease in-out":
-                    weight = weight * (
-                        0.05
-                        + 0.95
-                        * (1 - abs(t_idx - (self.layers / 2)) / (self.layers / 2))
-                    )
-                elif weight_type == "reverse in-out":
-                    weight = weight * (
-                        0.05
-                        + 0.95 * (abs(t_idx - (self.layers / 2)) / (self.layers / 2))
-                    )
-                elif weight_type == "weak input" and block_type == "input":
-                    weight = weight * 0.2
-                elif weight_type == "weak middle" and block_type == "middle":
-                    weight = weight * 0.2
-                elif weight_type == "weak output" and block_type == "output":
-                    weight = weight * 0.2
-                elif weight_type == "strong middle" and (
-                    block_type == "input" or block_type == "output"
-                ):
-                    weight = weight * 0.2
 
                 ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
                 ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
@@ -299,22 +328,46 @@ class CrossAttentionPatch(torch.nn.Module):
                 out = out + out_ip
 
         return out.to(dtype=dtype)
-    
-    def to(self, *args, **kwargs):
-        # print("Warning: CrossAttentionPatch.to() is called, but it is not implemented yet.")
+
+    def __deepcopy__(self, memo):
+        # print("Warning: CrossAttentionPatch is not deepcopiable.", '-'*20)
         return self
-    
-    def update(self, patch_kwargs):
-        weight = patch_kwargs.pop("weight")
-        self.weights[0].copy_(torch.Tensor(weight))
 
-        cond = patch_kwargs.pop("cond")
-        self.conds[0].copy_(cond)
+    def to(self, *args, **kwargs):
+        return self
 
-        uncond = patch_kwargs.pop("uncond")
-        self.unconds[0].copy_(uncond)
+    def bind_model(self, model: torch.nn.Module):
+        self._bind_model = model
 
-        # TODO support 
+    def get_bind_model(self):
+        return self._bind_model
+
+    def set_cache(self, key, value):
+        self.cache_map[key] = value
+
+    def retrieve_from_cache(self, key, default=None):
+        return self.cache_map.get(key, default)
+
+    def update(self, key, patch_kwargs: dict) -> bool:
+        idx = self.retrieve_from_cache(key)
+        if not isinstance(
+            patch_kwargs["ipadapter"], self.ipadapters[idx].__class__.__bases__
+        ):
+            print("Warning: Changing the IP adapter will trigger recompilation.")
+            return False
+
+        weight = patch_kwargs.get("weight")
+        self.weights[idx].copy_(torch.tensor(weight))
+
+        cond = patch_kwargs.get("cond")
+        self.conds[idx].copy_(cond)
+
+        uncond = patch_kwargs.get("uncond")
+        self.unconds[idx].copy_(uncond)
+
+        # mask = patch_kwargs.get("mask", None)
+        # if mask is not None:
+        #     self.masks[idx] = mask
         # patch_weight_type = patch_kwargs.pop("weight_type")
 
         # sigma_start = patch_kwargs.pop("sigma_start")
@@ -322,3 +375,56 @@ class CrossAttentionPatch(torch.nn.Module):
 
         # sigma_end = patch_kwargs.pop("sigma_end")
         # self.sigma_end[0] = sigma_end
+        return True
+
+    def update_mask(self, key, masks_dict: dict, mask):
+        idx = self.retrieve_from_cache(key)
+        masks_dict[self.forward_patch_key][idx] = mask
+
+    def append_mask(self, masks_dict: dict, mask):
+        masks = masks_dict.setdefault(self.forward_patch_key, [])
+        masks.append(mask)
+
+    def state_dict(self) -> dict[str, torch.Tensor]:
+        # weight, cond, uncond
+        attr_names = ["weights", "conds", "unconds"]
+        out = {}
+        for attr in attr_names:
+            out.update({f"{attr}.{i}": t for i, t in enumerate(self.get_attr(attr))})
+        return out
+
+    def get_attr(self, attr_name: str):
+        parts = attr_name.split(".")
+        current_module = self
+        for part in parts:
+            try:
+                if part.isdigit():
+                    current_module = current_module[int(part)]
+                else:
+                    current_module = getattr(current_module, part)
+            except (IndexError, AttributeError):
+                raise ModuleNotFoundError(f"Submodule {part} not found.")
+        return current_module
+
+    def set_attr(self, attr_name: str, new_value):
+        parts = attr_name.split(".")
+        current_module = self
+
+        for i, part in enumerate(parts):
+            try:
+                if part.isdigit():
+                    if i == len(parts) - 1:
+                        current_module[int(part)] = new_value
+                    else:
+                        current_module = current_module[int(part)]
+                else:
+                    if i == len(parts) - 1:
+                        setattr(current_module, part, new_value)
+                    else:
+                        current_module = getattr(current_module, part)
+            except (IndexError, AttributeError):
+                raise ModuleNotFoundError(f"Submodule {part} not found.")
+
+
+def is_crossAttention_patch(module) -> bool:
+    return getattr(module, "_use_crossAttention_patch", False)
