@@ -72,7 +72,7 @@ def set_constant_folded_conv_attr(
 
     for weight_name, weight_tensor in constant_folding_info.items():
         submodule = deployable_module._torch_module.get_submodule(
-            weight_name.removesuffix(".weight")
+            removesuffix(weight_name, ".weight")
         )
         object.__setattr__(submodule, GRAPH_RELATED_TENSOR_ATTR, weight_tensor)
 
@@ -185,3 +185,9 @@ def forward_pre_check_and_update_state_hook(module, args):
     logger.info(f"state_dict updated, modify the related weight in graph")
     update_graph_with_constant_folding_info(module, constant_folding_info)
     setattr(module._torch_module, STATE_UPDATED_ATTR, False)
+
+def removesuffix(s: str, suffix: str) -> str:
+    if s.endswith(suffix):
+        return s[ :len(s) -len(suffix)]
+    else:
+        return s
