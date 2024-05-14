@@ -19,8 +19,8 @@ class OneflowGraph(flow.nn.Graph):
         return self.model(*args, **kwargs)
 
     @cost_cnt(transform_mgr.debug_mode)
-    def load_graph(self, file_path, device=None, run_warmup=True):
-        state_dict = flow.load(file_path)
+    def load_graph(self, file_path, device=None, run_warmup=True, *, state_dict=None):
+        state_dict = state_dict if state_dict is not None else flow.load(file_path)
         self.graph_state_dict = state_dict  # used for OneflowGraph.save_graph
 
         if device is not None:

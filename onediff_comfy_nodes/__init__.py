@@ -31,7 +31,7 @@ def update_node_mappings(node):
 
 
 def lazy_load_extra_nodes():
-    print(f"{is_nexfort_available()=} {is_oneflow_available()=}")
+  
     from .extras_nodes import nodes_torch_compile_booster
 
     update_node_mappings(nodes_torch_compile_booster)

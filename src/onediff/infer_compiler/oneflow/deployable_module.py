@@ -145,8 +145,10 @@ class OneflowDeployableModule(DeployableModule):
     def __getattr__(self, name):
         return getattr(self._deployable_module_model, name)
 
-    def load_graph(self, file_path, device=None, run_warmup=True):
-        self.get_graph().load_graph(file_path, device, run_warmup)
+    def load_graph(self, file_path, device=None, run_warmup=True, *, state_dict=None):
+        self.get_graph().load_graph(
+            file_path, device, run_warmup, state_dict=state_dict
+        )
 
     def save_graph(self, file_path, *, process_state_dict=lambda x: x):
         self.get_graph().save_graph(file_path, process_state_dict=process_state_dict)
