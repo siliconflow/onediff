@@ -300,6 +300,11 @@ jobs:
       - if: matrix.test-suite == 'webui'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
 
+      - name: Show WebUI Log
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} cat /app/stable-diffusion-webui/onediff_webui.log
+
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
