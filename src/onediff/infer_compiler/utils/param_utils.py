@@ -188,6 +188,6 @@ def forward_pre_check_and_update_state_hook(module, args):
 
 def removesuffix(s: str, suffix: str) -> str:
     if s.endswith(suffix):
-        return s[ :len(s) -len(suffix)]
+        return s[:len(s) - len(suffix)]
     else:
         return s
