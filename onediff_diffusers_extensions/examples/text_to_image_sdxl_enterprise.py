@@ -129,7 +129,6 @@ else:
 start_t = time.time()
 
 torch.manual_seed(args.seed)
-
 torch.cuda.cudart().cudaProfilerStart()
 image = pipe(**infer_args).images[0]
 torch.cuda.cudart().cudaProfilerStop()
