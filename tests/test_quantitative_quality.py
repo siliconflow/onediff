@@ -3,7 +3,7 @@ from PIL import Image
 import numpy as np
 import unittest
 
-class  QuantizeQuality(unittest.TestCase):
+class QuantizeQuality(unittest.TestCase):
 
     def test_validate(self):
         image1 = np.array(Image.open('/share_nfs/civitai/20240407-163408.jpg').convert('RGB'))

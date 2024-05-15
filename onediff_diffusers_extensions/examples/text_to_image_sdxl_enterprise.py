@@ -104,7 +104,6 @@ if args.compile:
     pipe.unet = oneflow_compile(pipe.unet, options=compile_options)
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=compile_options)
 
-torch.manual_seed(args.seed)
 
 if args.load_graph:
     print("Loading graphs to avoid compilation...")
@@ -115,18 +114,21 @@ if args.load_graph:
     print(f"warmup with loading graph elapsed: {end_t - start_t} s")
     start_t = time.time()
     for _ in range(args.warmup):
+        torch.manual_seed(args.seed)
         image = pipe(**infer_args).images[0]
     end_t = time.time()
     print(f"warmup with run elapsed: {end_t - start_t} s")
 else:
     start_t = time.time()
     for _ in range(args.warmup):
+        torch.manual_seed(args.seed)
         image = pipe(**infer_args).images[0]
     end_t = time.time()
     print(f"warmup with run elapsed: {end_t - start_t} s")
 
 start_t = time.time()
 
+torch.manual_seed(args.seed)
 torch.cuda.cudart().cudaProfilerStart()
 image = pipe(**infer_args).images[0]
 torch.cuda.cudart().cudaProfilerStop()
