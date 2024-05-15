@@ -1,4 +1,4 @@
-__version__ = "1.0.0.dev"
+__version__ = "1.1.0.dev1"
 from onediff.infer_compiler import compile_options
 from .compilers.diffusion_pipeline_compiler import compile_pipe, save_pipe, load_pipe
 
