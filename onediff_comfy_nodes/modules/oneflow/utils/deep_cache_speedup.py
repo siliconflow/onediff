@@ -2,7 +2,6 @@ import torch
 from comfy import model_management
 from comfy.model_base import SVD_img2vid
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.utils import set_boolean_env_var
 from register_comfy import DeepCacheUNet, FastDeepCacheUNet
 
 from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher

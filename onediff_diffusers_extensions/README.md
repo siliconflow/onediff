@@ -197,7 +197,7 @@ deepcache_output = pipe(
 import torch
 
 from diffusers.utils import load_image, export_to_video
-from onediffx import compile_pipe, compiler_config
+from onediffx import compile_pipe, compile_options
 from onediffx.deep_cache import StableVideoDiffusionPipeline
 
 pipe = StableVideoDiffusionPipeline.from_pretrained(
@@ -208,8 +208,8 @@ pipe = StableVideoDiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-compiler_config.attention_allow_half_precision_score_accumulation_max_m = 0
-pipe = compile_pipe(pipe)
+compile_options.oneflow.attention_allow_half_precision_score_accumulation_max_m = 0
+pipe = compile_pipe(pipe, options=compile_options)
 
 input_image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true")
 input_image = input_image.resize((1024, 576))

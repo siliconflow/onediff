@@ -1,5 +1,7 @@
 import hashlib
+import importlib
 import os
+from typing import Dict
 import torch
 import oneflow as flow
 from pathlib import Path
@@ -53,6 +55,28 @@ def graph_file_management(func):
             )
             setattr(self, "_load_graph_first_run", False)
 
+        def apply_patch_after_loading_state_dict(state_dict):
+            nonlocal self, args, kwargs
+            graph = self.get_graph()
+            if importlib.util.find_spec("register_comfy"):
+                from register_comfy import CrossAttntionStateDictPatch as state_patch
+
+                state_dict = state_patch.apply_patch_after_loading_state_dict(
+                    state_dict, input_kwargs=kwargs, graph=graph
+                )
+            return state_dict
+
+        def process_state_dict_before_saving(state_dict: Dict):
+            nonlocal self, args, kwargs, graph_file
+            graph = self.get_graph()
+            if importlib.util.find_spec("register_comfy"):
+                from register_comfy import CrossAttntionStateDictPatch as state_patch
+
+                state_dict = state_patch.process_state_dict_before_saving(
+                    state_dict, graph=graph
+                )
+            return state_dict
+
         def handle_graph_loading():
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
@@ -64,7 +88,11 @@ def graph_file_management(func):
                 )
             else:
                 graph_device = compile_options.graph_file_device
-                self.load_graph(graph_file, torch2oflow(graph_device))
+                state_dict = flow.load(graph_file)
+                self.load_graph(
+                    graph_file, torch2oflow(graph_device), state_dict=state_dict
+                )
+                apply_patch_after_loading_state_dict(state_dict)
                 logger.info(f"Loaded graph file: {graph_file}")
                 is_first_load = False
 
@@ -77,7 +105,9 @@ def graph_file_management(func):
                 if parent_dir != "":
                     os.makedirs(parent_dir, exist_ok=True)
 
-                self.save_graph(graph_file)
+                self.save_graph(
+                    graph_file, process_state_dict=process_state_dict_before_saving
+                )
                 logger.info(f"Saved graph file: {graph_file}")
 
             except Exception as e:
