@@ -1,11 +1,11 @@
 from comfy.ldm.modules.attention import attention_pytorch
-
 from register_comfy.CrossAttentionPatch import \
     Attn2Replace, ipadapter_attention
 
 from onediff.infer_compiler.transform import torch2oflow
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
+# from ._config import ipadapter_plus_hijacker, ipadapter_plus_pt
 
 from onediff.infer_compiler.utils.cost_util import cost_time
 
@@ -73,6 +73,7 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
         if key not in cache_dict:
             attn2_m_pt = Attn2Replace(ipadapter_attention, **patch_kwargs)
             attn2_m_of = torch2oflow(attn2_m_pt, bypass_check=True)
+
             cache_dict[key] = attn2_m_of
             attn2_m: Attn2Replace = attn2_m_of
             index = len(attn2_m.callback) - 1
@@ -81,7 +82,6 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
             
             # QuantizedInputPatch
             attn2_m._bind_model = attn2_m_pt
-            attn2_m_pt.optimized_attention = attention_pytorch
         else:
             attn2_m = cache_dict[key]
 
@@ -98,7 +98,7 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
             bind_model.add(bind_model.callback[0], **patch_kwargs)
         
 
-    if create_patch_executor(PatchType.QuantizedInputPatch).check_patch():
+    if not create_patch_executor(PatchType.QuantizedInputPatch).check_patch():
         create_patch_executor(PatchType.QuantizedInputPatch).set_patch()
 
 # def set_model_patch_replace(org_fn, model, patch_kwargs, key):

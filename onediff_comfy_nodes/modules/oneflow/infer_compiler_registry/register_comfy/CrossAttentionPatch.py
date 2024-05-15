@@ -6,8 +6,7 @@ https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/main/CrossAttentionPatch.py
 import torch
 import math
 import torch.nn.functional as F
-# from comfy.ldm.modules.attention import attention_pytorch as optimized_attention 
-from .attention import attention_pytorch_oneflow as optimized_attention
+from comfy.ldm.modules.attention import attention_pytorch as optimized_attention
 
 def tensor_to_size(source, dest_size):
     if isinstance(dest_size, torch.Tensor):
@@ -22,16 +21,17 @@ def tensor_to_size(source, dest_size):
     return source
 
 class Attn2Replace:
+
     def __init__(self, callback=None, **kwargs):
         self.callback = [callback]
         self.kwargs = [kwargs]
-
 
         self.forward_patch_key = id(self)
         self._use_crossAttention_patch = True
         self.cache_map = {} # {ui_index, index}
         self._bind_model = None
         self.optimized_attention = optimized_attention
+
         
     def get_bind_model(self):
         return self._bind_model
