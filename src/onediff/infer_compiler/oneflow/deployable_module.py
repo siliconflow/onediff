@@ -6,7 +6,7 @@ from ..transform.manager import transform_mgr
 from ..utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from ..utils.args_tree_util import input_output_processor
 from ..utils.log_utils import logger
-from ..utils.param_utils import parse_device, check_device
+from ..utils.param_utils import parse_device, check_device, generate_constant_folding_info
 from ..utils.graph_management_utils import graph_file_management
 from ..utils.online_quantization_utils import quantize_and_deploy_wrapper
 from ..utils.options import OneflowCompileOptions
@@ -149,6 +149,7 @@ class OneflowDeployableModule(DeployableModule):
         self.get_graph().load_graph(
             file_path, device, run_warmup, state_dict=state_dict
         )
+        generate_constant_folding_info(self)
 
     def save_graph(self, file_path, *, process_state_dict=lambda x: x):
         self.get_graph().save_graph(file_path, process_state_dict=process_state_dict)
