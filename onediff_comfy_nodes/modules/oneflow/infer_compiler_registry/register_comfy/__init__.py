@@ -3,7 +3,7 @@ from pathlib import Path
 import comfy
 from comfy.ldm.modules.diffusionmodules.model import AttnBlock
 from nodes import *  # must imported before import comfy
-from onediff.infer_compiler import register
+from onediff.infer_compiler.transform import register
 from onediff.infer_compiler.utils import is_community_version
 
 from .attention import CrossAttention as CrossAttention1f
