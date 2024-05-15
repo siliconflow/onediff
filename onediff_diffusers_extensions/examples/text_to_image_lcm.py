@@ -65,6 +65,7 @@ if not args.disable:
     pipe.unet = oneflow_compile(pipe.unet)
 
 for _ in range(args.warmup):
+    torch.manual_seed(args.seed)
     images = pipe(
         args.prompt,
         height=args.height,
@@ -73,7 +74,6 @@ for _ in range(args.warmup):
     ).images
 
 torch.manual_seed(args.seed)
-
 images = pipe(
     args.prompt, height=args.height, width=args.width, num_inference_steps=args.steps
 ).images

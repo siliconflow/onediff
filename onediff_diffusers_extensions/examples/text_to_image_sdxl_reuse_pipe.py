@@ -101,6 +101,7 @@ else:
 new_base.to("cuda")
 
 print("New base running by torch backend")
+torch.manual_seed(args.seed)
 image = new_base(
     prompt=args.prompt,
     height=args.height,
@@ -128,6 +129,7 @@ torch.cuda.empty_cache()
 
 # Normal SDXL run
 print("Re-use the compiled graph")
+torch.manual_seed(args.seed)
 image = new_base(
     prompt=args.prompt,
     height=args.height,
