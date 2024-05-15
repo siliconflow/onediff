@@ -63,7 +63,9 @@ class CachedCrossAttentionPatch(PatchExecutorBase):
 
 
 class CrossAttentionForwardMasksPatch(PatchExecutorBase):
+    
     def __init__(self) -> None:
+        """Will be abandoned"""
         self.patch_name = "forward_masks"
 
     def check_patch(self, module):
@@ -106,3 +108,34 @@ class DeepCacheUNetExecutorPatch(PatchExecutorBase):
 
     def is_use_deep_cache_unet(self, module: BaseModel):
         return getattr(module, "use_deep_cache_unet", False)
+
+class UNetExtraInputOptions(PatchExecutorBase):
+    def __init__(self) -> None:
+        """UNetExtraInputOptions
+       
+        """
+        super().__init__()
+        self.patch_name = type(self).__name__
+
+    def check_patch(self, module):
+        return hasattr(module, self.patch_name)
+
+    def set_patch(self, module, value: Dict):
+        """
+        Bind extra input options to the specified module.
+        For UNet extra input options, the value is a dictionary.
+
+        Args:
+            module: The module object to set the patch attribute on.
+            value (Dict): The extra input options to bind to the module.
+        """
+        setattr(module, self.patch_name, value)
+
+    def get_patch(self, module) -> Dict:
+        if not self.check_patch(module):
+            self.set_patch(module, {})
+        return getattr(module, self.patch_name)
+
+    def clear_patch(self, module):
+        if self.check_patch(module):
+            self.get_patch(module).clear()
