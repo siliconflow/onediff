@@ -66,13 +66,19 @@ def is_using_oneflow_backend(module):
         deep_cache_module = dc_patch_executor.get_patch(module)
         if deep_cache_module[0] and isinstance(deep_cache_module[0], DeployableModule):
             return True
-        diff_model = module.model.diffusion_model
-        return isinstance(diff_model, DeployableModule)
+        if hasattr(module.model, "diffusion_model"):
+            diff_model = module.model.diffusion_model
+            return isinstance(diff_model, DeployableModule)
+        else:
+            return False
 
     if isinstance(module, BaseModel):
         if dc_patch_executor.is_use_deep_cache_unet(module):
             return True
-        return isinstance(module.diffusion_model, DeployableModule)
+        if hasattr(module, "diffusion_model"):
+            return isinstance(module.diffusion_model, DeployableModule)
+        else:
+            return False
 
     if isinstance(module, DeployableModule):
         return True
