@@ -1,8 +1,6 @@
 from comfy.ldm.modules.attention import attention_pytorch
-from register_comfy.CrossAttentionPatch import \
-    CrossAttentionPatch as CrossAttentionPatch_PT
 
-from register_comfy.CrossAttentionPatch_v2 import \
+from register_comfy.CrossAttentionPatch import \
     Attn2Replace, ipadapter_attention
 
 from onediff.infer_compiler.transform import torch2oflow
@@ -80,6 +78,10 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
             index = len(attn2_m.callback) - 1
             attn2_m.cache_map[ui_cache_key] = index
             unet_extra_options["attn2"][attn2_m.forward_patch_key] = [new_patch_kwargs]
+            
+            # QuantizedInputPatch
+            attn2_m._bind_model = attn2_m_pt
+            attn2_m_pt.optimized_attention = attention_pytorch
         else:
             attn2_m = cache_dict[key]
 
@@ -91,7 +93,13 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
         unet_extra_options["attn2"][attn2_m.forward_patch_key].append(new_patch_kwargs) # update last patch
         attn2_m.cache_map[ui_cache_key] = len(attn2_m.callback) - 1
 
+        if attn2_m.get_bind_model() is not None:
+            bind_model: Attn2Replace = attn2_m.get_bind_model()
+            bind_model.add(bind_model.callback[0], **patch_kwargs)
         
+
+    if create_patch_executor(PatchType.QuantizedInputPatch).check_patch():
+        create_patch_executor(PatchType.QuantizedInputPatch).set_patch()
 
 # def set_model_patch_replace(org_fn, model, patch_kwargs, key):
 #     diff_model = model.model.diffusion_model

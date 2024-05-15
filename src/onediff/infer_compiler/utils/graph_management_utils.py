@@ -57,9 +57,9 @@ def graph_file_management(func):
             # Avoid graph file conflicts
             if importlib.util.find_spec("register_comfy"):
                 from register_comfy import CrossAttntionStateDictPatch as state_patch
-
-                if state_patch.has_attn2_patch(input_kwargs=kwargs):
-                    graph_file = graph_file.replace(".graph", "_attn2.graph")
+                attn2_patch_sum = state_patch.attn2_patch_sum(input_kwargs=kwargs)
+                if attn2_patch_sum > 0:
+                    graph_file = graph_file.replace(".graph", f"_attn2_{attn2_patch_sum}.graph")
 
         def process_state_dict_before_saving(state_dict: Dict):
             nonlocal self, args, kwargs, graph_file

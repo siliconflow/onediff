@@ -1,10 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-import torch
 from comfy.model_patcher import ModelPatcher
 from comfy.model_base import BaseModel
-from register_comfy.CrossAttentionPatch import CrossAttentionPatch
 
 
 class PatchExecutorBase(ABC):
@@ -52,7 +50,7 @@ class CachedCrossAttentionPatch(PatchExecutorBase):
     def set_patch(self, module, value: dict):
         setattr(module, self.patch_name, value)
 
-    def get_patch(self, module) -> Dict[str, CrossAttentionPatch]:
+    def get_patch(self, module) -> Dict[str, any]:
         if not self.check_patch(module):
             self.set_patch(module, {})
         return getattr(module, self.patch_name)
