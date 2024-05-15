@@ -4,7 +4,6 @@ import argparse
 import torch
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.schedulers import EulerDiscreteScheduler
 from diffusers import StableDiffusionXLPipeline
 
 # import diffusers
@@ -50,16 +49,10 @@ args = parser.parse_args()
 OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
-scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
 base = StableDiffusionXLPipeline.from_pretrained(
-    args.base,
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
-
 
 # Compile unet with oneflow
 if args.compile_unet:
@@ -94,7 +87,6 @@ print("loading new base")
 if str(args.new_base).endswith(".safetensors"):
     new_base = StableDiffusionXLPipeline.from_single_file(
         args.new_base,
-        scheduler=scheduler,
         torch_dtype=torch.float16,
         variant=args.variant,
         use_safetensors=True,
@@ -102,7 +94,6 @@ if str(args.new_base).endswith(".safetensors"):
 else:
     new_base = StableDiffusionXLPipeline.from_pretrained(
         args.new_base,
-        scheduler=scheduler,
         torch_dtype=torch.float16,
         variant=args.variant,
         use_safetensors=True,

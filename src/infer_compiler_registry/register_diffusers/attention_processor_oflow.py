@@ -411,7 +411,9 @@ class Attention(nn.Module):
         if self.upcast_attention and parse_boolean_from_env(
             "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", True
         ):
-            set_boolean_env_var("ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False)
+            set_boolean_env_var(
+                "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", False
+            )
         dtype = query.dtype
         # if self.upcast_attention:
         #     query = query.float()

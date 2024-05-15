@@ -15,6 +15,7 @@ Guides and instructions for maintainers and contributors of this repository.
   ```
   .github/workflows/pub.yml
   src/onediff/__init__.py
+  onediff_diffusers_extensions/onediffx/__init__.py
   ```
 
 - install build package

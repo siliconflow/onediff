@@ -7,9 +7,7 @@ import argparse
 
 import torch
 
-from onediffx import compile_pipe, compiler_config
-from onediff.schedulers import EulerDiscreteScheduler
-
+from onediffx import compile_pipe
 from onediffx.deep_cache import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
@@ -42,13 +40,8 @@ args = parser.parse_args()
 OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
-scheduler = EulerDiscreteScheduler.from_pretrained(args.base, subfolder="scheduler")
 base = StableDiffusionXLPipeline.from_pretrained(
-    args.base,
-    scheduler=scheduler,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
 
