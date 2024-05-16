@@ -56,7 +56,7 @@ class Attn2Replace:
         return out.to(dtype=dtype)
     
     def __deepcopy__(self, memo):
-        print("Warning: CrossAttentionPatch is not deepcopiable.", '-'*20)
+        # print("Warning: CrossAttentionPatch is not deepcopiable.", '-'*20)
         return self
 
 def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=None, weight=1.0, cond=None, cond_alt=None, uncond=None, weight_type="linear", mask=None, sigma_start=0.0, sigma_end=1.0, unfold_batch=False, embeds_scaling='V only', optimized_attention=None, **kwargs):
