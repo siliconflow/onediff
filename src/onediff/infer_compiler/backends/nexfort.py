@@ -3,16 +3,6 @@ import torch
 from .registry import register_backend
 
 
-def make_inductor_options(options):
-    inductor_options = {}
-    if options is None:
-        return inductor_options
-    for filed in dataclasses.fields(options):
-        filed_name = filed.name
-        inductor_options[f"inductor.{filed_name}"] = getattr(options, filed_name)
-    return inductor_options
-
-
 @register_backend("nexfort")
 def compile(torch_module: torch.nn.Module, *, options=None):
     from nexfort.utils.memory_format import apply_memory_format
@@ -22,11 +12,8 @@ def compile(torch_module: torch.nn.Module, *, options=None):
 
     options = options if options is not None else CompileOptions()
     nexfort_options = options.nexfort
-    if nexfort_options.memory_format != torch.preserve_format:
-        model = apply_memory_format(
-            torch_module, memory_format=nexfort_options.memory_format
-        )
-    model = nexfort_compile(
-        model, options=make_inductor_options(nexfort_options.inductor)
+    compiled_model = nexfort_compile(
+        torch_module, **nexfort_options
     )
-    return NexfortDeployableModule(model)
+    # return NexfortDeployableModule(compiled_model, torch_module)
+    return compiled_model

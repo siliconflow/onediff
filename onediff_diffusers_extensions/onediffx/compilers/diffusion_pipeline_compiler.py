@@ -29,11 +29,11 @@ _PARTS = [
     "fast_unet",  # for deepcache
     "prior",  # for StableCascadePriorPipeline
     "decoder",  # for StableCascadeDecoderPipeline
+    "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
     "vqgan.down_blocks",  # for StableCascadeDecoderPipeline
     "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
     "vae.decoder",
     "vae.encoder",
-    "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
 ]
 
 
@@ -52,8 +52,17 @@ def _filter_parts(ignores=()):
 
 
 def compile_pipe(
-    pipe, *, backend="oneflow", options=None, ignores=(),
+    pipe, *, backend="oneflow", options=None, ignores=(), fuse_qkv_projections=False,
 ):
+    if fuse_qkv_projections:
+        print("****** fuse qkv projections ******")
+        pipe = fuse_qkv_projections_in_pipe(pipe)
+
+    if options.nexfort is not None and "memory_format" in options.nexfort:
+        memory_format = getattr(torch, options.nexfort["memory_format"])
+        pipe = convert_pipe_to_memory_format(pipe, ignores=ignores, memory_format=memory_format)
+        del options.nexfort["memory_format"]
+
     # To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
     if (
         hasattr(pipe, "upcast_vae")
@@ -82,6 +91,33 @@ def compile_pipe(
 
     return pipe
 
+def fuse_qkv_projections_in_pipe(pipe):
+    if hasattr(pipe, "fuse_qkv_projections"):
+        pipe.fuse_qkv_projections()
+    return pipe
+
+
+def convert_pipe_to_memory_format(pipe, *, ignores=(), memory_format=torch.preserve_format):
+    from nexfort.utils.attributes import multi_recursive_apply
+    from nexfort.utils.memory_format import apply_memory_format
+    import functools
+    if memory_format == torch.preserve_format:
+        return pipe
+
+    parts = [
+        "unet",
+        "controlnet",
+        "fast_unet",  # for deepcache
+        "prior",  # for StableCascadePriorPipeline
+        "decoder",  # for StableCascadeDecoderPipeline
+        "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
+        "vqgan",  # for StableCascadeDecoderPipeline
+        "vae",
+    ]
+    multi_recursive_apply(
+        pipe, parts, functools.partial(apply_memory_format, memory_format=memory_format), ignores=ignores, verbose=True
+    )
+    return pipe
 
 def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
     if not os.path.exists(dir):
