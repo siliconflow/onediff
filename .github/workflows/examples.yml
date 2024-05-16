@@ -292,7 +292,7 @@ jobs:
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
         run: |
-          docker exec -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory '/app/stable-diffusion-webui/*'
+          docker exec -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory '/app/stable-diffusion-webui/repositories/*'
           docker exec -d ${{ env.CONTAINER_NAME }} mkdir /app/stable-diffusion-webui/.git
           docker exec -e venv_dir=- -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "bash /app/stable-diffusion-webui/webui.sh -f --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
           # docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/stable-diffusion-webui/webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
