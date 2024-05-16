@@ -2,6 +2,7 @@
 from ..utils.booster_utils import is_using_oneflow_backend
 from ._config import ipadapter_plus_hijacker, ipadapter_plus_pt
 from .set_model_patch_replace import set_model_patch_replace_v2
+
 set_model_patch_replace_fn_pt = ipadapter_plus_pt.IPAdapterPlus.set_model_patch_replace
 
 
