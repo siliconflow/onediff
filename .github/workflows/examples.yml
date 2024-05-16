@@ -289,13 +289,13 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio==3.41.2 clip open_clip_torch diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install git+https://github.com/openai/CLIP.git
-          docker exec -d ${{ env.CONTAINER_NAME }} ls -ahl
+          docker exec -d ${{ env.CONTAINER_NAME }} ls -ahl >> /app/stable-diffusion-webui/onediff_webui.log
           docker exec -w /src/onediff/ ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
 
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
         run: |
-          docker exec -d ${{ env.CONTAINER_NAME }} ls -ahl
+          docker exec -d ${{ env.CONTAINER_NAME }} ls -ahl >> /app/stable-diffusion-webui/onediff_webui.log
           docker exec -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory '/app/stable-diffusion-webui/repositories/*'
           docker exec -d ${{ env.CONTAINER_NAME }} mkdir /app/stable-diffusion-webui/.git /app/stable-diffusion-webui/openai
           docker exec -d ${{ env.CONTAINER_NAME }} ln -s /share_nfs/onediff_ci/sd-webui/models/clips/clip-vit-large-patch14 /app/stable-diffusion-webui/openai/clip-vit-large-patch14
