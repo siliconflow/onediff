@@ -28,20 +28,8 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
         to["patches_replace"]["attn2"] = {}
     else:
         to["patches_replace"]["attn2"] = to["patches_replace"]["attn2"].copy()
-    
-    # patch_kwargs = {
-    #     "ipadapter": ipa,
-    #     "weight": weight,
-    #     "cond": cond,
-    #     "cond_alt": cond_alt,
-    #     "uncond": uncond,
-    #     "weight_type": weight_type,
-    #     "mask": attn_mask,
-    #     "sigma_start": sigma_start,
-    #     "sigma_end": sigma_end,
-    #     "unfold_batch": unfold_batch,
-    #     "embeds_scaling": embeds_scaling,
-    # }
+
+
     def split_patch_kwargs(patch_kwargs):
         split1dict = {}
         split2dict = {}
