@@ -287,7 +287,7 @@ jobs:
         if: matrix.test-suite == 'webui'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio clip open_clip_torch diskcache
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio clip open_clip_torch diskcache gitpython
 
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
