@@ -8,6 +8,7 @@ git clone https://github.com/siliconflow/oneflow.git
 When you have completed these steps, follow the [instructions](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/README.md?plain=1#L169) to install OneDiff.
 Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/onediff_comfy_nodes/README.md?plain=1#L86) to install ComfyUI OneDiff extension
 
+
 #### Install ComfyUI
 
 ```
@@ -44,6 +45,7 @@ git checkout f9e0343f4c4606ee6365a9af4a7e16118f1c45e1
 ```
 When you have completed these steps, follow the [instructions](https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved/blob/07f1736813ba3e7ab93a8adf757448098d4b8783/README.md?plain=1#L25)  for installation
 
+
 ### Quick Start
 
 > Recommend running the official example of ComfyUI_IPAdapter_plus now, and then trying OneDiff acceleration. 
@@ -77,7 +79,6 @@ As follows:
 | ------------------ | --------- |
 | Dynamic Shape      | Yes       |
 | Dynamic Batch Size | No        |
-| Vae Speed Up       | Yes       |
 
 ## Contact
 
