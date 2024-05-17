@@ -1,5 +1,7 @@
 import hashlib
+import importlib
 import os
+from typing import Dict
 import torch
 import oneflow as flow
 from pathlib import Path
@@ -52,6 +54,23 @@ def graph_file_management(func):
                 graph_file, self, args=args, kwargs=kwargs
             )
             setattr(self, "_load_graph_first_run", False)
+            # Avoid graph file conflicts
+            if importlib.util.find_spec("register_comfy"):
+                from register_comfy import CrossAttntionStateDictPatch as state_patch
+                attn2_patch_sum = state_patch.attn2_patch_sum(input_kwargs=kwargs)
+                if attn2_patch_sum > 0:
+                    graph_file = graph_file.replace(".graph", f"_attn2_{attn2_patch_sum}.graph")
+
+        def process_state_dict_before_saving(state_dict: Dict):
+            nonlocal self, args, kwargs, graph_file
+            graph = self.get_graph()
+            if importlib.util.find_spec("register_comfy"):
+                from register_comfy import CrossAttntionStateDictPatch as state_patch
+
+                state_dict = state_patch.process_state_dict_before_saving(
+                    state_dict, graph=graph
+                )
+            return state_dict
 
         def handle_graph_loading():
             nonlocal graph_file, compile_options, is_first_load
@@ -64,7 +83,10 @@ def graph_file_management(func):
                 )
             else:
                 graph_device = compile_options.graph_file_device
-                self.load_graph(graph_file, torch2oflow(graph_device))
+                state_dict = flow.load(graph_file)
+                self.load_graph(
+                    graph_file, torch2oflow(graph_device), state_dict=state_dict
+                )
                 logger.info(f"Loaded graph file: {graph_file}")
                 is_first_load = False
 
@@ -76,8 +98,14 @@ def graph_file_management(func):
                 parent_dir = os.path.dirname(graph_file)
                 if parent_dir != "":
                     os.makedirs(parent_dir, exist_ok=True)
+                
+                # Avoid graph file conflicts
+                if os.path.exists(graph_file):
+                    raise FileExistsError(f"File {graph_file} exists!")
 
-                self.save_graph(graph_file)
+                self.save_graph(
+                    graph_file, process_state_dict=process_state_dict_before_saving
+                )
                 logger.info(f"Saved graph file: {graph_file}")
 
             except Exception as e:

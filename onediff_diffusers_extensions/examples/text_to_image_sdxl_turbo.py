@@ -49,6 +49,7 @@ if args.compile:
 
 # Warmup
 for i in range(args.warmup):
+    torch.manual_seed(args.seed)
     image = base(
         prompt=args.prompt,
         height=args.height,
@@ -60,7 +61,6 @@ for i in range(args.warmup):
 
 # Normal SDXL turbo run
 torch.manual_seed(args.seed)
-
 start_t = time.time()
 
 image = base(
