@@ -1,19 +1,31 @@
 ## Accelerating ComfyUI_InstantID with OneDiff
 ### Environment
 Please Refer to the Readme in the Respective Repositories for Installation Instructions.
+#### Install OneDiff
 
-- ComfyUI:
-  - github: https://github.com/comfyanonymous/ComfyUI
-  - commit: 4bd7d55b9028d79829a645edfe8259f7b7a049c0 
-  - Date:   Thu Apr 11 22:43:05 2024 -0400
+```
+git clone https://github.com/siliconflow/oneflow.git
+```
+When you have completed these steps, follow the [instructions](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/README.md?plain=1#L169) to install OneDiff.
+Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/onediff_comfy_nodes/README.md?plain=1#L86) to install ComfyUI OneDiff extension
+
+#### Install ComfyUI
+
+```
+git clone https://github.com/comfyanonymous/ComfyUI
+
+git checkout 4bd7d55b9028d79829a645edfe8259f7b7a049c0
+```
+When you have completed these steps, follow the [instructions](https://github.com/comfyanonymous/ComfyUI/blob/58f8388020ba6ab5a913beb742a6312914d640b2/README.md?plain=1#L111) to install ComfyUI
   
-- ComfyUI_InstantID:
-  - github: https://github.com/cubiq/ComfyUI_InstantID
-  - commit: e9cc7597b2a7cd441065418a975a2de4aa2450df 
-  - Date:   Tue Apr 9 14:05:15 2024 +0200
-  
-- OneDiff:
-  - github: https://github.com/siliconflow/onediff 
+#### Install ComfyUI_InstantID
+
+```
+git clone https://github.com/cubiq/ComfyUI_InstantID.git
+
+git checkout e9cc7597b2a7cd441065418a975a2de4aa2450df
+```
+When you have completed these steps,follow the [instructions](https://github.com/cubiq/ComfyUI_InstantID/blob/d8c70a0cd8ce0d4d62e78653674320c9c3084ec1/README.md?plain=1#L51) below to install ComfyUI_InstantID
 
 ### Quick Start
 
@@ -63,7 +75,6 @@ wget -O models/checkpoints/sd_xl_base_1.0.safetensors https://hf-mirror.com/stab
 mkdir -p models/instantid
 wget -O models/instantid/ip-adapter.bin https://hf-mirror.com/InstantX/InstantID/resolve/main/ip-adapter.bin
 
-
 # Load ControlNet Model
 wget -O models/controlnet/diffusion_pytorch_model.safetensors https://hf-mirror.com/InstantX/InstantID/resolve/main/ControlNetModel/diffusion_pytorch_model.safetensors
 ```
@@ -74,7 +85,10 @@ wget -O models/controlnet/diffusion_pytorch_model.safetensors https://hf-mirror.
 - **Note:**
    - Consider setting `ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION=0` and `ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION=0` to ensure computational precision, but expect a potential 5% reduction in performance.
 
+## Contact
 
+For users of OneDiff Community, please visit [GitHub Issues](https://github.com/siliconflow/onediff/issues) for bug reports and feature requests.
 
+For users of OneDiff Enterprise, you can contact contact@siliconflow.com for commercial support.
 
-
+Feel free to join our [Discord](https://discord.gg/RKJTjZMcPQ) community for discussions and to receive the latest updates.
