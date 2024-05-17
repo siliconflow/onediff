@@ -288,8 +288,9 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio==3.41.2 clip open_clip_torch diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install git+https://github.com/openai/CLIP.git
-          docker exec -w /src/onediff/ ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
+          # docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install git+https://github.com/openai/CLIP.git
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -e /app/stable-diffusion-webui/repositories/CLIP
+          docker exec -w /src/onediff/ ${{ env.CONTAINER_NAME }} python3 -m pip install -e /src/onediff
           # docker exec -d ${{ env.CONTAINER_NAME }} ls -ahl >> /app/stable-diffusion-webui/onediff_webui.log
 
       - name: Start WebUI Web Service
