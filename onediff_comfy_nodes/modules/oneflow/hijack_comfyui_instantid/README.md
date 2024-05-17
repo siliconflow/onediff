@@ -39,7 +39,7 @@ Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_
 As follows:
 
 Note that you can download all images in this page and then drag or load them on ComfyUI to get the workflow embedded in the image.
-![oneflow_basic](https://github.com/siliconflow/onediff/assets/109639975/5ab47746-04e8-4753-afcf-7d95161f542e)
+![oneflow_basic](https://github.com/siliconflow/oneflow/assets/117806079/81016bd8-3ec8-457f-850f-9c486bfd2d0c)
 
 
 <details close>
@@ -80,6 +80,12 @@ wget -O models/controlnet/diffusion_pytorch_model.safetensors https://hf-mirror.
 ```
 
 </details>
+
+- NVIDIA A100-PCIE-40GB 
+- batch_size 4
+- warmup 4
+- e2e
+  - oneflow_basic: 14.9 s (baseline)
 
 
 - **Note:**
