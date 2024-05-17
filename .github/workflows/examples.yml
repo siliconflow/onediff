@@ -48,11 +48,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
-      # - name: Checkout Stable Diffusion WebUI
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: AUTOMATIC1111/stable-diffusion-webui
-      #     path: stable-diffusion-webui
       - name: Pack src
         working-directory: onediff
         run: |
@@ -65,12 +60,6 @@ jobs:
           git reset --hard
           git clean -f
           git archive --prefix ${{ env.COMFYUI_SRC_DIR }}/ --format zip HEAD > comfyui-src.zip
-      # - name: Pack webui
-      #   working-directory: stable-diffusion-webui
-      #   run: |
-      #     git reset --hard
-      #     git clean -f
-      #     git archive --prefix ${{ env.WEBUI_SRC_DIR }}/ --format zip HEAD > webui-src.zip
       - name: Upload src
         id: upload_to_oss
         run: |
@@ -79,7 +68,6 @@ jobs:
           WEBUI_DST="oss://oneflow-public/stable-diffusion-webui/stable-diffusion-webui.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
           ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
-          # ./ossutil64 cp --disable-ignore-error --update stable-diffusion-webui/webui-src.zip ${WEBUI_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
@@ -141,12 +129,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
-      # - name: Checkout WebUI
-      #   if: matrix.test-suite == 'webui' && github.repository != 'siliconflow/onediff'
-      #   uses: actions/checkout@v4
-      #   with:
-      #     repository: AUTOMATIC1111/stable-diffusion-webui
-      #     path: ${{ env.WEBUI_SRC_DIR }}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
@@ -288,21 +270,15 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio==3.41.2 clip open_clip_torch diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
-          # docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install git+https://github.com/openai/CLIP.git
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -e /app/stable-diffusion-webui/repositories/CLIP
-          # docker exec -w /src/onediff/ ${{ env.CONTAINER_NAME }} python3 -m pip install -e /src/onediff
-          # docker exec -d ${{ env.CONTAINER_NAME }} ls -ahl >> /app/stable-diffusion-webui/onediff_webui.log
 
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
         run: |
-          # docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} ls -ahl > /app/stable-diffusion-webui/onediff_webui.log
-          # docker exec -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory '/app/stable-diffusion-webui/repositories/*'
           docker exec -d ${{ env.CONTAINER_NAME }} mkdir /app/stable-diffusion-webui/.git /app/stable-diffusion-webui/openai
           docker exec -d ${{ env.CONTAINER_NAME }} ln -s /share_nfs/onediff_ci/sd-webui/models/clips/clip-vit-large-patch14 /app/stable-diffusion-webui/openai/clip-vit-large-patch14
-          # docker exec -e venv_dir=- -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "bash /app/stable-diffusion-webui/webui.sh -f --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check >> /app/stable-diffusion-webui/onediff_webui.log 2>&1"
           docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/stable-diffusion-webui/webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
-          sleep 300
+          sleep 30
 
       - name: Show WebUI Log
         if: matrix.test-suite == 'webui'
@@ -313,7 +289,6 @@ jobs:
 
       - if: matrix.test-suite == 'webui'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
-
 
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'

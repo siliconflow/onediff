@@ -27,7 +27,7 @@ def simple_txt2img_request():
         "batch_size": 1,
 
         # Enable OneDiff speed up
-        # "script_name": "onediff_diffusion_model",
+        "script_name": "onediff_diffusion_model",
 
         # If you are using OneDiff Enterprise, add the field below to enable quant feature
         # "script_args" : [
@@ -40,17 +40,17 @@ def simple_txt2img_request():
 def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
     assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
 
+@pytest.mark.skip
 def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
-    # script_args = {
-    #     "script_args": [
-    #         True, # quantization
-    #         #  None,  # graph_checkpoint
-    #         #  "saved_graph",    # saved_graph_name
-    #     ]
-    # }
-    # data = {**simple_txt2img_request, **script_args}
-    # assert requests.post(url_txt2img, json=data).status_code == 200
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+    script_args = {
+        "script_args": [
+            True, # quantization
+            #  None,  # graph_checkpoint
+            #  "saved_graph",    # saved_graph_name
+        ]
+    }
+    data = {**simple_txt2img_request, **script_args}
+    assert requests.post(url_txt2img, json=data).status_code == 200
 
 @pytest.mark.skip
 def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
