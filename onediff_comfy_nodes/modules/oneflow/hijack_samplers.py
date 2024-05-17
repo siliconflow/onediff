@@ -96,8 +96,8 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         
         if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(diff_model):
             transformer_options["sigmas"] = timestep[0].item()
-            masks_patch_executor = create_patch_executor(PatchType.CrossAttentionForwardMasksPatch)
-            transformer_options["_masks"] = masks_patch_executor.get_patch(diff_model)
+            patch_executor = create_patch_executor(PatchType.UNetExtraInputOptions)
+            transformer_options["_attn2"] = patch_executor.get_patch(diff_model)["attn2"]
         else:
             transformer_options["sigmas"] = timestep
 

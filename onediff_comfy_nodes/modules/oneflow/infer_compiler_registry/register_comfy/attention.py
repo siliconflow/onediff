@@ -423,3 +423,23 @@ class SpatialVideoTransformer(
             x = self.proj_out(x)
         out = x + x_in
         return out
+
+
+
+def attention_pytorch_oneflow(q, k, v, heads, mask=None, attn_precision=None):
+    b, _, dim_head = q.shape
+    dim_head //= heads
+    head_dim = dim_head
+    out = torch._C.fused_multi_head_attention_inference_v2(
+        query=q,
+        query_layout="BM(HK)",
+        query_head_size=head_dim,
+        key=k,
+        key_layout="BM(HK)",
+        value=v,
+        value_layout="BM(HK)",
+        output_layout="BM(HK)",
+        causal=False,
+    )
+    return out
+
