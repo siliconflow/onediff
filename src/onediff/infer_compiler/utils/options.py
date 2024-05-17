@@ -10,6 +10,7 @@ class OneflowCompileOptions:
     max_cached_graph_size: int = 9
     graph_file: str = None
     graph_file_device: torch.device = None
+    skip_graph_file_safety_check: bool = False
 
     # Optimization related environment variables
     run_graph_by_vm: bool = None

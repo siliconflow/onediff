@@ -3,6 +3,11 @@ from functools import singledispatchmethod
 
 from comfy.model_patcher import ModelPatcher
 from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
+from comfy.controlnet import ControlLora, ControlNet
+from comfy.model_patcher import ModelPatcher
+from comfy.sd import VAE
+from onediff import __version__ as onediff_version
+from oneflow import __version__ as oneflow_version
 
 from ..booster_interface import BoosterExecutor
 
@@ -18,7 +23,7 @@ class PatchBoosterExecutor(BoosterExecutor):
             file_path = diff_model.get_graph_file()
             if file_path is None:
                 return diff_model
-            
+
             file_dir = os.path.dirname(file_path)
             file_name = os.path.basename(file_path)
             names = file_name.split("_")
@@ -44,4 +49,62 @@ class PatchBoosterExecutor(BoosterExecutor):
         if latent_image:
             diff_model = model.model.diffusion_model
             self._set_batch_size_patch(diff_model, latent_image)
+        return model
+
+
+class PatchUnetGraphCacheExecutor(BoosterExecutor):
+    @singledispatchmethod
+    def execute(self, model, ckpt_name=None):
+        print(f"Warning: cache manager {type(model)} is not supported")
+        return model
+
+    @execute.register(ModelPatcher)
+    def _(
+        self,
+        model,
+        cache_dir,
+        filename,
+        custom_suffix=".graph",
+        overwrite=False,
+        **kwargs,
+    ):
+        # model.model.diffusion_model = self.compile_fn(model.model.diffusion_model)
+        if not isinstance(model.model.diffusion_model, DeployableModule):
+            return model
+
+        diff_model: DeployableModule = model.model.diffusion_model
+        module_type = type(diff_model._torch_module).__name__
+        if diff_model._deployable_module_quant_config is not None:
+            custom_suffix += f"_quant_{custom_suffix}"
+
+        version_info = f"{onediff_version}-{oneflow_version}"
+        graph_file_name = (
+            f"{module_type}{os.sep}{filename}_{version_info}{custom_suffix}"
+        )
+
+        compiled_options = diff_model._deployable_module_options
+        if overwrite:
+            os.remove(compiled_options.graph_file)
+
+        compiled_options.graph_file = os.path.join(cache_dir, graph_file_name)
+        compiled_options.skip_graph_file_safety_check = True
+        return model
+
+    @execute.register(VAE)
+    def _(self, model, cache_dir, filename, overwrite=False, **kwargs):
+        # model.first_stage_model = self.compile_fn(model.first_stage_model)
+        return model
+
+    @execute.register(ControlNet)
+    def _(self, model, cache_dir, filename, overwrite=False, **kwargs):
+        # torch_model = model.control_model
+        # compiled_model = self.compile_fn(torch_model)
+        # model.control_model = compiled_model
+        return model
+
+    @execute.register(ControlLora)
+    def _(self, model, cache_dir, filename, overwrite=False, **kwargs):
+        # torch_model = model.control_model
+        # compiled_model = self.compile_fn(torch_model)
+        # model.control_model = compiled_model
         return model

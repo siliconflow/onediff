@@ -44,22 +44,29 @@ def graph_file_management(func):
             else OneflowCompileOptions()
         )
         graph_file = compile_options.graph_file
+        skip_graph_file_safety_check = compile_options.skip_graph_file_safety_check
 
         is_first_load = (
             getattr(self, "_load_graph_first_run", True) and graph_file is not None
         )
 
         if is_first_load:
-            graph_file = generate_graph_file_name(
-                graph_file, self, args=args, kwargs=kwargs
-            )
             setattr(self, "_load_graph_first_run", False)
-            # Avoid graph file conflicts
-            if importlib.util.find_spec("register_comfy"):
-                from register_comfy import CrossAttntionStateDictPatch as state_patch
-                attn2_patch_sum = state_patch.attn2_patch_sum(input_kwargs=kwargs)
-                if attn2_patch_sum > 0:
-                    graph_file = graph_file.replace(".graph", f"_attn2_{attn2_patch_sum}.graph")
+            if not skip_graph_file_safety_check:
+                graph_file = generate_graph_file_name(
+                    graph_file, self, args=args, kwargs=kwargs
+                )
+                # Avoid graph file conflicts
+                if importlib.util.find_spec("register_comfy"):
+                    from register_comfy import (
+                        CrossAttntionStateDictPatch as state_patch,
+                    )
+
+                    attn2_patch_sum = state_patch.attn2_patch_sum(input_kwargs=kwargs)
+                    if attn2_patch_sum > 0:
+                        graph_file = graph_file.replace(
+                            ".graph", f"_attn2_{attn2_patch_sum}.graph"
+                        )
 
         def process_state_dict_before_saving(state_dict: Dict):
             nonlocal self, args, kwargs, graph_file
@@ -94,14 +101,15 @@ def graph_file_management(func):
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
                 return
+            parent_dir = os.path.dirname(graph_file)
+            if parent_dir != "":
+                os.makedirs(parent_dir, exist_ok=True)
+
+            # Avoid graph file conflicts
+            if os.path.exists(graph_file):
+                raise FileExistsError(f"File {graph_file} exists!")
+
             try:
-                parent_dir = os.path.dirname(graph_file)
-                if parent_dir != "":
-                    os.makedirs(parent_dir, exist_ok=True)
-                
-                # Avoid graph file conflicts
-                if os.path.exists(graph_file):
-                    raise FileExistsError(f"File {graph_file} exists!")
 
                 self.save_graph(
                     graph_file, process_state_dict=process_state_dict_before_saving

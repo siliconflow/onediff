@@ -9,24 +9,28 @@ from comfy.cli_args import args
 
 from onediff.infer_compiler.utils import is_community_version
 
+from ..modules import BoosterScheduler
+from ..modules.oneflow import (
+    BasicOneFlowBoosterExecutor,
+    DeepcacheBoosterExecutor,
+    PatchBoosterExecutor,
+    PatchUnetGraphCacheExecutor,
+)
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from ..modules.oneflow.hijack_animatediff import animatediff_hijacker
+from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
 from ..modules.oneflow.hijack_ipadapter_plus import ipadapter_plus_hijacker
 from ..modules.oneflow.hijack_model_management import model_management_hijacker
+from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
 from ..modules.oneflow.hijack_nodes import nodes_hijacker
 from ..modules.oneflow.hijack_samplers import samplers_hijack
-from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
-from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
-from ..modules.oneflow import BasicOneFlowBoosterExecutor
-from ..modules.oneflow import DeepcacheBoosterExecutor
-from ..modules.oneflow import PatchBoosterExecutor
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
-from ..modules import BoosterScheduler
 from ..utils.import_utils import is_onediff_quant_available
 
-
 if is_onediff_quant_available() and not is_community_version():
-    from ..modules.oneflow.booster_quantization import OnelineQuantizationBoosterExecutor  # type: ignore
+    from ..modules.oneflow.booster_quantization import (
+        OnelineQuantizationBoosterExecutor,
+    )  # type: ignore
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -39,9 +43,8 @@ model_patch_hijacker.hijack()
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple
 
-
 # https://github.com/comfyanonymous/ComfyUI/commit/bb4940d837f0cfd338ff64776b084303be066c67#diff-fab3fbd81daf87571b12fb3e4d80fc7d6bbbcf0f3dafed1dbc55d81998d82539L54
-if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention: 
+if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention:
     os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
@@ -361,6 +364,73 @@ class BatchSizePatcher:
         return (model,)
 
 
+class ModelGraphCachePatcher:
+    default_dir = os.path.join(folder_paths.base_path, f"input{os.sep}graph")
+    default_filename = "cache_file_name"
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "model": ("MODEL",),
+                "cache_dir": (
+                    "STRING",
+                    {
+                        "multiline": False,  # True if you want the field to look like the one on the ClipTextEncode node
+                        "default": s.default_dir,
+                    },
+                ),
+                "filename": (
+                    "STRING",
+                    {
+                        "multiline": False,  # True if you want the field to look like the one on the ClipTextEncode node
+                        "default": s.default_filename,
+                    },
+                ),
+                "custom_suffix": (
+                    "STRING",
+                    {
+                        "multiline": False,  # True if you want the field to look like the one on the ClipTextEncode node
+                        "default": ".graph",
+                    },
+                ),
+                "overwrite": ([False, True],),
+            },
+        }
+
+    RETURN_TYPES = ("MODEL",)
+    CATEGORY = "OneDiff/Tools"
+    FUNCTION = "custom_cache_file"
+
+    @torch.inference_mode()
+    def custom_cache_file(
+        self,
+        model,
+        cache_dir=default_dir,
+        filename=default_filename,
+        custom_suffix=".graph",
+        overwrite=True,
+    ):
+        # Ensure the cache directory exists
+        try:
+            os.makedirs(cache_dir, exist_ok=True)
+        except OSError as e:
+            raise ValueError(
+                f"Failed to create cache directory {cache_dir}: {e}"
+            ) from e
+
+        booster = BoosterScheduler(PatchUnetGraphCacheExecutor())
+        return (
+            booster(
+                model,
+                cache_dir=cache_dir,
+                filename=filename,
+                custom_suffix=custom_suffix,
+                overwrite=overwrite,
+            ),
+        )
+
+
 class SVDSpeedup:
     @classmethod
     def INPUT_TYPES(s):
@@ -505,6 +575,7 @@ NODE_CLASS_MAPPINGS = {
     "ModuleDeepCacheSpeedup": ModuleDeepCacheSpeedup,
     "OneDiffDeepCacheCheckpointLoaderSimple": OneDiffDeepCacheCheckpointLoaderSimple,
     "BatchSizePatcher": BatchSizePatcher,
+    "ModelGraphCachePatcher": ModelGraphCachePatcher,
     "OneDiffOnlineQuantizationBooster": OneDiffOnlineQuantizationBooster,
     "SVDSpeedup": SVDSpeedup,
     "OneFlowDeepcacheBooster": OneFlowDeepcacheBooster,
@@ -520,6 +591,7 @@ NODE_DISPLAY_NAME_MAPPINGS = {
     "OneDiffControlNetLoader": "Load ControlNet Model - OneDiff",
     "OneDiffDeepCacheCheckpointLoaderSimple": "Load Checkpoint - OneDiff DeepCache",
     "BatchSizePatcher": "Batch Size Patcher",
+    "ModelGraphCachePatcher": "Model Cache Patcher - OneDiff",
     "OneDiffOnlineQuantizationBooster": "Online OneFlow Quantizer - OneDiff",
     "OneFlowDeepcacheBooster": "OneFlow Deepcache Booster - OneDiff",
 }
