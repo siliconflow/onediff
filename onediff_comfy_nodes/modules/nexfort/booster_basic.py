@@ -19,7 +19,10 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
     ):
         super().__init__()
         # self.compile_fn = partial(compile, backend="nexfort")
-        self.compile_fn = partial(nexfort_compile)
+        from nexfort.compilers import nexfort_compile
+
+        mode = "max-optimize:max-autotune:cudagraphs"
+        self.compile_fn = partial(nexfort_compile, mode=mode, fullgraph=True, dynamic = True)
 
     
     @singledispatchmethod

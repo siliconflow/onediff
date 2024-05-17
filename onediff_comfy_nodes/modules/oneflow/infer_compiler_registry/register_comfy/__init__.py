@@ -2,8 +2,12 @@ from pathlib import Path
 
 import comfy
 from comfy.ldm.modules.diffusionmodules.model import AttnBlock
+from comfy.ldm.modules.attention import attention_pytorch 
+from .attention import attention_pytorch_oneflow
+
+
 from nodes import *  # must imported before import comfy
-from onediff.infer_compiler import register
+from onediff.infer_compiler.transform import register
 from onediff.infer_compiler.utils import is_community_version
 
 from .attention import CrossAttention as CrossAttention1f
@@ -24,6 +28,7 @@ else:
 
 torch2of_class_map = {
     comfy.ldm.modules.attention.CrossAttention: CrossAttention1f,
+    attention_pytorch: attention_pytorch_oneflow,
     comfy.ldm.modules.attention.SpatialTransformer: SpatialTransformer1f,
     comfy.ldm.modules.attention.SpatialVideoTransformer: SpatialVideoTransformer1f,
     comfy.ldm.modules.diffusionmodules.util.AlphaBlender: AlphaBlender1f,

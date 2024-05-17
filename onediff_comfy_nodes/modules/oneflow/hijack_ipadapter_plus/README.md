@@ -4,24 +4,25 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 
 - ComfyUI:
   - github: https://github.com/comfyanonymous/ComfyUI
-  - commit: 4bd7d55b9028d79829a645edfe8259f7b7a049c0 
-  - Date: Thu Apr 11 22:43:05 2024 -0400
+  - commit: 2d4164271634476627aae31fbec251ca748a0ae0 
+  - Date:   Wed May 15 02:40:06 2024 -0400
   
 - ComfyUI_IPAdapter_plus:
   - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
-  - commit 417d806e7a2153c98613e86407c1941b2b348e88 
-  - Date:  Wed Apr 10 13:28:41 2024 +0200
+  - commit 20125bf9394b1bc98ef3228277a31a3a52c72fc2 
+  - Date:   Wed May 8 16:10:20 2024 +0200
 
-- ComfyUI_InstantID$ git log
-  - commit e9cc7597b2a7cd441065418a975a2de4aa2450df 
-  - Date:   Tue Apr 9 14:05:15 2024 +0200
-
+- ComfyUI_InstantID$ 
+  - commit d8c70a0cd8ce0d4d62e78653674320c9c3084ec1 
+  - Date:   Wed May 8 16:55:55 2024 +0200
+  
 - ComfyUI-AnimateDiff-Evolved$ git log
   - commit f9e0343f4c4606ee6365a9af4a7e16118f1c45e1 
   - Date:   Sat Apr 6 17:32:15 2024 -0500
 
 - OneDiff:
   - github: https://github.com/siliconflow/onediff 
+
 
 ### Quick Start
 
@@ -56,7 +57,6 @@ As follows:
 | ------------------ | --------- |
 | Dynamic Shape      | Yes       |
 | Dynamic Batch Size | No        |
-| Vae Speed Up       | Yes       |
 
 ## Contact
 

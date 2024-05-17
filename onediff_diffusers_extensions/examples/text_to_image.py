@@ -46,12 +46,12 @@ pipe.unet = oneflow_compile(pipe.unet)
 prompt = args.prompt
 with flow.autocast("cuda"):
     for _ in range(args.warmup):
+        torch.manual_seed(args.seed)
         images = pipe(
             prompt, height=args.height, width=args.width, num_inference_steps=args.steps
         ).images
 
     torch.manual_seed(args.seed)
-
     images = pipe(
         prompt, height=args.height, width=args.width, num_inference_steps=args.steps
     ).images

@@ -1,5 +1,5 @@
 import torch
-from onediff.infer_compiler.deployable_module import DeployableModule
+from onediff.infer_compiler import DeployableModule
 from onediff.infer_compiler.utils.param_utils import update_graph_related_tensor
 
 
