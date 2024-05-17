@@ -17,6 +17,7 @@ from .patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
 
 from .patch_for_comfy import PatchForComfy
+
 __all__ = [
     "proxy_class",
     "ProxySubmodule",
@@ -25,6 +26,7 @@ __all__ = [
     "torch2oflow",
     "default_converter",
 ]
+
 
 def singledispatch_proxy(func):
     dispatcher = singledispatch(func)
@@ -57,10 +59,12 @@ def singledispatch_proxy(func):
 def proxy_class(cls: type):
     try:
         out = transform_mgr.transform_cls(cls)
-        return out 
+        return out
     except Exception as e:
         # If an exception occurs during transformation, print traceback for debugging
-        raise RuntimeError(f"An exception occurred during class transformation:\n{traceback.format_exc()}\nException: {e}")
+        raise RuntimeError(
+            f"An exception occurred during class transformation:\n{traceback.format_exc()}\nException: {e}"
+        )
 
 
 def reverse_proxy_class(cls: type):

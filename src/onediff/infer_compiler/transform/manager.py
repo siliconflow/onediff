@@ -115,6 +115,7 @@ if not transform_mgr.debug_mode:
 
 if importlib.util.find_spec("pydantic") is not None:
     import pydantic
+
     if pydantic.VERSION < "2.5.2":
         logger.warning(
             f"Pydantic version {pydantic.VERSION} is too low, please upgrade to 2.5.2 or higher."
@@ -124,5 +125,3 @@ if importlib.util.find_spec("pydantic") is not None:
         MockEnableDisableMixin.hazard_list.append(
             "huggingface_hub.inference._text_generation"
         )
-
-

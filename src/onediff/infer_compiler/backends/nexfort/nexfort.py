@@ -12,8 +12,6 @@ def compile(torch_module: torch.nn.Module, *, options=None):
 
     options = options if options is not None else CompileOptions()
     nexfort_options = options.nexfort
-    compiled_model = nexfort_compile(
-        torch_module, **nexfort_options
-    )
+    compiled_model = nexfort_compile(torch_module, **nexfort_options)
     # return NexfortDeployableModule(compiled_model, torch_module)
     return compiled_model

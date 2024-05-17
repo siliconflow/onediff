@@ -37,5 +37,6 @@ def lookup_backend(compiler_fn):
 
 def _lazy_import(backend_name):
     from .. import backends
+
     backend_path = f"{backends.__name__}.{backend_name}"
     importlib.import_module(backend_path)

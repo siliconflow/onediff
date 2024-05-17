@@ -150,6 +150,7 @@ class DualModuleList(torch.nn.ModuleList):
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
 
+
 def get_mixed_dual_module(module_cls):
     if issubclass(module_cls, DualModule) and "MixedDualModule" in module_cls.__name__:
         return module_cls
@@ -164,5 +165,3 @@ def get_mixed_dual_module(module_cls):
             return f"{self.__class__.__name__}(of {module_cls.__name__})"
 
     return MixedDualModule
-
-

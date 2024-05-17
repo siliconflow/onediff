@@ -45,6 +45,7 @@ class OneflowCompileOptions:
     kernel_glu_enable_y_gemm_impl: bool = None
     kernel_glu_quant_enable_dual_gemm_impl: bool = None
 
+
 def _set_env_vars(field2env_var, options):
     for field in dataclasses.fields(options):
         field_name = field.name

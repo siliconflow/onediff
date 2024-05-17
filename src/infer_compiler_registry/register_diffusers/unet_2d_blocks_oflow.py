@@ -70,7 +70,9 @@ if diffusers_version < diffusers_0210_v:
 
                     ckpt_kwargs: Dict[str, Any] = {
                         "use_reentrant": False
-                    } if transformed_diffusers.utils.is_torch_version(">=", "1.11.0") else {}
+                    } if transformed_diffusers.utils.is_torch_version(
+                        ">=", "1.11.0"
+                    ) else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(resnet),
                         hidden_states,
@@ -236,7 +238,9 @@ else:
 
                     ckpt_kwargs: Dict[str, Any] = {
                         "use_reentrant": False
-                    } if transformed_diffusers.utils.is_torch_version(">=", "1.11.0") else {}
+                    } if transformed_diffusers.utils.is_torch_version(
+                        ">=", "1.11.0"
+                    ) else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(resnet),
                         hidden_states,

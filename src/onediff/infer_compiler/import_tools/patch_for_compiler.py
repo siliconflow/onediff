@@ -109,13 +109,17 @@ flow.version = torch.version
 
 from oneflow import Tensor
 
+
 def oneflow_rfloordiv():
-    original_rfloordiv = Tensor.__rfloordiv__ 
+    original_rfloordiv = Tensor.__rfloordiv__
+
     def rfloordiv(self, other):
         if isinstance(other, int):
             other = flow.tensor(other)
-            
+
         return original_rfloordiv(self, other)
+
     return rfloordiv
+
 
 Tensor.__rfloordiv__ = oneflow_rfloordiv()

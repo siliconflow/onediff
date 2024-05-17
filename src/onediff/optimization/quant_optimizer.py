@@ -107,4 +107,3 @@ def quantize_model(
     )
 
     return model
-

@@ -51,6 +51,7 @@ def get_oneflow_graph(model, size=9, dynamic_graph=True):
     g._dynamic_input_graph_cache.enable_shared(dynamic_graph)
     return g
 
+
 class OneflowDeployableModule(DeployableModule):
     def __init__(
         self, torch_module, oneflow_module, dynamic=True, options=None,
@@ -236,8 +237,8 @@ class OneflowDeployableModule(DeployableModule):
         """
         self._deployable_module_quant_config = quant_config
 
-def get_mixed_deployable_module(module_cls):
 
+def get_mixed_deployable_module(module_cls):
     class MixedOneflowDeployableModule(OneflowDeployableModule, module_cls):
         def __init__(self, torch_module, oneflow_module, dynamic=True, options=None):
             OneflowDeployableModule.__init__(
