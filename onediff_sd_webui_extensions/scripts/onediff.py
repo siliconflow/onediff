@@ -18,7 +18,7 @@ from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
 from onediff_hijack import do_hijack as onediff_do_hijack
 
-from onediff.infer_compiler.utils.log_utils import logger
+from onediff.utils import logger
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,

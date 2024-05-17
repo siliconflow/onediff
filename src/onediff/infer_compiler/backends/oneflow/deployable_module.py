@@ -1,19 +1,55 @@
 import types
 import torch
+from functools import wraps
+
 import oneflow as flow
 
-from ..core.deployable_module import DeployableModule
-from ..transform.manager import transform_mgr
-from ..utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
-from ..utils.args_tree_util import input_output_processor
-from ..utils.log_utils import logger
-from ..utils.param_utils import parse_device, check_device, generate_constant_folding_info
-from ..utils.graph_management_utils import graph_file_management
-from ..utils.online_quantization_utils import quantize_and_deploy_wrapper
-from ..utils.options import OneflowCompileOptions
+from onediff.utils import logger
 
-from .utils import handle_deployable_exception, get_mixed_dual_module, get_oneflow_graph
+from ..deployable_module import DeployableModule
 
+from ...transform.manager import transform_mgr
+from ...transform.builtin_transform import torch2oflow
+
+from .dual_module import DualModule, get_mixed_dual_module
+from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
+from .args_tree_util import input_output_processor
+from .param_utils import parse_device, check_device, generate_constant_folding_info
+from .graph_management_utils import graph_file_management
+from .online_quantization_utils import quantize_and_deploy_wrapper
+from .env_var import OneflowCompileOptions
+
+
+@torch2oflow.register
+def _(mod: DualModule, verbose=False):
+    return torch2oflow(mod._torch_module, verbose)
+
+
+def handle_deployable_exception(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        if transform_mgr.debug_mode:
+            return func(self, *args, **kwargs)
+        else:
+            try:
+                return func(self, *args, **kwargs)
+            except Exception as e:
+                logger.error(f"Exception in {func.__name__}: {e=}")
+                logger.warning("Recompile oneflow module ...")
+                del self._deployable_module_model.oneflow_module
+                self._deployable_module_dpl_graph = None
+                return func(self, *args, **kwargs)
+
+    return wrapper
+
+
+def get_oneflow_graph(model, size=9, dynamic_graph=True):
+    from .graph import OneflowGraph
+
+    g = OneflowGraph(model)
+    g._dynamic_input_graph_cache.set_cache_size(size)
+    g._dynamic_input_graph_cache.enable_shared(dynamic_graph)
+    return g
 
 class OneflowDeployableModule(DeployableModule):
     def __init__(
@@ -199,3 +235,29 @@ class OneflowDeployableModule(DeployableModule):
             >>> model.apply_online_quant(quant_config)
         """
         self._deployable_module_quant_config = quant_config
+
+def get_mixed_deployable_module(module_cls):
+
+    class MixedOneflowDeployableModule(OneflowDeployableModule, module_cls):
+        def __init__(self, torch_module, oneflow_module, dynamic=True, options=None):
+            OneflowDeployableModule.__init__(
+                self, torch_module, oneflow_module, dynamic, options
+            )
+            self._is_raw_deployable_module = False
+
+        @classmethod
+        def from_existing(cls, existing_module, dynamic=True, options=None):
+            torch_module = existing_module._deployable_module_model._torch_module
+            oneflow_module = existing_module._deployable_module_model._oneflow_module
+            instance = cls(torch_module, oneflow_module, dynamic, options)
+            instance._deployable_module_dpl_graph = None
+            if hasattr(existing_module, "_deployable_module_dpl_graph"):
+                instance._deployable_module_dpl_graph = (
+                    existing_module._deployable_module_dpl_graph
+                )
+            return instance
+
+        def _get_name(self):
+            return f"{self.__class__.__name__}(of {module_cls.__name__})"
+
+    return MixedOneflowDeployableModule

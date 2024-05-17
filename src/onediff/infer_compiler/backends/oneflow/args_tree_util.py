@@ -1,7 +1,7 @@
 import torch
 import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
-from .log_utils import logger
+from onediff.utils import logger
 
 
 def input_output_processor(func):

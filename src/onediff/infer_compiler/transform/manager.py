@@ -5,7 +5,7 @@ import warnings
 import logging
 from typing import Dict, List, Union
 from pathlib import Path
-from ..utils.log_utils import logger
+from onediff.utils import logger
 from ..import_tools.importer import LazyMocker
 
 __all__ = ["transform_mgr"]

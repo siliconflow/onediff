@@ -6,7 +6,7 @@ from typing import Callable, Dict, List, Optional, Union
 from ..import_tools import import_module_from_path
 from .manager import transform_mgr
 from .builtin_transform import torch2oflow
-from ..utils.log_utils import logger
+from onediff.utils import logger
 
 __all__ = ["register"]
 

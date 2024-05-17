@@ -10,8 +10,8 @@ import torch
 from oneflow.mock_torch import enable
 from oneflow.mock_torch.mock_importer import _importer
 from .import_module_utils import import_module_from_path
-from ..utils.log_utils import logger
-from ..utils.patch_for_compiler import *
+from onediff.utils import logger
+from .patch_for_compiler import *
 
 __all__ = ["DynamicMockModule"]
 

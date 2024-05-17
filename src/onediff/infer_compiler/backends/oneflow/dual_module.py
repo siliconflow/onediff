@@ -7,9 +7,9 @@ import torch
 import oneflow as flow
 from oneflow.utils.tensor import to_torch
 
-from ..transform.builtin_transform import torch2oflow
-from ..utils.oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
-from ..utils.log_utils import logger
+from onediff.utils import logger
+from ...transform.builtin_transform import torch2oflow
+from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 
 
 class DualModule(torch.nn.Module):
@@ -91,8 +91,6 @@ class DualModule(torch.nn.Module):
             return DualModuleList(torch_attr, oneflow_attr)
 
         elif isinstance(torch_attr, torch.nn.Module):
-            from .utils import get_mixed_dual_module
-
             return get_mixed_dual_module(torch_attr.__class__)(torch_attr, oneflow_attr)
         else:
             return oneflow_attr if oneflow_exec_mode_enabled() else torch_attr
@@ -120,7 +118,6 @@ class DualModuleList(torch.nn.ModuleList):
         assert len(torch_modules) == len(oneflow_modules)
         self._torch_modules = torch_modules
         self._oneflow_modules = oneflow_modules
-        from .utils import get_mixed_dual_module
 
         dual_modules = []
         for torch_module, oneflow_module in zip(
@@ -152,3 +149,20 @@ class DualModuleList(torch.nn.ModuleList):
             value = torch2oflow(value)
             setattr(self._oneflow_modules, key, value)
         return object.__setattr__(self, key, value)
+
+def get_mixed_dual_module(module_cls):
+    if issubclass(module_cls, DualModule) and "MixedDualModule" in module_cls.__name__:
+        return module_cls
+
+    class MixedDualModule(DualModule, module_cls):
+        def __init__(self, torch_module, oneflow_module):
+            while isinstance(torch_module, DualModule):
+                torch_module = torch_module._torch_module
+            DualModule.__init__(self, torch_module, oneflow_module)
+
+        def _get_name(self) -> str:
+            return f"{self.__class__.__name__}(of {module_cls.__name__})"
+
+    return MixedDualModule
+
+

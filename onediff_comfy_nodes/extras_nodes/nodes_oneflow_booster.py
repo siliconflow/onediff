@@ -7,7 +7,7 @@ import torch
 from comfy import model_management
 from comfy.cli_args import args
 
-from onediff.infer_compiler.utils import is_community_version
+from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from ..modules.oneflow.hijack_animatediff import animatediff_hijacker

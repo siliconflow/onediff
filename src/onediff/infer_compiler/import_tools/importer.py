@@ -9,7 +9,7 @@ from pathlib import Path
 from importlib.metadata import requires
 from .format_utils import MockEntityNameFormatter
 from .dyn_mock_mod import DynamicMockModule
-from ..utils.log_utils import logger
+from onediff.utils import logger
 
 __all__ = ["LazyMocker", "is_need_mock"]
 

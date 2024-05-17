@@ -1,7 +1,7 @@
 import os
 import torch
-from onediff.infer_compiler import compile, DeployableModule
-from onediff.infer_compiler.utils.log_utils import logger
+from onediff.infer_compiler import compile, DeployableModule, CompileOptions
+from onediff.utils import logger
 
 
 def _recursive_getattr(obj, attr, default=None):
@@ -54,6 +54,8 @@ def _filter_parts(ignores=()):
 def compile_pipe(
     pipe, *, backend="oneflow", options=None, ignores=(), fuse_qkv_projections=False,
 ):
+    if options is None:
+        options = CompileOptions()
     if fuse_qkv_projections:
         print("****** fuse qkv projections ******")
         pipe = fuse_qkv_projections_in_pipe(pipe)

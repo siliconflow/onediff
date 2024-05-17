@@ -1,5 +1,6 @@
 import torch
-from ..core.deployable_module import DeployableModule
+
+from ..deployable_module import DeployableModule
 
 
 class NexfortDeployableModule(DeployableModule):

@@ -12,8 +12,8 @@ import torch
 import oneflow as flow
 
 from .manager import transform_mgr
-from ..utils.log_utils import logger
-from ..utils.patch_for_diffusers import diffusers_checker
+from onediff.utils import logger
+from .patch_for_diffusers import diffusers_checker
 from ..import_tools.importer import is_need_mock
 
 from .patch_for_comfy import PatchForComfy

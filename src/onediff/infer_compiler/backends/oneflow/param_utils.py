@@ -3,7 +3,7 @@ import torch
 import oneflow as flow
 from typing import List, Dict, Any, Union
 
-from .log_utils import logger
+from onediff.utils import logger
 
 
 def parse_device(args: List[Any], kwargs: Dict[str, Any]):

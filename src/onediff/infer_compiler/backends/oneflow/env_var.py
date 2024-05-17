@@ -1,36 +1,49 @@
 import dataclasses
 import os
+import torch
 from typing import Optional
 
-
-def parse_boolean_from_env(env_var, default_value=None):
-    env_var = os.getenv(env_var)
-    if env_var is None:
-        return default_value
-    env_var = env_var.lower()
-    return env_var in ("1", "true", "yes", "on", "y")
+from onediff.utils import set_boolean_env_var, set_integer_env_var
 
 
-def set_boolean_env_var(env_var: str, val: Optional[bool]):
-    if val is None:
-        os.environ.pop(env_var, None)
-    else:
-        os.environ[env_var] = "1" if val else "0"
+@dataclasses.dataclass
+class OneflowCompileOptions:
+    use_graph: bool = True
+    debug_level: int = -1
+    max_cached_graph_size: int = 9
+    graph_file: str = None
+    graph_file_device: torch.device = None
 
+    # Optimization related environment variables
+    run_graph_by_vm: bool = None
+    graph_delay_variable_op_execution: bool = None
 
-def parse_integer_from_env(env_var, default_value=None):
-    env_var = os.getenv(env_var)
-    if env_var is None:
-        return default_value
-    return int(env_var)
+    conv_allow_half_precision_accumulation: bool = None
+    matmul_allow_half_precision_accumulation: bool = None
+    attention_allow_half_precision_accumulation: bool = None
+    attention_allow_half_precision_score_accumulation_max_m: int = None
+    attention_allow_quantization: bool = None
 
+    mlir_cse: bool = None
+    mlir_enable_inference_optimization: bool = None
+    mlir_enable_round_trip: bool = None
+    mlir_fuse_forward_ops: bool = None
+    mlir_fuse_ops_with_backward_impl: bool = None
+    mlir_group_matmul: bool = None
+    mlir_prefer_nhwc: bool = None
+    mlir_fuse_kernel_launch: bool = None
 
-def set_integer_env_var(env_var: str, val: Optional[int]):
-    if val is None:
-        os.environ.pop(env_var, None)
-    else:
-        os.environ[env_var] = str(int(val))
-
+    kernel_enable_cuda_graph: bool = None
+    kernel_enable_fused_conv_bias: bool = None
+    kernel_enable_fused_linear: bool = None
+    kernel_conv_cutlass_impl_enable_tuning_warmup: bool = None
+    kernel_enable_conv2d_tuning_warmup: bool = None
+    kernel_gemm_cutlass_impl_enable_tuning_warmup: bool = None
+    kernel_conv_enable_cutlass_impl: bool = None
+    kernel_gemm_enable_cutlass_impl: bool = None
+    kernel_glu_enable_dual_gemm_impl: bool = None
+    kernel_glu_enable_y_gemm_impl: bool = None
+    kernel_glu_quant_enable_dual_gemm_impl: bool = None
 
 def _set_env_vars(field2env_var, options):
     for field in dataclasses.fields(options):
@@ -117,17 +130,3 @@ def set_oneflow_default_env_vars():
     # TODO: enable this will cause the failure of multi resolution warmup
     # os.environ.setdefault("ONEFLOW_MLIR_FUSE_KERNEL_LAUNCH", "1")
     # os.environ.setdefault("ONEFLOW_KERNEL_ENABLE_CUDA_GRAPH", "1")
-
-
-def set_nexfort_env_vars(options):
-    field2env_var = {}
-    _set_env_vars(field2env_var, options)
-
-
-def set_nexfort_default_env_vars():
-    pass
-
-
-def set_default_env_vars():
-    set_oneflow_default_env_vars()
-    set_nexfort_default_env_vars()

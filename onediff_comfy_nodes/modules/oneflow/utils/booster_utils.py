@@ -6,7 +6,7 @@ from comfy.model_base import BaseModel, SVD_img2vid
 from comfy.model_patcher import ModelPatcher
 
 from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
-from onediff.infer_compiler.utils import set_boolean_env_var
+from onediff.utils import set_boolean_env_var
 
 from ..patch_management import PatchType, create_patch_executor
 

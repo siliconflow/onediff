@@ -2,7 +2,7 @@ from functools import wraps
 import oneflow as flow
 import time
 import inspect
-from .log_utils import logger
+from onediff.utils import logger
 
 __all__ = ["cost_cnt", "cost_time"]
 
