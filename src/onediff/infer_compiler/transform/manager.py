@@ -35,6 +35,11 @@ class TransformManager:
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
 
+    def set_load_diffusers_patch(self, load_diffusers: bool = False):
+        if not load_diffusers:
+            self.mocker.mocked_packages.add("register_diffusers")
+            self.mocker.mocked_packages.add("register_diffusers_enterprise_lite")
+
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         self.logger.debug(f"Loading modules: {package_names}")
         for package_name in package_names:
@@ -117,6 +122,7 @@ if not transform_mgr.debug_mode:
 
 if importlib.util.find_spec("pydantic") is not None:
     import pydantic
+
     if pydantic.VERSION < "2.5.2":
         logger.warning(
             f"Pydantic version {pydantic.VERSION} is too low, please upgrade to 2.5.2 or higher."
@@ -126,5 +132,3 @@ if importlib.util.find_spec("pydantic") is not None:
         MockEnableDisableMixin.hazard_list.append(
             "huggingface_hub.inference._text_generation"
         )
-
-

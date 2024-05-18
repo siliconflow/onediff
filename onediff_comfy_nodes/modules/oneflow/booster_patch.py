@@ -83,10 +83,10 @@ class PatchUnetGraphCacheExecutor(BoosterExecutor):
         )
 
         compiled_options = diff_model._deployable_module_options
+        compiled_options.graph_file = os.path.join(cache_dir, graph_file_name)
         if overwrite:
             os.remove(compiled_options.graph_file)
 
-        compiled_options.graph_file = os.path.join(cache_dir, graph_file_name)
         compiled_options.skip_graph_file_safety_check = True
         return model
 

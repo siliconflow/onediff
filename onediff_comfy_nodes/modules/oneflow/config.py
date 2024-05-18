@@ -4,6 +4,10 @@ import sys
 from pathlib import Path
 
 from onediff.infer_compiler.utils import is_community_version
+from onediff.infer_compiler.transform import transform_mgr
+
+# disable patch for loading diffusers
+transform_mgr.set_load_diffusers_patch(False)
 
 # Set up paths
 ONEDIFF_QUANTIZED_OPTIMIZED_MODELS = "onediff_quant"
