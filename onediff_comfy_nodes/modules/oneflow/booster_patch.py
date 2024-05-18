@@ -73,7 +73,7 @@ class PatchUnetGraphCacheExecutor(BoosterExecutor):
             return model
 
         diff_model: DeployableModule = model.model.diffusion_model
-        module_type = type(diff_model._torch_module).__name__
+        module_type = type(model.model).__name__
         if diff_model._deployable_module_quant_config is not None:
             custom_suffix += f"_quant_{custom_suffix}"
 
