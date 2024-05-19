@@ -74,17 +74,12 @@ class PatchUnetGraphCacheExecutor(BoosterExecutor):
 
         diff_model: DeployableModule = model.model.diffusion_model
         module_type = type(model.model).__name__
-        if diff_model._deployable_module_quant_config is not None:
-            custom_suffix += f"_quant_{custom_suffix}"
-
-        version_info = f"{onediff_version}-{oneflow_version}"
-        graph_file_name = (
-            f"{module_type}{os.sep}{filename}_{version_info}{custom_suffix}"
-        )
+        graph_file_name = f"{module_type}{os.sep}{filename}{custom_suffix}"
 
         compiled_options = diff_model._deployable_module_options
         compiled_options.graph_file = os.path.join(cache_dir, graph_file_name)
         if overwrite:
+            print(f"Warning: overwrite cache file {compiled_options.graph_file}")
             os.remove(compiled_options.graph_file)
 
         compiled_options.skip_graph_file_safety_check = True
