@@ -1,5 +1,16 @@
+import base64
 import pytest
 import requests
+from pathlib import Path
+
+def encode_file_to_base64(path):
+    with open(path, "rb") as file:
+        return base64.b64encode(file.read()).decode("utf-8")
+
+def post_request(url, data):
+    response = requests.post(url, json=data)
+    assert response.status_code == 200
+    return response
 
 @pytest.fixture()
 def base_url():
@@ -8,6 +19,10 @@ def base_url():
 @pytest.fixture()
 def url_txt2img(base_url):
     return f"{base_url}/sdapi/v1/txt2img"
+
+@pytest.fixture()
+def url_img2img(base_url):
+    return f"{base_url}/sdapi/v1/img2img"
 
 @pytest.fixture()
 def url_set_config(base_url):
@@ -29,49 +44,52 @@ def simple_txt2img_request():
         # Enable OneDiff speed up
         "script_name": "onediff_diffusion_model",
 
-        # If you are using OneDiff Enterprise, add the field below to enable quant feature
-        # "script_args" : [
-        #     False, # quantization
-        #     # None,  # graph_checkpoint
-        #     # "",    # saved_graph_name
-        # ],
+        "script_args" : [
+            False, # quantization
+            None,  # graph_checkpoint
+            "",    # saved_graph_name
+        ],
     }
 
 def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
-    assert requests.post(url_txt2img, json=simple_txt2img_request).status_code == 200
+    data = simple_txt2img_request
+    post_request(url_txt2img, data)
 
-@pytest.mark.skip
+def test_img2img_onediff(url_img2img, simple_txt2img_request):
+    img_path = str(Path(__file__).parent / "cat.png")
+    init_images = {"init_images": [encode_file_to_base64(img_path)]}
+    data = {**simple_txt2img_request, **init_images}
+    post_request(url_img2img, data)
+
 def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
-            True, # quantization
-            #  None,  # graph_checkpoint
-            #  "saved_graph",    # saved_graph_name
+            True,           # quantization
+            None,           # graph_checkpoint
+            "saved_graph",  # saved_graph_name
         ]
     }
     data = {**simple_txt2img_request, **script_args}
-    assert requests.post(url_txt2img, json=data).status_code == 200
+    post_request(url_txt2img, data)
 
-@pytest.mark.skip
 def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
-            False, # quantization
-            #  None,  # graph_checkpoint
-            #  "saved_graph",    # saved_graph_name
+            False,          # quantization
+            None,           # graph_checkpoint
+            "saved_graph",  # saved_graph_name
         ]
     }
     data = {**simple_txt2img_request, **script_args}
-    assert requests.post(url_txt2img, json=data).status_code == 200
+    post_request(url_txt2img, data)
 
-@pytest.mark.skip
 def test_txt2img_onediff_load_graph(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
-            False, # quantization
-            #  None,  # graph_checkpoint
-            #  "saved_graph",    # saved_graph_name
+            False,          # quantization
+            "saved_graph",  # graph_checkpoint
+            "",             # saved_graph_name
         ]
     }
     data = {**simple_txt2img_request, **script_args}
-    assert requests.post(url_txt2img, json=data).status_code == 200
+    post_request(url_txt2img, data)
