@@ -178,7 +178,8 @@ class Script(scripts.Script):
                 original_diffusion_model, quantization=quantization
             )
 
-            if compiler_cache != "None" or compiler_cache != None:
+            # Due to the version of gradio compatible with sd-webui, the CompilerCache dropdown box always returns a string
+            if compiler_cache != "None" and compiler_cache != None:
                 compiler_cache_path = all_compiler_caches_path() + f"/{compiler_cache}"
                 if not Path(compiler_cache_path).exists():
                     raise FileNotFoundError(f"Cannot find cache {compiler_cache_path}, please make sure it exists")
