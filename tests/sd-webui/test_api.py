@@ -27,7 +27,7 @@ def simple_txt2img_request():
         "batch_size": 1,
 
         # Enable OneDiff speed up
-        # "script_name": "onediff_diffusion_model",
+        "script_name": "onediff_diffusion_model",
 
         # If you are using OneDiff Enterprise, add the field below to enable quant feature
         # "script_args" : [

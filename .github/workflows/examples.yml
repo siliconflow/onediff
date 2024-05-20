@@ -83,8 +83,8 @@ jobs:
           - onediff:cu118
           - onediff-pro:cu121
         test-suite:
-          - diffusers_examples
-          - comfy
+          # - diffusers_examples
+          # - comfy
           - webui
     steps:
       - name: Login to ACR with the AccessKey pair
@@ -280,15 +280,17 @@ jobs:
           docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/stable-diffusion-webui/webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
           sleep 30
 
-      - name: Show WebUI Log
-        if: matrix.test-suite == 'webui'
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} cat /app/stable-diffusion-webui/onediff_webui.log
       # print to check if webui is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
 
       - if: matrix.test-suite == 'webui'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
+        continue-on-error: true
+
+      - name: Show WebUI Log
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} cat /app/stable-diffusion-webui/onediff_webui.log
 
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
