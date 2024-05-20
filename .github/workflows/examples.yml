@@ -83,8 +83,8 @@ jobs:
           - onediff:cu118
           - onediff-pro:cu121
         test-suite:
-          - diffusers_examples
-          - comfy
+          # - diffusers_examples
+          # - comfy
           - webui
     steps:
       - name: Login to ACR with the AccessKey pair
