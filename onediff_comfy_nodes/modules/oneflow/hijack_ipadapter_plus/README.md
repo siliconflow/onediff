@@ -55,13 +55,13 @@ Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 
-![ipadapter_example](https://github.com/siliconflow/oneflow/assets/117806079/61343399-7c1f-4698-bdc8-9cee4928e0a3)
+![ipadapter_example](https://github.com/siliconflow/sd-team/assets/117806079/1940ec76-9247-43bc-b143-b646adc7c561)
 
-![ipadapter_example int8](https://github.com/siliconflow/oneflow/assets/117806079/45e421f6-2941-4379-b6d3-82adc04336fd)
+![ipadapter_example int8](https://github.com/siliconflow/sd-team/assets/117806079/8633af92-cfc9-42b0-b265-55b85d5ffe2d)
 
  | PyTorch                                                                                                | OneDiff                                                                                                  |
  | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
- | ![torch](https://github.com/siliconflow/oneflow/assets/117806079/ea4ec12d-abb5-4e9e-a60b-fb306b14473d) | ![onediff](https://github.com/siliconflow/oneflow/assets/117806079/773f80b3-b3e3-45fc-9553-49e4983357ec) |
+ | ![torch](https://github.com/siliconflow/sd-team/assets/117806079/44872835-29e3-4df3-b178-49701400c1d6) | ![onediff](https://github.com/siliconflow/sd-team/assets/117806079/095c0e49-e554-4b23-92ec-0d0229b572f3) |
 
 - NVIDIA A100-PCIE-40GB 
 - batch_size 4
