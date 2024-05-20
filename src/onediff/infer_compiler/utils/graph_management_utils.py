@@ -20,19 +20,35 @@ def calculate_model_hash(model):
 
 @cost_time(debug=transform_mgr.debug_mode, message="generate graph file name")
 def generate_graph_file_name(file_path, deployable_module, args, kwargs):
-    if isinstance(file_path, Path):
-        file_path = str(file_path)
+    def _prepare_file_path(file_path):
+        if isinstance(file_path, Path):
+            file_path = str(file_path)
+        if file_path.endswith(".graph"):
+            file_path = file_path[:-6]
+        return file_path
 
-    if file_path.endswith(".graph"):
-        file_path = file_path[:-6]
+    def _generate_input_structure_key(args, kwargs):
+        args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+        out_lst = []
+        for v in args_tree.iter_nodes():
+            if v is None or isinstance(v, (int, float, str, list, dict, tuple)):
+                continue
+            out_lst.append(type(v).__name__)
 
-    args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-    count = len([v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)])
+        return hashlib.sha256("_".join(out_lst).encode("utf-8")).hexdigest()
 
-    model = deployable_module._deployable_module_model.oneflow_module
+    def _generate_model_structure_key(deployable_module):
+        model = deployable_module._deployable_module_model.oneflow_module
+        model_hash = hashlib.sha256(f"{model}".encode("utf-8")).hexdigest()
+        return model_hash
 
-    cache_key = calculate_model_hash(model) + "_" + flow.__version__
-    return f"{file_path}_{count}_{cache_key}.graph"
+    # Convert Path object to string if necessary and remove the .graph extension
+    file_path = _prepare_file_path(file_path)
+    input_structure_key = _generate_input_structure_key(args, kwargs)[:5]
+    model_structure_key = _generate_model_structure_key(deployable_module)[:10]
+    # Combine cache keys
+    cache_key = f"{input_structure_key}_{model_structure_key}"
+    return f"{file_path}_{cache_key}.graph"
 
 
 def graph_file_management(func):
@@ -56,17 +72,6 @@ def graph_file_management(func):
                 graph_file = generate_graph_file_name(
                     graph_file, self, args=args, kwargs=kwargs
                 )
-                # Avoid graph file conflicts
-                if importlib.util.find_spec("register_comfy"):
-                    from register_comfy import (
-                        CrossAttntionStateDictPatch as state_patch,
-                    )
-
-                    attn2_patch_sum = state_patch.attn2_patch_sum(input_kwargs=kwargs)
-                    if attn2_patch_sum > 0:
-                        graph_file = graph_file.replace(
-                            ".graph", f"_attn2_{attn2_patch_sum}.graph"
-                        )
 
         def process_state_dict_before_saving(state_dict: Dict):
             nonlocal self, args, kwargs, graph_file
@@ -101,6 +106,7 @@ def graph_file_management(func):
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
                 return
+
             parent_dir = os.path.dirname(graph_file)
             if parent_dir != "":
                 os.makedirs(parent_dir, exist_ok=True)
@@ -108,7 +114,6 @@ def graph_file_management(func):
             # Avoid graph file conflicts
             if os.path.exists(graph_file):
                 raise FileExistsError(f"File {graph_file} exists!")
-
             try:
 
                 self.save_graph(
