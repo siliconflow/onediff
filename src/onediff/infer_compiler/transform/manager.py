@@ -98,7 +98,9 @@ class TransformManager:
             return getattr(mod, cls.__qualname__)
 
     def transform_func(self, func: types.FunctionType):
-        # TODO: support transform function cache
+        mock_full_cls_name = self.get_transformed_entity_name(func)
+        if mock_full_cls_name in self._torch_to_oflow_cls_map:
+            return self._torch_to_oflow_cls_map[mock_full_cls_name]
         return self._transform_entity(func)
 
     def transform_package(self, package_name):
