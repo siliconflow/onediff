@@ -4,8 +4,8 @@ commit: 5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1
 """
 import os
 
-from onediff.infer_compiler.import_tools import DynamicModuleLoader
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.import_tools import DynamicModuleLoader
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 from ...sd_hijack_utils import Hijacker
 

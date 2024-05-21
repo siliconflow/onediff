@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 from packaging import version
 import importlib.metadata
 import oneflow as torch
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))

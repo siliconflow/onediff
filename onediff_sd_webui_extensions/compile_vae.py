@@ -2,7 +2,7 @@ from modules import shared
 from modules.sd_vae_approx import model as get_vae_model, sd_vae_approx_models
 from modules.sd_vae_approx import VAEApprox
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import proxy_class, register
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 __all__ = ["VaeCompileCtx"]
 

@@ -7,7 +7,7 @@ from .attention import attention_pytorch_oneflow
 
 
 from nodes import *  # must imported before import comfy
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 from onediff.infer_compiler.utils import is_community_version
 
 from .attention import CrossAttention as CrossAttention1f

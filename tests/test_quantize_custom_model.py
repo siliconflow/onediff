@@ -7,7 +7,7 @@ import torch
 from torch import nn
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
 is_community = is_community_version()

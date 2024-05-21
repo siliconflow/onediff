@@ -6,7 +6,7 @@ from onediff.utils import logger
 from ..infer_compiler.backends.oneflow.utils.version_util import is_quantization_enabled
 from ..infer_compiler.backends.oneflow.utils.cost_util import cost_cnt
 from ..infer_compiler.utils.module_operations import modify_sub_module
-from ..infer_compiler.transform.manager import transform_mgr
+from ..infer_compiler.backends.oneflow.transform.manager import transform_mgr
 
 
 __all__ = ["quantize_model", "varify_can_use_quantization"]

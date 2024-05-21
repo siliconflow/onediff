@@ -1,6 +1,6 @@
 from register_comfy.CrossAttentionPatch import Attn2Replace, ipadapter_attention
 
-from onediff.infer_compiler.transform import torch2oflow
+from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
 

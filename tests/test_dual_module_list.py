@@ -1,6 +1,6 @@
 import numpy as np
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 import torch
 import torch.nn as nn
 import oneflow as flow

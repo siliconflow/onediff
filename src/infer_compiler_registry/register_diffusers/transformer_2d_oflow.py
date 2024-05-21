@@ -6,7 +6,7 @@ import importlib.metadata
 import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 

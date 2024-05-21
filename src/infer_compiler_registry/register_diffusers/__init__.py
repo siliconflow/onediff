@@ -1,4 +1,4 @@
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 
 from packaging import version
 import importlib.metadata

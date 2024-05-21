@@ -2,7 +2,7 @@
 import oneflow as flow
 from einops import rearrange
 from onediff.infer_compiler import DeployableModule
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 from oneflow.nn.functional import group_norm
 
 from ._config import animatediff_hijacker, animatediff_of, animatediff_pt, comfy_of
