@@ -1,4 +1,5 @@
 from functools import wraps
+import torch
 import oneflow as flow
 import time
 import inspect
@@ -15,7 +16,10 @@ class cost_cnt:
     def __enter__(self):
         if not self.debug:
             return
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
         flow._oneflow_internal.eager.Sync()
+        #before_used = torch.cuda.memory_allocated(0)
         before_used = flow._oneflow_internal.GetCUDAMemoryUsed()
         before_host_used = flow._oneflow_internal.GetCPUMemoryUsed()
         logger.debug(f"====> {self.message} try to run...")
@@ -28,8 +32,11 @@ class cost_cnt:
     def __exit__(self, exc_type, exc_val, exc_tb):
         if not self.debug:
             return
+        torch.cuda.empty_cache()
+        torch.cuda.synchronize()
         flow._oneflow_internal.eager.Sync()
         end_time = time.time()
+        #after_used = torch.cuda.memory_allocated(0)
         after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
         after_host_used = flow._oneflow_internal.GetCPUMemoryUsed()
         logger.debug(f"{self.message} run time {end_time - self.start_time} seconds")
