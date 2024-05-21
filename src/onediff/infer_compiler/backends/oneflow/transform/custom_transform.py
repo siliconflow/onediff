@@ -49,7 +49,7 @@ def set_default_registry():
             logger.warning(f"Failed to import {module_name} from {module_path}. {e=}")
 
     # compiler_registry_path
-    registry_path = Path(__file__).parents[3] / "infer_compiler_registry"
+    registry_path = Path(__file__).parents[5] / "infer_compiler_registry"
 
     if importlib.util.find_spec("diffusers") is not None:
         import_module_safely(registry_path / "register_diffusers", "register_diffusers")

@@ -8,7 +8,7 @@ import oneflow as flow
 from oneflow.utils.tensor import to_torch
 
 from onediff.utils import logger
-from ...transform.builtin_transform import torch2oflow
+from .transform.builtin_transform import torch2oflow
 from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 
 

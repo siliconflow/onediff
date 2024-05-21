@@ -8,8 +8,8 @@ from onediff.utils import logger
 
 from ..deployable_module import DeployableModule
 
-from ...transform.manager import transform_mgr
-from ...transform.builtin_transform import torch2oflow
+from .transform.manager import transform_mgr
+from .transform.builtin_transform import torch2oflow
 
 from .dual_module import DualModule, get_mixed_dual_module
 from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled

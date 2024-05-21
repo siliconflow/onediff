@@ -29,7 +29,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
         forward_pre_check_and_update_state_hook,
         forward_generate_constant_folding_info_hook,
     )
-    from ...transform.custom_transform import set_default_registry
+    from .transform.custom_transform import set_default_registry
 
     set_oneflow_default_env_vars()
     set_default_registry()
