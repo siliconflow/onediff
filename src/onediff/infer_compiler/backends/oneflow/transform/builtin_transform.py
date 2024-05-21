@@ -451,7 +451,7 @@ def _(mod: types.BuiltinFunctionType, verbose=False):
         if mod_name is not None:
             m = importlib.import_module(mod_name)
             return getattr(m, mod.__name__)
-    
+
     return default_converter(mod, verbose)
 
 

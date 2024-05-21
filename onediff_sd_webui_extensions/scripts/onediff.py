@@ -18,12 +18,11 @@ from compile_vae import VaeCompileCtx
 from onediff_lora import HijackLoraActivate
 from onediff_hijack import do_hijack as onediff_do_hijack
 
-from onediff.utils import logger
+from onediff.utils import logger, parse_boolean_from_env
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
 )
-from onediff.infer_compiler.utils.env_var import parse_boolean_from_env
 from onediff import __version__ as onediff_version
 from oneflow import __version__ as oneflow_version
 
