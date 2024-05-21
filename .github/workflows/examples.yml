@@ -60,14 +60,22 @@ jobs:
           git reset --hard
           git clean -f
           git archive --prefix ${{ env.COMFYUI_SRC_DIR }}/ --format zip HEAD > comfyui-src.zip
+      - name: Pack webui
+        working-directory: stable-diffusion-webui
+        run: |
+          git reset --hard
+          git clean -f
+          git archive --prefix ${{ env.WEBUI_SRC_DIR }}/ --format zip HEAD > webui-src.zip
       - name: Upload src
         id: upload_to_oss
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
-          WEBUI_DST="oss://oneflow-public/stable-diffusion-webui/stable-diffusion-webui.zip"
+          WEBUI_DST="oss://gh-src-cache/onediff/${{ github.sha }}/webui-src.zip"
+          # WEBUI_DST="oss://oneflow-public/stable-diffusion-webui/stable-diffusion-webui.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
           ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
+          ./ossutil64 cp --disable-ignore-error --update stable-diffusion-webui/webui-src.zip ${WEBUI_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
@@ -129,6 +137,19 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
+
+      - name: Checkout Stable Diffusion WebUI
+        if: matrix.test-suite == 'webui' && github.repository != 'siliconflow/onediff'
+        uses: actions/checkout@v4
+        with:
+          repository: AUTOMATIC1111/stable-diffusion-webui
+          path: ${{ env.WEBUI_SRC_DIR }}
+        run: |
+          # disable webui service launching
+          docker exec ${{ env.CONTAINER_NAME }} sed -i 's/start()/#start()/g' launch.py
+          # prepare webui env
+          docker exec -e venv_dir=- ${{ env.CONTAINER_NAME }} bash webui.sh --no-download-sd-model --do-not-download-clip --skip-version-check
+
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
