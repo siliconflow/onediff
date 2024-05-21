@@ -1,7 +1,7 @@
 import os
 import oneflow as flow
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import proxy_class, register
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 from ldm.modules.attention import (
     BasicTransformerBlock,

@@ -1,7 +1,7 @@
 # ComfyUI/comfy/ldm/modules/diffusionmodules/model.py
 
 import oneflow as torch
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 onediff_comfy = transform_mgr.transform_package("comfy")
 

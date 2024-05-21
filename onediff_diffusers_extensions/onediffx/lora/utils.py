@@ -14,13 +14,13 @@ if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
 else:
     is_peft_available = lambda: False
 
-from onediff.infer_compiler.utils.param_utils import update_graph_related_tensor
+from onediff.infer_compiler.backends.oneflow.param_utils import update_graph_related_tensor
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
     from diffusers.models.lora import PatchedLoraProjection
-from onediff.infer_compiler.oneflow.dual_module import DualModule
+from onediff.infer_compiler.backends.oneflow.dual_module import DualModule
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection

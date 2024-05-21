@@ -6,7 +6,7 @@ LORA = None
 CONTROLNET = None
 STEPS = 30
 PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
-NEGATIVE_PROMPT = None
+NEGATIVE_PROMPT = ""
 SEED = None
 WARMUPS = 3
 BATCH = 1
@@ -19,6 +19,8 @@ EXTRA_CALL_KWARGS = None
 CACHE_INTERVAL = 3
 CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
+COMPILER = "oneflow"
+COMPILER_CONFIG = None
 
 import os
 import importlib
@@ -30,7 +32,7 @@ import torch
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-from onediffx import compile_pipe
+from onediffx import compile_pipe, CompileOptions 
 
 
 def parse_args():
@@ -60,8 +62,13 @@ def parse_args():
     parser.add_argument(
         "--compiler",
         type=str,
-        default="oneflow",
+        default=COMPILER,
         choices=["none", "oneflow", "nexfort", "compile", "compile-max-autotune"],
+    )
+    parser.add_argument(
+        "--compiler-config",
+        type=str,
+        default=COMPILER_CONFIG,
     )
     return parser.parse_args()
 
@@ -70,6 +77,8 @@ def load_pipe(
     pipeline_cls,
     model_name,
     variant=None,
+    dtype=torch.float16,
+    device="cuda",
     custom_pipeline=None,
     scheduler=None,
     lora=None,
@@ -80,31 +89,34 @@ def load_pipe(
         extra_kwargs["custom_pipeline"] = custom_pipeline
     if variant is not None:
         extra_kwargs["variant"] = variant
+    if dtype is not None:
+        extra_kwargs["torch_dtype"] = dtype
     if controlnet is not None:
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16,
+            controlnet, torch_dtype=dtype,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
         pipe = QuantPipeline.from_quantized(
-            pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
+            pipeline_cls, model_name, **extra_kwargs
         )
     else:
         pipe = pipeline_cls.from_pretrained(
-            model_name, torch_dtype=torch.float16, **extra_kwargs
+            model_name, **extra_kwargs
         )
-    if scheduler is not None:
+    if scheduler is not None and scheduler != "none":
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
         pipe.fuse_lora()
     pipe.safety_checker = None
-    pipe.to(torch.device("cuda"))
+    if device is not None:
+        pipe.to(torch.device(device))
     return pipe
 
 
@@ -154,15 +166,25 @@ def main():
         controlnet=args.controlnet,
     )
 
-    height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
-    width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
+    core_net = None
+    if core_net is None:
+        core_net = getattr(pipe, "unet", None)
+    if core_net is None:
+        core_net = getattr(pipe, "transformer", None)
+    height = args.height or core_net.config.sample_size * pipe.vae_scale_factor
+    width = args.width or core_net.config.sample_size * pipe.vae_scale_factor
 
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
         pipe = compile_pipe(pipe)
     elif args.compiler == "nexfort":
-        pipe = compile_pipe(pipe, backend="nexfort")
+        options = CompileOptions()
+        if args.compiler_config is not None:
+            options.nexfort = json.load(args.compiler_config)
+        else:
+            options.nexfort = json.loads('{"mode": "max-autotune", "memory_format": "channels_last"}')
+        pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         pipe.unet = torch.compile(pipe.unet, mode=mode)
@@ -199,7 +221,6 @@ def main():
             negative_prompt=args.negative_prompt,
             height=height,
             width=width,
-            num_inference_steps=args.steps,
             num_images_per_prompt=args.batch,
             generator=None
             if args.seed is None
@@ -210,6 +231,8 @@ def main():
                 else json.loads(args.extra_call_kwargs)
             ),
         )
+        if args.steps is not None:
+            kwarg_inputs["num_inference_steps"] = args.steps
         if input_image is not None:
             kwarg_inputs["image"] = input_image
         if control_image is not None:
