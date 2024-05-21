@@ -170,8 +170,8 @@ def _(mod: type):
     return proxy_class(mod)
 
 
-def default_converter(obj, verbose=False, *, proxy_cls=None):
-    if not is_need_mock(type(obj)):
+def default_converter(obj, verbose=False, *, proxy_cls=None, bypass_check=False):
+    if not bypass_check and not is_need_mock(type(obj)):
         return obj
     try:
         new_obj_cls = proxy_class(type(obj)) if proxy_cls is None else proxy_cls
@@ -451,7 +451,7 @@ def _(mod: types.BuiltinFunctionType, verbose=False):
         if mod_name is not None:
             m = importlib.import_module(mod_name)
             return getattr(m, mod.__name__)
-
+    
     return default_converter(mod, verbose)
 
 
