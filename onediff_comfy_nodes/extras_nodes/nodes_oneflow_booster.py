@@ -39,7 +39,9 @@ model_patch_hijacker.hijack()
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple
 
-if not args.dont_upcast_attention:
+
+# https://github.com/comfyanonymous/ComfyUI/commit/bb4940d837f0cfd338ff64776b084303be066c67#diff-fab3fbd81daf87571b12fb3e4d80fc7d6bbbcf0f3dafed1dbc55d81998d82539L54
+if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention: 
     os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 

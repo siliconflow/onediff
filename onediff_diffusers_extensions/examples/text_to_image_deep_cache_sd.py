@@ -68,6 +68,7 @@ resolutions = (
 # Warmup with chosen resolutions
 for resolution in resolutions:
     for i in range(args.warmup):
+        torch.manual_seed(args.seed)
         image = base(
             prompt=args.prompt,
             height=resolution[0],

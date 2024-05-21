@@ -1,6 +1,6 @@
 import oneflow as flow
-from onediff.infer_compiler import oneflow_compile, register
-from onediff.infer_compiler.transform import proxy_class
+from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.transform import proxy_class, register
 from sd_webui_onediff_utils import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
