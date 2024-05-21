@@ -129,7 +129,7 @@ jobs:
         run: |
           git reset --hard
           git clean -f
-          zip -r webui-src.zip
+          zip -r webui-src.zip .
           # git archive --prefix ${{ env.WEBUI_SRC_DIR }}/ --format zip HEAD > webui-src.zip
       - name: Upload src
         id: upload_to_oss
