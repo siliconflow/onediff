@@ -46,6 +46,7 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
                 f"{ckpt_name}_{type(model.model).__name__}", torch_model
             )
             set_compiled_options(compiled_model, graph_file)
+
         model.weight_inplace_update = True
         return model
 

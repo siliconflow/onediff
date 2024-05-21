@@ -1,5 +1,6 @@
+import torch
 from register_comfy.CrossAttentionPatch import Attn2Replace, ipadapter_attention
-
+from comfy import model_management
 from onediff.infer_compiler.transform import torch2oflow
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
@@ -40,6 +41,12 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
                 split1dict[k] = v
             else:
                 split2dict[k] = v
+
+        # patch for weight
+        weight = split1dict["weight"]
+        if isinstance(weight, (int, float)):
+            weight = torch.tensor([weight])
+            split1dict["weight"] = weight.to(model_management.get_torch_device())
 
         return split1dict, split2dict
 
