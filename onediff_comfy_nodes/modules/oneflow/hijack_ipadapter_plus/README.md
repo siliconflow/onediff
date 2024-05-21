@@ -4,17 +4,25 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 
 - ComfyUI:
   - github: https://github.com/comfyanonymous/ComfyUI
-  - commit: 5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1 
-  - Date:   Wed Mar 20 20:48:54 2024 -0400
-
+  - commit: 2d4164271634476627aae31fbec251ca748a0ae0 
+  - Date:   Wed May 15 02:40:06 2024 -0400
+  
 - ComfyUI_IPAdapter_plus:
   - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
-  - commit: 477217b364de427827f181cf11404bfc34181c41 
-  - Date:   Tue Mar 26 15:02:27 2024 +0100
+  - commit 20125bf9394b1bc98ef3228277a31a3a52c72fc2 
+  - Date:   Wed May 8 16:10:20 2024 +0200
+
+- ComfyUI_InstantID$ 
+  - commit d8c70a0cd8ce0d4d62e78653674320c9c3084ec1 
+  - Date:   Wed May 8 16:55:55 2024 +0200
   
+- ComfyUI-AnimateDiff-Evolved$ git log
+  - commit f9e0343f4c4606ee6365a9af4a7e16118f1c45e1 
+  - Date:   Sat Apr 6 17:32:15 2024 -0500
+
 - OneDiff:
   - github: https://github.com/siliconflow/onediff 
-  - branch: `git checkout dev_support_ipadapter_b`
+
 
 ### Quick Start
 
@@ -26,8 +34,9 @@ Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 
-![ipadapter_example](https://github.com/siliconflow/onediff/assets/109639975/a5f9478b-930a-41e3-92a8-fc54ddf9e9ba)
+![ipadapter_example](https://github.com/siliconflow/onediff/assets/109639975/adb2df92-b0f0-4650-ae02-5fd458209b92)
 
+![ipadapter_example int8](https://github.com/siliconflow/onediff/assets/109639975/009b2f84-37f2-4b29-a2be-d1091da00b98)
 
  | PyTorch                                                                                                | OneDiff                                                                                                  |
  | ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------- |
@@ -37,9 +46,9 @@ As follows:
 - batch_size 4
 - warmup 4
 - e2e
-  - torch: 2.08 s
-  - onediff: 1.35 s
-  - percentage improvement：～35% 
+  - torch: 2.08 s (baseline)
+  - onediff: 1.36 s (percentage improvement ~34.6%)
+  - onediff int8: 1.20 s (percentage improvement ~42.3%) 
 
 
 ### Compatibility
@@ -48,48 +57,6 @@ As follows:
 | ------------------ | --------- |
 | Dynamic Shape      | Yes       |
 | Dynamic Batch Size | No        |
-| Vae Speed Up       | Yes       |
-
-<div style="display: flex;">
-<div style="flex: 1;">
-        <img width="645" alt="image" src="https://github.com/siliconflow/onediff/assets/109639975/339e489e-aec7-488a-a242-276abfcf1cc3">
-    </div>
-    <div style="flex: 1;">
-        <table>
-            <thead>
-                <tr>
-                    <th>dynamic_modify</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td>weight</td>
-                    <td>Yes</td>
-                </tr>
-                <tr>
-                    <td>noise</td>
-                    <td>Yes</td>
-                </tr>
-                <tr>
-                    <td>weight_type</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td>start_at</td>
-                    <td>No</td>
-                </tr>
-                <tr>
-                    <td>end_at</td>
-                    <td>No</td>
-                </tr>
-                <tr> 
-                    <td> unflod_batch </td>
-                    <td> Untested </td>
-            </tbody>
-        </table>
-  </div>
-</div>
 
 ## Contact
 

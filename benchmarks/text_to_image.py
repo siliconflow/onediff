@@ -27,10 +27,11 @@ import argparse
 import time
 import json
 import torch
+import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-import oneflow as flow
 from onediffx import compile_pipe
 
 
@@ -57,14 +58,17 @@ def parse_args():
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
+    parser.add_argument("--throughput", action="store_true")
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
         "--compiler",
         type=str,
         default="oneflow",
-        choices=["none", "oneflow", "compile", "compile-max-autotune"],
+        choices=["none", "oneflow", "nexfort", "compile", "compile-max-autotune"],
     )
     return parser.parse_args()
+
+args = parse_args()
 
 
 def load_pipe(
@@ -135,8 +139,52 @@ class IterationProfiler:
         return callback_kwargs
 
 
+def calculate_inference_time_and_throughput(height, width, n_steps, model):
+    start_time = time.time()
+    model(prompt=args.prompt, height=height, width=width, num_inference_steps=n_steps)
+    end_time = time.time()
+    inference_time = end_time - start_time
+    # pixels_processed = height * width * n_steps
+    # throughput = pixels_processed / inference_time
+    throughput = n_steps / inference_time
+    return inference_time, throughput
+
+
+def generate_data_and_fit_model(model, steps_range):
+    height, width = 1024, 1024
+    data = {"steps": [], "inference_time": [], "throughput": []}
+
+    for n_steps in steps_range:
+        inference_time, throughput = calculate_inference_time_and_throughput(height, width, n_steps, model)
+        data["steps"].append(n_steps)
+        data["inference_time"].append(inference_time)
+        data["throughput"].append(throughput)
+        print(f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s")
+
+    average_throughput = np.mean(data["throughput"])
+    print(f"Average Throughput: {average_throughput:.2f} steps/s")
+
+    coefficients = np.polyfit(data["steps"], data["inference_time"], 1)
+    base_time_without_base_cost = 1 / coefficients[0]
+    print(f"Throughput without base cost: {base_time_without_base_cost:.2f} steps/s")
+    return data, coefficients
+
+
+def plot_data_and_model(data, coefficients):
+    plt.figure(figsize=(10, 5))
+    plt.scatter(data["steps"], data["inference_time"], color='blue')
+    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color='red')
+    plt.title("Inference Time vs. Steps")
+    plt.xlabel("Steps")
+    plt.ylabel("Inference Time (seconds)")
+    plt.grid(True)
+    # plt.savefig("output.png")
+    plt.show()
+
+    print(f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}")
+
+
 def main():
-    args = parse_args()
     if args.input_image is None:
         if args.deepcache:
             from onediffx.deep_cache import StableDiffusionXLPipeline as pipeline_cls
@@ -162,6 +210,8 @@ def main():
         pass
     elif args.compiler == "oneflow":
         pipe = compile_pipe(pipe)
+    elif args.compiler == "nexfort":
+        pipe = compile_pipe(pipe, backend="nexfort")
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         pipe.unet = torch.compile(pipe.unet, mode=mode)
@@ -248,16 +298,24 @@ def main():
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
-    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
-    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+    if args.compiler == "oneflow":
+        import oneflow as flow
+
+        cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
+    else:
+        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
+    print(f"CUDA Mem after: {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
 
     if args.output_image is not None:
         output_images[0].save(args.output_image)
     else:
         print("Please set `--output-image` to save the output image")
+
+    if args.throughput:
+        steps_range = range(1, 100, 1) 
+        data, coefficients = generate_data_and_fit_model(pipe, steps_range)
+        plot_data_and_model(data, coefficients)
 
 
 if __name__ == "__main__":

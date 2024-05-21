@@ -1,5 +1,3 @@
-import oneflow as flow
-
 _ONEFLOW_EXEC_MODE = False
 
 
@@ -11,6 +9,8 @@ class oneflow_exec_mode(object):
             self.enabled = True
 
     def __enter__(self):
+        import oneflow as flow
+
         global _ONEFLOW_EXEC_MODE
         self.prev_mode = _ONEFLOW_EXEC_MODE
         _ONEFLOW_EXEC_MODE = self.enabled
@@ -18,6 +18,8 @@ class oneflow_exec_mode(object):
         _ = flow.set_grad_enabled(False)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        import oneflow as flow
+
         global _ONEFLOW_EXEC_MODE
         _ONEFLOW_EXEC_MODE = self.prev_mode
         _ = flow.set_grad_enabled(self.prev_grad_mode)

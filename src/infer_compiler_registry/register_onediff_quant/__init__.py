@@ -1,4 +1,4 @@
-from onediff.infer_compiler import register
+from onediff.infer_compiler.transform import register
 
 import oneflow as flow
 import onediff_quant

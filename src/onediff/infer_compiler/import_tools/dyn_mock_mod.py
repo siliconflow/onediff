@@ -11,6 +11,7 @@ from oneflow.mock_torch import enable
 from oneflow.mock_torch.mock_importer import _importer
 from .import_module_utils import import_module_from_path
 from ..utils.log_utils import logger
+from ..utils.patch_for_compiler import *
 
 __all__ = ["DynamicMockModule"]
 
@@ -184,7 +185,7 @@ class DynamicMockModule(ModuleType):
             if not _importer.enable:
                 _update_module([fullname] + org_delete_list, self._main_pkg_enable)
         except Exception as e:
-            logger.warning(f"Failed to update obj_entity in place. Exception: {e}")
+            logger.debug(f"Failed to update obj_entity in place. Exception: {e}")
 
         if ismodule(obj_entity):
             return DynamicMockModule(self._pkg_name, obj_entity, self._main_pkg_enable)

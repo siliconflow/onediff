@@ -108,7 +108,7 @@ def main():
                                     "linear_mae_threshold": args.linear_mae_threshold,
                                     "conv_compute_density_threshold": args.conv_compute_density_threshold,
                                     "linear_compute_density_threshold": args.linear_compute_density_threshold})
-    
+    torch.manual_seed(args.seed)
     # Warm-up
     pipe(prompt=args.prompt, num_inference_steps=1)
 
