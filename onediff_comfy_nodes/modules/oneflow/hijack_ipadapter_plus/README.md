@@ -13,7 +13,7 @@ Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a9
 
 ```
 git clone https://github.com/comfyanonymous/ComfyUI.git
-git reset --hard  4bd7d55b9028d79829a645edfe8259f7b7a049c0
+git reset --hard  2d4164271634476627aae31fbec251ca748a0ae0
 ```
 When you have completed these steps, follow the [instructions](https://github.com/comfyanonymous/ComfyUI) to install ComfyUI
 
@@ -22,7 +22,7 @@ When you have completed these steps, follow the [instructions](https://github.co
 ```
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git
-git reset --hard  417d806e7a2153c98613e86407c1941b2b348e88
+git reset --hard  20125bf9394b1bc98ef3228277a31a3a52c72fc2
 ```
 When you have completed these steps, follow the [instructions](https://github.com/cubiq/ComfyUI_IPAdapter_plus) instructions for installation
 
@@ -31,7 +31,7 @@ When you have completed these steps, follow the [instructions](https://github.co
 ```
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/ComfyUI_InstantID.git
-git reset --hard  e9cc7597b2a7cd441065418a975a2de4aa2450df
+git reset --hard  d8c70a0cd8ce0d4d62e78653674320c9c3084ec1
 ```
 When you have completed these steps,follow the [instructions](https://github.com/cubiq/ComfyUI_InstantID) below to install ComfyUI_InstantID
 
@@ -106,42 +106,6 @@ Timings for 30 steps at 1024*1024
 | Accelerator           | Baseline (non-optimized) | OneDiff (optimized) | Percentage improvement |
 | --------------------- | ------------------------ | ------------------- | ---------------------- |
 | GeForce RTX 3090 | 8.72 s                   | 5.07  s           | 41.9%               |
-  
-
-<details close> 
-<summary> Environment </summary>
-
-- ComfyUI:
-  - github: https://github.com/comfyanonymous/ComfyUI
-  - commit: 2d4164271634476627aae31fbec251ca748a0ae0 
-  - Date:   Wed May 15 02:40:06 2024 -0400
- 
-- ComfyUI_IPAdapter_plus:
-  - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
-  - commit 20125bf9394b1bc98ef3228277a31a3a52c72fc2 
-  - Date:   Wed May 8 16:10:20 2024 +0200
-
-- ComfyUI_InstantID:
-  - github: https://github.com/cubiq/ComfyUI_InstantID
-  - commit d8c70a0cd8ce0d4d62e78653674320c9c3084ec1 
-  - Date:   Wed May 8 16:55:55 2024 +0200
-
-- OneDiff:
-  - github: https://github.com/siliconflow/onediff 
-
-    ```shell
-    # install onediff
-    git clone https://github.com/siliconflow/onediff.git
-    cd onediff && pip install -e .
-    
-    # install onediff_comfy_nodes
-    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    # or
-    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    ```
--  torch 2.3.0
-
-</details> 
 
 
 ### Compatibility

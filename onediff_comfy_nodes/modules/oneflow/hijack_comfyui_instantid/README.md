@@ -14,7 +14,7 @@ Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a9
 ```
 cd ComfyUI/custom_nodes
 git clone https://github.com/comfyanonymous/ComfyUI
-git reset --hard 4bd7d55b9028d79829a645edfe8259f7b7a049c0
+git reset --hard 2d4164271634476627aae31fbec251ca748a0ae0
 ```
 When you have completed these steps, follow the [instructions](https://github.com/comfyanonymous/ComfyUI) to install ComfyUI
   
@@ -23,7 +23,7 @@ When you have completed these steps, follow the [instructions](https://github.co
 ```
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/ComfyUI_InstantID.git
-git reset --hard e9cc7597b2a7cd441065418a975a2de4aa2450df
+git reset --hard d8c70a0cd8ce0d4d62e78653674320c9c3084ec1
 ```
 When you have completed these steps,follow the [instructions](https://github.com/cubiq/ComfyUI_InstantID) to install ComfyUI_InstantID
 
@@ -112,42 +112,6 @@ Timings for 30 steps at 1024*1024
 | Accelerator           | Baseline (non-optimized) | OneDiff (optimized) | Percentage improvement |
 | --------------------- | ------------------------ | ------------------- | ---------------------- |
 | GeForce RTX 3090 |   13.23 s                   |  9.33 s              |   29.5%                |
-
-<details close> 
-<summary> Environment </summary>
-
-- ComfyUI:
-  - github: https://github.com/comfyanonymous/ComfyUI
-  - commit: 2d4164271634476627aae31fbec251ca748a0ae0 
-  - Date:   Wed May 15 02:40:06 2024 -0400
- 
-- ComfyUI_IPAdapter_plus:
-  - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
-  - commit 20125bf9394b1bc98ef3228277a31a3a52c72fc2 
-  - Date:   Wed May 8 16:10:20 2024 +0200
-
-- ComfyUI_InstantID:
-  - github: https://github.com/cubiq/ComfyUI_InstantID
-  - commit d8c70a0cd8ce0d4d62e78653674320c9c3084ec1 
-  - Date:   Wed May 8 16:55:55 2024 +0200
-
-- OneDiff:
-  - github: https://github.com/siliconflow/onediff 
-
-    ```shell
-    # install onediff
-    git clone https://github.com/siliconflow/onediff.git
-    cd onediff && pip install -e .
-    
-    # install onediff_comfy_nodes
-    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    # or
-    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    ```
--  torch 2.3.0
-
-</details> 
-
 
 - **Note:**
    - Consider setting `ONEFLOW_CONV_ALLOW_HALF_PRECISION_ACCUMULATION=0` and `ONEFLOW_MATMUL_ALLOW_HALF_PRECISION_ACCUMULATION=0` to ensure computational precision, but expect a potential 5% reduction in performance.
