@@ -363,6 +363,7 @@ jobs:
           docker exec -w /app/stable-diffusion-webui -e venv_dir=- ${{ env.CONTAINER_NAME }} bash webui.sh -f --api --no-download-sd-model --do-not-download-clip --skip-version-check --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models
           sleep 300
         env:
+          INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
           CLIP_PACKAGE: "git+file:///app/stable-diffusion-webui/repositories/CLIP"
           OPENCLIP_PACKAGE: "git+file:///app/stable-diffusion-webui/repositories/open_clip"
           ASSETS_REPO: "git+file:///app/stable-diffusion-webui/repositories/stable-diffusion-webui-assets"
