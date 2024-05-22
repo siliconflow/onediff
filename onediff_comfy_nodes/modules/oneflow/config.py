@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-from onediff.infer_compiler.utils import is_community_version
+from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
 # Set up paths
 ONEDIFF_QUANTIZED_OPTIMIZED_MODELS = "onediff_quant"

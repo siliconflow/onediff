@@ -5,7 +5,7 @@ from packaging import version
 
 import torch
 
-from onediff.infer_compiler.utils.log_utils import logger
+from onediff.utils import logger
 
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
