@@ -16,10 +16,10 @@ pip3 install nexfort-0.1.dev195+torch230cu121-cp310-cp310-manylinux2014_x86_64.w
 
 ```
 # model_id_or_path_to_PixArt-XL-2-1024-MS: /data/hf_models/PixArt-XL-2-1024-MS/ 
-python3 ./benchmarks/text_to_image.py --model model_id_or_path_to_PixArt-XL-2-1024-MS --scheduler none  --steps 20 --compiler nexfort
+python3 ./benchmarks/text_to_image.py --model model_id_or_path_to_PixArt-XL-2-1024-MS --scheduler none --steps 20 --compiler nexfort
 ```
 Performance on NVIDIA A100-PCIE-40GB:
-Iterations per second of progress bar: 11.7
-Inference time: 2.045s
-Iterations per second: 10.517
-CUDA Mem after: 13.569GiB
+- Iterations per second of progress bar: 11.7
+- Inference time: 2.045s
+- Iterations per second: 10.517
+- CUDA Mem after: 13.569GiB

@@ -7,7 +7,7 @@ CONTROLNET = None
 STEPS = 30
 PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
 NEGATIVE_PROMPT = ""
-SEED = None
+SEED = 1024
 WARMUPS = 3
 BATCH = 1
 HEIGHT = None
@@ -327,7 +327,7 @@ def main():
         cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
     else:
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
-    print(f"CUDA Mem after: {cuda_mem_after_used:.3f}GiB")
+    print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
 
     if args.output_image is not None:
