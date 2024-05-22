@@ -1,10 +1,17 @@
-# Command to run save: python test_pipe_compile_save_load.py --save
-# Command to run load: python test_pipe_compile_save_load.py --load
+# Command to run save: python pipe_compile_save_load.py --save
+# Command to run load: python pipe_compile_save_load.py --load
+import json
 import argparse
 
 import torch
 from diffusers import StableDiffusionXLPipeline
-from onediffx import compile_pipe, save_pipe, load_pipe
+from onediffx import (
+    compile_pipe,
+    save_pipe,
+    load_pipe,
+    CompileOptions,
+    setup_nexfort_pipe_cache,
+)
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -12,22 +19,43 @@ parser.add_argument(
 )
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
-cmd_args = parser.parse_args()
+parser.add_argument(
+    "--compiler",
+    type=str,
+    default="oneflow",
+    choices=["oneflow", "nexfort"],
+)
+parser.add_argument(
+    "--compiler-config",
+    type=str,
+    default=None,
+)
+args = parser.parse_args()
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
-    "/share_nfs/hf_models/stable-diffusion-xl-base-1.0",
-    torch_dtype=torch.float16,
-    variant="fp16",
-    use_safetensors=True
+    args.model, torch_dtype=torch.float16, use_safetensors=True
 )
 pipe.to("cuda")
 
-# compile the pipe
-pipe = compile_pipe(pipe)
+# Compile the pipe
+if args.compiler == "oneflow":
+    pipe = compile_pipe(pipe)
+else:
+    options = CompileOptions()
+    if args.compiler_config is not None:
+        options.nexfort = json.load(args.compiler_config)
+    else:
+        options.nexfort = json.loads(
+            '{"mode": "max-autotune", "memory_format": "channels_last"}'
+        )
+    pipe = compile_pipe(
+        pipe, backend="nexfort", options=options, fuse_qkv_projections=True
+    )
+    setup_nexfort_pipe_cache("nexfort_cached_pipe")
 
-if cmd_args.load:
-    # load the compiled pipe
-    load_pipe(pipe, dir="cached_pipe")
+if args.load:
+    # Load the compiled pipe
+    load_pipe(pipe, dir="oneflow_cached_pipe")
 
 # If the pipe is not loaded, it will takes seconds to do real compilation.
 # If the pipe is loaded, it will run fast.
@@ -41,6 +69,6 @@ image = pipe(
 
 image[0].save(f"test_image.png")
 
-if cmd_args.save:
-    # save the compiled pipe
-    save_pipe(pipe, dir="cached_pipe")
+if args.save:
+    # Save the compiled pipe
+    save_pipe(pipe, dir="oneflow_cached_pipe")

@@ -121,6 +121,16 @@ def convert_pipe_to_memory_format(pipe, *, ignores=(), memory_format=torch.prese
     )
     return pipe
 
+def setup_nexfort_pipe_cache(cache_dir=None):
+    """
+    Args: cache_dir (str, optional): The directory to use for caching, defaults to '~/.torchinductor' if not provided.
+    """
+    if os.getenv('TORCHINDUCTOR_FX_GRAPH_CACHE') != '1':
+        os.environ['TORCHINDUCTOR_FX_GRAPH_CACHE'] = '1'
+
+    nexfort_dir = cache_dir if cache_dir else os.path.expanduser('~/.torchinductor')
+    os.environ['TORCHINDUCTOR_CACHE_DIR'] = nexfort_dir
+
 def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
     if not os.path.exists(dir):
         os.makedirs(dir)
