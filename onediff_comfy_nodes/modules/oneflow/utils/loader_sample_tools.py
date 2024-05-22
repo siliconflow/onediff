@@ -5,7 +5,7 @@ from comfy import model_management
 from folder_paths import get_input_directory
 # onediff
 from onediff.infer_compiler import CompileOptions, oneflow_compile
-from onediff.infer_compiler.transform import torch2oflow
+from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from onediff.optimization.quant_optimizer import quantize_model
 
 # onediff_comfy_nodes

@@ -3,8 +3,8 @@ import os
 import sys
 from pathlib import Path
 
-from onediff.infer_compiler.utils import is_community_version
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
 # disable patch for loading diffusers
 transform_mgr.set_load_diffusers_patch(False)

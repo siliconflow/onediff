@@ -8,7 +8,7 @@ import torch.nn as nn
 from comfy.controlnet import ControlNet
 from comfy.model_patcher import ModelPatcher
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
 from onediff_quant.quantization import QuantizationConfig
 from onediff_quant.quantization.module_operations import get_sub_module
 from onediff_quant.quantization.quantize_calibrators import (
