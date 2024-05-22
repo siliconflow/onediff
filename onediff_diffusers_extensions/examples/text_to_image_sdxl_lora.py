@@ -2,7 +2,7 @@ import torch
 from pathlib import Path
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.utils import TensorInplaceAssign
+from onediff.torch_utils import TensorInplaceAssign
 
 try:
     from onediffx.lora import load_and_fuse_lora, unfuse_lora, update_graph_with_constant_folding_info

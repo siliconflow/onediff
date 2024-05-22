@@ -8,7 +8,7 @@ import comfy
 import oneflow as torch
 import oneflow.nn as nn
 from einops import rearrange, repeat
-from onediff.infer_compiler.transform import proxy_class, transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, transform_mgr
 
 onediff_comfy = transform_mgr.transform_package("comfy")
 

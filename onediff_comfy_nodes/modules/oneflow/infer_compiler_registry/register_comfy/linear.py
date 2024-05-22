@@ -1,5 +1,5 @@
 import oneflow as torch
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 transformed_comfy = transform_mgr.transform_package("comfy")
 proxy_ops = transformed_comfy.ops

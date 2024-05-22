@@ -4,7 +4,7 @@ import comfy
 import oneflow as th  # 'th' is the way ComfyUI name the torch
 import oneflow.nn.functional as F
 from einops import rearrange
-from onediff.infer_compiler.transform import proxy_class, transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, transform_mgr
 
 onediff_comfy = transform_mgr.transform_package("comfy")
 
