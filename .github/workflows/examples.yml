@@ -48,62 +48,53 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
-
       - name: Checkout Stable Diffusion WebUI
         uses: actions/checkout@v4
         with:
           repository: AUTOMATIC1111/stable-diffusion-webui
           path: stable-diffusion-webui
-
       - name: Checkout openai CLIP
         uses: actions/checkout@v4
         with:
           repository: openai/CLIP
           path: stable-diffusion-webui/repositories/CLIP
           ref: d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
-
       - name: Checkout open clip
         uses: actions/checkout@v4
         with:
           repository: mlfoundations/open_clip
           path: stable-diffusion-webui/repositories/open_clip
           ref: bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b
-
-      - name: Checkout assets
+      - name: Checkout stable-diffusion-webui-assets
         uses: actions/checkout@v4
         with:
           repository: AUTOMATIC1111/stable-diffusion-webui-assets
           path: stable-diffusion-webui/repositories/stable-diffusion-webui-assets
           ref: 6f7db241d2f8ba7457bac5ca9753331f0c266917
-
-      - name: Checkout Stability-AI stablediffusion
+      - name: Checkout stablediffusion
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/stablediffusion
           path: stable-diffusion-webui/repositories/stable-diffusion-stability-ai
           ref: cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf
-
-      - name: Checkout Stability-AI generative-models
+      - name: Checkout generative-models
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/generative-models
           path: stable-diffusion-webui/repositories/generative-models
           ref: 45c443b316737a4ab6e40413d7794a7f5657c19f
-
-      - name: Checkout crowsonkb/k-diffusion
+      - name: Checkout k-diffusion
         uses: actions/checkout@v4
         with:
           repository: crowsonkb/k-diffusion
           path: stable-diffusion-webui/repositories/k-diffusion
           ref: ab527a9a6d347f364e3d185ba6d714e22d80cb3c
-
       - name: Checkout BLIP
         uses: actions/checkout@v4
         with:
           repository: salesforce/BLIP
           path: stable-diffusion-webui/repositories/BLIP
           ref: 48211a1594f1321b00f14c9f7a5b4813144b2fb9
-
       - name: Pack src
         working-directory: onediff
         run: |
@@ -122,7 +113,6 @@ jobs:
           git reset --hard
           git clean -f
           zip -r webui-src.zip .
-          # git archive --prefix ${{ env.WEBUI_SRC_DIR }}/ --format zip HEAD > webui-src.zip
       - name: Upload src
         id: upload_to_oss
         run: |
@@ -341,7 +331,6 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio==3.41.2 diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
-          # docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -e /app/stable-diffusion-webui/repositories/CLIP
 
       - name: Prepare environment
         if: matrix.test-suite == 'webui'
