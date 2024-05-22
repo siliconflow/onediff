@@ -7,7 +7,7 @@ import safetensors.torch
 from diffusers import DiffusionPipeline
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.utils import TensorInplaceAssign
+from onediff.torch_utils import TensorInplaceAssign
 from onediffx.lora import load_and_fuse_lora, unfuse_lora
 
 _time = None
