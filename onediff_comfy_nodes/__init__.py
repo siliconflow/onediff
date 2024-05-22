@@ -1,8 +1,13 @@
 """OneDiff ComfyUI Speedup Module"""
 from ._config import is_disable_oneflow_backend
-from ._nodes import (ControlnetSpeedup, ModelSpeedup, OneDiffApplyModelBooster,
-                     OneDiffCheckpointLoaderSimple, OneDiffControlNetLoader,
-                     VaeSpeedup)
+from ._nodes import (
+    ControlnetSpeedup,
+    ModelSpeedup,
+    OneDiffApplyModelBooster,
+    OneDiffCheckpointLoaderSimple,
+    OneDiffControlNetLoader,
+    VaeSpeedup,
+)
 from .utils.import_utils import is_nexfort_available, is_oneflow_available
 
 NODE_CLASS_MAPPINGS = {

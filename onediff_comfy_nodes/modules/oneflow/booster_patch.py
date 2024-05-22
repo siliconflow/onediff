@@ -3,7 +3,9 @@ from functools import singledispatchmethod
 
 from comfy.model_patcher import ModelPatcher
 from comfy.controlnet import ControlLora, ControlNet
-from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import (
+    OneflowDeployableModule as DeployableModule,
+)
 
 from ..booster_interface import BoosterExecutor
 
