@@ -36,7 +36,6 @@ Experiment (GeForce RTX 3090) Workflow for OneDiff Acceleration in ComfyUI_Insta
 As follows:
 ![workflow (20)](https://github.com/siliconflow/onediff/assets/117806079/492a83a8-1a5b-4fb3-9e53-6d53e881a3f8)
 
-
 Note that you can download all images in this page and then drag or load them on ComfyUI to get the workflow embedded in the image.
 ![oneflow_basic](https://github.com/siliconflow/oneflow/assets/117806079/81016bd8-3ec8-457f-850f-9c486bfd2d0c)
 
