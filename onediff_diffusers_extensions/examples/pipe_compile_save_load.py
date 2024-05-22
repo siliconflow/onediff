@@ -1,5 +1,6 @@
-# Command to run save: python pipe_compile_save_load.py --save
-# Command to run load: python pipe_compile_save_load.py --load
+# Command to run oneflow backend save: python pipe_compile_save_load.py --save
+# Command to run oneflow backend load: python pipe_compile_save_load.py --load
+# Command to run nexfort backend save/load: python pipe_compile_save_load.py --compiler nexfort
 import json
 import argparse
 
