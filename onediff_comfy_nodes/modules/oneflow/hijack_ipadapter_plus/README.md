@@ -2,12 +2,9 @@
 ### Environment
 Please Refer to the Readme in the Respective Repositories for Installation Instructions.
 #### Install OneDiff
-```
-git clone https://github.com/siliconflow/oneflow.git
-```
-When you have completed these steps, follow the [instructions](https://github.com/siliconflow/onediff) to install OneDiff.
-Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/onediff_comfy_nodes/README.md?plain=1#L86) to install ComfyUI OneDiff extension
 
+When you have completed these steps, follow the [instructions](https://github.com/siliconflow/onediff/blob/ba93c5a68607abefd38ffed9e6a17bed48c01a81/README.md?plain=1#L224) to install OneDiff.
+Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/onediff_comfy_nodes/README.md?plain=1#L86) to install ComfyUI OneDiff extension
 
 #### Install ComfyUI
 
@@ -54,6 +51,8 @@ Experiment (GeForce RTX 3090) Workflow for OneDiff Acceleration in ComfyUI_IPAda
 1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node. 
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
+![workflow (19)](https://github.com/siliconflow/onediff/assets/117806079/07b153fd-a236-4c8d-a220-9b5823a79c17)
+
 
 ### ipadapter_advanced_basic
 #### WorkFlow Description

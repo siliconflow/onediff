@@ -3,10 +3,7 @@
 Please Refer to the Readme in the Respective Repositories for Installation Instructions.
 #### Install OneDiff
 
-```
-git clone https://github.com/siliconflow/oneflow.git
-```
-When you have completed these steps, follow the [instructions](https://github.com/siliconflow/onediff) to install OneDiff.
+When you have completed these steps, follow the [instructions](https://github.com/siliconflow/onediff/blob/ba93c5a68607abefd38ffed9e6a17bed48c01a81/README.md?plain=1#L224) to install OneDiff.
 Then follow the [guide](https://github.com/siliconflow/onediff/blob/0819aa41c8a910add96400265f3165f9d8d3634c/onediff_comfy_nodes/README.md?plain=1#L86) to install ComfyUI OneDiff extension
 
 #### Install ComfyUI
@@ -37,6 +34,8 @@ Experiment (GeForce RTX 3090) Workflow for OneDiff Acceleration in ComfyUI_Insta
 1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node. 
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
+![workflow (20)](https://github.com/siliconflow/onediff/assets/117806079/492a83a8-1a5b-4fb3-9e53-6d53e881a3f8)
+
 
 Note that you can download all images in this page and then drag or load them on ComfyUI to get the workflow embedded in the image.
 ![oneflow_basic](https://github.com/siliconflow/oneflow/assets/117806079/81016bd8-3ec8-457f-850f-9c486bfd2d0c)
@@ -87,8 +86,8 @@ wget -O models/controlnet/diffusion_pytorch_model.safetensors https://hf-mirror.
 source: https://github.com/cubiq/ComfyUI_InstantID/blob/main/examples/InstantID_basic.json
 | InstantID | Baseline (non-optimized)                                                                                         | OneDiff (optimized)                                                                                                      |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| WorkFlow          |![InstantID_basic_torch](https://github.com/siliconflow/sd-team/assets/117806079/d649539c-7e8e-449f-b7b5-08622e6f93cc) |![InstantID_basic_oneflow](https://github.com/siliconflow/sd-team/assets/117806079/c752ca4b-7d81-49b4-915a-9c3088227e9d)
-|
+| WorkFlow          |![InstantID_basic_torch](https://github.com/siliconflow/sd-team/assets/117806079/d649539c-7e8e-449f-b7b5-08622e6f93cc) |![InstantID_basic_oneflow](https://github.com/siliconflow/sd-team/assets/117806079/c752ca4b-7d81-49b4-915a-9c3088227e9d)|
+
 #### Performance Comparison
 
 Timings for 30 steps at 1024*1024
