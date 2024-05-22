@@ -32,7 +32,7 @@ When you have completed these steps,follow the [instructions](https://github.com
 > Recommend running the official example of ComfyUI_InstantID now, and then trying OneDiff acceleration. 
 > You can Load these images in ComfyUI to get the full workflow.
 
-Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI_InstantID:
+Experiment (GeForce RTX 3090) Workflow for OneDiff Acceleration in ComfyUI_InstantID:
 
 1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node. 
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
@@ -81,11 +81,72 @@ wget -O models/controlnet/diffusion_pytorch_model.safetensors https://hf-mirror.
 
 </details>
 
-- NVIDIA A100-PCIE-40GB 
-- batch_size 4
-- warmup 4
-- e2e
-  - oneflow_basic: 14.9 s (baseline)
+
+### InstantID_basic
+#### WorkFlow Description
+source: https://github.com/cubiq/ComfyUI_InstantID/blob/main/examples/InstantID_basic.json
+| InstantID | Baseline (non-optimized)                                                                                         | OneDiff (optimized)                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| WorkFlow          |![InstantID_basic_torch](https://github.com/siliconflow/sd-team/assets/117806079/d649539c-7e8e-449f-b7b5-08622e6f93cc) |![InstantID_basic_oneflow](https://github.com/siliconflow/sd-team/assets/117806079/c752ca4b-7d81-49b4-915a-9c3088227e9d)
+|
+#### Performance Comparison
+
+Timings for 30 steps at 1024*1024
+
+| Accelerator           | Baseline (non-optimized) | OneDiff (optimized) | Percentage improvement |
+| --------------------- | ------------------------ | ------------------- | ---------------------- |
+| GeForce RTX 3090 |  12.69 s                   | 9 s              |    29.1 %          |
+
+### InstantID_IPAdapter
+#### WorkFlow Description
+source: https://github.com/cubiq/ComfyUI_InstantID/blob/main/examples/InstantID_IPAdapter.json
+
+| InstantID_IPAdapter | Baseline (non-optimized)                                                                                         | OneDiff (optimized)                                                                                                      |
+| ----------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| WorkFlow          |![InstantID_IPAdapter_torch](https://github.com/siliconflow/sd-team/assets/117806079/ba4ba6a9-f9d8-4921-85dd-be00c72f20a6) | ![InstantID_IPAdapter_oneflow](https://github.com/siliconflow/sd-team/assets/117806079/46533f74-7634-4839-8c3e-c555c78eca63) |
+
+#### Performance Comparison
+
+Timings for 30 steps at 1024*1024
+
+| Accelerator           | Baseline (non-optimized) | OneDiff (optimized) | Percentage improvement |
+| --------------------- | ------------------------ | ------------------- | ---------------------- |
+| GeForce RTX 3090 |   13.23 s                   |  9.33 s              |   29.5%                |
+
+<details close> 
+<summary> Environment </summary>
+
+- ComfyUI:
+  - github: https://github.com/comfyanonymous/ComfyUI
+  - commit: 2d4164271634476627aae31fbec251ca748a0ae0 
+  - Date:   Wed May 15 02:40:06 2024 -0400
+ 
+- ComfyUI_IPAdapter_plus:
+  - github: https://github.com/cubiq/ComfyUI_IPAdapter_plus
+  - commit 20125bf9394b1bc98ef3228277a31a3a52c72fc2 
+  - Date:   Wed May 8 16:10:20 2024 +0200
+
+- ComfyUI_InstantID:
+  - github: https://github.com/cubiq/ComfyUI_InstantID
+  - commit d8c70a0cd8ce0d4d62e78653674320c9c3084ec1 
+  - Date:   Wed May 8 16:55:55 2024 +0200
+
+- OneDiff:
+  - github: https://github.com/siliconflow/onediff 
+
+    ```shell
+    # install onediff
+    git clone https://github.com/siliconflow/onediff.git
+    cd onediff && pip install -e .
+    
+    # install onediff_comfy_nodes
+    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    # or
+    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    ```
+-  torch 2.3.0
+
+</details> 
 
 
 - **Note:**
