@@ -129,7 +129,6 @@ jobs:
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
           WEBUI_DST="oss://gh-src-cache/onediff/${{ github.sha }}/webui-src.zip"
-          # WEBUI_DST="oss://oneflow-public/stable-diffusion-webui/stable-diffusion-webui.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
           ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
           ./ossutil64 cp --disable-ignore-error --update stable-diffusion-webui/webui-src.zip ${WEBUI_DST}
@@ -148,8 +147,8 @@ jobs:
           - onediff:cu118
           - onediff-pro:cu121
         test-suite:
-          # - diffusers_examples
-          # - comfy
+          - diffusers_examples
+          - comfy
           - webui
     steps:
       - name: Login to ACR with the AccessKey pair
@@ -347,7 +346,6 @@ jobs:
       - name: Prepare environment
         if: matrix.test-suite == 'webui'
         run: |
-          # prepare env for sd-webui
           docker exec -d ${{ env.CONTAINER_NAME }} mkdir /app/stable-diffusion-webui/.git /app/stable-diffusion-webui/openai
           docker exec -d ${{ env.CONTAINER_NAME }} ln -s /share_nfs/onediff_ci/sd-webui/models/clips/clip-vit-large-patch14 /app/stable-diffusion-webui/openai/clip-vit-large-patch14
 
@@ -361,8 +359,6 @@ jobs:
           docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/stable-diffusion-webui/repositories/BLIP
 
           docker exec -w /app/stable-diffusion-webui -e venv_dir=- ${{ env.CONTAINER_NAME }} sh -c "bash webui.sh -f --exit --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models"
-          # docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/stable-diffusion-webui/webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
-          # sleep 300
         env:
           INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
           CLIP_PACKAGE: "git+file:///app/stable-diffusion-webui/repositories/CLIP"
@@ -383,13 +379,12 @@ jobs:
         if: matrix.test-suite == 'webui'
         run: |
           docker exec -w /app/stable-diffusion-webui -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/stable-diffusion-webui/webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check > /app/stable-diffusion-webui/onediff_webui.log 2>&1"
-          sleep 300
+          sleep 60
 
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
 
       - if: matrix.test-suite == 'webui'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
-        continue-on-error: true
 
       - name: Show WebUI Log
         if: matrix.test-suite == 'webui'
