@@ -74,43 +74,35 @@ jobs:
         with:
           repository: AUTOMATIC1111/stable-diffusion-webui-assets
           path: stable-diffusion-webui/repositories/stable-diffusion-webui-assets
+          ref: 6f7db241d2f8ba7457bac5ca9753331f0c266917
 
       - name: Checkout Stability-AI stablediffusion
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/stablediffusion
           path: stable-diffusion-webui/repositories/stable-diffusion-stability-ai
+          ref: cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf
 
-      - name: Checkout Stability-AI/generative-models
+      - name: Checkout Stability-AI generative-models
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/generative-models
           path: stable-diffusion-webui/repositories/generative-models
+          ref: 45c443b316737a4ab6e40413d7794a7f5657c19f
 
       - name: Checkout crowsonkb/k-diffusion
         uses: actions/checkout@v4
         with:
           repository: crowsonkb/k-diffusion
           path: stable-diffusion-webui/repositories/k-diffusion
+          ref: ab527a9a6d347f364e3d185ba6d714e22d80cb3c
 
       - name: Checkout BLIP
         uses: actions/checkout@v4
         with:
           repository: salesforce/BLIP
           path: stable-diffusion-webui/repositories/BLIP
-
-      - name: Checkout CLIP
-        uses: actions/checkout@v4
-        with:
-          repository: openai/CLIP
-          path: stable-diffusion-webui/repositories/CLIP
-
-      - name: Checkout openclip
-        uses: actions/checkout@v4
-        with:
-          repository: mlfoundations/open_clip
-          path: stable-diffusion-webui/repositories/open_clip
-
+          ref: 48211a1594f1321b00f14c9f7a5b4813144b2fb9
 
       - name: Pack src
         working-directory: onediff
@@ -378,6 +370,14 @@ jobs:
           STABLE_DIFFUSION_XL_REPO: "git+file:///app/stable-diffusion-webui/repositories/generative-models"
           K_DIFFUSION_REPO: "git+file:///app/stable-diffusion-webui/repositories/k-diffusion"
           BLIP_REPO: "git+file:///app/stable-diffusion-webui/repositories/BLIP"
+
+          CLIP_PACKAGE: d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
+          OPENCLIP_PACKAGE: bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b
+          ASSETS_COMMIT_HASH: 6f7db241d2f8ba7457bac5ca9753331f0c266917
+          STABLE_DIFFUSION_COMMIT_HASH: cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf
+          STABLE_DIFFUSION_XL_COMMIT_HASH: 45c443b316737a4ab6e40413d7794a7f5657c19f
+          K_DIFFUSION_COMMIT_HASH: ab527a9a6d347f364e3d185ba6d714e22d80cb3c
+          BLIP_COMMIT_HASH: 48211a1594f1321b00f14c9f7a5b4813144b2fb9
 
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
 
