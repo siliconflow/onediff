@@ -18,7 +18,7 @@ from onediff import (
 from diffusers import EulerDiscreteScheduler
 from diffusers import utils
 
-from onediff.infer_compiler.utils.cost_util import cost_cnt
+from onediff.infer_compiler.backends.oneflow.utils.cost_util import cost_cnt
 
 
 _MODEL_ID = "stabilityai/stable-diffusion-2"
