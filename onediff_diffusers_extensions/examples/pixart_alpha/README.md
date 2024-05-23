@@ -29,19 +29,21 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 ```
 
 ## Performance comparation
-| Metric                               | NVIDIA A100-PCIE-40GB (1024 * 1024) |
-| ------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)         | 2024-05-23                          |
-| PyTorch iteration speed              | 8.623it/s                           |
-| OneDiff iteration speed              | 10.743it/s(+24.58%)                  |
-| PyTorch E2E time                     | 2.568s                              |
-| OneDiff E2E time                     | 1.992s(-22.4%)                      |
-| PyTorch Max Mem Used                 | 14.445GiB                           |
-| OneDiff Max Mem Used                 | 13.855GiB                           |
-| PyTorch Warmup with Run time         | 4.100s                              |
-| OneDiff Warmup with Compilation time | 771.418s                            |
-| OneDiff Warmup with Cache time       | TODO                                |
+| Metric                               | NVIDIA A100-PCIE-40GB (1024 * 1024)                                                                                     |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------- |
+| Data update date(yyyy-mm-dd)         | 2024-05-23                                                                                                              |
+| PyTorch iteration speed              | 8.623it/s                                                                                                               |
+| OneDiff iteration speed              | 10.743it/s(+24.58%)                                                                                                     |
+| PyTorch E2E time                     | 2.568s                                                                                                                  |
+| OneDiff E2E time                     | 1.992s(-22.4%)                                                                                                          |
+| PyTorch Max Mem Used                 | 14.445GiB                                                                                                               |
+| OneDiff Max Mem Used                 | 13.855GiB                                                                                                               |
+| PyTorch Warmup with Run time         | 4.100s                                                                                                                  |
+| OneDiff Warmup with Compilation time | 771.418s(On Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz, this is just for reference, and it varies a lot on different CPU) |
+| OneDiff Warmup with Cache time       | TODO                                                                                                                    |
+|                                      |                                                                                                                         |
 
 nexfort compile config: 
 - {"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}
+  - {"mode": "max-autotune", "memory_format": "channels_last"} will reduce compilation time to 57.863s
 - fuse_qkv_projections: True
