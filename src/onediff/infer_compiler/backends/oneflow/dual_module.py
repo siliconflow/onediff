@@ -102,8 +102,8 @@ class DualModule(torch.nn.Module):
         else:  # TODO: aviod memory up when set attr
             _torch_module: torch.nn.Module = self._torch_module
             if (
-                hasattr(_torch_module, "disable_param_update")
-                and _torch_module.disable_param_update
+                hasattr(_torch_module, "_disable_param_update")
+                and _torch_module._disable_param_update
             ):
                 return
 

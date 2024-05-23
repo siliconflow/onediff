@@ -39,7 +39,7 @@ def online_quantize_model(
     quantized_model, info = module.quantize_with_calibration(*in_args, **in_kwargs)
     status = module.collect_quantization_status(model, info)
     for _, layer in quantized_model.named_modules():
-        layer.disable_param_update = True
+        layer._disable_param_update = True
 
     return quantized_model, status
 
