@@ -6,11 +6,18 @@ pip3 install -U torchao==0.1
 ```
 
 ### Install nexfort
+
+Before installing nextfort, please make sure that the corresponding PyTorch and CUDA environments are installed.
+
 ```
-wget https://oneflow-static.oss-cn-beijing.aliyuncs.com/sd/nexfort-0.1-cb3133ca2dae4265bc1d86068fc3aa1d.zip
-unzip nexfort-0.1-cb3133ca2dae4265bc1d86068fc3aa1d.zip
-cd nexfort-0.1-cb3133ca2dae4265bc1d86068fc3aa1d
-pip3 install nexfort-0.1.dev195+torch230cu121-cp310-cp310-manylinux2014_x86_64.whl
+# PyTorch 2.3.0, CUDA 12.1
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch230cu121-cp310-cp310-manylinux2014_x86_64.whl
+
+# PyTorch 2.4.0, CUDA 12.1
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch240dev20240507cu121-cp310-cp310-manylinux2014_x86_64.whl
+
+# PyTorch 2.4.0, CUDA 12.4
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch240dev20240507cu124-cp310-cp310-manylinux2014_x86_64.whl
 ```
 
 ### Run pixart alpha (with nexfort backend)
