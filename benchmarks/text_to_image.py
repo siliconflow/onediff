@@ -8,7 +8,7 @@ STEPS = 30
 PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
 NEGATIVE_PROMPT = ""
 SEED = 1024
-WARMUPS = 3
+WARMUPS = 1
 BATCH = 1
 HEIGHT = None
 WIDTH = None
@@ -299,10 +299,15 @@ def main():
     # The initial calls will trigger compilation and might be very slow.
     # After that, it should be very fast.
     if args.warmups > 0:
+        begin = time.time()
+        print("=======================================")
         print("Begin warmup")
         for _ in range(args.warmups):
             pipe(**get_kwarg_inputs())
+        end = time.time()
         print("End warmup")
+        print(f"Warmup time: {end - begin:.3f}s")
+        print("=======================================")
 
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
