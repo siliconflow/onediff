@@ -360,11 +360,11 @@ jobs:
           INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
           CLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/CLIP"
           OPENCLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/open_clip"
-          ASSETS_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-webui-assets"
-          STABLE_DIFFUSION_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-stability-ai"
-          STABLE_DIFFUSION_XL_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/generative-models"
-          K_DIFFUSION_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/k-diffusion"
-          BLIP_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/BLIP"
+          ASSETS_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-webui-assets"
+          STABLE_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-stability-ai"
+          STABLE_DIFFUSION_XL_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/generative-models"
+          K_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/k-diffusion"
+          BLIP_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/BLIP"
 
           ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
           STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
