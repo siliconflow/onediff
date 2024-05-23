@@ -348,11 +348,14 @@ jobs:
       - name: Prepare environment for WebUI
         if: matrix.test-suite == 'webui'
         run: |
+          # hack code to print error msg
+          docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} sed -i '/except RuntimeError:/a\    except RuntimeError as e:\n        print(f"Error occurred while running git command: {e}")' modules/launch_utils.py
           docker exec -d ${{ env.CONTAINER_NAME }} mkdir /app/${{ env.WEBUI_SRC_DIR }}/.git /app/${{ env.WEBUI_SRC_DIR }}/openai
           docker exec -d ${{ env.CONTAINER_NAME }} ln -s /share_nfs/onediff_ci/sd-webui/models/clips/clip-vit-large-patch14 /app/${{ env.WEBUI_SRC_DIR }}/openai/clip-vit-large-patch14
-          docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory .
+          docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}
           for dir in $SAFE_DIRECTORIES; do
-            docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory ./repositories/$dir
+            docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}/repositories/$dir
+            docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} echo "dir is $dir"
           done
           docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -e venv_dir=- ${{ env.CONTAINER_NAME }} sh -c "bash webui.sh -f --exit --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models"
 
