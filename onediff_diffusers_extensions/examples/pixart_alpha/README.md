@@ -32,16 +32,16 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 | Metric                               | NVIDIA A100-PCIE-40GB (1024 * 1024) |
 | ------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)         | 2024-05-23                          |
-| PyTorch iteration speed              | 8.469it/s                           |
-| OneDiff iteration speed              | 10.51it/s(+24.2%)                   |
-| PyTorch E2E time                     | 2.610s                              |
-| OneDiff E2E time                     | 2.043s(-21.7%)                      |
+| PyTorch iteration speed              | 8.623it/s                           |
+| OneDiff iteration speed              | 10.743it/s(+24.58%)                  |
+| PyTorch E2E time                     | 2.568s                              |
+| OneDiff E2E time                     | 1.992s(-22.4%)                      |
 | PyTorch Max Mem Used                 | 14.445GiB                           |
-| OneDiff Max Mem Used                 | 13.571GiB                           |
-| PyTorch Warmup with Run time         | 3.377s                              |
-| OneDiff Warmup with Compilation time | 57.863s                             |
+| OneDiff Max Mem Used                 | 13.855GiB                           |
+| PyTorch Warmup with Run time         | 4.100s                              |
+| OneDiff Warmup with Compilation time | 771.418s                            |
 | OneDiff Warmup with Cache time       | TODO                                |
 
 nexfort compile config: 
-- {"mode": "max-autotune", "memory_format": "channels_last"}
+- {"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}
 - fuse_qkv_projections: True
