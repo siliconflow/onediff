@@ -4,7 +4,7 @@ import comfy
 import oneflow as torch
 import oneflow.nn as nn
 import oneflow.nn.functional as F
-from onediff.infer_compiler.transform import proxy_class
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 
 
 def Normalize(in_channels, num_groups=32):

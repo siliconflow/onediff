@@ -111,6 +111,22 @@ benchmark_sd_model sd15 ${SD15_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 benchmark_sd_model sd21 ${SD21_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 benchmark_sd_model sdxl ${SDXL_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 
+benchmark_sd_model_with_throughput() {
+  model_path=$1
+  warmups=$2
+  compiler=$3
+  echo "Run ${model_path} with throughput test at 1024x1024..."
+  script_output=$(python3 ${SCRIPT_DIR}/text_to_image.py --model ${model_path} --variant fp16 --warmups ${warmups} --compiler ${compiler} --height 1024 --width 1024 --throughput | tee /dev/tty)
+
+  throughput=$(echo "${script_output}" | grep -oP '(?<=Throughput without base cost: )\d+\.\d+')
+  inference_time_eq=$(echo "${script_output}" | grep -oP 'Model: Inference Time = .+')
+
+  BENCHMARK_RESULT_TEXT="${BENCHMARK_RESULT_TEXT}| ${model_path} | 1024x1024 | N/A | N/A | N/A | N/A | Throughput without base cost: ${throughput} | ${inference_time_eq} |\n"
+}
+
+benchmark_sd_model_with_throughput ${SD15_MODEL_PATH} ${WARMUPS} ${COMPILER}
+benchmark_sd_model_with_throughput ${SDXL_MODEL_PATH} ${WARMUPS} ${COMPILER}
+
 if [ ${BENCHMARK_QUANT_MODEL} != 0 ] && [ x"${COMPILER}" == x"oneflow" ]; then
   benchmark_sd_model sdxl_quant ${SDXL_QUANT_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 fi
@@ -119,4 +135,5 @@ if [ ${BENCHMARK_QUANT_MODEL} != 0 ] && [ ${BENCHMARK_DEEP_CACHE_MODEL} != 0 ] &
   benchmark_sd_model sdxl_deepcache_quant ${SDXL_DEEP_CACHE_QUANT_MODEL_PATH} 1024x1024,720x1280,768x768,512x512
 fi
 
+echo -e "\nBenchmark Results:"
 echo -e "${BENCHMARK_RESULT_TEXT}" > ${OUTPUT_FILE}

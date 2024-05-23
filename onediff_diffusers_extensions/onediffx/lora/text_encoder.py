@@ -19,7 +19,7 @@ else:
 from diffusers.utils import is_accelerate_available
 
 from diffusers.models.modeling_utils import _LOW_CPU_MEM_USAGE_DEFAULT
-from onediff.infer_compiler.utils.log_utils import logger
+from onediff.utils import logger
 
 from .utils import fuse_lora, get_adapter_names
 

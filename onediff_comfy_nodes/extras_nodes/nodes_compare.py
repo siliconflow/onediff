@@ -5,7 +5,7 @@ import subprocess
 import folder_paths
 import numpy as np
 import oneflow as flow
-from onediff.infer_compiler.transform.builtin_transform import torch2oflow
+from onediff.infer_compiler.backends.oneflow.transform.builtin_transform import torch2oflow
 from PIL import Image
 
 try:
