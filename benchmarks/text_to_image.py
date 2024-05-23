@@ -230,7 +230,7 @@ def main():
     elif args.compiler == "nexfort":
         options = CompileOptions()
         if args.compiler_config is not None:
-            options.nexfort = json.load(args.compiler_config)
+            options.nexfort = json.loads(args.compiler_config)
         else:
             options.nexfort = json.loads('{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}')
         pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)

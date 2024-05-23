@@ -30,8 +30,8 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 
 ## Performance comparation
 ### nexfort compile config
-- {"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}
-  - {"mode": "max-autotune", "memory_format": "channels_last"} will reduce compilation time to 57.863s
+- compiler-config default is `{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`
+  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time to 57.863s and just slightly reduce the performance
 - fuse_qkv_projections: True
 
 ### Metric
