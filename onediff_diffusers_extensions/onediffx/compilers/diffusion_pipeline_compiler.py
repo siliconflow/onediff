@@ -125,6 +125,7 @@ def setup_nexfort_pipe_cache(cache_dir=None):
     """
     Args: cache_dir (str, optional): The directory to use for caching, defaults to '~/.torchinductor' if not provided.
     """
+    # default TORCHINDUCTOR_FX_GRAPH_CACHE=0
     if os.getenv('TORCHINDUCTOR_FX_GRAPH_CACHE') != '1':
         os.environ['TORCHINDUCTOR_FX_GRAPH_CACHE'] = '1'
 
