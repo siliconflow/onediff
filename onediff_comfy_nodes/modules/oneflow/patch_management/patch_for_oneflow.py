@@ -14,16 +14,3 @@ class PatchNamedArg(NamedArg):
 
 
 flow.framework.args_tree.NamedArg = PatchNamedArg
-
-
-
-original_copy_ = flow.Tensor.copy_
-
-def new_copy_(self, src, *args, **kwargs):
-    # print(f'{__file__}.new_copy_ {self.dtype=}')
-    if self.dtype == flow.int8 and src.dtype != flow.int8:
-        return
-    return original_copy_(self, other=src, *args, **kwargs)
-
-# Replace the original copy_ method with the new one
-flow.Tensor.copy_ = new_copy_

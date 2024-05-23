@@ -29,6 +29,7 @@ class DualModule(torch.nn.Module):
         logger.debug(f"Convert {type(self._torch_module)} ...")
         self._oneflow_module = torch2oflow(self._torch_module)
         logger.debug(f"Convert {type(self._torch_module)} done!")
+
         return self._oneflow_module
 
     @oneflow_module.deleter
@@ -99,6 +100,13 @@ class DualModule(torch.nn.Module):
         if name in ["_torch_module", "_oneflow_module"]:
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
+            _torch_module: torch.nn.Module = self._torch_module
+            if (
+                hasattr(_torch_module, "disable_param_update")
+                and _torch_module.disable_param_update
+            ):
+                return
+
             if self._oneflow_module is not None:
                 v = torch2oflow(value)
                 if isinstance(v, flow.Tensor):
@@ -106,7 +114,7 @@ class DualModule(torch.nn.Module):
                     obj.copy_(v)
                 else:
                     setattr(self._oneflow_module, name, v)
-            setattr(self._torch_module, name, value)
+            setattr(_torch_module, name, value)
 
     def extra_repr(self) -> str:
         return self._torch_module.extra_repr()
