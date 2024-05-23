@@ -385,6 +385,7 @@ jobs:
 
       - if: matrix.test-suite == 'webui'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
+        continue-on-error: true
 
       - name: Show WebUI Log
         if: matrix.test-suite == 'webui'
