@@ -22,4 +22,4 @@ Performance on NVIDIA A100-PCIE-40GB:
 - Iterations per second of progress bar: 11.7
 - Inference time: 2.045s
 - Iterations per second: 10.517
-- CUDA Mem after: 13.569GiB
+- Max used CUDA memory: 13.569GiB

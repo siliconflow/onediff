@@ -7,7 +7,7 @@ CONTROLNET = None
 STEPS = 30
 PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
 NEGATIVE_PROMPT = ""
-SEED = 1024
+SEED = 333
 WARMUPS = 1
 BATCH = 1
 HEIGHT = None
@@ -236,7 +236,10 @@ def main():
         pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
-        pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "unet"):
+            pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = torch.compile(pipe.transformer, mode=mode)
         if hasattr(pipe, "controlnet"):
             pipe.controlnet = torch.compile(pipe.controlnet, mode=mode)
         pipe.vae = torch.compile(pipe.vae, mode=mode)
