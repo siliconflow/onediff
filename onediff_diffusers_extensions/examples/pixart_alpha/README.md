@@ -7,8 +7,9 @@ https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
 https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort
 
 ### Set up PixArt alpha
-Using this model: https://huggingface.co/PixArt-alpha/PixArt-XL-2-1024-MS
-Using this pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/pixart
+HF model: https://huggingface.co/PixArt-alpha/PixArt-XL-2-1024-MS
+
+HF pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/pixart
 
 ## Run
 model_id_or_path_to_PixArt-XL-2-1024-MS is the model id or model path of pixart alpha, such as `/data/hf_models/PixArt-XL-2-1024-MS/`
@@ -18,7 +19,7 @@ model_id_or_path_to_PixArt-XL-2-1024-MS is the model id or model path of pixart 
 cd onediff
 ```
 
-### Run 1024*1024 without compile(the original pytorch HF diffusers pipelne)
+### Run 1024*1024 without compile(the original pytorch HF diffusers pipeline)
 ```
 python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-MS/ --scheduler none --steps 20 --compiler none --output-image ./pixart_alpha.png
 ```
