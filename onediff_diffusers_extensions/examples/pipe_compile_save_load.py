@@ -49,10 +49,11 @@ else:
         options.nexfort = json.loads(
             '{"mode": "max-autotune", "memory_format": "channels_last"}'
         )
+
+    setup_nexfort_pipe_cache("nexfort_cached_pipe")
     pipe = compile_pipe(
         pipe, backend="nexfort", options=options, fuse_qkv_projections=True
     )
-    setup_nexfort_pipe_cache("nexfort_cached_pipe")
 
 if args.load:
     # Load the compiled pipe
