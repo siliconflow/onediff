@@ -9,7 +9,7 @@ import oneflow as flow
 import unittest
 import numpy as np
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 
 class PyTorchModel(torch.nn.Module):

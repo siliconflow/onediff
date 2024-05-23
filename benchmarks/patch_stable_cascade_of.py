@@ -5,7 +5,7 @@ import oneflow.nn.functional as F
 from packaging import version
 import importlib.metadata
 
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 diffusers_of = transform_mgr.transform_package("diffusers")
 StableCascadeUnet_OF_CLS = (
@@ -120,7 +120,7 @@ from diffusers.pipelines.stable_cascade.modeling_stable_cascade_common import (
 )
 
 # torch2oflow_class_map.update({StableCascadeUnet: StableCascadeUnetOflow})
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 from contextlib import contextmanager
 
 

@@ -1,7 +1,7 @@
 # ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/motion_module_ad.py
 import oneflow as torch
 from einops import repeat
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 
 from ._config import animatediff_of, animatediff_pt
 
@@ -124,7 +124,7 @@ register(
 )
 
 # import torch as torch_pt
-# from onediff.infer_compiler.transform import torch2oflow
+# from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 
 # @torch2oflow.register(TemporalTransformer3DModel_PT_CLS)
 # def _(mod, verbose=False):

@@ -2,8 +2,8 @@ import os
 import traceback
 
 COMFYUI_ROOT = os.getenv("COMFYUI_ROOT")
-from onediff.infer_compiler.import_tools import DynamicModuleLoader
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.import_tools import DynamicModuleLoader
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 from ...sd_hijack_utils import Hijacker
 
