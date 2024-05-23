@@ -57,7 +57,6 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
-      
       - name: Checkout Stable Diffusion WebUI
         uses: actions/checkout@v4
         with:
@@ -82,31 +81,31 @@ jobs:
         with:
           repository: AUTOMATIC1111/stable-diffusion-webui-assets
           path: ${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-webui-assets
-          ref: 6f7db241d2f8ba7457bac5ca9753331f0c266917
+          ref: ${{ env.ASSETS_COMMIT_HASH }}
       - name: Checkout stablediffusion (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/stablediffusion
           path: ${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-stability-ai
-          ref: cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf
+          ref: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
       - name: Checkout generative-models (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/generative-models
           path: ${{ env.WEBUI_SRC_DIR }}/repositories/generative-models
-          ref: 45c443b316737a4ab6e40413d7794a7f5657c19f
+          ref: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
       - name: Checkout k-diffusion (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: crowsonkb/k-diffusion
           path: ${{ env.WEBUI_SRC_DIR }}/repositories/k-diffusion
-          ref: ab527a9a6d347f364e3d185ba6d714e22d80cb3c
+          ref: ${{ env.K_DIFFUSION_COMMIT_HASH }}
       - name: Checkout BLIP (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: salesforce/BLIP
           path: ${{ env.WEBUI_SRC_DIR }}/repositories/BLIP
-          ref: 48211a1594f1321b00f14c9f7a5b4813144b2fb9
+          ref: ${{ env.BLIP_COMMIT_HASH }}
       # -------- The above are the dependencies required by webui --------
 
       - name: Pack src
@@ -366,6 +365,13 @@ jobs:
           STABLE_DIFFUSION_XL_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/generative-models"
           K_DIFFUSION_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/k-diffusion"
           BLIP_REPO: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/BLIP"
+
+          ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
+          STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
+          STABLE_DIFFUSION_XL_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
+          K_DIFFUSION_COMMIT_HASH: ${{ env.K_DIFFUSION_COMMIT_HASH }}
+          BLIP_COMMIT_HASH: ${{ env.BLIP_COMMIT_HASH }}
+
           SAFE_DIRECTORIES: |
             CLIP
             open_clip
