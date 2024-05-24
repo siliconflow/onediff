@@ -44,7 +44,7 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
         # patch for weight
         weight = split1dict["weight"]
         if isinstance(weight, (int, float)):
-            weight = torch.tensor([weight])
+            weight = torch.tensor(weight)
             split1dict["weight"] = weight.to(model_management.get_torch_device())
 
         return split1dict, split2dict
