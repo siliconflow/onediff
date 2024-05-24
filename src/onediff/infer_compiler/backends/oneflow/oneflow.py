@@ -21,7 +21,11 @@ def compile(torch_module: torch.nn.Module, *, options=None):
         - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
     """
     from .deployable_module import OneflowDeployableModule, get_mixed_deployable_module
-    from .env_var import set_oneflow_default_env_vars, set_oneflow_env_vars, OneflowCompileOptions
+    from .env_var import (
+        set_oneflow_default_env_vars,
+        set_oneflow_env_vars,
+        OneflowCompileOptions,
+    )
     from .param_utils import (
         state_update_hook,
         init_state_update_attr,
@@ -39,9 +43,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
     def wrap_module(module):
         if isinstance(module, OneflowDeployableModule):
             assert not module._is_raw_deployable_module
-            return module.__class__.from_existing(
-                module, options.dynamic, options
-            )
+            return module.__class__.from_existing(module, options.dynamic, options)
         else:
             return get_mixed_deployable_module(module.__class__)(
                 module, None, options.dynamic, options
