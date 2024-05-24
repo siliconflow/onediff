@@ -45,7 +45,7 @@ class ModelSpeedup:
     def speedup(self, model, inplace=False, custom_booster: BoosterScheduler = None):
         if custom_booster:
             booster = custom_booster
-            booster.inplace = False
+            booster.inplace = inplace
         else:
             booster = BoosterScheduler(BasicBoosterExecutor(), inplace=inplace)
 
@@ -56,7 +56,7 @@ class VaeSpeedup:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"vae": ("VAE",),},
+            "required": {"vae": ("VAE",), "inplace": ([False, True],),},
             "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
         }
 
@@ -64,12 +64,13 @@ class VaeSpeedup:
     FUNCTION = "speedup"
     CATEGORY = "OneDiff"
 
-    @torch.no_grad()
-    def speedup(self, vae, custom_booster=None):
+    @torch.inference_mode()
+    def speedup(self, vae, inplace=False, custom_booster: BoosterScheduler = None):
         if custom_booster:
             booster = custom_booster
+            booster.inplace = inplace
         else:
-            booster = BoosterScheduler(BasicBoosterExecutor())
+            booster = BoosterScheduler(BasicBoosterExecutor(), inplace=inplace)
 
         new_vae = booster(vae)
         return (new_vae,)
