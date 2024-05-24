@@ -35,6 +35,7 @@ services:
       - ${PWD}/${COMFYUI_SRC_DIR}:/app/ComfyUI
       - /share_nfs/hf_models/comfyui_resources/custom_nodes/ComfyUI_IPAdapter_plus:/app/ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus
       - /share_nfs/hf_models/comfyui_resources/input/input_image_vermeer.png:/app/ComfyUI/input/input_image_vermeer.png:ro
+      - /share_nfs/hf_models/comfyui_resources/input/a_car.png:/app/ComfyUI/input/a_car.png:ro
       - ${PWD}/onediff_comfy_nodes:/app/ComfyUI/custom_nodes/onediff_comfy_nodes
       - ${SDXL_BASE}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro
       - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
