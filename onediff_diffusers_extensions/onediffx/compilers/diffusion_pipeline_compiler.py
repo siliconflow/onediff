@@ -1,5 +1,4 @@
 import os
-import logging
 
 import torch
 from onediff.infer_compiler import compile, DeployableModule, CompileOptions
