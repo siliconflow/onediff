@@ -16,6 +16,7 @@ env:
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
   WEBUI_SRC_DIR: stable-diffusion-webui
+  WEBUI_DEPENDENCIES_SUBDIR: repos
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
@@ -68,43 +69,43 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: openai/CLIP
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/CLIP
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/CLIP
           ref: d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
       - name: Checkout open clip (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: mlfoundations/open_clip
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/open_clip
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/open_clip
           ref: bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b
       - name: Checkout ${{ env.WEBUI_SRC_DIR }}-assets (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: AUTOMATIC1111/stable-diffusion-webui-assets
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-webui-assets
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-webui-assets
           ref: ${{ env.ASSETS_COMMIT_HASH }}
       - name: Checkout stablediffusion (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/stablediffusion
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-stability-ai
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-stability-ai
           ref: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
       - name: Checkout generative-models (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: Stability-AI/generative-models
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/generative-models
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/generative-models
           ref: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
       - name: Checkout k-diffusion (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: crowsonkb/k-diffusion
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/k-diffusion
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/k-diffusion
           ref: ${{ env.K_DIFFUSION_COMMIT_HASH }}
       - name: Checkout BLIP (dependency of webui)
         uses: actions/checkout@v4
         with:
           repository: salesforce/BLIP
-          path: ${{ env.WEBUI_SRC_DIR }}/repositories/BLIP
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/BLIP
           ref: ${{ env.BLIP_COMMIT_HASH }}
       # -------- The above are the dependencies required by webui --------
 
@@ -354,19 +355,20 @@ jobs:
           docker exec -d ${{ env.CONTAINER_NAME }} ln -s /share_nfs/onediff_ci/sd-webui/models/clips/clip-vit-large-patch14 /app/${{ env.WEBUI_SRC_DIR }}/openai/clip-vit-large-patch14
           docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}
           for dir in $SAFE_DIRECTORIES; do
-            docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}/repositories/$dir
+            docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/$dir
+            echo /app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/$dir
           done
           docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -e venv_dir=- ${{ env.CONTAINER_NAME }} sh -c "bash webui.sh -f --exit --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models"
 
         env:
           INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
-          CLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/CLIP"
-          OPENCLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/open_clip"
-          ASSETS_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-webui-assets"
-          STABLE_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/stable-diffusion-stability-ai"
-          STABLE_DIFFUSION_XL_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/generative-models"
-          K_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/k-diffusion"
-          BLIP_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/repositories/BLIP"
+          CLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/CLIP"
+          OPENCLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/open_clip"
+          ASSETS_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-webui-assets"
+          STABLE_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-stability-ai"
+          STABLE_DIFFUSION_XL_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/generative-models"
+          K_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/k-diffusion"
+          BLIP_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/BLIP"
 
           ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
           STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
