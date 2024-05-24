@@ -3,7 +3,6 @@ import dataclasses
 from pathlib import Path
 
 import torch
-from nexfort.utils.logging import logger
 from ..registry import register_backend
 
 
@@ -11,6 +10,7 @@ from ..registry import register_backend
 def compile(torch_module: torch.nn.Module, *, options=None):
     from nexfort.utils.memory_format import apply_memory_format
     from nexfort.compilers import nexfort_compile
+    from nexfort.utils.logging import logger
     from .deployable_module import NexfortDeployableModule
     from ..options import CompileOptions
 
