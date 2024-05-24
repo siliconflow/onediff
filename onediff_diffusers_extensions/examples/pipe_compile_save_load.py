@@ -44,10 +44,10 @@ if args.compiler == "oneflow":
 else:
     options = CompileOptions()
     if args.compiler_config is not None:
-        options.nexfort = json.load(args.compiler_config)
+        options.nexfort = json.loads(args.compiler_config)
     else:
         options.nexfort = json.loads(
-            '{"mode": "max-autotune", "memory_format": "channels_last"}'
+            '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
         )
 
     setup_nexfort_pipe_cache("nexfort_cached_pipe")
