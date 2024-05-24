@@ -57,7 +57,6 @@ if __name__ == "__main__":
         "width": 1024,
         "height": 1024,
         "cfg_scale": 7,
-        "sampler_name": "DPM++ 2M Karras",
         "n_iter": 1,
         "batch_size": 1,
         # Enable OneDiff speed up
