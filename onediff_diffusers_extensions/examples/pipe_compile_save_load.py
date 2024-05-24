@@ -2,6 +2,7 @@
 # Command to run oneflow backend load: python pipe_compile_save_load.py --load
 # Command to run nexfort backend save/load: python pipe_compile_save_load.py --compiler nexfort
 import json
+import time
 import argparse
 
 import torch
@@ -31,6 +32,7 @@ parser.add_argument(
     type=str,
     default=None,
 )
+parser.add_argument("--warmup-iterations", type=int, default=1)
 args = parser.parse_args()
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
@@ -58,6 +60,19 @@ else:
 if args.load:
     # Load the compiled pipe
     load_pipe(pipe, dir="oneflow_cached_pipe")
+
+# Warm-up iterations
+start_time = time.time()
+for _ in range(args.warmup_iterations):
+    pipe(
+        prompt="street style, detailed, raw photo, woman, face, shot on CineStill 800T",
+        height=512,
+        width=512,
+        num_inference_steps=30,
+        output_type="pil",
+    )
+warmup_time = time.time() - start_time
+print(f"Warmup Time: {warmup_time:.2f} seconds")
 
 # If the pipe is not loaded, it will takes seconds to do real compilation.
 # If the pipe is loaded, it will run fast.

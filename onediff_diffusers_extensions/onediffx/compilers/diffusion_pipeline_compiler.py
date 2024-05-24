@@ -4,6 +4,7 @@ import logging
 import torch
 from onediff.infer_compiler import compile, DeployableModule, CompileOptions
 from onediff.utils import logger
+from nexfort.utils.logging import logger as nexfort_logger
 
 
 def _recursive_getattr(obj, attr, default=None):
@@ -127,16 +128,15 @@ def setup_nexfort_pipe_cache(cache_dir=None):
     """
     Args: cache_dir (str, optional): The directory to use for caching, defaults to '~/.torchinductor' if not provided.
     """
-    logging.basicConfig(level=logging.INFO)
 
     # default TORCHINDUCTOR_FX_GRAPH_CACHE=0
     if os.getenv('TORCHINDUCTOR_FX_GRAPH_CACHE') != '1':
         os.environ['TORCHINDUCTOR_FX_GRAPH_CACHE'] = '1'
-        logging.info("Enabled Inductor - FX Graph Cache.")
+        nexfort_logger.info("Enabled Inductor - FX Graph Cache.")
 
     nexfort_dir = cache_dir if cache_dir else os.path.expanduser('~/.torchinductor')
     os.environ['TORCHINDUCTOR_CACHE_DIR'] = nexfort_dir
-    logging.info(f"Set TORCHINDUCTOR_CACHE_DIR to {nexfort_dir}.")
+    nexfort_logger.info(f"Set TORCHINDUCTOR_CACHE_DIR to {nexfort_dir}.")
 
 def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
     if not os.path.exists(dir):
