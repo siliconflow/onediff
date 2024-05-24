@@ -174,9 +174,14 @@ def launch_prompt(driver):
 
         print(f"launch the queue prompt (timeout: {args.timeout}s) ...")
         launch_and_wait(driver, timeout=args.timeout)
+
+        duration = time.time() - start_time
         print(
-            f"{args.workflow} has finished, time elapsed: {time.time() - start_time:.1f}"
+            f"{args.workflow} has finished, time elapsed: {duration:.1f}"
         )
+        
+        if duration < 2:
+            raise ValueError("Execution duration is too short, possible error in workflow execution")
 
         print(f"check if error occurs...")
         check_error_occurs(driver)
