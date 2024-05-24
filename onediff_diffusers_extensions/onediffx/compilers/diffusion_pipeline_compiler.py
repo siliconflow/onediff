@@ -56,6 +56,10 @@ def compile_pipe(
 ):
     if fuse_qkv_projections:
         pipe = fuse_qkv_projections_in_pipe(pipe)
+    
+    if backend == "nexfort" and isinstance(options, str):
+        import json
+        options = json.loads(options)
 
     if backend == "nexfort" and options is not None and "memory_format" in options:
         memory_format = getattr(torch, options["memory_format"])
