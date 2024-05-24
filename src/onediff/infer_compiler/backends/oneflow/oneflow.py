@@ -9,7 +9,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
     Transform a torch nn.Module to oneflow.nn.Module, then optimize it with oneflow.nn.Graph.
     Args:
        model (torch.nn.Module): Module to optimize
-       options (CompileOptions): Compilation options to pass to the compiler:
+       options (OneflowCompileOptions): Compilation options to pass to the compiler:
         - 'dynamic': When this is True, we will generate one graph and reuse it to avoid recompilations when
                      input shape change.  This may not always work as some operations/optimizations break the contition of
                      reusing. When this is False, we will generate a graph for each new input shape, and will always specialize.
@@ -21,8 +21,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
         - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
     """
     from .deployable_module import OneflowDeployableModule, get_mixed_deployable_module
-    from .env_var import set_oneflow_default_env_vars, set_oneflow_env_vars
-    from ..options import CompileOptions
+    from .env_var import set_oneflow_default_env_vars, set_oneflow_env_vars, OneflowCompileOptions
     from .param_utils import (
         state_update_hook,
         init_state_update_attr,
@@ -34,18 +33,18 @@ def compile(torch_module: torch.nn.Module, *, options=None):
     set_oneflow_default_env_vars()
     set_default_registry()
 
-    options = options if options is not None else CompileOptions()
-    set_oneflow_env_vars(options.oneflow)
+    options = options if options is not None else OneflowCompileOptions()
+    set_oneflow_env_vars(options)
 
     def wrap_module(module):
         if isinstance(module, OneflowDeployableModule):
             assert not module._is_raw_deployable_module
             return module.__class__.from_existing(
-                module, options.dynamic, options.oneflow
+                module, options.dynamic, options
             )
         else:
             return get_mixed_deployable_module(module.__class__)(
-                module, None, options.dynamic, options.oneflow
+                module, None, options.dynamic, options
             )
 
     model = wrap_module(torch_module)

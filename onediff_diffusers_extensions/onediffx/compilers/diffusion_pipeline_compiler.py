@@ -1,6 +1,6 @@
 import os
 import torch
-from onediff.infer_compiler import compile, DeployableModule, CompileOptions
+from onediff.infer_compiler import compile, DeployableModule
 from onediff.utils import logger
 
 
@@ -54,16 +54,13 @@ def _filter_parts(ignores=()):
 def compile_pipe(
     pipe, *, backend="oneflow", options=None, ignores=(), fuse_qkv_projections=False,
 ):
-    if options is None:
-        options = CompileOptions()
     if fuse_qkv_projections:
-        print("****** fuse qkv projections ******")
         pipe = fuse_qkv_projections_in_pipe(pipe)
 
-    if options.nexfort is not None and "memory_format" in options.nexfort:
-        memory_format = getattr(torch, options.nexfort["memory_format"])
+    if backend == "nexfort" and options is not None and "memory_format" in options:
+        memory_format = getattr(torch, options["memory_format"])
         pipe = convert_pipe_to_memory_format(pipe, ignores=ignores, memory_format=memory_format)
-        del options.nexfort["memory_format"]
+        del options["memory_format"]
 
     # To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
     if (
