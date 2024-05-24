@@ -4,7 +4,7 @@ from pathlib import Path
 from comfy import model_management
 from folder_paths import get_input_directory
 # onediff
-from onediff.infer_compiler import CompileOptions, oneflow_compile
+from onediff.infer_compiler import OneflowCompileOptions, oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from onediff.optimization.quant_optimizer import quantize_model
 
@@ -18,9 +18,9 @@ def compoile_unet(diffusion_model, graph_file):
 
     print(f" OneDiffCheckpointLoaderSimple load_checkpoint file_path {graph_file}")
 
-    compile_options = CompileOptions()
-    compile_options.oneflow.graph_file = graph_file
-    compile_options.oneflow.graph_file_device = load_device
+    compile_options = OneflowCompileOptions()
+    compile_options.graph_file = graph_file
+    compile_options.graph_file_device = load_device
     diffusion_model = oneflow_compile(diffusion_model, options=compile_options)
 
     return diffusion_model

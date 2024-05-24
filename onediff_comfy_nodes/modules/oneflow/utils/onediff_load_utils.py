@@ -3,7 +3,7 @@ from pathlib import Path
 import folder_paths
 import torch
 from comfy import model_management
-from onediff.infer_compiler import CompileOptions, oneflow_compile
+from onediff.infer_compiler import OneflowCompileOptions, oneflow_compile
 
 from ..config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from .graph_path import generate_graph_path
@@ -49,11 +49,11 @@ def onediff_load_quant_checkpoint_advanced(
         )
 
     if vae_speedup == "enable":
-        compile_options = CompileOptions()
-        compile_options.oneflow.graph_file = generate_graph_path(
+        compile_options = OneflowCompileOptions()
+        compile_options.graph_file = generate_graph_path(
             ckpt_name, vae.first_stage_model
         )
-        compile_options.oneflow.graph_file_device = model_management.get_torch_device()
+        compile_options.graph_file_device = model_management.get_torch_device()
         vae.first_stage_model = oneflow_compile(
             vae.first_stage_model, options=compile_options
         )
