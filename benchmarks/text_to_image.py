@@ -7,8 +7,8 @@ CONTROLNET = None
 STEPS = 30
 PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
 NEGATIVE_PROMPT = ""
-SEED = None
-WARMUPS = 3
+SEED = 333
+WARMUPS = 1
 BATCH = 1
 HEIGHT = None
 WIDTH = None
@@ -230,13 +230,16 @@ def main():
     elif args.compiler == "nexfort":
         options = CompileOptions()
         if args.compiler_config is not None:
-            options.nexfort = json.load(args.compiler_config)
+            options.nexfort = json.loads(args.compiler_config)
         else:
-            options.nexfort = json.loads('{"mode": "max-autotune", "memory_format": "channels_last"}')
+            options.nexfort = json.loads('{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}')
         pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
-        pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "unet"):
+            pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = torch.compile(pipe.transformer, mode=mode)
         if hasattr(pipe, "controlnet"):
             pipe.controlnet = torch.compile(pipe.controlnet, mode=mode)
         pipe.vae = torch.compile(pipe.vae, mode=mode)
@@ -299,10 +302,15 @@ def main():
     # The initial calls will trigger compilation and might be very slow.
     # After that, it should be very fast.
     if args.warmups > 0:
+        begin = time.time()
+        print("=======================================")
         print("Begin warmup")
         for _ in range(args.warmups):
             pipe(**get_kwarg_inputs())
+        end = time.time()
         print("End warmup")
+        print(f"Warmup time: {end - begin:.3f}s")
+        print("=======================================")
 
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
@@ -327,7 +335,7 @@ def main():
         cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
     else:
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
-    print(f"CUDA Mem after: {cuda_mem_after_used:.3f}GiB")
+    print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
 
     if args.output_image is not None:
