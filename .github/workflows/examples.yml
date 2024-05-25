@@ -15,11 +15,22 @@ env:
   REGION_ID: cn-beijing
   ACR_ORG: registry.cn-beijing.aliyuncs.com/oneflow
   COMFYUI_SRC_DIR: ComfyUI
+  WEBUI_SRC_DIR: stable-diffusion-webui
+  WEBUI_DEPENDENCIES_SUBDIR: repos
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
   SELENIUM_CONTAINER_NAME: selenium-test
   SELENIUM_IMAGE: standalone-chrome:119.0-chromedriver-119.0-grid-4.15.0-20231129
+
+  # For git repos required by webui
+  ASSETS_COMMIT_HASH: 6f7db241d2f8ba7457bac5ca9753331f0c266917
+  STABLE_DIFFUSION_COMMIT_HASH: cf1d67a6fd5ea1aa600c4df58e5b47da45f6bdbf
+  STABLE_DIFFUSION_XL_COMMIT_HASH: 45c443b316737a4ab6e40413d7794a7f5657c19f
+  K_DIFFUSION_COMMIT_HASH: ab527a9a6d347f364e3d185ba6d714e22d80cb3c
+  BLIP_COMMIT_HASH: 48211a1594f1321b00f14c9f7a5b4813144b2fb9
+
+
 concurrency:
   group: sd-examples-${{ github.ref }}
   cancel-in-progress: true
@@ -31,6 +42,7 @@ jobs:
     outputs:
       onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
       comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
+      webui_src_url: ${{ steps.upload_to_oss.outputs.webui_src_url }}
     steps:
       - name: Setup ossutil
         run: |
@@ -46,6 +58,57 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ComfyUI
+      - name: Checkout Stable Diffusion WebUI
+        uses: actions/checkout@v4
+        with:
+          repository: AUTOMATIC1111/stable-diffusion-webui
+          path: ${{ env.WEBUI_SRC_DIR }}
+
+      # -------- The following are the dependencies required by webui --------
+      - name: Checkout CLIP (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: openai/CLIP
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/CLIP
+          ref: d50d76daa670286dd6cacf3bcd80b5e4823fc8e1
+      - name: Checkout open clip (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: mlfoundations/open_clip
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/open_clip
+          ref: bb6e834e9c70d9c27d0dc3ecedeebeaeb1ffad6b
+      - name: Checkout ${{ env.WEBUI_SRC_DIR }}-assets (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: AUTOMATIC1111/stable-diffusion-webui-assets
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-webui-assets
+          ref: ${{ env.ASSETS_COMMIT_HASH }}
+      - name: Checkout stablediffusion (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: Stability-AI/stablediffusion
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-stability-ai
+          ref: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
+      - name: Checkout generative-models (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: Stability-AI/generative-models
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/generative-models
+          ref: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
+      - name: Checkout k-diffusion (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: crowsonkb/k-diffusion
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/k-diffusion
+          ref: ${{ env.K_DIFFUSION_COMMIT_HASH }}
+      - name: Checkout BLIP (dependency of webui)
+        uses: actions/checkout@v4
+        with:
+          repository: salesforce/BLIP
+          path: ${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/BLIP
+          ref: ${{ env.BLIP_COMMIT_HASH }}
+      # -------- The above are the dependencies required by webui --------
+
       - name: Pack src
         working-directory: onediff
         run: |
@@ -58,15 +121,24 @@ jobs:
           git reset --hard
           git clean -f
           git archive --prefix ${{ env.COMFYUI_SRC_DIR }}/ --format zip HEAD > comfyui-src.zip
+      - name: Pack webui
+        working-directory: ${{ env.WEBUI_SRC_DIR }}
+        run: |
+          git reset --hard
+          git clean -f
+          zip -r webui-src.zip .
       - name: Upload src
         id: upload_to_oss
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
+          WEBUI_DST="oss://gh-src-cache/onediff/${{ github.sha }}/webui-src.zip"
           ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
           ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
+          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${WEBUI_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
+          echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
@@ -81,6 +153,7 @@ jobs:
         test-suite:
           - diffusers_examples
           - comfy
+          - webui
     steps:
       - name: Login to ACR with the AccessKey pair
         uses: aliyun/acr-login@v1
@@ -110,6 +183,11 @@ jobs:
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.comfy_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
+      - name: Checkout WebUI vis OSS
+        if: matrix.test-suite == 'webui' && github.repository == 'siliconflow/onediff'
+        run: |
+          $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
+          unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
       - name: Checkout
         if: github.repository != 'siliconflow/onediff'
         uses: actions/checkout@v4
@@ -119,6 +197,12 @@ jobs:
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
+      - name: Checkout Stable Diffusion WebUI
+        if: matrix.test-suite == 'webui' && github.repository != 'siliconflow/onediff'
+        uses: actions/checkout@v4
+        with:
+          repository: AUTOMATIC1111/stable-diffusion-webui
+          path: ${{ env.WEBUI_SRC_DIR }}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
@@ -158,6 +242,25 @@ jobs:
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+          
+      - name: Setup docker for WebUI Test
+        if: matrix.test-suite == 'webui'
+        run: |
+          env
+          docker compose -f tests/webui-docker-compose.yml up -d
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          WEBUI_SRC_DIR: ${{ env.WEBUI_SRC_DIR }}
+          WEBUI_DEPENDENCIES_SUBDIR: ${{ env.WEBUI_DEPENDENCIES_SUBDIR }}
+          SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+          SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+          ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
+          STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
+          STABLE_DIFFUSION_XL_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
+          K_DIFFUSION_COMMIT_HASH: ${{ env.K_DIFFUSION_COMMIT_HASH }}
+          BLIP_COMMIT_HASH: ${{ env.BLIP_COMMIT_HASH }}
 
       - run: nvidia-smi
       - run: nvidia-smi -L
@@ -235,7 +338,9 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_turbo.py --compile true --base /share_nfs/hf_models/sdxl-turbo
       - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install scikit-image -i https://pypi.tuna.tsinghua.edu.cn/simple
+          docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py
       # - if: matrix.test-suite == 'diffusers_examples'
       #   run: docker exec -w /src/onediff/onediff_diffusers_extensions -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_reuse_pipe.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --new_base /share_nfs/hf_models/dataautogpt3-OpenDalleV1.1
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
@@ -243,6 +348,67 @@ jobs:
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /share_nfs/hf_models/stable-diffusion-v1-5-int8 --width 512 --height 512 --saved_image /src/onediff/output_enterprise_sd.png
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantitative_quality.py
       
+      - name: Install Requirements for WebUI
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio==3.41.2 diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
+
+      - name: Prepare environment for WebUI
+        if: matrix.test-suite == 'webui'
+        run: |
+          # hack code to print error msg for debugging
+          # docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} sed -i '/except RuntimeError:/c\    except RuntimeError as e:\n        print(f"Error occurred while running git command: {e}")' modules/launch_utils.py
+          docker exec -d ${{ env.CONTAINER_NAME }} mkdir /app/${{ env.WEBUI_SRC_DIR }}/.git /app/${{ env.WEBUI_SRC_DIR }}/openai
+          docker exec -d ${{ env.CONTAINER_NAME }} ln -s /share_nfs/onediff_ci/sd-webui/models/clips/clip-vit-large-patch14 /app/${{ env.WEBUI_SRC_DIR }}/openai/clip-vit-large-patch14
+          docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}
+          for dir in $SAFE_DIRECTORIES; do
+            docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} git config --global --add safe.directory /app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/$dir
+            echo /app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/$dir
+          done
+          docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -e venv_dir=- ${{ env.CONTAINER_NAME }} sh -c "bash webui.sh -f --exit --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models"
+
+        # env:
+        #   INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
+        #   CLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/CLIP"
+        #   OPENCLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/open_clip"
+        #   ASSETS_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-webui-assets"
+        #   STABLE_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-stability-ai"
+        #   STABLE_DIFFUSION_XL_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/generative-models"
+        #   K_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/k-diffusion"
+        #   BLIP_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/BLIP"
+
+        #   ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
+        #   STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
+        #   STABLE_DIFFUSION_XL_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
+        #   K_DIFFUSION_COMMIT_HASH: ${{ env.K_DIFFUSION_COMMIT_HASH }}
+        #   BLIP_COMMIT_HASH: ${{ env.BLIP_COMMIT_HASH }}
+
+        #   SAFE_DIRECTORIES: |
+        #     CLIP
+        #     open_clip
+        #     stable-diffusion-webui-assets
+        #     stable-diffusion-stability-ai
+        #     generative-models
+        #     k-diffusion
+        #     BLIP
+
+      - name: Start WebUI Web Service
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -d ${{ env.CONTAINER_NAME }} sh -c "python3 webui.py --port 7860 --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models --skip-version-check > /app/${{ env.WEBUI_SRC_DIR }}/onediff_webui.log 2>&1"
+          sleep 60
+
+      - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
+
+      - if: matrix.test-suite == 'webui'
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
+
+      - name: Show WebUI Log
+        if: matrix.test-suite == 'webui'
+        run: docker exec ${{ env.CONTAINER_NAME }} cat /app/${{ env.WEBUI_SRC_DIR }}/onediff_webui.log
+
       - name: Shutdown docker for ComfyUI Test
         if: matrix.test-suite == 'comfy'
         run: |
@@ -268,4 +434,17 @@ jobs:
           MATRIX_IMAGE: ${{ matrix.image }}
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
+          SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+
+      - name: Shutdown docker for WebUI Test
+        if: matrix.test-suite == 'webui'
+        run: |
+          docker compose -f tests/webui-docker-compose.yml down
+        env:
+          CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
+          ACR_ORG: ${{ env.ACR_ORG }}
+          MATRIX_IMAGE: ${{ matrix.image }}
+          WEBUI_SRC_DIR: ${{ env.WEBUI_SRC_DIR }}
+          SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
+          SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
