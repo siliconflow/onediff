@@ -57,15 +57,10 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
     @execute.register(ModelPatcher)
     @torch.inference_mode()
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
-        import logging
-
-        torch._logging.set_logs(
-            inductor=logging.DEBUG, output_code=True, dynamic=logging.DEBUG
-        )
         diffusion_model = model.model.diffusion_model
-        # model.model.diffusion_model = apply_memory_format(diffusion_model, torch.channels_last)
-        model.model.diffusion_model = torch.compile(model.model.diffusion_model)
-
+       
+        model.model.diffusion_model = apply_memory_format(diffusion_model, torch.channels_last)
+        model.model.diffusion_model = self.compile_fn(diffusion_model)
         self._apply_hooks(model)
         model.weight_inplace_update = True
         return model
