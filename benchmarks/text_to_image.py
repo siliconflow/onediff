@@ -34,7 +34,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-from onediffx import compile_pipe, CompileOptions 
+from onediffx import compile_pipe
 
 
 def parse_args():
@@ -228,11 +228,12 @@ def main():
     elif args.compiler == "oneflow":
         pipe = compile_pipe(pipe)
     elif args.compiler == "nexfort":
-        options = CompileOptions()
         if args.compiler_config is not None:
-            options.nexfort = json.loads(args.compiler_config)
+            # config with dict
+            options = json.loads(args.compiler_config)
         else:
-            options.nexfort = json.loads('{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}')
+            # config with string
+            options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
         pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
