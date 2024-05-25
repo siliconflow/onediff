@@ -252,9 +252,15 @@ jobs:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           MATRIX_IMAGE: ${{ matrix.image }}
           WEBUI_SRC_DIR: ${{ env.WEBUI_SRC_DIR }}
+          WEBUI_DEPENDENCIES_SUBDIR: ${{ env.WEBUI_DEPENDENCIES_SUBDIR }}
           SELENIUM_IMAGE: ${{ env.SELENIUM_IMAGE }}
           SELENIUM_CONTAINER_NAME: ${{ env.SELENIUM_CONTAINER_NAME }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
+          ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
+          STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
+          STABLE_DIFFUSION_XL_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
+          K_DIFFUSION_COMMIT_HASH: ${{ env.K_DIFFUSION_COMMIT_HASH }}
+          BLIP_COMMIT_HASH: ${{ env.BLIP_COMMIT_HASH }}
 
       - run: nvidia-smi
       - run: nvidia-smi -L
