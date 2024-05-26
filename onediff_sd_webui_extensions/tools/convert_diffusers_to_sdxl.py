@@ -4,7 +4,10 @@
 # *Only* converts the UNet, VAE, and Text Encoder.
 # Does not convert optimizer state or any other thing.
 
-__all__ = ["convert_sdxl", "convert_unet_calibrate_info_sdxl"]
+__all__ = [
+    # "convert_sdxl",
+    "convert_unet_calibrate_info_sdxl",
+]
 
 import argparse
 import os.path as osp
@@ -13,7 +16,6 @@ from pathlib import Path
 
 import torch
 from safetensors.torch import load_file, save_file
-
 
 # =================#
 # UNet Conversion #
@@ -285,6 +287,7 @@ def convert_openclip_text_enc_state_dict(text_enc_dict):
 def convert_openai_text_enc_state_dict(text_enc_dict):
     return text_enc_dict
 
+
 def convert_unet_calibrate_dict(state_dict) -> str:
     mapping = {k: k for k in state_dict}
     remove_suffix = (
@@ -333,11 +336,27 @@ def convert_unet_calibrate_info_sdxl(calibration_path, dst_path):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--model_path", default=None, type=str, required=True, help="Path to the model to convert.")
-    parser.add_argument("--checkpoint_path", default=None, type=str, required=True, help="Path to the output model.")
-    parser.add_argument("--half", action="store_true", help="Save weights in half precision.")
     parser.add_argument(
-        "--use_safetensors", action="store_true", help="Save weights use safetensors, default is ckpt."
+        "--model_path",
+        default=None,
+        type=str,
+        required=True,
+        help="Path to the model to convert.",
+    )
+    parser.add_argument(
+        "--checkpoint_path",
+        default=None,
+        type=str,
+        required=True,
+        help="Path to the output model.",
+    )
+    parser.add_argument(
+        "--half", action="store_true", help="Save weights in half precision."
+    )
+    parser.add_argument(
+        "--use_safetensors",
+        action="store_true",
+        help="Save weights use safetensors, default is ckpt.",
     )
 
     args = parser.parse_args()
@@ -374,12 +393,16 @@ if __name__ == "__main__":
     if osp.exists(text_enc_2_path):
         text_enc_2_dict = load_file(text_enc_2_path, device="cpu")
     else:
-        text_enc_2_path = osp.join(args.model_path, "text_encoder_2", "pytorch_model.bin")
+        text_enc_2_path = osp.join(
+            args.model_path, "text_encoder_2", "pytorch_model.bin"
+        )
         text_enc_2_dict = torch.load(text_enc_2_path, map_location="cpu")
 
     # Convert the UNet model
     unet_state_dict = convert_unet_state_dict(unet_state_dict)
-    unet_state_dict = {"model.diffusion_model." + k: v for k, v in unet_state_dict.items()}
+    unet_state_dict = {
+        "model.diffusion_model." + k: v for k, v in unet_state_dict.items()
+    }
 
     # Convert the VAE model
     vae_state_dict = convert_vae_state_dict(vae_state_dict)
@@ -387,19 +410,30 @@ if __name__ == "__main__":
 
     # Convert text encoder 1
     text_enc_dict = convert_openai_text_enc_state_dict(text_enc_dict)
-    text_enc_dict = {"conditioner.embedders.0.transformer." + k: v for k, v in text_enc_dict.items()}
+    text_enc_dict = {
+        "conditioner.embedders.0.transformer." + k: v for k, v in text_enc_dict.items()
+    }
 
     # Convert text encoder 2
     text_enc_2_dict = convert_openclip_text_enc_state_dict(text_enc_2_dict)
-    text_enc_2_dict = {"conditioner.embedders.1.model." + k: v for k, v in text_enc_2_dict.items()}
+    text_enc_2_dict = {
+        "conditioner.embedders.1.model." + k: v for k, v in text_enc_2_dict.items()
+    }
     # We call the `.T.contiguous()` to match what's done in
     # https://github.com/huggingface/diffusers/blob/84905ca7287876b925b6bf8e9bb92fec21c78764/src/diffusers/loaders/single_file_utils.py#L1085
-    text_enc_2_dict["conditioner.embedders.1.model.text_projection"] = text_enc_2_dict.pop(
+    text_enc_2_dict[
+        "conditioner.embedders.1.model.text_projection"
+    ] = text_enc_2_dict.pop(
         "conditioner.embedders.1.model.text_projection.weight"
     ).T.contiguous()
 
     # Put together new checkpoint
-    state_dict = {**unet_state_dict, **vae_state_dict, **text_enc_dict, **text_enc_2_dict}
+    state_dict = {
+        **unet_state_dict,
+        **vae_state_dict,
+        **text_enc_dict,
+        **text_enc_2_dict,
+    }
 
     if args.half:
         state_dict = {k: v.half() for k, v in state_dict.items()}
@@ -410,8 +444,13 @@ if __name__ == "__main__":
         state_dict = {"state_dict": state_dict}
         torch.save(state_dict, args.checkpoint_path)
 
-    calibrate_info_save_path = Path(args.checkpoint_path).parent / f"{Path(args.checkpoint_path).stem}_sd_calibrate_info.txt"
-    convert_unet_calibrate_info_sdxl(args.model_path + "/calibrate_info.txt", calibrate_info_save_path)
+    calibrate_info_save_path = (
+        Path(args.checkpoint_path).parent
+        / f"{Path(args.checkpoint_path).stem}_sd_calibrate_info.txt"
+    )
+    convert_unet_calibrate_info_sdxl(
+        args.model_path + "/calibrate_info.txt", calibrate_info_save_path
+    )
 
 
 # def get_unet_state_dict(model_path):
@@ -497,4 +536,3 @@ if __name__ == "__main__":
 #     else:
 #         state_dict = {"state_dict": state_dict}
 #         torch.save(state_dict, checkpoint_path)
-
