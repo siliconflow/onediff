@@ -1,35 +1,41 @@
 import os
-import zipfile
 import warnings
-import gradio as gr
+import zipfile
 from pathlib import Path
-from typing import Union, Dict
+from typing import Dict, Union
+
+import gradio as gr
 import modules.scripts as scripts
 import modules.shared as shared
-from modules.sd_models import select_checkpoint
-from modules.processing import process_images
-from modules.ui_common import create_refresh_button
-from modules import script_callbacks
-
-from ui_utils import hints_message, get_all_compiler_caches, refresh_all_compiler_caches, all_compiler_caches_path
-from compile_ldm import compile_ldm_unet, SD21CompileCtx
+from compile_ldm import SD21CompileCtx, compile_ldm_unet
 from compile_sgm import compile_sgm_unet
 from compile_vae import VaeCompileCtx
-from onediff_lora import HijackLoraActivate
+from modules import script_callbacks
+from modules.processing import process_images
+from modules.sd_models import select_checkpoint
+from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
+from onediff_lora import HijackLoraActivate
+from oneflow import __version__ as oneflow_version
+from ui_utils import (
+    all_compiler_caches_path,
+    get_all_compiler_caches,
+    hints_message,
+    refresh_all_compiler_caches,
+)
 
-from onediff.utils import logger, parse_boolean_from_env
+from onediff import __version__ as onediff_version
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
 )
-from onediff import __version__ as onediff_version
-from oneflow import __version__ as oneflow_version
+from onediff.utils import logger, parse_boolean_from_env
 
 """oneflow_compiled UNetModel"""
 compiled_unet = None
 is_unet_quantized = False
 compiled_ckpt_name = None
+
 
 def generate_graph_path(ckpt_name: str, model_name: str) -> str:
     base_output_dir = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
@@ -118,14 +124,29 @@ class Script(scripts.Script):
         """
         with gr.Row():
             # TODO: set choices as Tuple[str, str] after the version of gradio specified webui upgrades
-            compiler_cache = gr.Dropdown(label="Compiler caches (Beta)", choices=["None"] + get_all_compiler_caches(), value="None", elem_id="onediff_compiler_cache")
-            refresh_button = create_refresh_button(compiler_cache, refresh_all_compiler_caches, lambda: {"choices": ["None"] + get_all_compiler_caches()}, "onediff_refresh_compiler_caches")
+            compiler_cache = gr.Dropdown(
+                label="Compiler caches (Beta)",
+                choices=["None"] + get_all_compiler_caches(),
+                value="None",
+                elem_id="onediff_compiler_cache",
+            )
+            create_refresh_button(
+                compiler_cache,
+                refresh_all_compiler_caches,
+                lambda: {"choices": ["None"] + get_all_compiler_caches()},
+                "onediff_refresh_compiler_caches",
+            )
             save_cache_name = gr.Textbox(label="Saved cache name (Beta)")
         with gr.Row():
-            always_recompile = gr.components.Checkbox(label="always_recompile", visible=parse_boolean_from_env("ONEDIFF_DEBUG"))
-        if not varify_can_use_quantization():
-            gr.HTML(hints_message)
-        is_quantized = gr.components.Checkbox(label="Model Quantization(int8) Speed Up", visible=varify_can_use_quantization())
+            always_recompile = gr.components.Checkbox(
+                label="always_recompile",
+                visible=parse_boolean_from_env("ONEDIFF_DEBUG"),
+            )
+        gr.HTML(hints_message, elem_id="hintMessage", visible=not varify_can_use_quantization())
+        is_quantized = gr.components.Checkbox(
+            label="Model Quantization(int8) Speed Up",
+            visible=varify_can_use_quantization(),
+        )
         return [is_quantized, compiler_cache, save_cache_name, always_recompile]
 
     def show(self, is_img2img):
@@ -142,7 +163,7 @@ class Script(scripts.Script):
                 "is_ssd": model.is_ssd,
             }
 
-        if self.current_type == None:
+        if self.current_type is None:
             is_changed = True
         else:
             for key, v in self.current_type.items():
@@ -150,11 +171,18 @@ class Script(scripts.Script):
                     is_changed = True
                     break
 
-        if is_changed == True:
+        if is_changed is True:
             self.current_type = get_model_type(model)
         return is_changed
 
-    def run(self, p, quantization=False, compiler_cache=None, saved_cache_name="", always_recompile=False):
+    def run(
+        self,
+        p,
+        quantization=False,
+        compiler_cache=None,
+        saved_cache_name="",
+        always_recompile=False,
+    ):
 
         global compiled_unet, compiled_ckpt_name, is_unet_quantized
         current_checkpoint = shared.opts.sd_model_checkpoint
@@ -164,9 +192,11 @@ class Script(scripts.Script):
         model_changed = self.check_model_change(shared.sd_model)
         quantization_changed = quantization != is_unet_quantized
         need_recompile = (
-            (quantization and ckpt_changed) # always recompile when switching ckpt with 'int8 speed model' enabled
-            or model_changed                # always recompile when switching model to another structure
-            or quantization_changed         # always recompile when switching model from non-quantized to quantized (and vice versa) 
+            (
+                quantization and ckpt_changed
+            )  # always recompile when switching ckpt with 'int8 speed model' enabled
+            or model_changed  # always recompile when switching model to another structure
+            or quantization_changed  # always recompile when switching model from non-quantized to quantized (and vice versa)
             or always_recompile
         )
 
@@ -177,16 +207,23 @@ class Script(scripts.Script):
                 original_diffusion_model, quantization=quantization
             )
 
-            if compiler_cache != "None":
+            # Due to the version of gradio compatible with sd-webui, the CompilerCache dropdown box always returns a string
+            if compiler_cache not in [None, "None"]:
                 compiler_cache_path = all_compiler_caches_path() + f"/{compiler_cache}"
                 if not Path(compiler_cache_path).exists():
-                    raise FileNotFoundError(f"Cannot find cache {compiler_cache_path}, please make sure it exists")
+                    raise FileNotFoundError(
+                        f"Cannot find cache {compiler_cache_path}, please make sure it exists"
+                    )
                 try:
                     compiled_unet.load_graph(compiler_cache_path, run_warmup=True)
-                except zipfile.BadZipFile as e:
-                    raise RuntimeError("Load cache failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui")
+                except zipfile.BadZipFile:
+                    raise RuntimeError(
+                        "Load cache failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui"
+                    )
                 except Exception as e:
-                    raise RuntimeError("Load cache failed. Please make sure cache has the same sd version (or unet architure) with current checkpoint")
+                    raise RuntimeError(
+                        f"Load cache failed ({e}). Please make sure cache has the same sd version (or unet architure) with current checkpoint"
+                    )
 
         else:
             logger.info(
@@ -198,8 +235,10 @@ class Script(scripts.Script):
 
         if saved_cache_name != "":
             if not os.access(str(all_compiler_caches_path()), os.W_OK):
-                raise PermissionError(f"The directory {all_compiler_caches_path()} does not have write permissions, and compiler cache cannot be written to this directory. \
-                                      Please change it in the settings to a directory with write permissions")
+                raise PermissionError(
+                    f"The directory {all_compiler_caches_path()} does not have write permissions, and compiler cache cannot be written to this directory. \
+                                      Please change it in the settings to a directory with write permissions"
+                )
             if not Path(all_compiler_caches_path()).exists():
                 Path(all_compiler_caches_path()).mkdir()
             saved_cache_name = all_compiler_caches_path() + f"/{saved_cache_name}"
@@ -208,10 +247,18 @@ class Script(scripts.Script):
 
         return proc
 
+
 def on_ui_settings():
-    section = ('onediff', "OneDiff")
-    shared.opts.add_option("onediff_compiler_caches_path", shared.OptionInfo(
-        str(Path(__file__).parent.parent / "compiler_caches"), "Directory for onediff compiler caches", section=section))
+    section = ("onediff", "OneDiff")
+    shared.opts.add_option(
+        "onediff_compiler_caches_path",
+        shared.OptionInfo(
+            str(Path(__file__).parent.parent / "compiler_caches"),
+            "Directory for onediff compiler caches",
+            section=section,
+        ),
+    )
+
 
 script_callbacks.on_ui_settings(on_ui_settings)
 onediff_do_hijack()
