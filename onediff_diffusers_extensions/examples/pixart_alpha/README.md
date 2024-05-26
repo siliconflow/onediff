@@ -46,8 +46,8 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 | PyTorch Max Mem Used                             | 14.445GiB                           |
 | OneDiff Max Mem Used                             | 13.855GiB                           |
 | PyTorch Warmup with Run time                     | 4.100s                              |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 115.309s                            |
-| OneDiff Warmup with Cache time                   | TODO                                |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 776.170s                            |
+| OneDiff Warmup with Cache time                   | 111.563s                            |
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz. Note this is just for reference, and it varies a lot on different CPU.
 
