@@ -10,8 +10,9 @@ from ..registry import register_backend
 def compile(torch_module: torch.nn.Module, *, options=None):
     from nexfort.compilers import nexfort_compile
     from nexfort.utils.logging import logger
-    from .deployable_module import NexfortDeployableModule
-    from ..options import CompileOptions
+
+    if isinstance(options, str):
+        import json
 
         # TODO(): using jsonschema to define the options schema
         options = json.loads(options)
@@ -21,7 +22,8 @@ def compile(torch_module: torch.nn.Module, *, options=None):
 
     cache_dir = os.environ.get("TORCHINDUCTOR_CACHE_DIR")
     if cache_dir and not Path(cache_dir).exists():
-        logger.info(f"Enabled Inductor - Autotuning Cache for {torch_module.__class__.__name__}")
+        logger.info(
+            f"Enabled Inductor - Autotuning Cache for {torch_module.__class__.__name__}"
+        )
 
-    # return NexfortDeployableModule(compiled_model, torch_module)
     return compiled_model

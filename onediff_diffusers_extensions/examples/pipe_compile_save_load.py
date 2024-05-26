@@ -11,7 +11,6 @@ from onediffx import (
     compile_pipe,
     save_pipe,
     load_pipe,
-    CompileOptions,
     setup_nexfort_pipe_cache,
 )
 
@@ -44,13 +43,10 @@ pipe.to("cuda")
 if args.compiler == "oneflow":
     pipe = compile_pipe(pipe)
 else:
-    options = CompileOptions()
     if args.compiler_config is not None:
-        options.nexfort = json.loads(args.compiler_config)
+        options = json.loads(args.compiler_config)
     else:
-        options.nexfort = json.loads(
-            '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
-        )
+        options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
 
     setup_nexfort_pipe_cache("nexfort_cached_pipe")
     pipe = compile_pipe(
