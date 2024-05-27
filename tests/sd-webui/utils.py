@@ -66,7 +66,7 @@ def call_txt2img_api(payload):
 
 def txt2img_generate_imgs(save_path):
     payload_with_onediff = basepromot
-    response = call_txt2img_api(**payload_with_onediff,)
+    response = call_txt2img_api(payload_with_onediff,)
     image = response.get("images")[0]
     decode_and_save_base64(
         image,
@@ -81,7 +81,7 @@ def txt2img_generate_imgs(save_path):
         ]
     }
     payload_with_onediff_quant = {**payload_with_onediff, **script_args}
-    response = call_txt2img_api(**payload_with_onediff_quant,)
+    response = call_txt2img_api(payload_with_onediff_quant,)
     image = response.get("images")[0]
     decode_and_save_base64(
         image,
@@ -98,7 +98,7 @@ def img2img_generate_imgs(save_path):
     batch_size = 1
     init_images = {"init_images": [encode_file_to_base64(img_path)]}
     payload_with_onediff = {**basepromot, **init_images}
-    response = call_img2img_api(**payload_with_onediff,)
+    response = call_img2img_api(payload_with_onediff,)
 
     image = response.get("images")[0]
     decode_and_save_base64(
@@ -114,7 +114,7 @@ def img2img_generate_imgs(save_path):
         ]
     }
     payload_with_onediff_quant = {**payload_with_onediff, **script_args}
-    response = call_img2img_api(**payload_with_onediff_quant,)
+    response = call_img2img_api(payload_with_onediff_quant,)
     image = response.get("images")[0]
     decode_and_save_base64(
         image,

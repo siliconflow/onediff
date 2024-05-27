@@ -98,7 +98,7 @@ def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
 
 
 def test_img2img_onediff(url_img2img, simple_txt2img_request):
-    img_path = str(img2img_target_folder / "cat.png")
+    img_path = os.path.join(img2img_target_folder, "cat.png")
     init_images = {"init_images": [encode_file_to_base64(img_path)]}
     data = {**simple_txt2img_request, **init_images}
     # response = post_request(url_img2img, data)
