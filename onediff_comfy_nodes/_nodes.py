@@ -3,8 +3,8 @@ import torch
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from ._config import is_disable_oneflow_backend
 from .modules import BoosterScheduler, BoosterExecutor
-from .utils.import_utils import is_nexfort_available  # type: ignore
-from .utils.import_utils import is_oneflow_available
+from onediff.utils.import_utils import is_nexfort_available  # type: ignore
+from onediff.utils.import_utils import is_oneflow_available
 
 if is_oneflow_available() and not is_disable_oneflow_backend():
     from .modules.oneflow import BasicOneFlowBoosterExecutor

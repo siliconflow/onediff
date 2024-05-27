@@ -23,7 +23,7 @@ from ..modules.oneflow import DeepcacheBoosterExecutor
 from ..modules.oneflow import PatchBoosterExecutor
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..modules import BoosterScheduler
-from ..utils.import_utils import is_onediff_quant_available
+from .onediff.utils.import_utils import is_onediff_quant_available
 
 
 if is_onediff_quant_available() and not is_community_version():
