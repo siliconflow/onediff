@@ -12,6 +12,8 @@ class OneDiffNexfortBooster:
                     [
                         "max-optimize:max-autotune:freezing:benchmark:cudagraphs",
                         "max-autotune:cudagraphs",
+                        "cudagraphs:benchmark:low-precision:freezing:jit"
+                        "max-optimize:max-autotune:cudagraphs:benchmark:low-precision:freezing",
                     ],
                 ),
                 "docs_link": (

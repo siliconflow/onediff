@@ -42,6 +42,5 @@ class BoosterScheduler:
 
     @copy.register
     def _(self, model: VAE):
-        new_vae = copy.copy(model)
-        new_vae.first_stage_model = copy.deepcopy(model.first_stage_model)
+        new_vae = copy.deepcopy(model)
         return new_vae
