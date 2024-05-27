@@ -6,6 +6,7 @@
 <p align="center">
   <a href="https://pypistats.org/packages/onediff" target="_blank"><img src="https://img.shields.io/pypi/dw/onediff?style=square&label=Pip install"></a>
   <a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Stars&color=green"></a>
+  <a href="https://github.com/siliconflow/onediff?tab=Apache-2.0-1-ov-file#readme" target="_blank"><img src="https://img.shields.io/github/license/siliconflow/onediff"></a>
   <a href="https://github.com/siliconflow/onediff/wiki" target="_blank"><img src="https://img.shields.io/badge/OneDiff-Community wiki-green"></a>
   <a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-green?logo=twitter&amp"></a>
   <a href="https://discord.gg/RKJTjZMcPQ" target="_blank"><img src="https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square"></a>
@@ -13,7 +14,8 @@
 
 <p align="center">
   <a href="https://github.com/siliconflow/onediff/milestone/3" target="_blank"><img src="https://img.shields.io/github/milestones/progress/siliconflow/onediff/3"></a>
-  <a href="https://github.com/siliconflow/onediff/issues" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff?label=Issues"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aopen+is%3Aissue" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aissue+is%3Aclosed" target="_blank"><img src="https://img.shields.io/github/issues-closed/siliconflow/onediff?color=blue"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/sd.yml" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule"></a>
 </p>
@@ -47,6 +49,8 @@ The latest news:
 ## OS and GPU Compatibility
 - Linux
   - If you want to use OneDiff on Windows, please use it under WSL.
+  - [The guide to install OneDiff in WSL2](https://github.com/siliconflow/onediff/wiki/Run-OneDiff-on-Windows-by-WSL2).
+
 - NVIDIA GPUs
   - [Compatibility with Nvidia GPUs](https://github.com/siliconflow/onediff/wiki/Compatibility-with-Nvidia-GPUs).
 
@@ -59,7 +63,7 @@ The Full Introduction of OneDiff:
   - [Features](#features)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [Acceleration for production environment](#acceleration-for-production-environment)
-  - [OneDiff Quality Evalution](#onediff-quality-evaluation)
+  - [OneDiff Quality Evaluation](#onediff-quality-evaluation)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
 - [Release](#release)
@@ -87,9 +91,11 @@ OneDiff interfaces with various front-end sd frameworks upward, and uses a custo
 
 <img src="imgs/0_12_svd.png" height="400">
 
+Note that we haven't got the way to run SVD with TensorRT on Feb 29 2024.
+
 ### Features
 
-| Main Function | Details |
+| Functionality | Details |
 |----------------|----------------------------|
 | Compiling Time   | About 1 minute (SDXL) |
 | Deployment Methods              | Plug and Play |
@@ -144,10 +150,10 @@ We also maintain a repository for benchmarking the quality of generation after a
 
 ### OneDiff Enterprise Edition
 If you need **Enterprise-level Support** for your system or business, you can
-- subscribe to Enterprise Edition online and get all support after the order: https://siliconflow.com/onediff.html
-- or send an email to contact@siliconflow.com and tell us about your user case, deployment scale, and requirements.
+- Subscribe to the OneDiff Enterprise Edition directly through our website. Upon purchase, you'll gain immediate access to comprehensive support: https://siliconflow.com/onediff.html
+- For a more personalized approach, please email us at contact@siliconflow.com. Include details about your use case, deployment size, and any specific needs you might have.
 
-OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and the cost is low.
+The OneDiff Enterprise Edition is available for a monthly subscription and is designed to be cost-effective, even for systems utilizing a **single GPU**.
 
 |                                                                                                           | OneDiff Enterprise Edition              | OneDiff Community Edition               |
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
@@ -195,7 +201,7 @@ OneDiff Enterprise Edition can be **subscripted for one month and one GPU** and 
 - **CUDA 12.2**
 
   For NA/EU users
-  ```bash 
+  ```bash
   python3 -m pip install -U --pre oneflow -f https://github.com/siliconflow/oneflow_releases/releases/expanded_assets/community_cu122
   ```
   For CN users
@@ -231,41 +237,7 @@ cd onediff && python3 -m pip install -e .
 
 #### 4. (Optional)Login huggingface-cli
 
-```
+```bash
 python3 -m pip install huggingface_hub
- ~/.local/bin/huggingface-cli login
+huggingface-cli login
 ```
-
-## Release
-
-- run examples to check it works
-
-  ```bash
-  cd onediff_diffusers_extensions
-  python3 examples/text_to_image.py
-  ```
-
-- bump version in these files:
-
-  ```
-  .github/workflows/pub.yml
-  src/onediff/__init__.py
-  ```
-
-- install build package
-  ```bash
-  python3 -m pip install build
-  ```
-
-- build wheel
-
-  ```bash
-  rm -rf dist
-  python3 -m build
-  ```
-
-- upload to pypi
-
-  ```bash
-  twine upload dist/*
-  ```

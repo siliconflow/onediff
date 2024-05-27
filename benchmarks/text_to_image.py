@@ -6,9 +6,9 @@ LORA = None
 CONTROLNET = None
 STEPS = 30
 PROMPT = "best quality, realistic, unreal engine, 4K, a beautiful girl"
-NEGATIVE_PROMPT = None
-SEED = None
-WARMUPS = 3
+NEGATIVE_PROMPT = ""
+SEED = 333
+WARMUPS = 1
 BATCH = 1
 HEIGHT = None
 WIDTH = None
@@ -19,6 +19,8 @@ EXTRA_CALL_KWARGS = None
 CACHE_INTERVAL = 3
 CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
+COMPILER = "oneflow"
+COMPILER_CONFIG = None
 
 import os
 import importlib
@@ -27,10 +29,11 @@ import argparse
 import time
 import json
 import torch
+import matplotlib.pyplot as plt
+import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-import oneflow as flow
 from onediffx import compile_pipe
 
 
@@ -57,20 +60,30 @@ def parse_args():
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
+    parser.add_argument("--throughput", action="store_true")
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
         "--compiler",
         type=str,
-        default="oneflow",
-        choices=["none", "oneflow", "compile", "compile-max-autotune"],
+        default=COMPILER,
+        choices=["none", "oneflow", "nexfort", "compile", "compile-max-autotune"],
+    )
+    parser.add_argument(
+        "--compiler-config",
+        type=str,
+        default=COMPILER_CONFIG,
     )
     return parser.parse_args()
+
+args = parse_args()
 
 
 def load_pipe(
     pipeline_cls,
     model_name,
     variant=None,
+    dtype=torch.float16,
+    device="cuda",
     custom_pipeline=None,
     scheduler=None,
     lora=None,
@@ -81,31 +94,34 @@ def load_pipe(
         extra_kwargs["custom_pipeline"] = custom_pipeline
     if variant is not None:
         extra_kwargs["variant"] = variant
+    if dtype is not None:
+        extra_kwargs["torch_dtype"] = dtype
     if controlnet is not None:
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16,
+            controlnet, torch_dtype=dtype,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
         pipe = QuantPipeline.from_quantized(
-            pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
+            pipeline_cls, model_name, **extra_kwargs
         )
     else:
         pipe = pipeline_cls.from_pretrained(
-            model_name, torch_dtype=torch.float16, **extra_kwargs
+            model_name, **extra_kwargs
         )
-    if scheduler is not None:
+    if scheduler is not None and scheduler != "none":
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
     if lora is not None:
         pipe.load_lora_weights(lora)
         pipe.fuse_lora()
     pipe.safety_checker = None
-    pipe.to(torch.device("cuda"))
+    if device is not None:
+        pipe.to(torch.device(device))
     return pipe
 
 
@@ -135,8 +151,52 @@ class IterationProfiler:
         return callback_kwargs
 
 
+def calculate_inference_time_and_throughput(height, width, n_steps, model):
+    start_time = time.time()
+    model(prompt=args.prompt, height=height, width=width, num_inference_steps=n_steps)
+    end_time = time.time()
+    inference_time = end_time - start_time
+    # pixels_processed = height * width * n_steps
+    # throughput = pixels_processed / inference_time
+    throughput = n_steps / inference_time
+    return inference_time, throughput
+
+
+def generate_data_and_fit_model(model, steps_range):
+    height, width = 1024, 1024
+    data = {"steps": [], "inference_time": [], "throughput": []}
+
+    for n_steps in steps_range:
+        inference_time, throughput = calculate_inference_time_and_throughput(height, width, n_steps, model)
+        data["steps"].append(n_steps)
+        data["inference_time"].append(inference_time)
+        data["throughput"].append(throughput)
+        print(f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s")
+
+    average_throughput = np.mean(data["throughput"])
+    print(f"Average Throughput: {average_throughput:.2f} steps/s")
+
+    coefficients = np.polyfit(data["steps"], data["inference_time"], 1)
+    base_time_without_base_cost = 1 / coefficients[0]
+    print(f"Throughput without base cost: {base_time_without_base_cost:.2f} steps/s")
+    return data, coefficients
+
+
+def plot_data_and_model(data, coefficients):
+    plt.figure(figsize=(10, 5))
+    plt.scatter(data["steps"], data["inference_time"], color='blue')
+    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color='red')
+    plt.title("Inference Time vs. Steps")
+    plt.xlabel("Steps")
+    plt.ylabel("Inference Time (seconds)")
+    plt.grid(True)
+    # plt.savefig("output.png")
+    plt.show()
+
+    print(f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}")
+
+
 def main():
-    args = parse_args()
     if args.input_image is None:
         if args.deepcache:
             from onediffx.deep_cache import StableDiffusionXLPipeline as pipeline_cls
@@ -155,16 +215,32 @@ def main():
         controlnet=args.controlnet,
     )
 
-    height = args.height or pipe.unet.config.sample_size * pipe.vae_scale_factor
-    width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
+    core_net = None
+    if core_net is None:
+        core_net = getattr(pipe, "unet", None)
+    if core_net is None:
+        core_net = getattr(pipe, "transformer", None)
+    height = args.height or core_net.config.sample_size * pipe.vae_scale_factor
+    width = args.width or core_net.config.sample_size * pipe.vae_scale_factor
 
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
         pipe = compile_pipe(pipe)
+    elif args.compiler == "nexfort":
+        if args.compiler_config is not None:
+            # config with dict
+            options = json.loads(args.compiler_config)
+        else:
+            # config with string
+            options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
+        pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
-        pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "unet"):
+            pipe.unet = torch.compile(pipe.unet, mode=mode)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = torch.compile(pipe.transformer, mode=mode)
         if hasattr(pipe, "controlnet"):
             pipe.controlnet = torch.compile(pipe.controlnet, mode=mode)
         pipe.vae = torch.compile(pipe.vae, mode=mode)
@@ -198,7 +274,6 @@ def main():
             negative_prompt=args.negative_prompt,
             height=height,
             width=width,
-            num_inference_steps=args.steps,
             num_images_per_prompt=args.batch,
             generator=None
             if args.seed is None
@@ -209,6 +284,8 @@ def main():
                 else json.loads(args.extra_call_kwargs)
             ),
         )
+        if args.steps is not None:
+            kwarg_inputs["num_inference_steps"] = args.steps
         if input_image is not None:
             kwarg_inputs["image"] = input_image
         if control_image is not None:
@@ -226,10 +303,15 @@ def main():
     # The initial calls will trigger compilation and might be very slow.
     # After that, it should be very fast.
     if args.warmups > 0:
+        begin = time.time()
+        print("=======================================")
         print("Begin warmup")
         for _ in range(args.warmups):
             pipe(**get_kwarg_inputs())
+        end = time.time()
         print("End warmup")
+        print(f"Warmup time: {end - begin:.3f}s")
+        print("=======================================")
 
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
@@ -248,16 +330,24 @@ def main():
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
-    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
-    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+    if args.compiler == "oneflow":
+        import oneflow as flow
+
+        cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
+    else:
+        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
+    print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
 
     if args.output_image is not None:
         output_images[0].save(args.output_image)
     else:
         print("Please set `--output-image` to save the output image")
+
+    if args.throughput:
+        steps_range = range(1, 100, 1) 
+        data, coefficients = generate_data_and_fit_model(pipe, steps_range)
+        plot_data_and_model(data, coefficients)
 
 
 if __name__ == "__main__":

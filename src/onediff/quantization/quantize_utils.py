@@ -17,7 +17,7 @@ def load_calibration_and_quantize_pipeline(calibration_path, pipe):
 
     store = CalibrationStorage()
     calibrate_info = store.load_from_file(file_path=calibration_path)
-    
+
     for sub_module_name, sub_calibrate_info in calibrate_info.items():
         replace_sub_module_with_quantizable_module(
             pipe.unet,

@@ -16,8 +16,8 @@ setup(
     description="onediff extensions for diffusers",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
-    license="Apache",
-    author_email="caishenghang@oneflow.org",
+    license="Apache-2.0",
+    author_email="contact@siliconflow.com",
     packages=find_packages(),
     python_requires=">=3.7.0",
     install_requires=[

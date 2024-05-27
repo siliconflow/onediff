@@ -35,7 +35,7 @@ Run the commands below to install Sable Diffusion WebUI and OneDiff extensions.
 git clone https://github.com/AUTOMATIC1111/stable-diffusion-webui.git
 git clone https://github.com/siliconflow/onediff.git
 ln -s "$(pwd)/onediff/onediff_sd_webui_extensions" "$(pwd)/stable-diffusion-webui/extensions/onediff_sd_webui_extensions"
-cd stable-diffusion-webui && git checkout 4afaaf8  # The tested git commit id is 4afaaf8.
+cd stable-diffusion-webui
 
 # Install all of stable-diffusion-webui's dependencies.
 venv_dir=- bash webui.sh --port=8080
@@ -65,7 +65,34 @@ Select `onediff_diffusion_model` from the Script menu, enter a prompt in the tex
 
 When switching models, if the new model has the same structure as the old model, OneDiff will reuse the previously compiled graph, which means you don't need to compile the new model again, which significantly reduces the time it takes you to switch models.
 
-> Note: Please make sure that your PyTorch version is at least 2.1.0. And the feature is not supported for quantized model.
+> Note: The feature is not supported for quantized model.
+
+
+### Compiler cache saving and loading
+
+OneDiff supports saving compiler cache to disk and loading cache from disk. In scenarios where recompiling is required after switching model, you can skip the compilation process by loading the compiler cache from the disk, to saving time of model switching.
+
+The compiler cache will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/` by default. If you want to specify the path, you can modify it in webui settings.
+
+![Path to save compiler cache in Settings](./images/setting_dir_of_compiler_cache.png)
+
+#### Compiler cache saving
+
+After selecting onediff, a text box named `Saved cache name` will appear at the bottom right. You can input the file name of the compiler cache you want to save here. After generating the image, the compiler cache will be saved in the `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/your-compiler-cache-name` path.
+
+![Compiler caches](./images/saved_cache_name.png)
+
+
+> Note: When the text box is empty or the file with the specified name already exists, the compiler cache will not be saved.
+
+
+#### Compiler cache loading
+
+After selecting onediff, a dropdown menu named `Compile cache` will appear at the bottom left. Here, you can select the compiler cache you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/`. And click the button on the right side to refresh the `Compile cache` list.
+
+![Compiler cache loading](./images/compiler_caches.png)
+
+> Note: To properly use this feature, please ensure that you have added the `--disable-safe-unpickle` parameter when launching sd-webui.
 
 ### LoRA
 
@@ -108,16 +135,17 @@ Run the commands below to use Sable Diffusion WebUI with OneDiff extensions (Ass
 python3 webui.py --api
 
 # send request
-python3 extensions/onediff_sd_webui_extensions/api.py
+python3 extensions/onediff_sd_webui_extensions/api_examples/txt2img.py
+python3 extensions/onediff_sd_webui_extensions/api_examples/img2img.py
 ```
 
-Then you can get the images returned by sd-webui client at `./api_out/txt2img/`.
+Then you can get the images returned by sd-webui client at `./api_out/txt2img/` and `./api_out/img2img/`.
 
 To use the OneDiff-based sd-webui API, you only need to add a `"script": "onediff_diffusion_model"` field to the request to speed up model inference.
 
 For OneDiff Enterprise, add `"script_args" : [{"0": True}]` to use the quantization feature.
 
-Check file [txt2img.py](./api_examples/txt2img.py) for more details.
+Check file [txt2img.py](./api_examples/txt2img.py) and [img2img.py](./api_examples/img2img.py) for more details.
 
 ## Contact
 

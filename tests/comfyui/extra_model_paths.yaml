@@ -9,13 +9,14 @@ comfyui:
     # checkpoints: /home/fengwen/workspace/test_checkpoints
     checkpoints: /share_nfs/hf_models/comfyui_resources/checkpoints
     clip: models/clip/
-    clip_vision: models/clip_vision/
+    clip_vision: /share_nfs/hf_models/comfyui_resources/clip_vision
     configs: models/configs/
     controlnet: models/controlnet/
     embeddings: models/embeddings/
-    loras: models/loras/
+    loras: /share_nfs/hf_models/comfyui_resources/loras/
     upscale_models: models/upscale_models/
     vae: models/vae/
+    ipadapter: /share_nfs/hf_models/comfyui_resources/ipadapter
 
 #other_ui:
 #    base_path: path/to/ui

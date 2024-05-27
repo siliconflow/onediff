@@ -5,7 +5,7 @@ import subprocess
 import folder_paths
 import numpy as np
 import oneflow as flow
-from onediff.infer_compiler.transform.builtin_transform import torch2oflow
+from onediff.infer_compiler.backends.oneflow.transform.builtin_transform import torch2oflow
 from PIL import Image
 
 try:
@@ -66,9 +66,11 @@ class CompareModel:
             )
             return {}
 
+        removeprefix = lambda ss, prefix: ss[len(prefix):] if ss.startswith(prefix) else ss
+        
         cnt = 0
         for key, _ in oflow_unet.named_parameters():
-            key = key.removeprefix("_deployable_module_model._torch_module.")
+            key = removeprefix(key, "_deployable_module_model._torch_module.")
             torch_value = torch_unet.get_parameter(key).cuda()
             oflow_value = oflow_unet._deployable_module_model._oneflow_module.get_parameter(
                 key
@@ -146,8 +148,9 @@ class ShowImageDiff:
         )
         results = list()
         for image1, image2 in zip(images1, images2):
+
             # image diff
-            image = image1 - image2
+            image = image1.cuda() - image2.cuda()
 
             i = 255.0 * image.cpu().numpy()
             img = Image.fromarray(np.clip(i, 0, 255).astype(np.uint8))

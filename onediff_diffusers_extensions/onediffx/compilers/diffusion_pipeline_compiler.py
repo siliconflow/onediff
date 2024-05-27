@@ -1,8 +1,7 @@
 import os
 import torch
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.deployable_module import DeployableModule
-from onediff.infer_compiler.utils.log_utils import logger
+from onediff.infer_compiler import compile, DeployableModule
+from onediff.utils import logger
 
 
 def _recursive_getattr(obj, attr, default=None):
@@ -30,6 +29,7 @@ _PARTS = [
     "fast_unet",  # for deepcache
     "prior",  # for StableCascadePriorPipeline
     "decoder",  # for StableCascadeDecoderPipeline
+    "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
     "vqgan.down_blocks",  # for StableCascadeDecoderPipeline
     "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
     "vae.decoder",
@@ -52,8 +52,20 @@ def _filter_parts(ignores=()):
 
 
 def compile_pipe(
-    pipe, *, ignores=(),
+    pipe, *, backend="oneflow", options=None, ignores=(), fuse_qkv_projections=False,
 ):
+    if fuse_qkv_projections:
+        pipe = fuse_qkv_projections_in_pipe(pipe)
+    
+    if backend == "nexfort" and isinstance(options, str):
+        import json
+        options = json.loads(options)
+
+    if backend == "nexfort" and options is not None and "memory_format" in options:
+        memory_format = getattr(torch, options["memory_format"])
+        pipe = convert_pipe_to_memory_format(pipe, ignores=ignores, memory_format=memory_format)
+        del options["memory_format"]
+
     # To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
     if (
         hasattr(pipe, "upcast_vae")
@@ -67,7 +79,9 @@ def compile_pipe(
         obj = _recursive_getattr(pipe, part, None)
         if obj is not None:
             logger.info(f"Compiling {part}")
-            _recursive_setattr(pipe, part, oneflow_compile(obj))
+            _recursive_setattr(
+                pipe, part, compile(obj, backend=backend, options=options)
+            )
 
     if hasattr(pipe, "image_processor") and "image_processor" not in ignores:
         logger.info("Patching image_processor")
@@ -80,6 +94,33 @@ def compile_pipe(
 
     return pipe
 
+def fuse_qkv_projections_in_pipe(pipe):
+    if hasattr(pipe, "fuse_qkv_projections"):
+        pipe.fuse_qkv_projections()
+    return pipe
+
+
+def convert_pipe_to_memory_format(pipe, *, ignores=(), memory_format=torch.preserve_format):
+    from nexfort.utils.attributes import multi_recursive_apply
+    from nexfort.utils.memory_format import apply_memory_format
+    import functools
+    if memory_format == torch.preserve_format:
+        return pipe
+
+    parts = [
+        "unet",
+        "controlnet",
+        "fast_unet",  # for deepcache
+        "prior",  # for StableCascadePriorPipeline
+        "decoder",  # for StableCascadeDecoderPipeline
+        "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
+        "vqgan",  # for StableCascadeDecoderPipeline
+        "vae",
+    ]
+    multi_recursive_apply(
+        pipe, parts, functools.partial(apply_memory_format, memory_format=memory_format), ignores=ignores, verbose=True
+    )
+    return pipe
 
 def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
     if not os.path.exists(dir):

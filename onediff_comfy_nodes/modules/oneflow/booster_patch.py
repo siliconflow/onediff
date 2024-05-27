@@ -2,7 +2,7 @@ import os
 from functools import singledispatchmethod
 
 from comfy.model_patcher import ModelPatcher
-from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
 
 from ..booster_interface import BoosterExecutor
 
@@ -16,6 +16,9 @@ class PatchBoosterExecutor(BoosterExecutor):
         batch_size = latent_image["samples"].shape[0]
         if isinstance(diff_model, DeployableModule):
             file_path = diff_model.get_graph_file()
+            if file_path is None:
+                return diff_model
+            
             file_dir = os.path.dirname(file_path)
             file_name = os.path.basename(file_path)
             names = file_name.split("_")

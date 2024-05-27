@@ -1,6 +1,6 @@
 # ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/utils_motion.py
 import oneflow as torch
-from onediff.infer_compiler.transform import register
+from onediff.infer_compiler.backends.oneflow.transform import register
 
 from ._config import animatediff_of, animatediff_pt
 

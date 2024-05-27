@@ -41,13 +41,15 @@ from PIL import Image, ImageDraw
 
 import oneflow as flow
 import torch
-from onediffx import compile_pipe, compiler_config
+from onediffx import compile_pipe, OneflowCompileOptions 
 from diffusers.utils import load_image, export_to_video
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default=MODEL)
+    parser.add_argument("--save_graph", action="store_true")
+    parser.add_argument("--load_graph", action="store_true")
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     parser.add_argument("--scheduler", type=str, default=SCHEDULER)
@@ -187,10 +189,11 @@ def main():
         # especially for 40xx series cards.
         # So here by partially disabling the half accumulation in MHA partially,
         # we can get a good balance.
-        compiler_config.attention_allow_half_precision_score_accumulation_max_m = (
+        compile_options = OneflowCompileOptions()
+        compile_options.attention_allow_half_precision_score_accumulation_max_m = (
             args.attention_fp16_score_accum_max_m
         )
-        pipe = compile_pipe(pipe,)
+        pipe = compile_pipe(pipe, options=compile_options)
     elif args.compiler == "compile":
         pipe.unet = torch.compile(pipe.unet)
         if hasattr(pipe, "controlnet"):
@@ -251,10 +254,22 @@ def main():
             return kwarg_inputs
 
         if args.warmups > 0:
-            print("Begin warmup")
-            for _ in range(args.warmups):
-                pipe(**get_kwarg_inputs())
-            print("End warmup")
+            if args.load_graph:
+                print("Loading graphs to avoid compilation...")
+                start_t = time.time()
+                pipe.unet.load_graph("base_unet_compiled", run_warmup=True)
+                pipe.vae.decoder.load_graph("base_vae_compiled", run_warmup=True)
+                end_t = time.time()
+                print(f"Loading graph elapsed: {end_t - start_t} s")
+                print("Begin warmup")
+                for _ in range(args.warmups):
+                    pipe(**get_kwarg_inputs())
+                print("End warmup")
+            else:
+                print("Begin warmup")
+                for _ in range(args.warmups):
+                    pipe(**get_kwarg_inputs())
+                print("End warmup")
 
         kwarg_inputs = get_kwarg_inputs()
         iter_profiler = IterationProfiler()
@@ -279,6 +294,14 @@ def main():
             export_to_video(output_frames[0], args.output_video, fps=args.fps)
         else:
             print("Please set `--output-video` to save the output video")
+
+    if args.save_graph:
+        print("Saving graphs...")
+        start_t = time.time()
+        pipe.unet.save_graph("base_unet_compiled")
+        pipe.vae.decoder.save_graph("base_vae_compiled")
+        end_t = time.time()
+        print(f"save graphs elapsed: {end_t - start_t} s")
 
 
 if __name__ == "__main__":
