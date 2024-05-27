@@ -1,8 +1,6 @@
 import os
-import oneflow as flow
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import proxy_class, register
 
+import oneflow as flow
 from ldm.modules.attention import (
     BasicTransformerBlock,
     CrossAttention,
@@ -16,6 +14,9 @@ from sd_webui_onediff_utils import (
     GroupNorm32Oflow,
     timestep_embedding,
 )
+
+from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 __all__ = ["compile_ldm_unet"]
 

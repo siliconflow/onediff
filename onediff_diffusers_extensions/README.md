@@ -208,7 +208,7 @@ pipe = StableVideoDiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-compile_options.oneflow.attention_allow_half_precision_score_accumulation_max_m = 0
+compile_options.attention_allow_half_precision_score_accumulation_max_m = 0
 pipe = compile_pipe(pipe, options=compile_options)
 
 input_image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true")

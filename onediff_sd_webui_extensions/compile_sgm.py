@@ -1,15 +1,19 @@
 import oneflow as flow
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import proxy_class, register
 from sd_webui_onediff_utils import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
     timestep_embedding,
 )
-from sgm.modules.attention import CrossAttention, SpatialTransformer
-from sgm.modules.diffusionmodules.openaimodel import UNetModel, ResBlock
-from sgm.modules.attention import BasicTransformerBlock
+from sgm.modules.attention import (
+    BasicTransformerBlock,
+    CrossAttention,
+    SpatialTransformer,
+)
+from sgm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from sgm.modules.diffusionmodules.util import GroupNorm32
+
+from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 __all__ = ["compile_sgm_unet"]
 

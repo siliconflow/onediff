@@ -7,7 +7,7 @@ import torch
 from comfy import model_management
 from comfy.cli_args import args
 
-from onediff.infer_compiler.utils import is_community_version
+from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from ..modules.oneflow.hijack_animatediff import animatediff_hijacker
@@ -17,6 +17,7 @@ from ..modules.oneflow.hijack_nodes import nodes_hijacker
 from ..modules.oneflow.hijack_samplers import samplers_hijack
 from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
 from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
+from ..modules.oneflow.hijack_utils import comfy_utils_hijack
 from ..modules.oneflow import BasicOneFlowBoosterExecutor
 from ..modules.oneflow import DeepcacheBoosterExecutor
 from ..modules.oneflow import PatchBoosterExecutor
@@ -35,6 +36,7 @@ animatediff_hijacker.hijack()
 ipadapter_plus_hijacker.hijack()
 comfyui_instantid_hijacker.hijack()
 model_patch_hijacker.hijack()
+comfy_utils_hijack.hijack()
 
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple

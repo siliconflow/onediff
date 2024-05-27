@@ -6,12 +6,12 @@
 # And if you are using OneDiff Enterprise, add another
 # `"script_args" : [{"0": True}]` field to enable quantization
 
-from datetime import datetime
-import urllib.request
 import base64
 import json
-import time
 import os
+import time
+import urllib.request
+from datetime import datetime
 
 webui_server_url = "http://127.0.0.1:7860"
 
@@ -57,7 +57,6 @@ if __name__ == "__main__":
         "width": 1024,
         "height": 1024,
         "cfg_scale": 7,
-        "sampler_name": "DPM++ 2M Karras",
         "n_iter": 1,
         "batch_size": 1,
         # Enable OneDiff speed up

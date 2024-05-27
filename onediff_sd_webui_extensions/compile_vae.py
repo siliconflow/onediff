@@ -1,21 +1,26 @@
 from modules import shared
-from modules.sd_vae_approx import model as get_vae_model, sd_vae_approx_models
 from modules.sd_vae_approx import VAEApprox
+from modules.sd_vae_approx import model as get_vae_model
+from modules.sd_vae_approx import sd_vae_approx_models
+
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.transform import proxy_class, register
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 __all__ = ["VaeCompileCtx"]
 
 compiled_models = {}
 
+
 class VAEApproxOflow(proxy_class(VAEApprox)):
     pass
+
 
 torch2oflow_class_map = {
     VAEApprox: VAEApproxOflow,
 }
 
 register(package_names=["modules"], torch2oflow_class_map=torch2oflow_class_map)
+
 
 class VaeCompileCtx(object):
     def __init__(self, options=None):
