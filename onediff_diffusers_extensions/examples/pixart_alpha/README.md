@@ -29,6 +29,17 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-MS/ --scheduler none --steps 20 --compiler nexfort --output-image ./pixart_alpha.png
 ```
 
+### Local cache speeds up recompilation
+
+Reference script:
+https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/pipe_compile_save_load.py
+
+Usage:
+```
+setup_nexfort_pipe_cache("nexfort_cached_pipe") # Specify the path.
+# Or add `cache-all` in the mode dict: {"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs:cache-all"}
+```
+
 ## Performance comparation
 ### nexfort compile config
 - compiler-config default is `{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`
