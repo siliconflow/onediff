@@ -167,7 +167,7 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
         )
         print(f"lora {names} ssim {ssim}")
         assert ssim > 0.92, f"LoRA {names} ssim too low"
-    delete_adapters(pipe)
+    # delete_adapters(pipe)
 # =======
 # weight_num = 20
 # weight_names = {
@@ -270,19 +270,35 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
 
 
 # @pytest.mark.parametrize("multi_lora", multi_loras)
-# def test_get_active_adapters(multi_lora):
-#     set_and_fuse_adapters(pipe, multi_lora, [0.5, ] * len(multi_lora))
-#     active_adapters = get_active_adapters(pipe)
-#     assert active_adapters == multi_lora
+def test_get_active_adapters(get_multi_loras):
+    multi_loras = get_multi_loras()
+    for names, _ in multi_loras.items():
+        names = [str(Path(name).stem) for name in names]
+        set_and_fuse_adapters(pipe, names)
+        active_adapters = get_active_adapters(pipe)
+        assert set(active_adapters) == set(names)
+
+    #     names = [str(Path(name).stem) for name in names]
+    #     set_and_fuse_adapters(pipe, names, [LORA_SCALE, ] * len(names))
+
+    # set_and_fuse_adapters(pipe, multi_lora.keys(), [LORA_SCALE, ] * len(multi_lora))
+    # assert active_adapters == multi_lora
 
 
 # @pytest.mark.parametrize("multi_lora", multi_loras)
-# def test_delete_adapters(multi_lora):
-#     # multi_loras[-1] contains all loras
-#     all_loras = multi_loras[-1]
+def test_delete_adapters(get_multi_loras):
+    multi_loras = get_multi_loras()
+    for names, _ in multi_loras.items():
+        names = [str(Path(name).stem) for name in names]
+        names_to_delete = random.sample(names, k=random.randint(0, len(names)))
+        set_and_fuse_adapters(pipe, names)
+        delete_adapters(pipe, names_to_delete)
+        active_adapters = get_active_adapters(pipe)
+        assert active_adapters == set(names) - set(names_to_delete)
+    # all_loras = multi_loras[-1]
 
-#     set_and_fuse_adapters(pipe, multi_loras[-1])
-#     delete_adapters(pipe, multi_lora)
-#     active_adapters = get_active_adapters(pipe)
-#     assert set(active_adapters) == set(all_loras) - set(multi_lora)
+    # set_and_fuse_adapters(pipe, multi_lora)
+    # delete_adapters(pipe, multi_lora)
+    # active_adapters = get_active_adapters(pipe)
+    # assert set(active_adapters) == set(multi_lora.keys()) - set(multi_lora)
 # >>>>>>> main
