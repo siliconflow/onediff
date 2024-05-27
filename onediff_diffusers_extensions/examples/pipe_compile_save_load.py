@@ -21,15 +21,10 @@ parser.add_argument(
 parser.add_argument("--save", action=argparse.BooleanOptionalAction)
 parser.add_argument("--load", action=argparse.BooleanOptionalAction)
 parser.add_argument(
-    "--compiler",
-    type=str,
-    default="oneflow",
-    choices=["oneflow", "nexfort"],
+    "--compiler", type=str, default="oneflow", choices=["oneflow", "nexfort"],
 )
 parser.add_argument(
-    "--compiler-config",
-    type=str,
-    default=None,
+    "--compiler-config", type=str, default=None,
 )
 parser.add_argument("--warmup-iterations", type=int, default=1)
 args = parser.parse_args()
@@ -48,6 +43,7 @@ else:
     else:
         options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
 
+    # Or add `cache-all` in the mode dict: {"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs:cache-all"}
     setup_nexfort_pipe_cache("nexfort_cached_pipe")
     pipe = compile_pipe(
         pipe, backend="nexfort", options=options, fuse_qkv_projections=True
