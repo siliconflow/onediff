@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 # oneflow_compile should be imported before importing any diffusers
-from onediff.infer_compiler import oneflow_compile, compile_options
+from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 
 
 def parse_args():
@@ -90,7 +90,8 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
-compile_options.oneflow.use_graph = args.graph
+compile_options = OneflowCompileOptions()
+compile_options.use_graph = args.graph
 
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:

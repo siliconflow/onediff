@@ -177,3 +177,6 @@ unet_graphs
 # onediff_comfy_nodes
 *.pt
 *.graph
+
+# onediff_sd_webui_extensions
+onediff_sd_webui_extensions/compiled_caches/
