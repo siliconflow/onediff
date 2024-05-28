@@ -5,19 +5,46 @@ import urllib.request
 from pathlib import Path
 
 import requests
+import yaml
 from skimage.metrics import structural_similarity as ssim
 
+
+def read_config(file_path=None):
+    if file_path is None:
+        file_path = os.path.join(os.path.dirname(__file__), "config.yml")
+    with open(file_path, "r") as file:
+        return yaml.safe_load(file)
+
+
 webui_server_url = "http://127.0.0.1:7860"
+
+# init args
+config = read_config()
+TXT2IMG_API_ENDPOINT = config["constants"]["TXT2IMG_API_ENDPOINT"]
+IMG2IMG_API_ENDPOINT = config["constants"]["IMG2IMG_API_ENDPOINT"]
+IMG2IMG = config["constants"]["IMG2IMG"]
+TXT2IMG = config["constants"]["TXT2IMG"]
+HEIGHT = config["constants"]["HEIGHT"]
+WIDTH = config["constants"]["WIDTH"]
+ONEDIFF_QUANT = config["constants"]["ONEDIFF_QUANT"]
+ONEDIFF = config["constants"]["ONEDIFF"]
+SEED = config["constants"]["SEED"]
+NUM_STEPS = config["constants"]["NUM_STEPS"]
+CFG_SCALE = config["constants"]["CFG_SCALE"]
+N_ITER = config["constants"]["N_ITER"]
+BATCH_SIZE = config["constants"]["BATCH_SIZE"]
+SAVED_GRAPH_NAME = config["constants"]["SAVED_GRAPH_NAME"]
+
 base_prompt = {
     "prompt": "1girl",
     "negative_prompt": "",
-    "seed": 1,
-    "steps": 20,
-    "width": 1024,
-    "height": 1024,
-    "cfg_scale": 7,
-    "n_iter": 1,
-    "batch_size": 1,
+    "seed": SEED,
+    "steps": NUM_STEPS,
+    "width": WIDTH,
+    "height": HEIGHT,
+    "cfg_scale": CFG_SCALE,
+    "n_iter": N_ITER,
+    "batch_size": BATCH_SIZE,
     # Enable OneDiff speed up
     "script_name": "onediff_diffusion_model",
     "script_args": [
@@ -26,20 +53,17 @@ base_prompt = {
         "",  # saved_graph_name
     ],
 }
-TXT2IMG_API_ENDPOINT = "sdapi/v1/txt2img"
-IMG2IMG_API_ENDPOINT = "sdapi/v1/img2img"
-saved_graph_name = "saved_graph"
 
 
 def check_and_generate_images(
     keywords, img2img_target_folder, txt2img_target_folder, WIDTH, HEIGHT
 ):
     img2img_target_onediff_images = [
-        f"{img2img_target_folder}/{keyword}-img2img-w{WIDTH}-h{HEIGHT}-seed-1-numstep-20.png"
+        f"{img2img_target_folder}/{keyword}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         for keyword in keywords
     ]
     txt2img_target_onediff_images = [
-        f"{txt2img_target_folder}/{keyword}-txt2img-w{WIDTH}-h{HEIGHT}-seed-1-numstep-20.png"
+        f"{txt2img_target_folder}/{keyword}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         for keyword in keywords
     ]
 
@@ -96,7 +120,10 @@ def txt2img_generate_onediff_imgs(save_path):
     image = response.get("images")[0]
     decode_and_save_base64(
         image,
-        os.path.join(save_path, "onediff-txt2img-w1024-h1024-seed-1-numstep-20.png"),
+        os.path.join(
+            save_path,
+            "{ONEDIFF}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+        ),
     )
 
 
@@ -105,7 +132,7 @@ def txt2img_generate_onediff_quant_imgs(save_path):
         "script_args": [
             True,  # quantization
             None,  # graph_checkpoint
-            saved_graph_name,  # saved_graph_name
+            SAVED_GRAPH_NAME,  # saved_graph_name
         ]
     }
     payload_with_onediff_quant = {**base_prompt, **script_args}
@@ -114,7 +141,8 @@ def txt2img_generate_onediff_quant_imgs(save_path):
     decode_and_save_base64(
         image,
         os.path.join(
-            save_path, "onediff-quant-txt2img-w1024-h1024-seed-1-numstep-20.png"
+            save_path,
+            "{ONEDIFF_QUANT}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -129,7 +157,10 @@ def img2img_generate_onediff_imgs(save_path):
     image = response.get("images")[0]
     decode_and_save_base64(
         image,
-        os.path.join(save_path, "onediff-img2img-w1024-h1024-seed-1-numstep-20.png"),
+        os.path.join(
+            save_path,
+            "{ONEDIFF}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+        ),
     )
 
 
@@ -138,7 +169,7 @@ def img2img_generate_onediff_quant_imgs(save_path):
         "script_args": [
             True,  # quantization
             None,  # graph_checkpoint
-            saved_graph_name,  # saved_graph_name
+            SAVED_GRAPH_NAME,  # SAVED_GRAPH_NAME
         ]
     }
     img_path = os.path.join(save_path, "cat.png")
@@ -151,12 +182,13 @@ def img2img_generate_onediff_quant_imgs(save_path):
     decode_and_save_base64(
         image,
         os.path.join(
-            save_path, "onediff-quant-img2img-w1024-h1024-seed-1-numstep-20.png"
+            save_path,
+            "{ONEDIFF_QUANT}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
 
-def check_ssim(src, generated):
+def cal_ssim(src, generated):
     ssim_score = ssim(src, generated, multichannel=True, win_size=3)
     print("SSIM:", ssim_score)
     return ssim_score
