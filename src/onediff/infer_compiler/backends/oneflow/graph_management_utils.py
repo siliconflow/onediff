@@ -11,44 +11,25 @@ from .transform.builtin_transform import torch2oflow
 from .transform.manager import transform_mgr
 from .utils.cost_util import cost_time
 from .env_var import OneflowCompileOptions
+from .utils.hash_utils import generate_input_structure_key, generate_model_structure_key
+
 from onediff.utils import logger
 
 
-def calculate_model_hash(model):
-    return hashlib.sha256(f"{model}".encode("utf-8")).hexdigest()
+def _prepare_file_path(file_path):
+    if isinstance(file_path, Path):
+        file_path = str(file_path)
+    if file_path.endswith(".graph"):
+        file_path = file_path[:-6]
+    return file_path
 
 
 @cost_time(debug=transform_mgr.debug_mode, message="generate graph file name")
 def generate_graph_file_name(file_path, deployable_module, args, kwargs):
-    def _prepare_file_path(file_path):
-        if isinstance(file_path, Path):
-            file_path = str(file_path)
-        if file_path.endswith(".graph"):
-            file_path = file_path[:-6]
-        return file_path
-
-    def _generate_input_structure_key(args, kwargs):
-        args_tree = ArgsTree((args, kwargs), gen_name=False, tensor_type=torch.Tensor)
-        out_lst = []
-        for v in args_tree.iter_nodes():
-            if isinstance(v, (int, float, str)):
-                out_lst.append(str(v))
-            elif isinstance(v, dict):
-                out_lst.append("_".join([str(k) for k in v.keys()]))
-            else:
-                out_lst.append(type(v).__name__)
-
-        return hashlib.sha256("_".join(out_lst).encode("utf-8")).hexdigest()
-
-    def _generate_model_structure_key(deployable_module):
-        model = deployable_module._deployable_module_model.oneflow_module
-        model_hash = hashlib.sha256(f"{model}".encode("utf-8")).hexdigest()
-        return model_hash
-
-    # Convert Path object to string if necessary and remove the .graph extension
     file_path = _prepare_file_path(file_path)
-    input_structure_key = _generate_input_structure_key(args, kwargs)[:6]
-    model_structure_key = _generate_model_structure_key(deployable_module)[:8]
+    args_tree = ArgsTree((args, kwargs), gen_name=False, tensor_type=torch.Tensor)
+    input_structure_key = generate_input_structure_key(args_tree)
+    model_structure_key = generate_model_structure_key(deployable_module)
     # Combine cache keys
     cache_key = f"{input_structure_key}_{model_structure_key}"
     return f"{file_path}_{cache_key}.graph"
@@ -56,22 +37,30 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
 
 def graph_file_management(func):
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self: "OneflowDeployableModule", *args, **kwargs):
         compile_options = (
             self._deployable_module_options
             if hasattr(self, "_deployable_module_options")
             else OneflowCompileOptions()
         )
         graph_file = compile_options.graph_file
+        is_first_load = self._load_graph_first_run and graph_file is not None
 
-        is_first_load = (
-            getattr(self, "_load_graph_first_run", True) and graph_file is not None
-        )
+        if self._deployable_module_input_structure_key is None:
+            args_tree = ArgsTree(
+                (args, kwargs), gen_name=False, tensor_type=torch.Tensor
+            )
+            self._deployable_module_input_structure_key = generate_input_structure_key(
+                args_tree
+            )
 
         if is_first_load:
-            setattr(self, "_load_graph_first_run", False)
-            graph_file = generate_graph_file_name(
-                graph_file, self, args=args, kwargs=kwargs
+            self._load_graph_first_run = False
+            input_structure_key = self._deployable_module_input_structure_key
+            model_structure_key = generate_model_structure_key(deployable_module=self)
+            file_path = _prepare_file_path(graph_file)
+            graph_file = (
+                f"{file_path}_{input_structure_key}_{model_structure_key}.graph"
             )
 
         def process_state_dict_before_saving(state_dict: Dict):
