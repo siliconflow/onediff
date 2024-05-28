@@ -8,6 +8,7 @@ from onediff.utils import set_boolean_env_var, set_integer_env_var
 
 @dataclasses.dataclass
 class OneflowCompileOptions:
+    dynamic: bool = True
     use_graph: bool = True
     debug_level: int = -1
     max_cached_graph_size: int = 9
