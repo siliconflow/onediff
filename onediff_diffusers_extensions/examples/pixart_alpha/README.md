@@ -32,6 +32,8 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 ## Performance comparation
 ### nexfort compile config
 - compiler-config default is `{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`
+  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time and just slightly reduce the performance
+  - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 21.832s, but will reduce the performance
 - fuse_qkv_projections: True
 
 ### Metric
@@ -47,8 +49,6 @@ python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-M
 | PyTorch Warmup with Run time                     | 4.100s                              |
 | OneDiff Warmup with Compilation time<sup>1</sup> | 776.170s                            |
 | OneDiff Warmup with Cache time                   | 111.563s                            |
-
-Note: setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 21.832s, but will reduce the performance
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz. Note this is just for reference, and it varies a lot on different CPU.
 
