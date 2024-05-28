@@ -63,7 +63,6 @@ def graph_file_management(func):
             else OneflowCompileOptions()
         )
         graph_file = compile_options.graph_file
-        skip_graph_file_safety_check = compile_options.skip_graph_file_safety_check
 
         is_first_load = (
             getattr(self, "_load_graph_first_run", True) and graph_file is not None
@@ -71,10 +70,9 @@ def graph_file_management(func):
 
         if is_first_load:
             setattr(self, "_load_graph_first_run", False)
-            if not skip_graph_file_safety_check:
-                graph_file = generate_graph_file_name(
-                    graph_file, self, args=args, kwargs=kwargs
-                )
+            graph_file = generate_graph_file_name(
+                graph_file, self, args=args, kwargs=kwargs
+            )
 
         def process_state_dict_before_saving(state_dict: Dict):
             nonlocal self, args, kwargs, graph_file
