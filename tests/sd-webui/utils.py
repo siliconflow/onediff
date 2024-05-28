@@ -28,6 +28,7 @@ base_prompt = {
 }
 TXT2IMG_API_ENDPOINT = "sdapi/v1/txt2img"
 IMG2IMG_API_ENDPOINT = "sdapi/v1/img2img"
+saved_graph_name = "saved_graph"
 
 
 def check_and_generate_images(
@@ -44,11 +45,13 @@ def check_and_generate_images(
 
     if not all(Path(x).exists() for x in txt2img_target_onediff_images):
         print("Didn't find target txt2img images, try to generate...")
-        txt2img_generate_imgs(txt2img_target_folder)
+        txt2img_generate_onediff_imgs(txt2img_target_folder)
+        txt2img_generate_onediff_quant_imgs(txt2img_target_folder)
 
     if not all(Path(x).exists() for x in img2img_target_onediff_images):
         print("Didn't find target img2img images, try to generate...")
-        img2img_generate_imgs(img2img_target_folder)
+        img2img_generate_onediff_imgs(img2img_target_folder)
+        img2img_generate_onediff_quant_imgs(img2img_target_folder)
 
 
 def encode_file_to_base64(path):
@@ -87,7 +90,7 @@ def call_txt2img_api(payload):
     return response
 
 
-def txt2img_generate_imgs(save_path):
+def txt2img_generate_onediff_imgs(save_path):
     payload_with_onediff = base_prompt
     response = call_txt2img_api(payload_with_onediff,)
     image = response.get("images")[0]
@@ -96,14 +99,16 @@ def txt2img_generate_imgs(save_path):
         os.path.join(save_path, "onediff-txt2img-w1024-h1024-seed-1-numstep-20.png"),
     )
 
+
+def txt2img_generate_onediff_quant_imgs(save_path):
     script_args = {
         "script_args": [
             True,  # quantization
             None,  # graph_checkpoint
-            "saved_graph",  # saved_graph_name
+            saved_graph_name,  # saved_graph_name
         ]
     }
-    payload_with_onediff_quant = {**payload_with_onediff, **script_args}
+    payload_with_onediff_quant = {**base_prompt, **script_args}
     response = call_txt2img_api(payload_with_onediff_quant,)
     image = response.get("images")[0]
     decode_and_save_base64(
@@ -114,10 +119,9 @@ def txt2img_generate_imgs(save_path):
     )
 
 
-def img2img_generate_imgs(save_path):
+def img2img_generate_onediff_imgs(save_path):
     img_path = os.path.join(save_path, "cat.png")
 
-    batch_size = 1
     init_images = {"init_images": [encode_file_to_base64(img_path)]}
     payload_with_onediff = {**base_prompt, **init_images}
     response = call_img2img_api(payload_with_onediff,)
@@ -128,14 +132,20 @@ def img2img_generate_imgs(save_path):
         os.path.join(save_path, "onediff-img2img-w1024-h1024-seed-1-numstep-20.png"),
     )
 
+
+def img2img_generate_onediff_quant_imgs(save_path):
     script_args = {
         "script_args": [
             True,  # quantization
             None,  # graph_checkpoint
-            "saved_graph",  # saved_graph_name
+            saved_graph_name,  # saved_graph_name
         ]
     }
+    img_path = os.path.join(save_path, "cat.png")
+    init_images = {"init_images": [encode_file_to_base64(img_path)]}
+    payload_with_onediff = {**base_prompt, **init_images}
     payload_with_onediff_quant = {**payload_with_onediff, **script_args}
+    print(f"payload_with_onediff_quant {payload_with_onediff_quant}")
     response = call_img2img_api(payload_with_onediff_quant,)
     image = response.get("images")[0]
     decode_and_save_base64(
