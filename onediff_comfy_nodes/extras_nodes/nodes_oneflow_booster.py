@@ -26,6 +26,7 @@ from ..modules.oneflow.hijack_model_management import model_management_hijacker
 from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
 from ..modules.oneflow.hijack_nodes import nodes_hijacker
 from ..modules.oneflow.hijack_samplers import samplers_hijack
+from ..modules.oneflow.hijack_utils import comfy_utils_hijack
 
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..utils.import_utils import is_onediff_quant_available

@@ -28,12 +28,15 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
         return file_path
 
     def _generate_input_structure_key(args, kwargs):
-        args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
+        args_tree = ArgsTree((args, kwargs), gen_name=False, tensor_type=torch.Tensor)
         out_lst = []
         for v in args_tree.iter_nodes():
-            if v is None or isinstance(v, (int, float, str, list, dict, tuple)):
-                continue
-            out_lst.append(type(v).__name__)
+            if isinstance(v, (int, float, str)):
+                out_lst.append(str(v))
+            elif isinstance(v, dict):
+                out_lst.append("_".join([str(k) for k in v.keys()]))
+            else:
+                out_lst.append(type(v).__name__)
 
         return hashlib.sha256("_".join(out_lst).encode("utf-8")).hexdigest()
 
@@ -44,8 +47,8 @@ def generate_graph_file_name(file_path, deployable_module, args, kwargs):
 
     # Convert Path object to string if necessary and remove the .graph extension
     file_path = _prepare_file_path(file_path)
-    input_structure_key = _generate_input_structure_key(args, kwargs)[:5]
-    model_structure_key = _generate_model_structure_key(deployable_module)[:10]
+    input_structure_key = _generate_input_structure_key(args, kwargs)[:6]
+    model_structure_key = _generate_model_structure_key(deployable_module)[:8]
     # Combine cache keys
     cache_key = f"{input_structure_key}_{model_structure_key}"
     return f"{file_path}_{cache_key}.graph"
