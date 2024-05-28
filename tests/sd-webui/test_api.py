@@ -66,6 +66,11 @@ def simple_txt2img_request():
     }
 
 
+@pytest.mark.parametrize(
+    "url_txt2img, simple_txt2img_request",
+    [(url_txt2img, simple_txt2img_request)],
+    indirect=["url_txt2img", "simple_txt2img_request"],
+)
 def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
     data = simple_txt2img_request
     utils.post_request(url_txt2img, data)
@@ -84,6 +89,11 @@ def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
     assert ssim > 0.99
 
 
+@pytest.mark.parametrize(
+    "url_img2img, simple_txt2img_request",
+    [(url_img2img, simple_txt2img_request)],
+    indirect=["url_img2img", "simple_txt2img_request"],
+)
 def test_img2img_onediff(url_img2img, simple_txt2img_request):
     img_path = os.path.join(img2img_target_folder, "cat.png")
     init_images = {"init_images": [utils.encode_file_to_base64(img_path)]}
@@ -100,10 +110,16 @@ def test_img2img_onediff(url_img2img, simple_txt2img_request):
     )
     imgdata = base64.b64decode(image)
     npimage = np.array(Image.open(io.BytesIO(imgdata)))
+
     ssim = utils.check_ssim(npimage, target_image)
     assert ssim > 0.99
 
 
+@pytest.mark.parametrize(
+    "url_txt2img, simple_txt2img_request",
+    [(url_txt2img, simple_txt2img_request)],
+    indirect=["url_txt2img", "simple_txt2img_request"],
+)
 def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
@@ -126,10 +142,16 @@ def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
 
     imgdata = base64.b64decode(image)
     npimage = np.array(Image.open(io.BytesIO(imgdata)))
+
     ssim = utils.check_ssim(npimage, target_image)
     assert ssim > 0.81
 
 
+@pytest.mark.parametrize(
+    "url_txt2img, simple_txt2img_request",
+    [(url_txt2img, simple_txt2img_request)],
+    indirect=["url_txt2img", "simple_txt2img_request"],
+)
 def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
@@ -142,6 +164,11 @@ def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
     utils.post_request(url_txt2img, data)
 
 
+@pytest.mark.parametrize(
+    "url_txt2img, simple_txt2img_request",
+    [(url_txt2img, simple_txt2img_request)],
+    indirect=["url_txt2img", "simple_txt2img_request"],
+)
 def test_txt2img_onediff_load_graph(url_txt2img, simple_txt2img_request):
     script_args = {
         "script_args": [
