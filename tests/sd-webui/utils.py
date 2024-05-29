@@ -66,12 +66,10 @@ def check_and_generate_images(
     ]
 
     if not all(Path(x).exists() for x in txt2img_target_onediff_images):
-        print("Didn't find target txt2img images, try to generate...")
         txt2img_generate_onediff_imgs(txt2img_target_folder)
         txt2img_generate_onediff_quant_imgs(txt2img_target_folder)
 
     if not all(Path(x).exists() for x in img2img_target_onediff_images):
-        print("Didn't find target img2img images, try to generate...")
         img2img_generate_onediff_imgs(img2img_target_folder)
         img2img_generate_onediff_quant_imgs(img2img_target_folder)
 
