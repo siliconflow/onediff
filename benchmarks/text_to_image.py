@@ -21,6 +21,7 @@ CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
 COMPILER = "oneflow"
 COMPILER_CONFIG = None
+QUANTIZE_CONFIG = None
 
 import os
 import importlib
@@ -34,7 +35,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-from onediffx import compile_pipe
+from onediffx import compile_pipe, nexfort_quant_pipe
 
 
 def parse_args():
@@ -72,6 +73,12 @@ def parse_args():
         "--compiler-config",
         type=str,
         default=COMPILER_CONFIG,
+    )
+    parser.add_argument("--quantize", action="store_true")
+    parser.add_argument(
+        "--quantize-config",
+        type=str,
+        default=QUANTIZE_CONFIG,
     )
     return parser.parse_args()
 
@@ -226,8 +233,16 @@ def main():
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
+        print("Oneflow backend is now active...")
         pipe = compile_pipe(pipe)
     elif args.compiler == "nexfort":
+        print("Nexfort backend is now active...")
+        if args.quantize:
+            if args.quantize_config is not None:
+                quantize_config = json.loads(args.quantize_config)
+            else:
+                quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
+            pipe = nexfort_quant_pipe(pipe, ignores=[], **quantize_config)
         if args.compiler_config is not None:
             # config with dict
             options = json.loads(args.compiler_config)

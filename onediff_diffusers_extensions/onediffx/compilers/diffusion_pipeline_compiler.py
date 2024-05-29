@@ -1,4 +1,6 @@
 import os
+import functools
+
 import torch
 from onediff.infer_compiler import compile, DeployableModule
 from onediff.utils import logger
@@ -163,3 +165,21 @@ def load_pipe(
         )
 
         patch_image_prcessor_(pipe.image_processor)
+
+def nexfort_quant_pipe(pipe, *, ignores=(), **kwargs):
+    from nexfort.ao import quantize
+    from nexfort.utils.attributes import multi_recursive_apply
+
+    # if "dynamic_quant_filter_fn" not in kwargs:
+    #     kwargs["dynamic_quant_filter_fn"] = dynamic_quant_filter_fn
+
+    parts = [
+        "unet",
+        "controlnet",
+        "fast_unet",  # for deepcache
+        "prior",  # for StableCascadePriorPipeline
+        "decoder",  # for StableCascadeDecoderPipeline
+        "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
+    ]
+    multi_recursive_apply(pipe, parts, functools.partial(quantize, **kwargs), ignores=ignores, verbose=True)
+    return pipe

@@ -49,3 +49,6 @@ python3 -m nexfort.utils.clear_inductor_cache
 ```
 
 Advanced cache functionality is currently in development.
+
+# Dynamic shape
+TODO
