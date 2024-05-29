@@ -52,7 +52,7 @@ Advanced cache functionality is currently in development.
 
 # Dynamic shape
 Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. You just need to enable `dynamic` during compilation, as in ` '{"mode": "max-autotune
-", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the PyTorch official documentation and the PyTorch GitHub page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
+", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the <https://pytorch.org/docs/stable/generated/torch.compile.html> and <https://github.com/pytorch/pytorch/blob/main/docs/source/torch.compiler_dynamic_shapes.rst> page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
 
 Test:
 ```
