@@ -51,4 +51,12 @@ python3 -m nexfort.utils.clear_inductor_cache
 Advanced cache functionality is currently in development.
 
 # Dynamic shape
-TODO
+Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. You just need to enable `dynamic` during compilation, as in ` '{"mode": "max-autotune
+", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the PyTorch official documentation and the PyTorch GitHub page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
+
+Test:
+```
+python3 onediff_diffusers_extensions/examples/text_to_image_sdxl.py --compiler nexfort --run_multiple_resolutions 1 --run_rare_resolutions 1 --height 512 --width 768
+```
+
+
