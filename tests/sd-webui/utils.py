@@ -122,7 +122,7 @@ def txt2img_generate_onediff_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            "{ONEDIFF}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -142,7 +142,7 @@ def txt2img_generate_onediff_quant_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            "{ONEDIFF_QUANT}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF_QUANT}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -159,7 +159,7 @@ def img2img_generate_onediff_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            "{ONEDIFF}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -176,14 +176,13 @@ def img2img_generate_onediff_quant_imgs(save_path):
     init_images = {"init_images": [encode_file_to_base64(img_path)]}
     payload_with_onediff = {**base_prompt, **init_images}
     payload_with_onediff_quant = {**payload_with_onediff, **script_args}
-    print(f"payload_with_onediff_quant {payload_with_onediff_quant}")
     response = call_img2img_api(payload_with_onediff_quant,)
     image = response.get("images")[0]
     decode_and_save_base64(
         image,
         os.path.join(
             save_path,
-            "{ONEDIFF_QUANT}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF_QUANT}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 

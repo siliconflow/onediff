@@ -149,7 +149,7 @@ def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
     npimage = np.array(Image.open(io.BytesIO(imgdata)))
 
     ssim = utils.cal_ssim(npimage, target_image)
-    assert ssim > 0.81
+    assert ssim > 0.99
 
 
 def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
