@@ -35,11 +35,6 @@ class TransformManager:
     def get_mocked_packages(self):
         return self.mocker.mocked_packages
 
-    def set_load_diffusers_patch(self, load_diffusers: bool = False):
-        if not load_diffusers:
-            self.mocker.mocked_packages.add("register_diffusers")
-            self.mocker.mocked_packages.add("register_diffusers_enterprise_lite")
-
     def load_class_proxies_from_packages(self, package_names: List[Union[Path, str]]):
         self.logger.debug(f"Loading modules: {package_names}")
         for package_name in package_names:

@@ -3,13 +3,13 @@ import os
 import sys
 from pathlib import Path
 
-from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 from onediff.infer_compiler.backends.oneflow.utils.version_util import (
     is_community_version,
 )
 
-# disable patch for loading diffusers
-transform_mgr.set_load_diffusers_patch(False)
+# Delete the diffusers module
+if "diffusers" in sys.modules:
+    del sys.modules["diffusers"]
 
 # Set up paths
 ONEDIFF_QUANTIZED_OPTIMIZED_MODELS = "onediff_quant"
