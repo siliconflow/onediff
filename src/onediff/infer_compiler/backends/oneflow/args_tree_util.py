@@ -2,7 +2,7 @@ import torch
 import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
 from onediff.utils import logger
-from .utils.cost_util import cost_time
+
 from .utils.hash_utils import generate_input_structure_key
 
 
@@ -38,9 +38,13 @@ def input_output_processor(func):
         mapped_args, mapped_kwargs, input_structure_key = process_input(*args, **kwargs)
         if (
             self._deployable_module_options.use_graph
+            and self._deployable_module_enable_dynamic
             and self._deployable_module_dpl_graph is not None
             and self._deployable_module_input_structure_key != input_structure_key
         ):
+            logger.warning(
+                "Input structure key has changed. Resetting the deployable module graph."
+            )
             self._deployable_module_dpl_graph = None
             self._load_graph_first_run = True
             self._deployable_module_input_structure_key = None

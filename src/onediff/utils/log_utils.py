@@ -29,7 +29,7 @@ class ConfigurableLogger:
     def configure_logging(self, name, level, log_dir=None, file_name=None):
         logger = logging.getLogger(name)
 
-        if logger.hasHandlers():
+        if len(logger.handlers) > 0:
             logger.warning("Logging handlers already exist for %s", name)
             return
 
