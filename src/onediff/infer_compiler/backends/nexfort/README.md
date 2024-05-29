@@ -31,3 +31,21 @@ Performance on NVIDIA A100-PCIE-40GB:
 - Inference time: 2.045s
 - Iterations per second: 10.743
 - Max used CUDA memory: 13.855GiB
+
+### Local cache speeds up recompilation
+
+Setting cache:
+```
+# Enabled Inductor - FX Graph Cache. Default Off
+export TORCHINDUCTOR_FX_GRAPH_CACHE=1
+
+# Setting Inductor - Autotuning Cache DIR. This cache is enabled by default.
+export TORCHINDUCTOR_CACHE_DIR=~/.torchinductor
+```
+
+Clear Cache:
+```
+python3 -m nexfort.utils.clear_inductor_cache
+```
+
+Advanced cache functionality is currently in development.
