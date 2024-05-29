@@ -97,6 +97,7 @@ def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
             f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         )
     )
+    utils.decode_and_save_base64(image,f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png")
     imgdata = base64.b64decode(image)
     npimage = np.array(Image.open(io.BytesIO(imgdata)))
 
@@ -113,6 +114,9 @@ def test_img2img_onediff(url_img2img, simple_txt2img_request):
     response = utils.call_img2img_api(data)
 
     image = response.get("images")[0]
+
+    utils.decode_and_save_base64( image  , f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png")
+
     target_image = np.array(
         Image.open(
             f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
@@ -138,12 +142,14 @@ def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
     utils.post_request(url_txt2img, data)
     response = utils.call_txt2img_api(data)
 
+
     target_image = np.array(
         Image.open(
             f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         )
     )
     image = response.get("images")[0]
+    utils.decode_and_save_base64( image  ,  f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png")
 
     imgdata = base64.b64decode(image)
     npimage = np.array(Image.open(io.BytesIO(imgdata)))
