@@ -1,5 +1,4 @@
-import compile_ldm
-import compile_sgm
+from compile import compile_ldm, compile_sgm
 import oneflow
 
 

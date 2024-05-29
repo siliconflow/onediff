@@ -7,9 +7,12 @@ from typing import Dict, Union
 import gradio as gr
 import modules.scripts as scripts
 import modules.shared as shared
-from compile_ldm import SD21CompileCtx, compile_ldm_unet
-from compile_sgm import compile_sgm_unet
-from compile_vae import VaeCompileCtx
+from compile import (
+    SD21CompileCtx,
+    VaeCompileCtx,
+    get_compiled_graph,
+    OneDiffCompiledGraph,
+)
 from modules import script_callbacks
 from modules.processing import process_images
 from modules.sd_models import select_checkpoint
@@ -22,6 +25,9 @@ from ui_utils import (
     get_all_compiler_caches,
     hints_message,
     refresh_all_compiler_caches,
+    check_structure_change_and_update,
+    load_graph,
+    save_graph,
 )
 
 from onediff import __version__ as onediff_version
@@ -30,11 +36,13 @@ from onediff.optimization.quant_optimizer import (
     varify_can_use_quantization,
 )
 from onediff.utils import logger, parse_boolean_from_env
+import onediff_shared
 
 """oneflow_compiled UNetModel"""
-compiled_unet = None
-is_unet_quantized = False
-compiled_ckpt_name = None
+# compiled_unet = {}
+# compiled_unet = None
+# is_unet_quantized = False
+# compiled_ckpt_name = None
 
 
 def generate_graph_path(ckpt_name: str, model_name: str) -> str:
@@ -68,43 +76,18 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
     return calibrate_info
 
 
-def compile_unet(
-    unet_model, quantization=False, *, options=None,
-):
-    from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
-    from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
-
-    if isinstance(unet_model, UNetModelLDM):
-        compiled_unet = compile_ldm_unet(unet_model, options=options)
-    elif isinstance(unet_model, UNetModelSGM):
-        compiled_unet = compile_sgm_unet(unet_model, options=options)
-    else:
-        warnings.warn(
-            f"Unsupported model type: {type(unet_model)} for compilation , skip",
-            RuntimeWarning,
-        )
-        compiled_unet = unet_model
-    # In OneDiff Community, quantization can be True when called by api
-    if quantization and varify_can_use_quantization():
-        calibrate_info = get_calibrate_info(
-            f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt"
-        )
-        compiled_unet = quantize_model(
-            compiled_unet, inplace=False, calibrate_info=calibrate_info
-        )
-    return compiled_unet
-
-
 class UnetCompileCtx(object):
     """The unet model is stored in a global variable.
     The global variables need to be replaced with compiled_unet before process_images is run,
     and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
     """
 
+    def __init__(self, compiled_unet):
+        self.compiled_unet = compiled_unet
+
     def __enter__(self):
         self._original_model = shared.sd_model.model.diffusion_model
-        global compiled_unet
-        shared.sd_model.model.diffusion_model = compiled_unet
+        shared.sd_model.model.diffusion_model = self.compiled_unet
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         shared.sd_model.model.diffusion_model = self._original_model
@@ -112,16 +95,10 @@ class UnetCompileCtx(object):
 
 
 class Script(scripts.Script):
-    current_type = None
-
     def title(self):
         return "onediff_diffusion_model"
 
     def ui(self, is_img2img):
-        """this function should create gradio UI elements. See https://gradio.app/docs/#components
-        The return value should be an array of all components that are used in processing.
-        Values of those returned components will be passed to run() and process() functions.
-        """
         with gr.Row():
             # TODO: set choices as Tuple[str, str] after the version of gradio specified webui upgrades
             compiler_cache = gr.Dropdown(
@@ -142,7 +119,11 @@ class Script(scripts.Script):
                 label="always_recompile",
                 visible=parse_boolean_from_env("ONEDIFF_DEBUG"),
             )
-        gr.HTML(hints_message, elem_id="hintMessage", visible=not varify_can_use_quantization())
+        gr.HTML(
+            hints_message,
+            elem_id="hintMessage",
+            visible=not varify_can_use_quantization(),
+        )
         is_quantized = gr.components.Checkbox(
             label="Model Quantization(int8) Speed Up",
             visible=varify_can_use_quantization(),
@@ -150,30 +131,7 @@ class Script(scripts.Script):
         return [is_quantized, compiler_cache, save_cache_name, always_recompile]
 
     def show(self, is_img2img):
-        return True
-
-    def check_model_change(self, model):
-        is_changed = False
-
-        def get_model_type(model):
-            return {
-                "is_sdxl": model.is_sdxl,
-                "is_sd2": model.is_sd2,
-                "is_sd1": model.is_sd1,
-                "is_ssd": model.is_ssd,
-            }
-
-        if self.current_type is None:
-            is_changed = True
-        else:
-            for key, v in self.current_type.items():
-                if v != getattr(model, key):
-                    is_changed = True
-                    break
-
-        if is_changed is True:
-            self.current_type = get_model_type(model)
-        return is_changed
+        return scripts.AlwaysVisible
 
     def run(
         self,
@@ -184,67 +142,44 @@ class Script(scripts.Script):
         always_recompile=False,
     ):
 
-        global compiled_unet, compiled_ckpt_name, is_unet_quantized
-        current_checkpoint = shared.opts.sd_model_checkpoint
-        original_diffusion_model = shared.sd_model.model.diffusion_model
-
-        ckpt_changed = current_checkpoint != compiled_ckpt_name
-        model_changed = self.check_model_change(shared.sd_model)
-        quantization_changed = quantization != is_unet_quantized
+        current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
+        ckpt_changed = (
+            shared.sd_model.sd_checkpoint_info.name
+            != onediff_shared.current_unet_graph.name
+        )
+        structure_changed = check_structure_change_and_update(
+            onediff_shared.current_unet_type, shared.sd_model
+        )
+        quantization_changed = (
+            quantization != onediff_shared.current_unet_graph.quantized
+        )
         need_recompile = (
             (
                 quantization and ckpt_changed
             )  # always recompile when switching ckpt with 'int8 speed model' enabled
-            or model_changed  # always recompile when switching model to another structure
+            or structure_changed  # always recompile when switching model to another structure
             or quantization_changed  # always recompile when switching model from non-quantized to quantized (and vice versa)
             or always_recompile
         )
-
-        is_unet_quantized = quantization
-        compiled_ckpt_name = current_checkpoint
         if need_recompile:
-            compiled_unet = compile_unet(
-                original_diffusion_model, quantization=quantization
+            onediff_shared.current_unet_graph = get_compiled_graph(
+                shared.sd_model, quantization
             )
-
-            # Due to the version of gradio compatible with sd-webui, the CompilerCache dropdown box always returns a string
-            if compiler_cache not in [None, "None"]:
-                compiler_cache_path = all_compiler_caches_path() + f"/{compiler_cache}"
-                if not Path(compiler_cache_path).exists():
-                    raise FileNotFoundError(
-                        f"Cannot find cache {compiler_cache_path}, please make sure it exists"
-                    )
-                try:
-                    compiled_unet.load_graph(compiler_cache_path, run_warmup=True)
-                except zipfile.BadZipFile:
-                    raise RuntimeError(
-                        "Load cache failed. Please make sure that the --disable-safe-unpickle parameter is added when starting the webui"
-                    )
-                except Exception as e:
-                    raise RuntimeError(
-                        f"Load cache failed ({e}). Please make sure cache has the same sd version (or unet architure) with current checkpoint"
-                    )
-
+            load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:
             logger.info(
-                f"Model {current_checkpoint} has same sd type of graph type {self.current_type}, skip compile"
+                f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.current_unet_type}, skip compile"
             )
 
-        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
+        # register graph
+        onediff_shared.graph_dict[shared.sd_model.sd_model_hash] = OneDiffCompiledGraph(
+            shared.sd_model, graph_module=onediff_shared.current_unet_graph.graph_module
+        )
+        with UnetCompileCtx(
+            onediff_shared.current_unet_graph.graph_module
+        ), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
-
-        if saved_cache_name != "":
-            if not os.access(str(all_compiler_caches_path()), os.W_OK):
-                raise PermissionError(
-                    f"The directory {all_compiler_caches_path()} does not have write permissions, and compiler cache cannot be written to this directory. \
-                                      Please change it in the settings to a directory with write permissions"
-                )
-            if not Path(all_compiler_caches_path()).exists():
-                Path(all_compiler_caches_path()).mkdir()
-            saved_cache_name = all_compiler_caches_path() + f"/{saved_cache_name}"
-            if not Path(saved_cache_name).exists():
-                compiled_unet.save_graph(saved_cache_name)
-
+        save_graph(onediff_shared.current_unet_graph, saved_cache_name)
         return proc
 
 
@@ -260,5 +195,23 @@ def on_ui_settings():
     )
 
 
+def cfg_denoisers_callback(params):
+    # print(f"current checkpoint: {shared.opts.sd_model_checkpoint}")
+    # import ipdb; ipdb.set_trace()
+    if "refiner" in shared.sd_model.sd_checkpoint_info.name:
+        pass
+        # import ipdb; ipdb.set_trace()
+        # shared.sd_model.model.diffusion_model
+
+    print(f"current checkpoint info: {shared.sd_model.sd_checkpoint_info.name}")
+    # shared.sd_model.model.diffusion_model = compile_unet(
+    #     shared.sd_model.model.diffusion_model
+    # )
+
+    # have to check if onediff enabled
+    # print('onediff denoiser callback')
+
+
 script_callbacks.on_ui_settings(on_ui_settings)
+script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
 onediff_do_hijack()
