@@ -9,10 +9,10 @@ constants:
   ONEDIFF: "onediff"
   SEED: 1
   NUM_STEPS: 20
-  HEIGHT : 1024
-  WIDTH : 1024
-  IMG2IMG_TARGET_FOLDER : "/share_nfs/onediff_ci/sd-webui/images/img2img"
-  TXT2IMG_TARGET_FOLDER : "/share_nfs/onediff_ci/sd-webui/images/txt2img"
+  height : 1024
+  width : 1024
+  img2img_target_folder : "/share_nfs/onediff_ci/sd-webui/images/img2img"
+  txt2img_target_folder : "/share_nfs/onediff_ci/sd-webui/images/txt2img"
   SAVED_GRAPH_NAME: "saved_graph"
   CFG_SCALE: 7
   N_ITER: 1
