@@ -9,15 +9,11 @@ import requests
 import utils
 import yaml
 from PIL import Image
-from utils import base_prompt
-
-
-from utils import (
-    TXT2IMG_API_ENDPOINT, IMG2IMG_API_ENDPOINT, OPTIONS_API_ENDPOINT,
-    height, width, SEED, NUM_STEPS, img2img_target_folder,
-    txt2img_target_folder, CFG_SCALE, N_ITER, BATCH_SIZE,
-    ONEDIFF_QUANT, ONEDIFF, IMG2IMG, TXT2IMG, SAVED_GRAPH_NAME
-)
+from utils import (BATCH_SIZE, CFG_SCALE, IMG2IMG, IMG2IMG_API_ENDPOINT,
+                   N_ITER, NUM_STEPS, ONEDIFF, ONEDIFF_QUANT,
+                   OPTIONS_API_ENDPOINT, SAVED_GRAPH_NAME, SEED, TXT2IMG,
+                   TXT2IMG_API_ENDPOINT, base_prompt, height,
+                   img2img_target_folder, txt2img_target_folder, width)
 
 os.makedirs(img2img_target_folder, exist_ok=True)
 os.makedirs(txt2img_target_folder, exist_ok=True)
