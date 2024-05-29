@@ -49,7 +49,7 @@ services:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
-      - /share_nfs/onediff_ci/sd-webui/images/:rw
+      - /share_nfs/onediff_ci/sd-webui/images:rw
       - ${PWD}/${WEBUI_SRC_DIR}:/app/${WEBUI_SRC_DIR}
       - ${PWD}/onediff_sd_webui_extensions:/app/${WEBUI_SRC_DIR}/extensions/onediff_sd_webui_extensions
       - $PWD:/src/onediff
