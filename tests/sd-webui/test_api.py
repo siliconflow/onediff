@@ -11,33 +11,13 @@ import yaml
 from PIL import Image
 from utils import base_prompt
 
-config = utils.read_config()
 
-
-# init args
-constants = [
-    "TXT2IMG_API_ENDPOINT",
-    "IMG2IMG_API_ENDPOINT",
-    "OPTIONS_API_ENDPOINT",
-    "height",
-    "width",
-    "SEED",
-    "NUM_STEPS",
-    "img2img_target_folder",
-    "txt2img_target_folder",
-    "CFG_SCALE",
-    "N_ITER",
-    "BATCH_SIZE",
-    "ONEDIFF_QUANT",
-    "ONEDIFF",
-    "IMG2IMG",
-    "TXT2IMG",
-    "SAVED_GRAPH_NAME",
-]
-
-# 从配置中读取常量并赋值给全局变量
-for const in constants:
-    globals()[const] = config["constants"][const]
+from utils import (
+    TXT2IMG_API_ENDPOINT, IMG2IMG_API_ENDPOINT, OPTIONS_API_ENDPOINT,
+    height, width, SEED, NUM_STEPS, img2img_target_folder,
+    txt2img_target_folder, CFG_SCALE, N_ITER, BATCH_SIZE,
+    ONEDIFF_QUANT, ONEDIFF, IMG2IMG, TXT2IMG, SAVED_GRAPH_NAME
+)
 
 os.makedirs(img2img_target_folder, exist_ok=True)
 os.makedirs(txt2img_target_folder, exist_ok=True)
@@ -73,24 +53,6 @@ def url_set_config(base_url):
 @pytest.fixture()
 def simple_txt2img_request():
     return base_prompt
-    # return {
-    #     "prompt": "1girl",
-    #     "negative_prompt": "",
-    #     "seed": SEED,
-    #     "steps": NUM_STEPS,
-    #     "width": width,
-    #     "height": height,
-    #     "cfg_scale": CFG_SCALE,
-    #     "n_iter": N_ITER,
-    #     "batch_size": BATCH_SIZE,
-    #     # Enable OneDiff speed up
-    #     "script_name": "onediff_diffusion_model",
-    #     "script_args": [
-    #         False,  # quantization
-    #         None,  # graph_checkpoint
-    #         "",  # saved_graph_name
-    #     ],
-    # }
 
 
 def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
@@ -110,6 +72,7 @@ def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
     npimage = utils.decode_image2array(image)
 
     ssim = utils.cal_ssim(npimage, target_image)
+    print("SSIM:", ssim)
     assert ssim > 0.99
 
 
@@ -130,6 +93,7 @@ def test_img2img_onediff(url_img2img, simple_txt2img_request):
     )
     npimage = utils.decode_image2array(image)
     ssim = utils.cal_ssim(npimage, target_image)
+    print("SSIM:", ssim)
     assert ssim > 0.99
 
 
@@ -155,6 +119,7 @@ def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
     )
     npimage = utils.decode_image2array(image)
     ssim = utils.cal_ssim(npimage, target_image)
+    print("SSIM:", ssim)
     assert ssim > 0.99
 
 

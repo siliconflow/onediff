@@ -1,47 +1,45 @@
 import base64
+import io
 import json
 import os
 import urllib.request
 from pathlib import Path
 
+import numpy as np
 import requests
 import yaml
+from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
-
-def read_config(file_path=None):
-    if file_path is None:
-        file_path = os.path.join(os.path.dirname(__file__), "config.yml")
-    with open(file_path, "r") as file:
-        return yaml.safe_load(file)
+TXT2IMG_API_ENDPOINT = "sdapi/v1/txt2img"
+IMG2IMG_API_ENDPOINT = "sdapi/v1/img2img"
+OPTIONS_API_ENDPOINT = "sdapi/v1/options"
+IMG2IMG = "img2img"
+TXT2IMG = "txt2img"
+ONEDIFF_QUANT = "onediff-quant"
+ONEDIFF = "onediff"
+SEED = 1
+NUM_STEPS = 20
+height = 1024
+width = 1024
+img2img_target_folder = "/share_nfs/onediff_ci/sd-webui/images/img2img"
+txt2img_target_folder = "/share_nfs/onediff_ci/sd-webui/images/txt2img"
+SAVED_GRAPH_NAME = "saved_graph"
+CFG_SCALE = 7
+N_ITER = 1
+BATCH_SIZE = 1
 
 
 webui_server_url = "http://127.0.0.1:7860"
 
-# init args
-config = read_config()
-TXT2IMG_API_ENDPOINT = config["constants"]["TXT2IMG_API_ENDPOINT"]
-IMG2IMG_API_ENDPOINT = config["constants"]["IMG2IMG_API_ENDPOINT"]
-IMG2IMG = config["constants"]["IMG2IMG"]
-TXT2IMG = config["constants"]["TXT2IMG"]
-HEIGHT = config["constants"]["HEIGHT"]
-WIDTH = config["constants"]["WIDTH"]
-ONEDIFF_QUANT = config["constants"]["ONEDIFF_QUANT"]
-ONEDIFF = config["constants"]["ONEDIFF"]
-SEED = config["constants"]["SEED"]
-NUM_STEPS = config["constants"]["NUM_STEPS"]
-CFG_SCALE = config["constants"]["CFG_SCALE"]
-N_ITER = config["constants"]["N_ITER"]
-BATCH_SIZE = config["constants"]["BATCH_SIZE"]
-SAVED_GRAPH_NAME = config["constants"]["SAVED_GRAPH_NAME"]
 
 base_prompt = {
     "prompt": "1girl",
     "negative_prompt": "",
     "seed": SEED,
     "steps": NUM_STEPS,
-    "width": WIDTH,
-    "height": HEIGHT,
+    "width": width,
+    "height": height,
     "cfg_scale": CFG_SCALE,
     "n_iter": N_ITER,
     "batch_size": BATCH_SIZE,
@@ -56,14 +54,14 @@ base_prompt = {
 
 
 def check_and_generate_images(
-    keywords, img2img_target_folder, txt2img_target_folder, WIDTH, HEIGHT
+    keywords, img2img_target_folder, txt2img_target_folder, width, height
 ):
     img2img_target_onediff_images = [
-        f"{img2img_target_folder}/{keyword}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
+        f"{img2img_target_folder}/{keyword}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         for keyword in keywords
     ]
     txt2img_target_onediff_images = [
-        f"{txt2img_target_folder}/{keyword}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
+        f"{txt2img_target_folder}/{keyword}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         for keyword in keywords
     ]
 
@@ -122,7 +120,7 @@ def txt2img_generate_onediff_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            f"{ONEDIFF}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -142,7 +140,7 @@ def txt2img_generate_onediff_quant_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            f"{ONEDIFF_QUANT}-{TXT2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -159,7 +157,7 @@ def img2img_generate_onediff_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            f"{ONEDIFF}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
@@ -182,12 +180,23 @@ def img2img_generate_onediff_quant_imgs(save_path):
         image,
         os.path.join(
             save_path,
-            f"{ONEDIFF_QUANT}-{IMG2IMG}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png",
+            f"{ONEDIFF_QUANT}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
         ),
     )
 
 
 def cal_ssim(src, generated):
     ssim_score = ssim(src, generated, multichannel=True, win_size=3)
-    print("SSIM:", ssim_score)
     return ssim_score
+
+
+def send_request_and_get_image(api_call_func, url, data):
+    post_request(url, data)
+    response = api_call_func(data)
+    return response.get("images")[0]
+
+
+def decode_image2array(base64_string):
+    imgdata = base64.b64decode(base64_string)
+    npimage = np.array(Image.open(io.BytesIO(imgdata)))
+    return npimage
