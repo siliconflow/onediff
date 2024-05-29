@@ -46,11 +46,12 @@ services:
 
 
     volumes:
-      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local:rw
-      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache:rw
-      - /share_nfs:/share_nfs:rw
-      - ${PWD}/${WEBUI_SRC_DIR}:/app/${WEBUI_SRC_DIR}:rw
-      - ${PWD}/onediff_sd_webui_extensions:/app/${WEBUI_SRC_DIR}/extensions/onediff_sd_webui_extensions:rw
-      - $PWD:/src/onediff:rw
+      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
+      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
+      - /share_nfs:/share_nfs:ro
+      - /share_nfs/onediff_ci/sd-webui/images/:rw
+      - ${PWD}/${WEBUI_SRC_DIR}:/app/${WEBUI_SRC_DIR}
+      - ${PWD}/onediff_sd_webui_extensions:/app/${WEBUI_SRC_DIR}/extensions/onediff_sd_webui_extensions
+      - $PWD:/src/onediff
     working_dir: /src/onediff
     restart: "no"
