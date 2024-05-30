@@ -281,7 +281,7 @@ jobs:
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
-          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml --input-directory /share_nfs/hf_models/comfyui_resources/input > /app/ComfyUI/onediff_comfyui.log 2>&1"
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
@@ -300,7 +300,7 @@ jobs:
 
           run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json" 200
           run_comfy_test "workflows/sdxl-control-lora-speedup.json" 200
-          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/ipadapter_advanced.json" 200
+          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/ComfyUI_IPAdapter_plus" 500
           run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache.json" 600
           run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
           # run_comfy_test "workflows/text-to-video-speedup.json" 5000
