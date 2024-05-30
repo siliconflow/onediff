@@ -78,10 +78,11 @@ def test_img2img_onediff(url_img2img, simple_txt2img_request):
     data = {**simple_txt2img_request, **init_images}
 
     image = utils.send_request_and_get_image(utils.call_img2img_api, url_img2img, data)
-    utils.decode_and_save_base64(
-        image,
-        f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
-    )
+    print(image)
+    # utils.decode_and_save_base64(
+    #     image,
+    #     f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
+    # )
     target_image = np.array(
         Image.open(
             f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
@@ -109,10 +110,12 @@ def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
             f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         )
     )
-    utils.decode_and_save_base64(
-        image,
-        f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
-    )
+    print(image)
+    # utils.decode_and_save_base64(
+    #     image,
+    #     f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
+    # )
+    print(image)
     npimage = utils.decode_image2array(image)
     ssim = utils.cal_ssim(npimage, target_image)
     print("SSIM:", ssim)
