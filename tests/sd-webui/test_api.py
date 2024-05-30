@@ -61,10 +61,10 @@ def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
             f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
         )
     )
-    utils.decode_and_save_base64(
-        image,
-        f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
-    )
+    # utils.decode_and_save_base64(
+    #     image,
+    #     f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
+    # )
     npimage = utils.decode_image2array(image)
 
     ssim = utils.cal_ssim(npimage, target_image)
