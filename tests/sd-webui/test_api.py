@@ -52,7 +52,7 @@ def simple_txt2img_request():
 
 
 def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
-
+    print(simple_txt2img_request)
     image = utils.send_request_and_get_image(
         utils.call_txt2img_api, url_txt2img, simple_txt2img_request
     )
