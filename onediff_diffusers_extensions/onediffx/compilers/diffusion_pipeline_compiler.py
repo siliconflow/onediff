@@ -183,15 +183,6 @@ def nexfort_quant_pipe(pipe, quant_config_path=None, top_percentage=90, *, ignor
         top_submodules = [fqn for fqn, _ in submodules_with_ssim[:top_n_percent_index]]
         return top_submodules
 
-    allowed_fqns = None
-    if quant_config_path:
-        allowed_fqns = load_quant_submodules_from_json(quant_config_path)
-
-    # def is_allowed_fqn(module, name, allowed_fqns=allowed_fqns):
-    #     if allowed_fqns is None:
-    #         return True
-    #     return name in allowed_fqns
-
     parts = [
         "unet",
         "controlnet",
@@ -201,6 +192,21 @@ def nexfort_quant_pipe(pipe, quant_config_path=None, top_percentage=90, *, ignor
         "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
     ]
 
-    multi_recursive_apply(pipe, parts, functools.partial(quantize, filter_fn_kwargs={"allowed_fqns": allowed_fqns}, **kwargs), ignores=ignores, verbose=True)
+    # def is_allowed_fqn(module, name, allowed_fqns=allowed_fqns):
+    #     if allowed_fqns is None:
+    #         return True
+    #     return name in allowed_fqns
+
+    if quant_config_path:
+        allowed_fqns = load_quant_submodules_from_json(quant_config_path, top_percentage)
+        quantization_function = functools.partial(
+            quantize,
+            quant_type=kwargs.pop('quant_type', None),
+            filter_fn="is_allowed_fqn",
+            filter_fn_kwargs={'allowed_fqns': allowed_fqns}
+        )
+        multi_recursive_apply(pipe, parts, quantization_function, ignores=ignores, verbose=True)
+    else:
+        multi_recursive_apply(pipe, parts, functools.partial(quantize, **kwargs), ignores=ignores, verbose=True)
 
     return pipe
