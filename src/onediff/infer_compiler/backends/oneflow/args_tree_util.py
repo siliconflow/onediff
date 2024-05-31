@@ -42,32 +42,39 @@ def input_output_processor(func):
             and self._deployable_module_dpl_graph is not None
             and self._deployable_module_input_structure_key != input_structure_key
         ):
+            # Retrieve the deployable module graph from cache using the input structure key
             dpl_graph = self._deployable_module_graph_cache.get(
                 input_structure_key, None
             )
 
-            current_cache_size = len(self._deployable_module_graph_cache)
-            max_cached_graph_size = (
-                self._deployable_module_options.max_cached_graph_size
-            )
-            assert current_cache_size <= max_cached_graph_size, (
-                f"Cache size exceeded! Current size: {current_cache_size}, "
-                f"Maximum allowed size: {max_cached_graph_size}"
-            )
-
-            self._deployable_module_graph_cache[
+            # Check if the current input structure key is not already in the cache
+            if (
                 self._deployable_module_input_structure_key
-            ] = self._deployable_module_dpl_graph
+                not in self._deployable_module_graph_cache
+            ):
+                current_cache_size = len(self._deployable_module_graph_cache)
+                max_cached_graph_size = (
+                    self._deployable_module_options.max_cached_graph_size
+                )
 
+                # Ensure the current cache size is within the allowed limit
+                assert current_cache_size < max_cached_graph_size, (
+                    f"Cache size exceeded! Current size: {current_cache_size}, "
+                    f"Maximum allowed size: {max_cached_graph_size}"
+                )
+
+                self._deployable_module_graph_cache[
+                    self._deployable_module_input_structure_key
+                ] = self._deployable_module_dpl_graph
+
+            # If a cached graph is found, update the deployable module graph and input structure key
             if dpl_graph is not None:
                 self._deployable_module_dpl_graph = dpl_graph
                 self._deployable_module_input_structure_key = input_structure_key
             else:
-
                 logger.warning(
                     f"Input structure key {self._deployable_module_input_structure_key} to {input_structure_key} has changed. Resetting the deployable module graph. This may slow down the process."
                 )
-
                 self._deployable_module_dpl_graph = None
                 self._deployable_module_input_structure_key = None
                 self._load_graph_first_run = True
