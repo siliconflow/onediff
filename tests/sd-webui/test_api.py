@@ -100,7 +100,7 @@ def test_image_similarity_ssim(
     target_image = np.array(Image.open(target_image_path))
     np_generated_image = utils.decode_image2array(generated_image)
     ssim_value = utils.cal_ssim(np_generated_image, target_image)
-    print("SSIM:", ssim_value)
+    print("SSIM: ", ssim_value)
 
     assert ssim_value > 0.99
 
