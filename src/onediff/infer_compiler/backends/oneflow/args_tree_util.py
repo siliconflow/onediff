@@ -45,22 +45,24 @@ def input_output_processor(func):
             dpl_graph = self._deployable_module_graph_cache.get(
                 input_structure_key, None
             )
+
+            current_cache_size = len(self._deployable_module_graph_cache)
+            max_cached_graph_size = (
+                self._deployable_module_options.max_cached_graph_size
+            )
+            assert current_cache_size <= max_cached_graph_size, (
+                f"Cache size exceeded! Current size: {current_cache_size}, "
+                f"Maximum allowed size: {max_cached_graph_size}"
+            )
+
+            self._deployable_module_graph_cache[
+                self._deployable_module_input_structure_key
+            ] = self._deployable_module_dpl_graph
+
             if dpl_graph is not None:
                 self._deployable_module_dpl_graph = dpl_graph
                 self._deployable_module_input_structure_key = input_structure_key
             else:
-                current_cache_size = len(self._deployable_module_graph_cache)
-                max_cached_graph_size = (
-                    self._deployable_module_options.max_cached_graph_size
-                )
-                assert current_cache_size < max_cached_graph_size, (
-                    f"Cache size exceeded! Current size: {current_cache_size}, "
-                    f"Maximum allowed size: {max_cached_graph_size}"
-                )
-
-                self._deployable_module_graph_cache[
-                    self._deployable_module_input_structure_key
-                ] = self._deployable_module_dpl_graph
 
                 logger.warning(
                     f"Input structure key {self._deployable_module_input_structure_key} to {input_structure_key} has changed. Resetting the deployable module graph. This may slow down the process."
