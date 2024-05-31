@@ -9,9 +9,10 @@ import requests
 import utils
 import yaml
 from PIL import Image
-from utils import (IMG2IMG_API_ENDPOINT, NUM_STEPS, OPTIONS_API_ENDPOINT,
-                   SAVED_GRAPH_NAME, SEED, TXT2IMG_API_ENDPOINT, base_prompt,
-                   height, img2img_target_folder, txt2img_target_folder, width)
+from utils import (IMG2IMG, IMG2IMG_API_ENDPOINT, NUM_STEPS, ONEDIFF,
+                   ONEDIFF_QUANT, OPTIONS_API_ENDPOINT, SAVED_GRAPH_NAME, SEED,
+                   TXT2IMG, TXT2IMG_API_ENDPOINT, base_prompt, height,
+                   img2img_target_folder, txt2img_target_folder, width)
 
 os.makedirs(img2img_target_folder, exist_ok=True)
 os.makedirs(txt2img_target_folder, exist_ok=True)
@@ -55,35 +56,19 @@ data = {**base_prompt, **init_images}
 
 
 test_cases = [
-    (
-        "utils.call_txt2img_api",
-        "http://127.0.0.1:7860/sdapi/v1/txt2img",
-        base_prompt,
-        "onediff",
-        "txt2img",
-    ),
-    (
-        "utils.call_txt2img_api",
-        "http://127.0.0.1:7860/sdapi/v1/txt2img",
-        base_prompt,
-        "onediff-quant",
-        "txt2img",
-    ),
-    (
-        "utils.call_img2img_api",
-        "http://127.0.0.1:7860/sdapi/v1/img2img",
-        data,
-        "onediff",
-        "img2img",
-    ),
+    ("utils.call_txt2img_api", "url_txt2img", base_prompt, ONEDIFF, TXT2IMG,),
+    ("utils.call_txt2img_api", "url_txt2img", base_prompt, ONEDIFF_QUANT, TXT2IMG,),
+    ("utils.call_img2img_api", "url_img2img", data, ONEDIFF, IMG2IMG,),
 ]
 
 
 @pytest.mark.parametrize(
-    "api, url, request_payload, speed_up_method, image_gen_method", test_cases
+    "api, url_txt2img, request_payload, speed_up_method, image_gen_method",
+    test_cases,
+    indirect=["url_txt2img"],
 )
 def test_image_similarity_ssim(
-    api, url, request_payload, speed_up_method, image_gen_method
+    api, url_txt2img, request_payload, speed_up_method, image_gen_method
 ):
     api_function = eval(api)
 
@@ -95,7 +80,7 @@ def test_image_similarity_ssim(
     target_image_path = f"{folder}/{speed_up_method}-{image_gen_method}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
 
     generated_image = utils.send_request_and_get_image(
-        api_function, url, request_payload
+        api_function, url_txt2img, request_payload
     )
     target_image = np.array(Image.open(target_image_path))
     np_generated_image = utils.decode_image2array(generated_image)
