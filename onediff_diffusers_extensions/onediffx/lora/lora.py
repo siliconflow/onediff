@@ -75,6 +75,7 @@ def load_and_fuse_lora(
         raise ValueError("[OneDiffX load_and_fuse_lora] Invalid LoRA checkpoint.")
 
     # load lora into unet
+    # import ipdb; ipdb.set_trace()
     load_lora_into_unet(
         self,
         state_dict,
