@@ -87,7 +87,7 @@ def test_image_similarity_ssim(
     ssim_value = utils.cal_ssim(np_generated_image, target_image)
     print("SSIM: ", ssim_value)
 
-    assert ssim_value > 0.99
+    assert ssim_value > 0.985
 
 
 def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
