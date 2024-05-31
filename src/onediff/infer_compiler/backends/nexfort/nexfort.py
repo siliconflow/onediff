@@ -3,7 +3,7 @@ from typing import Callable
 import torch
 
 from ..registry import register_backend
-from .deployable_module import get_mixed_deployable_module
+from .deployable_module import get_deployable_module
 
 
 @register_backend("nexfort")
@@ -30,9 +30,4 @@ def compile(torch_module: torch.nn.Module, *, options=None):
 
     compiled_model = nexfort_compile(torch_module, **nexfort_options)
 
-    if isinstance(torch_module, torch.nn.Module):
-        return get_mixed_deployable_module(type(torch_module))(
-            compiled_model, torch_module
-        )
-    else:
-        return compiled_model
+    return get_deployable_module(torch_module, compiled_model)

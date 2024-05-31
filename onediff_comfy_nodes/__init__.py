@@ -20,7 +20,7 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ModelSpeedup": "Model Speedup",
     "VaeSpeedup": "VAE Speedup",
-    "OneDiffModelBooster": "Apply Model Booster - OneDff",
+    "OneDiffModelBooster": "Apply Model Booster - OneDiff",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
