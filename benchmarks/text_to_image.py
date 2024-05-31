@@ -80,6 +80,7 @@ def parse_args():
         type=str,
         default=QUANTIZE_CONFIG,
     )
+    parser.add_argument("--quant-submodules-config-path", type=str, default=None)
     return parser.parse_args()
 
 args = parse_args()
@@ -242,7 +243,11 @@ def main():
                 quantize_config = json.loads(args.quantize_config)
             else:
                 quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
-            pipe = nexfort_quant_pipe(pipe, ignores=[], **quantize_config)
+            if args.quant_submodules_config_path:
+                # https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8/blob/main/fp8_e4m3.json
+                pipe = nexfort_quant_pipe(pipe, quant_config_path=args.quant_submodules_config_path, ignores=[], **quantize_config)
+            else:
+                pipe = nexfort_quant_pipe(pipe, ignores=[], **quantize_config)
         if args.compiler_config is not None:
             # config with dict
             options = json.loads(args.compiler_config)

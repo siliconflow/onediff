@@ -1,4 +1,5 @@
 import os
+import json
 import functools
 
 import torch
@@ -166,12 +167,28 @@ def load_pipe(
 
         patch_image_prcessor_(pipe.image_processor)
 
-def nexfort_quant_pipe(pipe, *, ignores=(), **kwargs):
+
+def nexfort_quant_pipe(pipe, quant_config_path=None, top_percentage=90, *, ignores=(), **kwargs):
     from nexfort.ao import quantize
     from nexfort.utils.attributes import multi_recursive_apply
 
-    # if "dynamic_quant_filter_fn" not in kwargs:
-    #     kwargs["dynamic_quant_filter_fn"] = dynamic_quant_filter_fn
+    def load_quant_submodules_from_json(quant_config_path, top_percentage):
+        with open(quant_config_path, 'r') as file:
+            data = json.load(file)
+        submodules_with_ssim = [(fqn, details['ssim']) for fqn, details in data.items()]
+        submodules_with_ssim.sort(key=lambda x: x[1], reverse=True)
+        top_n_percent_index = int(len(submodules_with_ssim) * (top_percentage / 100))
+        top_submodules = [fqn for fqn, _ in submodules_with_ssim[:top_n_percent_index]]
+        return top_submodules
+
+    allowed_fqns = None
+    if quant_config_path:
+        allowed_fqns = load_quant_submodules_from_json(quant_config_path)
+
+    # def is_allowed_fqn(module, name, allowed_fqns=allowed_fqns):
+    #     if allowed_fqns is None:
+    #         return True
+    #     return name in allowed_fqns
 
     parts = [
         "unet",
@@ -181,5 +198,7 @@ def nexfort_quant_pipe(pipe, *, ignores=(), **kwargs):
         "decoder",  # for StableCascadeDecoderPipeline
         "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
     ]
-    multi_recursive_apply(pipe, parts, functools.partial(quantize, **kwargs), ignores=ignores, verbose=True)
+
+    multi_recursive_apply(pipe, parts, functools.partial(quantize, filter_fn_kwargs={"allowed_fqns": allowed_fqns}, **kwargs), ignores=ignores, verbose=True)
+
     return pipe

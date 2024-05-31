@@ -105,6 +105,21 @@ Currently, multiple quant types are supported, such as `int8_dynamic`, `fp8_e4m3
 
 It is recommended to try different types of quantization to find the optimal situation in terms of performance and quality.
 
+
+```
+python3 ./benchmarks/text_to_image.py \
+--model PixArt-alpha/PixArt-XL-2-1024-MS \
+--scheduler none \
+--steps 20 \
+--output-image ./pixart_alpha_fp8.png \
+--prompt "product photography, world of warcraft orc warrior, white background" \
+--compiler nexfort \
+--compiler-config '{"mode": "quant:max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}' \
+--quantize \
+--quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
+--quant-submodules-config-path /path/to/fp8_e4m3.json
+```
+
 ### Metric
 
 NVIDIA H800 (1024 * 1024)
