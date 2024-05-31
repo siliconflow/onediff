@@ -71,7 +71,7 @@ def check_and_generate_images(
 
     if not all(Path(x).exists() for x in img2img_target_onediff_images):
         img2img_generate_onediff_imgs(img2img_target_folder)
-        # img2img_generate_onediff_quant_imgs(img2img_target_folder)
+        img2img_generate_onediff_quant_imgs(img2img_target_folder)
 
 
 def encode_file_to_base64(path):
