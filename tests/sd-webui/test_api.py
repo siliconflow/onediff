@@ -53,6 +53,7 @@ img_path = os.path.join(img2img_target_folder, "cat.png")
 init_images = {"init_images": [utils.encode_file_to_base64(img_path)]}
 data = {**base_prompt, **init_images}
 
+
 test_cases = [
     (
         "utils.call_txt2img_api",
