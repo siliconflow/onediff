@@ -4,7 +4,7 @@ services:
   onediff-test:
     container_name: ${CONTAINER_NAME}
     image: ${ACR_ORG}/${MATRIX_IMAGE}
-    command:  sleep 5400 
+    command:  sleep 5400
     privileged: true
     shm_size: 8g
     network_mode: host
