@@ -1,8 +1,6 @@
 import base64
 import io
-import json
 import os
-import urllib.request
 from itertools import product
 from pathlib import Path
 from typing import Any, Dict, Iterable, List
@@ -12,6 +10,7 @@ import requests
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
+WEBUI_SERVER_URL = "http://127.0.0.1:7860"
 TXT2IMG_API_ENDPOINT = "sdapi/v1/txt2img"
 IMG2IMG_API_ENDPOINT = "sdapi/v1/img2img"
 OPTIONS_API_ENDPOINT = "sdapi/v1/options"
@@ -25,8 +24,6 @@ SAVED_GRAPH_NAME = "saved_graph"
 
 os.makedirs(IMG2IMG_TARGET_FOLDER, exist_ok=True)
 os.makedirs(TXT2IMG_TARGET_FOLDER, exist_ok=True)
-
-webui_server_url = "http://127.0.0.1:7860"
 
 
 def get_base_args() -> Dict[str, Any]:
@@ -89,11 +86,6 @@ def encode_file_to_base64(path: str) -> str:
         return base64.b64encode(file.read()).decode("utf-8")
 
 
-def decode_and_save_base64(base64_str: str, save_path: str) -> None:
-    with open(save_path, "wb") as file:
-        file.write(base64.b64decode(base64_str))
-
-
 def post_request_and_check(url: str, data: Dict[str, Any]):
     response = requests.post(url, json=data)
     assert response.status_code == 200
@@ -109,27 +101,6 @@ def get_image_array_from_response(response):
     return np.array(Image.open(io.BytesIO(imgdata)))
 
 
-def call_api(api_endpoint, **payload):
-    data = json.dumps(payload).encode("utf-8")
-    request = urllib.request.Request(
-        f"{webui_server_url}/{api_endpoint}",
-        headers={"Content-Type": "application/json"},
-        data=data,
-    )
-    response = urllib.request.urlopen(request)
-    return json.loads(response.read().decode("utf-8"))
-
-
-def call_img2img_api(payload):
-    response = call_api(IMG2IMG_API_ENDPOINT, **payload)
-    return response
-
-
-def call_txt2img_api(payload):
-    response = call_api(TXT2IMG_API_ENDPOINT, **payload)
-    return response
-
-
 def get_init_image():
     img_path = str(Path(__file__).parent / "cat.png")
     return encode_file_to_base64(img_path)
@@ -142,7 +113,7 @@ def cal_ssim(src: np.ndarray, generated: np.ndarray) -> float:
 
 def generate_image(filename: str, data: Dict[str, Any]):
     endpoint = TXT2IMG_API_ENDPOINT if is_txt2img(data) else IMG2IMG_API_ENDPOINT
-    url = f"{webui_server_url}/{endpoint}"
+    url = f"{WEBUI_SERVER_URL}/{endpoint}"
     response = post_request_and_check(url, data)
     image = get_image_byte_from_response(response)
     with open(filename, "wb") as file:

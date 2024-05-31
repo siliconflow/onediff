@@ -6,6 +6,7 @@ from utils import (
     OPTIONS_API_ENDPOINT,
     SAVED_GRAPH_NAME,
     TXT2IMG_API_ENDPOINT,
+    WEBUI_SERVER_URL,
     cal_ssim,
     check_and_generate_images,
     get_all_args,
@@ -26,7 +27,7 @@ def prepare_target_images():
 
 @pytest.fixture()
 def base_url():
-    return "http://127.0.0.1:7860"
+    return WEBUI_SERVER_URL
 
 
 @pytest.fixture()
