@@ -6,13 +6,13 @@
 # And if you are using OneDiff Enterprise, add another
 # `"script_args" : [{"0": True}]` field to enable quantization
 
-from datetime import datetime
-from pathlib import Path
-import urllib.request
 import base64
 import json
-import time
 import os
+import time
+import urllib.request
+from datetime import datetime
+from pathlib import Path
 
 webui_server_url = "http://127.0.0.1:7860"
 

@@ -6,6 +6,7 @@ from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
 
+
 def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
     diff_model = model.model.diffusion_model
     cache_patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
@@ -59,7 +60,11 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
                 unet_extra_options["attn2"][attn2_m.forward_patch_key][
                     index
                 ] = new_patch_kwargs
+
+                to["patches_replace"]["attn2"][key] = attn2_m
+                model.model_options["transformer_options"] = to
                 return
+
         except Exception as e:
             clear_deployable_module_cache_and_unbind(model)
 

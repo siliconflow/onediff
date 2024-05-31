@@ -33,7 +33,7 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         graph_device=None,
     ):
         from onediff.infer_compiler import (
-            CompileOptions,
+            OneflowCompileOptions,
             oneflow_compile,
             DeployableModule,
         )
@@ -49,10 +49,10 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
                 "diffusion_model"
             ] = self.model.diffusion_model
         else:
-            options = CompileOptions()
-            options.oneflow.use_graph = use_graph
-            options.oneflow.graph_file = graph_path
-            options.oneflow.graph_file_device = graph_device
+            options = OneflowCompileOptions()
+            options.use_graph = use_graph
+            options.graph_file = graph_path
+            options.graph_file_device = graph_device
             self.model.__dict__["_modules"]["diffusion_model"] = oneflow_compile(
                 self.model.diffusion_model, options=options
             )
@@ -506,7 +506,7 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         gen_compile_options=None,
     ):
         from onediff.infer_compiler import (
-            CompileOptions,
+            OneflowCompileOptions,
             oneflow_compile,
             DeployableModule,
         )
@@ -525,14 +525,14 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
         if use_graph:
-            gen_compile_options = gen_compile_options or (lambda x: CompileOptions())
+            gen_compile_options = gen_compile_options or (lambda x: OneflowCompileOptions())
             compile_options = gen_compile_options(self.deep_cache_unet)
-            compile_options.oneflow.use_graph = use_graph
+            compile_options.use_graph = use_graph
             self.deep_cache_unet = oneflow_compile(
                 self.deep_cache_unet, options=compile_options,
             )
             compile_options = gen_compile_options(self.fast_deep_cache_unet)
-            compile_options.oneflow.use_graph = use_graph
+            compile_options.use_graph = use_graph
             self.fast_deep_cache_unet = oneflow_compile(
                 self.fast_deep_cache_unet, options=compile_options,
             )

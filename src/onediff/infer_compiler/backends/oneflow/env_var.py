@@ -8,12 +8,12 @@ from onediff.utils import set_boolean_env_var, set_integer_env_var
 
 @dataclasses.dataclass
 class OneflowCompileOptions:
+    dynamic: bool = True
     use_graph: bool = True
     debug_level: int = -1
     max_cached_graph_size: int = 9
     graph_file: str = None
     graph_file_device: torch.device = None
-
     # Optimization related environment variables
     run_graph_by_vm: bool = None
     graph_delay_variable_op_execution: bool = None
