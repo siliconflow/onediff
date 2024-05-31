@@ -66,6 +66,10 @@ def input_output_processor(func):
                     f"Input structure key {self._deployable_module_input_structure_key} to {input_structure_key} has changed. Resetting the deployable module graph. This may slow down the process."
                 )
 
+                self._deployable_module_dpl_graph = None
+                self._deployable_module_input_structure_key = None
+                self._load_graph_first_run = True
+
         output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
 
