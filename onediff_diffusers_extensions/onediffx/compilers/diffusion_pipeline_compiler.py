@@ -172,6 +172,8 @@ def nexfort_quant_pipe(pipe, quant_config_path=None, top_percentage=90, *, ignor
     from nexfort.ao import quantize
     from nexfort.utils.attributes import multi_recursive_apply
 
+    # if "dynamic_quant_filter_fn" not in kwargs:
+    #     kwargs["dynamic_quant_filter_fn"] = dynamic_quant_filter_fn
     def load_quant_submodules_from_json(quant_config_path, top_percentage):
         with open(quant_config_path, 'r') as file:
             data = json.load(file)
