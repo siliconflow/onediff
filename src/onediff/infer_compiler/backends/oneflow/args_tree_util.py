@@ -3,6 +3,8 @@ import oneflow as flow
 from oneflow.framework.args_tree import ArgsTree
 from onediff.utils import logger
 
+from .utils.hash_utils import generate_input_structure_key
+
 
 def input_output_processor(func):
     def process_input(*args, **kwargs):
@@ -14,13 +16,12 @@ def input_output_processor(func):
                 return value
 
         args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-        input_count = len(
-            [v for v in args_tree.iter_nodes() if isinstance(v, torch.Tensor)]
-        )
+
+        input_structure_key = generate_input_structure_key(args_tree)
         out = args_tree.map_leaf(input_fn)
         mapped_args = out[0]
         mapped_kwargs = out[1]
-        return mapped_args, mapped_kwargs, input_count
+        return mapped_args, mapped_kwargs, input_structure_key
 
     def process_output(output):
         def output_fn(value):
@@ -33,19 +34,20 @@ def input_output_processor(func):
         out = out_tree.map_leaf(output_fn)
         return out[0]
 
-    def wrapper(self: "DeployableModule", *args, **kwargs):
-        mapped_args, mapped_kwargs, input_count = process_input(*args, **kwargs)
+    def wrapper(self: "OneflowDeployableModule", *args, **kwargs):
+        mapped_args, mapped_kwargs, input_structure_key = process_input(*args, **kwargs)
         if (
             self._deployable_module_options.use_graph
+            and self._deployable_module_enable_dynamic
             and self._deployable_module_dpl_graph is not None
+            and self._deployable_module_input_structure_key != input_structure_key
         ):
-            count = len(self._deployable_module_dpl_graph._input_op_names)
-            if count != input_count:
-                logger.warning(
-                    f"Module {type(self._deployable_module_model.oneflow_module)} input tensor count changed from {count} to {input_count}, will compile again."
-                )
-                self._deployable_module_dpl_graph = None
-                self._load_graph_first_run = True
+            logger.warning(
+                "Input structure key has changed. Resetting the deployable module graph."
+            )
+            self._deployable_module_dpl_graph = None
+            self._load_graph_first_run = True
+            self._deployable_module_input_structure_key = None
 
         output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
