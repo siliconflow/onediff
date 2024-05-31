@@ -3,90 +3,110 @@ import io
 import json
 import os
 import urllib.request
+from itertools import product
 from pathlib import Path
+from typing import Any, Dict, Iterable, List
 
 import numpy as np
 import requests
-import yaml
 from PIL import Image
 from skimage.metrics import structural_similarity as ssim
 
 TXT2IMG_API_ENDPOINT = "sdapi/v1/txt2img"
 IMG2IMG_API_ENDPOINT = "sdapi/v1/img2img"
 OPTIONS_API_ENDPOINT = "sdapi/v1/options"
-IMG2IMG = "img2img"
-TXT2IMG = "txt2img"
-ONEDIFF_QUANT = "onediff-quant"
-ONEDIFF = "onediff"
 SEED = 1
 NUM_STEPS = 20
-height = 1024
-width = 1024
-img2img_target_folder = "/share_nfs/onediff_ci/sd-webui/images/img2img"
-txt2img_target_folder = "/share_nfs/onediff_ci/sd-webui/images/txt2img"
+HEIGHT = 1024
+WIDTH = 1024
+IMG2IMG_TARGET_FOLDER = "/share_nfs/onediff_ci/sd-webui/images/img2img"
+TXT2IMG_TARGET_FOLDER = "/share_nfs/onediff_ci/sd-webui/images/txt2img"
 SAVED_GRAPH_NAME = "saved_graph"
-CFG_SCALE = 7
-N_ITER = 1
-BATCH_SIZE = 1
 
+os.makedirs(IMG2IMG_TARGET_FOLDER, exist_ok=True)
+os.makedirs(TXT2IMG_TARGET_FOLDER, exist_ok=True)
 
 webui_server_url = "http://127.0.0.1:7860"
 
 
-base_prompt = {
-    "prompt": "1girl",
-    "negative_prompt": "",
-    "seed": SEED,
-    "steps": NUM_STEPS,
-    "width": width,
-    "height": height,
-    "cfg_scale": CFG_SCALE,
-    "n_iter": N_ITER,
-    "batch_size": BATCH_SIZE,
-    # Enable OneDiff speed up
-    "script_name": "onediff_diffusion_model",
-    "script_args": [
-        False,  # quantization
-        None,  # graph_checkpoint
-        "",  # saved_graph_name
-    ],
-}
+def get_base_args() -> Dict[str, Any]:
+    return {
+        "prompt": "1girl",
+        "negative_prompt": "",
+        "seed": SEED,
+        "steps": NUM_STEPS,
+        "width": WIDTH,
+        "height": HEIGHT,
+        "cfg_scale": 7,
+        "n_iter": 1,
+        "batch_size": 1,
+        # Enable OneDiff speed up
+        "script_name": "onediff_diffusion_model",
+    }
 
 
-def check_and_generate_images(
-    keywords, img2img_target_folder, txt2img_target_folder, width, height
-):
-    img2img_target_onediff_images = [
-        f"{img2img_target_folder}/{keyword}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
-        for keyword in keywords
-    ]
-    txt2img_target_onediff_images = [
-        f"{txt2img_target_folder}/{keyword}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
-        for keyword in keywords
+def get_extra_args() -> List[Dict[str, Any]]:
+    quant_args = [
+        {
+            "script_args": [
+                x,  # quantization
+                None,  # graph_checkpoint
+                "",  # saved_graph_name
+            ]
+        }
+        for x in [True, False]
     ]
 
-    if not all(Path(x).exists() for x in txt2img_target_onediff_images):
-        txt2img_generate_onediff_imgs(txt2img_target_folder)
-        txt2img_generate_onediff_quant_imgs(txt2img_target_folder)
+    txt2img_args = [
+        {},
+        {"init_images": [get_init_image()]},
+    ]
 
-    if not all(Path(x).exists() for x in img2img_target_onediff_images):
-        img2img_generate_onediff_imgs(img2img_target_folder)
-        img2img_generate_onediff_quant_imgs(img2img_target_folder)
+    return [
+        quant_args,
+        txt2img_args,
+    ]
 
 
-def encode_file_to_base64(path):
+def get_all_args() -> Iterable[Dict[str, Any]]:
+    for extra_args in product(*get_extra_args()):
+        args = get_base_args()
+        for extra_arg in extra_args:
+            args = {**args, **extra_arg}
+        yield args
+
+
+def is_txt2img(data: Dict[str, Any]) -> bool:
+    return "init_images" not in data
+
+
+def is_quant(data: Dict[str, Any]) -> bool:
+    return data["script_args"][0]
+
+
+def encode_file_to_base64(path: str) -> str:
     with open(path, "rb") as file:
         return base64.b64encode(file.read()).decode("utf-8")
 
 
-def post_request(url, data):
-    response = requests.post(url, json=data)
-    assert response.status_code == 200
-
-
-def decode_and_save_base64(base64_str, save_path):
+def decode_and_save_base64(base64_str: str, save_path: str) -> None:
     with open(save_path, "wb") as file:
         file.write(base64.b64decode(base64_str))
+
+
+def post_request_and_check(url: str, data: Dict[str, Any]):
+    response = requests.post(url, json=data)
+    assert response.status_code == 200
+    return response
+
+
+def get_image_byte_from_response(response):
+    return base64.b64decode(response.json()["images"][0])
+
+
+def get_image_array_from_response(response):
+    imgdata = base64.b64decode(response.json()["images"][0])
+    return np.array(Image.open(io.BytesIO(imgdata)))
 
 
 def call_api(api_endpoint, **payload):
@@ -110,91 +130,46 @@ def call_txt2img_api(payload):
     return response
 
 
-def txt2img_generate_onediff_imgs(save_path):
-    payload_with_onediff = base_prompt
-    response = call_txt2img_api(payload_with_onediff,)
-    image = response.get("images")[0]
-    decode_and_save_base64(
-        image,
-        os.path.join(
-            save_path,
-            f"{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
-        ),
-    )
+def get_init_image():
+    img_path = str(Path(__file__).parent / "cat.png")
+    return encode_file_to_base64(img_path)
 
 
-def txt2img_generate_onediff_quant_imgs(save_path):
-    script_args = {
-        "script_args": [
-            True,  # quantization
-            None,  # graph_checkpoint
-            SAVED_GRAPH_NAME,  # saved_graph_name
-        ]
-    }
-    payload_with_onediff_quant = {**base_prompt, **script_args}
-    response = call_txt2img_api(payload_with_onediff_quant,)
-    image = response.get("images")[0]
-    decode_and_save_base64(
-        image,
-        os.path.join(
-            save_path,
-            f"{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
-        ),
-    )
-
-
-def img2img_generate_onediff_imgs(save_path):
-    img_path = os.path.join(save_path, "cat.png")
-
-    init_images = {"init_images": [encode_file_to_base64(img_path)]}
-    payload_with_onediff = {**base_prompt, **init_images}
-    response = call_img2img_api(payload_with_onediff,)
-
-    image = response.get("images")[0]
-    decode_and_save_base64(
-        image,
-        os.path.join(
-            save_path,
-            f"{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
-        ),
-    )
-
-
-def img2img_generate_onediff_quant_imgs(save_path):
-    script_args = {
-        "script_args": [
-            True,  # quantization
-            None,  # graph_checkpoint
-            SAVED_GRAPH_NAME,  # SAVED_GRAPH_NAME
-        ]
-    }
-    img_path = os.path.join(save_path, "cat.png")
-    init_images = {"init_images": [encode_file_to_base64(img_path)]}
-    payload_with_onediff = {**base_prompt, **init_images}
-    payload_with_onediff_quant = {**payload_with_onediff, **script_args}
-    response = call_img2img_api(payload_with_onediff_quant,)
-    image = response.get("images")[0]
-    decode_and_save_base64(
-        image,
-        os.path.join(
-            save_path,
-            f"{ONEDIFF_QUANT}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png",
-        ),
-    )
-
-
-def cal_ssim(src, generated):
+def cal_ssim(src: np.ndarray, generated: np.ndarray) -> float:
     ssim_score = ssim(src, generated, multichannel=True, win_size=3)
     return ssim_score
 
 
-def send_request_and_get_image(api_call_func, url, data):
-    post_request(url, data)
-    response = api_call_func(data)
-    return response.get("images")[0]
+def generate_image(filename: str, data: Dict[str, Any]):
+    endpoint = TXT2IMG_API_ENDPOINT if is_txt2img(data) else IMG2IMG_API_ENDPOINT
+    url = f"{webui_server_url}/{endpoint}"
+    response = post_request_and_check(url, data)
+    image = get_image_byte_from_response(response)
+    with open(filename, "wb") as file:
+        file.write(image)
 
 
-def decode_image2array(base64_string):
-    imgdata = base64.b64decode(base64_string)
-    npimage = np.array(Image.open(io.BytesIO(imgdata)))
-    return npimage
+def get_target_image_filename(data: Dict[str, Any]) -> str:
+    parent_path = TXT2IMG_TARGET_FOLDER if is_txt2img else IMG2IMG_TARGET_FOLDER
+    if not Path(parent_path).exists():
+        Path(parent_path).mkdir(mode=777, parents=True)
+
+    txt2img_str = "txt2img" if is_txt2img(data) else "img2img"
+    quant_str = "-quant" if is_quant(data) else ""
+    return f"{parent_path}/onediff{quant_str}-{txt2img_str}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
+
+
+def check_and_generate_images():
+    for data in get_all_args():
+        image_path = get_target_image_filename(data)
+        if not Path(image_path).exists():
+            print(f"Generating image for {get_data_summary(data)}...")
+            generate_image(image_path, data)
+        print(f"Image for {get_data_summary(data)} exists, skip generating...")
+
+
+def get_data_summary(data: Dict[str, Any]) -> Dict[str, bool]:
+    return {
+        "is_txt2img": is_txt2img(data),
+        "is_quant": is_quant(data),
+    }
