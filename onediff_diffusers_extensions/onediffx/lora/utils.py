@@ -212,15 +212,10 @@ def fuse_lora(
     w_down = state_dict[down_key].float().to(device)
     w_up = state_dict[up_key].float().to(device)
 
-    # if alpha is not None:
-    #     w_up = w_up * (alpha / rank)
-
     adapter_name = adapter_name if adapter_name is not None else get_adapter_names(self)
 
     if alpha is None:
         alpha = rank
-    #     self.scaling[adapter_name] = lora_scale
-    # else:
 
     self.scaling[adapter_name] = lora_scale * alpha / rank
     self.r[adapter_name] = rank
@@ -259,7 +254,6 @@ def _unfuse_lora(
     for name in adapter_names:
         if name not in self.active_adapter_names:
             continue
-        # weight = self.active_adapter_names[name]
         w_down = self.lora_A[name].to(device=device).float()
         w_up = self.lora_B[name].to(device).float()
         if delta_weight is None:
