@@ -9,11 +9,9 @@ import requests
 import utils
 import yaml
 from PIL import Image
-from utils import (BATCH_SIZE, CFG_SCALE, IMG2IMG, IMG2IMG_API_ENDPOINT,
-                   N_ITER, NUM_STEPS, ONEDIFF, ONEDIFF_QUANT,
-                   OPTIONS_API_ENDPOINT, SAVED_GRAPH_NAME, SEED, TXT2IMG,
-                   TXT2IMG_API_ENDPOINT, base_prompt, height,
-                   img2img_target_folder, txt2img_target_folder, width)
+from utils import (IMG2IMG_API_ENDPOINT, NUM_STEPS, OPTIONS_API_ENDPOINT,
+                   SAVED_GRAPH_NAME, SEED, TXT2IMG_API_ENDPOINT, base_prompt,
+                   height, img2img_target_folder, txt2img_target_folder, width)
 
 os.makedirs(img2img_target_folder, exist_ok=True)
 os.makedirs(txt2img_target_folder, exist_ok=True)
@@ -51,75 +49,59 @@ def simple_txt2img_request():
     return base_prompt
 
 
-def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
-    print(simple_txt2img_request)
-    image = utils.send_request_and_get_image(
-        utils.call_txt2img_api, url_txt2img, simple_txt2img_request
+img_path = os.path.join(img2img_target_folder, "cat.png")
+init_images = {"init_images": [utils.encode_file_to_base64(img_path)]}
+data = {**base_prompt, **init_images}
+
+test_cases = [
+    (
+        "utils.call_txt2img_api",
+        "http://127.0.0.1:7860/sdapi/v1/txt2img",
+        base_prompt,
+        "onediff",
+        "txt2img",
+    ),
+    (
+        "utils.call_txt2img_api",
+        "http://127.0.0.1:7860/sdapi/v1/txt2img",
+        base_prompt,
+        "onediff-quant",
+        "txt2img",
+    ),
+    (
+        "utils.call_img2img_api",
+        "http://127.0.0.1:7860/sdapi/v1/img2img",
+        data,
+        "onediff",
+        "img2img",
+    ),
+]
+
+
+@pytest.mark.parametrize(
+    "api, url, request_payload, speed_up_method, image_gen_method", test_cases
+)
+def test_image_similarity_ssim(
+    api, url, request_payload, speed_up_method, image_gen_method
+):
+    api_function = eval(api)
+
+    folder = (
+        img2img_target_folder
+        if image_gen_method == "img2img"
+        else txt2img_target_folder
     )
-    target_image = np.array(
-        Image.open(
-            f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
-        )
+    target_image_path = f"{folder}/{speed_up_method}-{image_gen_method}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
+
+    generated_image = utils.send_request_and_get_image(
+        api_function, url, request_payload
     )
-    # utils.decode_and_save_base64(
-    #     image,
-    #     f"{txt2img_target_folder}/{ONEDIFF}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
-    # )
-    npimage = utils.decode_image2array(image)
+    target_image = np.array(Image.open(target_image_path))
+    np_generated_image = utils.decode_image2array(generated_image)
+    ssim_value = utils.cal_ssim(np_generated_image, target_image)
+    print("SSIM:", ssim_value)
 
-    ssim = utils.cal_ssim(npimage, target_image)
-    print("SSIM:", ssim)
-    assert ssim > 0.99
-
-
-def test_img2img_onediff(url_img2img, simple_txt2img_request):
-    img_path = os.path.join(img2img_target_folder, "cat.png")
-    init_images = {"init_images": [utils.encode_file_to_base64(img_path)]}
-    data = {**simple_txt2img_request, **init_images}
-
-    image = utils.send_request_and_get_image(utils.call_img2img_api, url_img2img, data)
-    print(image)
-    # utils.decode_and_save_base64(
-    #     image,
-    #     f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
-    # )
-    target_image = np.array(
-        Image.open(
-            f"{img2img_target_folder}/{ONEDIFF}-{IMG2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
-        )
-    )
-    npimage = utils.decode_image2array(image)
-    ssim = utils.cal_ssim(npimage, target_image)
-    print("SSIM:", ssim)
-    assert ssim > 0.99
-
-
-def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
-    script_args = {
-        "script_args": [
-            True,  # quantization
-            None,  # graph_checkpoint
-            SAVED_GRAPH_NAME,  # SAVED_GRAPH_NAME
-        ]
-    }
-    data = {**simple_txt2img_request, **script_args}
-
-    image = utils.send_request_and_get_image(utils.call_txt2img_api, url_txt2img, data)
-    target_image = np.array(
-        Image.open(
-            f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}.png"
-        )
-    )
-    print(image)
-    # utils.decode_and_save_base64(
-    #     image,
-    #     f"{txt2img_target_folder}/{ONEDIFF_QUANT}-{TXT2IMG}-w{width}-h{height}-seed-{SEED}-numstep-{NUM_STEPS}-ci.png",
-    # )
-    print(image)
-    npimage = utils.decode_image2array(image)
-    ssim = utils.cal_ssim(npimage, target_image)
-    print("SSIM:", ssim)
-    assert ssim > 0.99
+    assert ssim_value > 0.99
 
 
 def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
