@@ -2,6 +2,7 @@
 import inspect
 import importlib.util
 from pathlib import Path
+import sys
 from typing import Callable, Dict, List, Optional, Union
 from ..import_tools import import_module_from_path
 from .manager import transform_mgr
@@ -51,18 +52,21 @@ def set_default_registry():
     # compiler_registry_path
     registry_path = Path(__file__).parents[5] / "infer_compiler_registry"
 
-    if importlib.util.find_spec("diffusers") is not None:
-        import_module_safely(registry_path / "register_diffusers", "register_diffusers")
+    if sys.modules.get("diffusers") is not None:
+        if importlib.util.find_spec("diffusers") is not None:
+            import_module_safely(
+                registry_path / "register_diffusers", "register_diffusers"
+            )
+
+        if importlib.util.find_spec("diffusers_enterprise_lite"):
+            import_module_safely(
+                registry_path / "register_diffusers_enterprise_lite",
+                "register_diffusers_enterprise_lite",
+            )
 
     if importlib.util.find_spec("onediff_quant") is not None:
         import_module_safely(
             registry_path / "register_onediff_quant", "register_onediff_quant"
-        )
-
-    if importlib.util.find_spec("diffusers_enterprise_lite") is not None:
-        import_module_safely(
-            registry_path / "register_diffusers_enterprise_lite",
-            "register_diffusers_enterprise_lite",
         )
 
 
