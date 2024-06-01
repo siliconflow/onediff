@@ -80,8 +80,6 @@ python3 ./benchmarks/text_to_image.py \
 
  <sup>2</sup> Intel(R) Xeon(R) Platinum 8468.
 
-Test data on the NVIDIA GeForce RTX 4090 is yet to be supplemented.
-
 ## Quant
 
 Onediff's nexfort backend works closely with Torchao to support model quantization. Quant can reduce the runtime memory requirement and increase the inference speed.
