@@ -55,18 +55,26 @@ def _filter_parts(ignores=()):
 
 
 def compile_pipe(
-    pipe, *, backend="oneflow", options=None, ignores=(), fuse_qkv_projections=False,
+    pipe,
+    *,
+    backend="oneflow",
+    options=None,
+    ignores=(),
+    fuse_qkv_projections=False,
 ):
     if fuse_qkv_projections:
         pipe = fuse_qkv_projections_in_pipe(pipe)
-    
+
     if backend == "nexfort" and isinstance(options, str):
         import json
+
         options = json.loads(options)
 
     if backend == "nexfort" and options is not None and "memory_format" in options:
         memory_format = getattr(torch, options["memory_format"])
-        pipe = convert_pipe_to_memory_format(pipe, ignores=ignores, memory_format=memory_format)
+        pipe = convert_pipe_to_memory_format(
+            pipe, ignores=ignores, memory_format=memory_format
+        )
         del options["memory_format"]
 
     # To fix the bug of graph load of vae. Please refer to: https://github.com/siliconflow/onediff/issues/452
@@ -97,16 +105,20 @@ def compile_pipe(
 
     return pipe
 
+
 def fuse_qkv_projections_in_pipe(pipe):
     if hasattr(pipe, "fuse_qkv_projections"):
         pipe.fuse_qkv_projections()
     return pipe
 
 
-def convert_pipe_to_memory_format(pipe, *, ignores=(), memory_format=torch.preserve_format):
+def convert_pipe_to_memory_format(
+    pipe, *, ignores=(), memory_format=torch.preserve_format
+):
     from nexfort.utils.attributes import multi_recursive_apply
     from nexfort.utils.memory_format import apply_memory_format
     import functools
+
     if memory_format == torch.preserve_format:
         return pipe
 
@@ -121,9 +133,14 @@ def convert_pipe_to_memory_format(pipe, *, ignores=(), memory_format=torch.prese
         "vae",
     ]
     multi_recursive_apply(
-        pipe, parts, functools.partial(apply_memory_format, memory_format=memory_format), ignores=ignores, verbose=True
+        pipe,
+        parts,
+        functools.partial(apply_memory_format, memory_format=memory_format),
+        ignores=ignores,
+        verbose=True,
     )
     return pipe
+
 
 def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
     if not os.path.exists(dir):
@@ -147,7 +164,10 @@ def save_pipe(pipe, dir="cached_pipe", *, ignores=(), overwrite=True):
 
 
 def load_pipe(
-    pipe, dir="cached_pipe", *, ignores=(),
+    pipe,
+    dir="cached_pipe",
+    *,
+    ignores=(),
 ):
     if not os.path.exists(dir):
         return
@@ -168,7 +188,9 @@ def load_pipe(
         patch_image_prcessor_(pipe.image_processor)
 
 
-def nexfort_quant_pipe(pipe, quant_submodules_config_path=None, top_percentage=90, *, ignores=(), **kwargs):
+def nexfort_quant_pipe(
+    pipe, quant_submodules_config_path=None, top_percentage=90, *, ignores=(), **kwargs
+):
     from nexfort.ao import quantize
     from nexfort.utils.attributes import multi_recursive_apply
 
@@ -176,9 +198,9 @@ def nexfort_quant_pipe(pipe, quant_submodules_config_path=None, top_percentage=9
     #     kwargs["dynamic_quant_filter_fn"] = dynamic_quant_filter_fn
 
     def load_quant_submodules_from_json(quant_submodules_config_path, top_percentage):
-        with open(quant_submodules_config_path, 'r') as file:
+        with open(quant_submodules_config_path, "r") as file:
             data = json.load(file)
-        submodules_with_ssim = [(fqn, details['ssim']) for fqn, details in data.items()]
+        submodules_with_ssim = [(fqn, details["ssim"]) for fqn, details in data.items()]
         submodules_with_ssim.sort(key=lambda x: x[1], reverse=True)
         top_n_percent_index = int(len(submodules_with_ssim) * (top_percentage / 100))
         top_submodules = [fqn for fqn, _ in submodules_with_ssim[:top_n_percent_index]]
@@ -199,15 +221,25 @@ def nexfort_quant_pipe(pipe, quant_submodules_config_path=None, top_percentage=9
     #     return name in allowed_fqns
 
     if quant_submodules_config_path:
-        allowed_fqns = load_quant_submodules_from_json(quant_submodules_config_path, top_percentage)
+        allowed_fqns = load_quant_submodules_from_json(
+            quant_submodules_config_path, top_percentage
+        )
         quantization_function = functools.partial(
             quantize,
-            quant_type=kwargs.pop('quant_type', None),
+            quant_type=kwargs.pop("quant_type", None),
             filter_fn="is_allowed_fqn",
-            filter_fn_kwargs={'allowed_fqns': allowed_fqns}
+            filter_fn_kwargs={"allowed_fqns": allowed_fqns},
         )
-        multi_recursive_apply(pipe, parts, quantization_function, ignores=ignores, verbose=True)
+        multi_recursive_apply(
+            pipe, parts, quantization_function, ignores=ignores, verbose=True
+        )
     else:
-        multi_recursive_apply(pipe, parts, functools.partial(quantize, **kwargs), ignores=ignores, verbose=True)
+        multi_recursive_apply(
+            pipe,
+            parts,
+            functools.partial(quantize, **kwargs),
+            ignores=ignores,
+            verbose=True,
+        )
 
     return pipe

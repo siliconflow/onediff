@@ -83,6 +83,7 @@ def parse_args():
     parser.add_argument("--quant-submodules-config-path", type=str, default=None)
     return parser.parse_args()
 
+
 args = parse_args()
 
 
@@ -108,19 +109,16 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=dtype,
+            controlnet,
+            torch_dtype=dtype,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
-        pipe = QuantPipeline.from_quantized(
-            pipeline_cls, model_name, **extra_kwargs
-        )
+        pipe = QuantPipeline.from_quantized(pipeline_cls, model_name, **extra_kwargs)
     else:
-        pipe = pipeline_cls.from_pretrained(
-            model_name, **extra_kwargs
-        )
+        pipe = pipeline_cls.from_pretrained(model_name, **extra_kwargs)
     if scheduler is not None and scheduler != "none":
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
@@ -175,11 +173,15 @@ def generate_data_and_fit_model(model, steps_range):
     data = {"steps": [], "inference_time": [], "throughput": []}
 
     for n_steps in steps_range:
-        inference_time, throughput = calculate_inference_time_and_throughput(height, width, n_steps, model)
+        inference_time, throughput = calculate_inference_time_and_throughput(
+            height, width, n_steps, model
+        )
         data["steps"].append(n_steps)
         data["inference_time"].append(inference_time)
         data["throughput"].append(throughput)
-        print(f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s")
+        print(
+            f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s"
+        )
 
     average_throughput = np.mean(data["throughput"])
     print(f"Average Throughput: {average_throughput:.2f} steps/s")
@@ -192,8 +194,8 @@ def generate_data_and_fit_model(model, steps_range):
 
 def plot_data_and_model(data, coefficients):
     plt.figure(figsize=(10, 5))
-    plt.scatter(data["steps"], data["inference_time"], color='blue')
-    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color='red')
+    plt.scatter(data["steps"], data["inference_time"], color="blue")
+    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color="red")
     plt.title("Inference Time vs. Steps")
     plt.xlabel("Steps")
     plt.ylabel("Inference Time (seconds)")
@@ -201,7 +203,9 @@ def plot_data_and_model(data, coefficients):
     # plt.savefig("output.png")
     plt.show()
 
-    print(f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}")
+    print(
+        f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}"
+    )
 
 
 def main():
@@ -245,7 +249,12 @@ def main():
                 quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
             if args.quant_submodules_config_path:
                 # download: https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8/blob/main/fp8_e4m3.json
-                pipe = nexfort_quant_pipe(pipe, quant_submodules_config_path=args.quant_submodules_config_path, ignores=[], **quantize_config)
+                pipe = nexfort_quant_pipe(
+                    pipe,
+                    quant_submodules_config_path=args.quant_submodules_config_path,
+                    ignores=[],
+                    **quantize_config,
+                )
             else:
                 pipe = nexfort_quant_pipe(pipe, ignores=[], **quantize_config)
         if args.compiler_config is not None:
@@ -254,7 +263,9 @@ def main():
         else:
             # config with string
             options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
-        pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
+        pipe = compile_pipe(
+            pipe, backend="nexfort", options=options, fuse_qkv_projections=True
+        )
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         if hasattr(pipe, "unet"):
@@ -295,9 +306,11 @@ def main():
             height=height,
             width=width,
             num_images_per_prompt=args.batch,
-            generator=None
-            if args.seed is None
-            else torch.Generator(device="cuda").manual_seed(args.seed),
+            generator=(
+                None
+                if args.seed is None
+                else torch.Generator(device="cuda").manual_seed(args.seed)
+            ),
             **(
                 dict()
                 if args.extra_call_kwargs is None
@@ -355,7 +368,7 @@ def main():
 
         cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
     else:
-        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
+        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
 
@@ -365,7 +378,7 @@ def main():
         print("Please set `--output-image` to save the output image")
 
     if args.throughput:
-        steps_range = range(1, 100, 1) 
+        steps_range = range(1, 100, 1)
         data, coefficients = generate_data_and_fit_model(pipe, steps_range)
         plot_data_and_model(data, coefficients)
 

@@ -4,6 +4,7 @@ Compile with oneflow: python examples/text_to_image_sdxl.py --compiler oneflow
 Compile with nexfort: python examples/text_to_image_sdxl.py --compiler nexfort
 Test dynamic shape: Add --run_multiple_resolutions 1 and --run_rare_resolutions 1
 """
+
 import os
 import json
 import time
@@ -96,9 +97,7 @@ elif args.compiler == "nexfort":
     if args.compiler_config is not None:
         options = json.loads(args.compiler_config)
     else:
-        options = json.loads(
-            '{"mode": "max-autotune:cudagraphs", "dynamic": true}'
-        )
+        options = json.loads('{"mode": "max-autotune:cudagraphs", "dynamic": true}')
 
     base = compile_pipe(
         base, backend="nexfort", options=options, fuse_qkv_projections=True
