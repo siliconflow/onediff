@@ -244,8 +244,8 @@ def main():
             else:
                 quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
             if args.quant_submodules_config_path:
-                # https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8/blob/main/fp8_e4m3.json
-                pipe = nexfort_quant_pipe(pipe, quant_config_path=args.quant_submodules_config_path, ignores=[], **quantize_config)
+                # download: https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8/blob/main/fp8_e4m3.json
+                pipe = nexfort_quant_pipe(pipe, quant_submodules_config_path=args.quant_submodules_config_path, ignores=[], **quantize_config)
             else:
                 pipe = nexfort_quant_pipe(pipe, ignores=[], **quantize_config)
         if args.compiler_config is not None:
