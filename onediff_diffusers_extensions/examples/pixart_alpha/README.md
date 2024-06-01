@@ -128,7 +128,7 @@ python3 ./benchmarks/text_to_image.py \
 --compiler nexfort \
 --compiler-config '{"mode": "quant:max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}' \
 --quantize \
---quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
+--quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}' \
 --quant-submodules-config-path /path/to/fp8_e4m3.json
 ```
 
