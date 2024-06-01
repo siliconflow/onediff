@@ -123,7 +123,7 @@ python3 ./benchmarks/text_to_image.py \
 --model PixArt-alpha/PixArt-XL-2-1024-MS \
 --scheduler none \
 --steps 20 \
---output-image ./pixart_alpha_fp8.png \
+--output-image ./pixart_alpha_fp8_90%.png \
 --prompt "product photography, world of warcraft orc warrior, white background" \
 --compiler nexfort \
 --compiler-config '{"mode": "quant:max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}' \
