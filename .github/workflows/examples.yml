@@ -338,7 +338,7 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install scikit-image -i https://pypi.tuna.tsinghua.edu.cn/simple
-          docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py
+          docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py --disable-warnings
       # - if: matrix.test-suite == 'diffusers_examples'
       #   run: docker exec -w /src/onediff/onediff_diffusers_extensions -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl_reuse_pipe.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --new_base /share_nfs/hf_models/dataautogpt3-OpenDalleV1.1
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
@@ -366,31 +366,6 @@ jobs:
             echo /app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/$dir
           done
           docker exec -w /app/${{ env.WEBUI_SRC_DIR }} -e venv_dir=- ${{ env.CONTAINER_NAME }} sh -c "bash webui.sh -f --exit --api --no-download-sd-model --do-not-download-clip --disable-safe-unpickle --ckpt-dir /share_nfs/onediff_ci/sd-webui/models"
-
-        # env:
-        #   INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
-        #   CLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/CLIP"
-        #   OPENCLIP_PACKAGE: "git+file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/open_clip"
-        #   ASSETS_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-webui-assets"
-        #   STABLE_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/stable-diffusion-stability-ai"
-        #   STABLE_DIFFUSION_XL_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/generative-models"
-        #   K_DIFFUSION_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/k-diffusion"
-        #   BLIP_REPO: "file:///app/${{ env.WEBUI_SRC_DIR }}/${{ env.WEBUI_DEPENDENCIES_SUBDIR }}/BLIP"
-
-        #   ASSETS_COMMIT_HASH: ${{ env.ASSETS_COMMIT_HASH }}
-        #   STABLE_DIFFUSION_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_COMMIT_HASH }}
-        #   STABLE_DIFFUSION_XL_COMMIT_HASH: ${{ env.STABLE_DIFFUSION_XL_COMMIT_HASH }}
-        #   K_DIFFUSION_COMMIT_HASH: ${{ env.K_DIFFUSION_COMMIT_HASH }}
-        #   BLIP_COMMIT_HASH: ${{ env.BLIP_COMMIT_HASH }}
-
-        #   SAFE_DIRECTORIES: |
-        #     CLIP
-        #     open_clip
-        #     stable-diffusion-webui-assets
-        #     stable-diffusion-stability-ai
-        #     generative-models
-        #     k-diffusion
-        #     BLIP
 
       - name: Start WebUI Web Service
         if: matrix.test-suite == 'webui'
