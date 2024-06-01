@@ -80,7 +80,7 @@ python3 ./benchmarks/text_to_image.py \
 
  <sup>2</sup> Intel(R) Xeon(R) Platinum 8468.
 
-## Quant
+## Quantization
 
 Onediff's nexfort backend works closely with Torchao to support model quantization. Quant can reduce the runtime memory requirement and increase the inference speed.
 
@@ -103,7 +103,21 @@ Currently, multiple quant types are supported, such as `int8_dynamic`, `fp8_e4m3
 
 It is recommended to try different types of quantization to find the optimal situation in terms of performance and quality.
 
+### Metric
 
+NVIDIA H800 (1024 * 1024)
+
+| quant_type                       | E2E Inference Time | Iteration speed    | Max Used CUDA Memory |
+|----------------------------------|--------------------|--------------------|----------------------|
+| fp8_e4m3_e4m3_dynamic            | 0.824s (-25.2%)    | 25.649 (+21.8%)   | 13.400 GiB           |
+| fp8_e4m3_e4m3_dynamic_per_tensor | 0.834s (-24.3%)    | 25.323 (+20.2%)   | 13.396 GiB           |
+| int8_dynamic                     | 0.895s (-18.8%)    | 24.328 (+15.5%)   | 13.369 GiB           |
+
+### Precision Optimization Quantization
+
+Quantization of the model's layers can be selectively performed based on accuracy. Download `fp8_e4m3.json` or `per_tensor_fp8_e4m3.json` from https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8.
+
+Run:
 ```
 python3 ./benchmarks/text_to_image.py \
 --model PixArt-alpha/PixArt-XL-2-1024-MS \
@@ -117,17 +131,6 @@ python3 ./benchmarks/text_to_image.py \
 --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
 --quant-submodules-config-path /path/to/fp8_e4m3.json
 ```
-
-### Metric
-
-NVIDIA H800 (1024 * 1024)
-
-| quant_type                       | E2E Inference Time | Iteration speed    | Max Used CUDA Memory |
-|----------------------------------|--------------------|--------------------|----------------------|
-| fp8_e4m3_e4m3_dynamic            | 0.824s (-25.2%)    | 25.649 (+21.8%)   | 13.400 GiB           |
-| fp8_e4m3_e4m3_dynamic_per_tensor | 0.834s (-24.3%)    | 25.323 (+20.2%)   | 13.396 GiB           |
-| int8_dynamic                     | 0.895s (-18.8%)    | 24.328 (+15.5%)   | 13.369 GiB           |
-
 
 ## Quality
 
