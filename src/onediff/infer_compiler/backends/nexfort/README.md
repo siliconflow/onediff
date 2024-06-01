@@ -11,13 +11,13 @@ Before installing nextfort, please make sure that the corresponding PyTorch and 
 
 ```
 # PyTorch 2.3.0, CUDA 12.1
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch230cu121-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch230cu121-cp310-cp310-manylinux2014_x86_64.whl
 
 # PyTorch 2.4.0, CUDA 12.1
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch240dev20240507cu121-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch240dev20240507cu121-cp310-cp310-manylinux2014_x86_64.whl
 
 # PyTorch 2.4.0, CUDA 12.4
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch240dev20240507cu124-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch240dev20240507cu124-cp310-cp310-manylinux2014_x86_64.whl
 ```
 
 ### Run pixart alpha (with nexfort backend)
