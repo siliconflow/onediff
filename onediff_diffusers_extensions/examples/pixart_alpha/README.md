@@ -115,7 +115,7 @@ NVIDIA H800 (1024 * 1024)
 
 ### Precision Optimization Quantization
 
-Quantization of the model's layers can be selectively performed based on accuracy. Download `fp8_e4m3.json` or `per_tensor_fp8_e4m3.json` from https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8.
+Quantization of the model's layers can be selectively performed based on precision. Download `fp8_e4m3.json` or `per_tensor_fp8_e4m3.json` from https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8.
 
 Run:
 ```
