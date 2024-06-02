@@ -99,7 +99,7 @@ python3 ./benchmarks/text_to_image.py \
 --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
 ```
 
-Currently, multiple quant types are supported, such as `int8_dynamic`, `fp8_e4m3_e4m3_weightonly`, `fp8_e4m3_e4m3_dynamic_per_tensor`, `fp8_e4m3_e4m3_weightonly_per_tensor`. Additionally, the format of activations and weights supports switching between `e4m3` and `e5m2`, such as `fp8_e4m3_e5m2_dynamic`.
+**Optimal balance**. Currently, multiple quant types are supported, such as `int8_dynamic`, `fp8_e4m3_e4m3_weightonly`, `fp8_e4m3_e4m3_dynamic_per_tensor`, `fp8_e4m3_e4m3_weightonly_per_tensor`. Additionally, the format of activations and weights supports switching between `e4m3` and `e5m2`, such as `fp8_e4m3_e5m2_dynamic`.
 
 It is recommended to try different types of quantization to find the optimal situation in terms of performance and quality.
 
@@ -113,7 +113,7 @@ NVIDIA H800 (1024 * 1024)
 | fp8_e4m3_e4m3_dynamic_per_tensor | 0.834s (-24.3%)    | 25.323 (+20.2%)   | 13.396 GiB           |
 | int8_dynamic                     | 0.832s (-24.5%)    | 25.391 (+20.5%)   | 13.367 GiB           |
 
-### Precision Optimization Quantization
+### Optimizing Quantization Precision
 
 Quantization of the model's layers can be selectively performed based on precision. Download `fp8_e4m3.json` or `per_tensor_fp8_e4m3.json` from https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8.
 
@@ -133,6 +133,8 @@ python3 ./benchmarks/text_to_image.py \
 ```
 
 ## Quality
+
+When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless. With nexfort's quantized versions (fp8 or int8), there are only slight differences.
 
 <p align="center">
 <img src="../../../imgs/nexfort_sample_quality.png">
