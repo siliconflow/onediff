@@ -1,4 +1,19 @@
 # Run PixArt alpha (with nexfort backend)
+
+1. [Environment Setup](#environment-setup)
+   - [Set up onediff](#set-up-onediff)
+   - [Set up nexfort backend](#set-up-nexfort-backend)
+   - [Set up PixArt alpha](#set-up-pixart-alpha)
+2. [Run](#run)
+   - [Run 1024*1024 without compile](#run-10241024-without-compile)
+   - [Run 1024*1024 with compile](#run-10241024-with-compile)
+3. [Performance Comparison](#performance-comparison)
+4. [Quantization](#quantization)
+   - [Run](#run-1)
+   - [Metric](#metric-1)
+   - [Optimizing Quantization Precision](#optimizing-quantization-precision)
+5. [Quality](#quality)
+
 ## Environment setup
 ### Set up onediff
 https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
