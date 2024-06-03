@@ -16,7 +16,6 @@ from utils import (
     get_target_image_filename,
     is_txt2img,
     post_request_and_check,
-    TXT2IMG_TARGET_FOLDER
 )
 
 
@@ -52,15 +51,6 @@ def test_image_ssim(base_url, data):
     endpoint = TXT2IMG_API_ENDPOINT if is_txt2img(data) else IMG2IMG_API_ENDPOINT
     url = f"{base_url}/{endpoint}"
     generated_image = get_image_array_from_response(post_request_and_check(url, data))
-
-    from datetime import datetime
-    current_timestamp = datetime.now().timestamp()
-    readable_time = datetime.fromtimestamp(current_timestamp)
-    file_time_str = readable_time.strftime('%Y-%m-%d_%H-%M-%S')
-    image = Image.fromarray(generated_image)
-    # 保存图像到文件
-    image.save(f"{TXT2IMG_TARGET_FOLDER}/{file_time_str}.png")
-
     target_image_path = get_target_image_filename(data)
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
