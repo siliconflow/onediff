@@ -26,7 +26,7 @@ from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
 from ..modules.oneflow.hijack_nodes import nodes_hijacker
 from ..modules.oneflow.hijack_samplers import samplers_hijack
 from ..modules.oneflow.hijack_utils import comfy_utils_hijack
-
+from ..modules.oneflow.hijack_pulid_comfyui import pulid_comfyui_hijacker
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..utils.import_utils import is_onediff_quant_available
 
@@ -43,6 +43,7 @@ ipadapter_plus_hijacker.hijack()
 comfyui_instantid_hijacker.hijack()
 model_patch_hijacker.hijack()
 comfy_utils_hijack.hijack()
+pulid_comfyui_hijacker.hijack()
 
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple
