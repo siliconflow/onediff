@@ -32,7 +32,7 @@ Performance on NVIDIA A100-PCIE-40GB:
 - Iterations per second: 10.743
 - Max used CUDA memory: 13.855GiB
 
-### Local cache speeds up recompilation
+### Compilation cache speeds up recompilation
 
 Setting cache:
 ```
