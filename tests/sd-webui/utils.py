@@ -133,6 +133,10 @@ def get_target_image_filename(data: Dict[str, Any]) -> str:
 def check_and_generate_images():
     for data in get_all_args():
         image_path = get_target_image_filename(data)
+        if not Path(image_path).exists():
+            print(f"Generating image for {get_data_summary(data)}...")
+            generate_image(image_path, data)
+        print(f"Image for {get_data_summary(data)} exists, skip generating...")
         generate_image(image_path, data)
 
 
