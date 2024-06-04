@@ -1,7 +1,7 @@
 import folder_paths
 import torch
 import comfy
-from functools import lru_cache
+from onediff.utils.chache_utils import LRUCache
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from ._config import is_disable_oneflow_backend
 from .modules import BoosterScheduler, BoosterExecutor
@@ -177,6 +177,8 @@ class OneDiffControlNetLoader(ControlNetLoader):
 
 
 class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
+    _cache_map = LRUCache(1)
+
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -191,7 +193,6 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     FUNCTION = "onediff_load_checkpoint"
 
     @staticmethod
-    @lru_cache(maxsize=1, typed=True)
     def _load_checkpoint(
         ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None
     ):
@@ -225,4 +226,11 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     def onediff_load_checkpoint(
         self, ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None,
     ):
-        return self._load_checkpoint(ckpt_name, vae_speedup, custom_booster)
+        cache_key = (ckpt_name, vae_speedup, custom_booster)
+        out = self._cache_map.get(cache_key, None)
+        if out is None:
+            out = self._load_checkpoint(ckpt_name, vae_speedup, custom_booster)
+            self._cache_map.put(cache_key, out)
+
+        # Return the loaded checkpoint (modelpatcher, clip, vae)
+        return out

@@ -5,6 +5,7 @@ from functools import wraps
 import oneflow as flow
 
 from onediff.utils import logger
+from onediff.utils.chache_utils import LRUCache
 
 from ..deployable_module import DeployableModule
 
@@ -18,7 +19,6 @@ from .param_utils import parse_device, check_device, generate_constant_folding_i
 from .graph_management_utils import graph_file_management
 from .online_quantization_utils import quantize_and_deploy_wrapper
 from .env_var import OneflowCompileOptions
-from .graph import LRUCache
 
 
 @torch2oflow.register
