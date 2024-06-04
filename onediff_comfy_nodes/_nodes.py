@@ -1,5 +1,7 @@
 import folder_paths
 import torch
+import comfy
+from functools import lru_cache
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from ._config import is_disable_oneflow_backend
 from .modules import BoosterScheduler, BoosterExecutor
@@ -188,24 +190,39 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_checkpoint"
 
-    @torch.no_grad()
-    def onediff_load_checkpoint(
-        self,
-        ckpt_name,
-        vae_speedup="disable",
-        output_vae=True,
-        output_clip=True,
-        custom_booster: BoosterScheduler = None,
+    @staticmethod
+    @lru_cache(maxsize=1, typed=True)
+    def _load_checkpoint(
+        ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None
     ):
-        # CheckpointLoaderSimple.load_checkpoint
-        modelpatcher, clip, vae = self.load_checkpoint(
-            ckpt_name, output_vae, output_clip
+        """Loads a checkpoint, applying speedup techniques."""
+
+        ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
+        out = comfy.sd.load_checkpoint_guess_config(
+            ckpt_path,
+            output_vae=True,
+            output_clip=True,
+            embedding_directory=folder_paths.get_folder_paths("embeddings"),
         )
-        if custom_booster is None:
-            custom_booster = BoosterScheduler(BasicBoosterExecutor())
+
+        # Unpack outputs
+        modelpatcher, clip, vae = out[:3]
+
+        # Apply custom booster if provided, otherwise use a basic one
+        custom_booster = custom_booster or BoosterScheduler(BasicBoosterExecutor())
         modelpatcher = custom_booster(modelpatcher, ckpt_name=ckpt_name)
+
+        # Apply VAE speedup if enabled
         if vae_speedup == "enable":
             vae = BoosterScheduler(BasicBoosterExecutor())(vae, ckpt_name=ckpt_name)
-        # set inplace update
+
+        # Set weight inplace update
         modelpatcher.weight_inplace_update = True
+
         return modelpatcher, clip, vae
+
+    @torch.inference_mode()
+    def onediff_load_checkpoint(
+        self, ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None,
+    ):
+        return self._load_checkpoint(ckpt_name, vae_speedup, custom_booster)
