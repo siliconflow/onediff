@@ -1,24 +1,23 @@
 import os
-from typing import Dict
 
 # import modules.shared as shared
 import warnings
-from typing import Union, Dict
 from pathlib import Path
+from typing import Dict, Union
 
-from .compile_ldm import compile_ldm_unet
-from .compile_sgm import compile_sgm_unet
-from .onediff_compiled_graph import OneDiffCompiledGraph
 from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
+from modules.sd_models import select_checkpoint
 from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
+
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
 )
 from onediff.utils import logger
-from onediff_shared import graph_dict
 
-from modules.sd_models import select_checkpoint
+from .compile_ldm import compile_ldm_unet
+from .compile_sgm import compile_sgm_unet
+from .onediff_compiled_graph import OneDiffCompiledGraph
 
 
 def compile_unet(
@@ -65,6 +64,7 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
 
 
 def get_compiled_graph(sd_model, quantization) -> OneDiffCompiledGraph:
+    from onediff_shared import graph_dict
     if sd_model.sd_model_hash in graph_dict:
         return graph_dict[sd_model.sd_model_hash]
     else:

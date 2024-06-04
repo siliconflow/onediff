@@ -9,7 +9,7 @@ from ldm.modules.attention import (
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 from modules import shared
-from sd_webui_onediff_utils import (
+from .sd_webui_onediff_utils import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
     timestep_embedding,

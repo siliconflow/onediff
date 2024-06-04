@@ -1,7 +1,9 @@
 import dataclasses
+
 import torch
-from onediff.infer_compiler import DeployableModule
 from modules import sd_models_types
+
+from onediff.infer_compiler import DeployableModule
 
 
 @dataclasses.dataclass

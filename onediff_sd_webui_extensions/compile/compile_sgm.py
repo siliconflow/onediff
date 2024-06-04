@@ -1,5 +1,5 @@
 import oneflow as flow
-from sd_webui_onediff_utils import (
+from .sd_webui_onediff_utils import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
     timestep_embedding,

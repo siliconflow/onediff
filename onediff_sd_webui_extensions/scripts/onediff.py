@@ -1,4 +1,5 @@
 import os
+import torch
 import warnings
 import zipfile
 from pathlib import Path
@@ -7,11 +8,13 @@ from typing import Dict, Union
 import gradio as gr
 import modules.scripts as scripts
 import modules.shared as shared
+import modules.sd_models as sd_models
+import onediff_shared
 from compile import (
+    OneDiffCompiledGraph,
     SD21CompileCtx,
     VaeCompileCtx,
     get_compiled_graph,
-    OneDiffCompiledGraph,
 )
 from modules import script_callbacks
 from modules.processing import process_images
@@ -22,12 +25,13 @@ from onediff_lora import HijackLoraActivate
 from oneflow import __version__ as oneflow_version
 from ui_utils import (
     all_compiler_caches_path,
+    check_structure_change_and_update,
     get_all_compiler_caches,
     hints_message,
-    refresh_all_compiler_caches,
-    check_structure_change_and_update,
     load_graph,
+    refresh_all_compiler_caches,
     save_graph,
+    onediff_enabled,
 )
 
 from onediff import __version__ as onediff_version
@@ -36,7 +40,6 @@ from onediff.optimization.quant_optimizer import (
     varify_can_use_quantization,
 )
 from onediff.utils import logger, parse_boolean_from_env
-import onediff_shared
 
 """oneflow_compiled UNetModel"""
 # compiled_unet = {}
@@ -82,12 +85,13 @@ class UnetCompileCtx(object):
     and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
     """
 
-    def __init__(self, compiled_unet):
-        self.compiled_unet = compiled_unet
+    # def __init__(self, compiled_unet):
+    #     self.compiled_unet = compiled_unet
 
     def __enter__(self):
         self._original_model = shared.sd_model.model.diffusion_model
-        shared.sd_model.model.diffusion_model = self.compiled_unet
+            # onediff_shared.current_unet_graph.graph_module
+        shared.sd_model.model.diffusion_model = onediff_shared.current_unet_graph.graph_module
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         shared.sd_model.model.diffusion_model = self._original_model
@@ -131,7 +135,7 @@ class Script(scripts.Script):
         return [is_quantized, compiler_cache, save_cache_name, always_recompile]
 
     def show(self, is_img2img):
-        return scripts.AlwaysVisible
+        return True
 
     def run(
         self,
@@ -141,6 +145,11 @@ class Script(scripts.Script):
         saved_cache_name="",
         always_recompile=False,
     ):
+        # restore checkpoint_info from refiner to base model
+        if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
+            p.override_settings.pop('sd_model_checkpoint', None)
+            sd_models.reload_model_weights()
+            torch.cuda.empty_cache()
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
@@ -175,9 +184,8 @@ class Script(scripts.Script):
         onediff_shared.graph_dict[shared.sd_model.sd_model_hash] = OneDiffCompiledGraph(
             shared.sd_model, graph_module=onediff_shared.current_unet_graph.graph_module
         )
-        with UnetCompileCtx(
-            onediff_shared.current_unet_graph.graph_module
-        ), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
+
+        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(), onediff_enabled():
             proc = process_images(p)
         save_graph(onediff_shared.current_unet_graph, saved_cache_name)
         return proc
@@ -196,9 +204,15 @@ def on_ui_settings():
 
 
 def cfg_denoisers_callback(params):
+    # check refiner model
     # print(f"current checkpoint: {shared.opts.sd_model_checkpoint}")
     # import ipdb; ipdb.set_trace()
     if "refiner" in shared.sd_model.sd_checkpoint_info.name:
+        # onediff_shared.current_unet_graph = get_compiled_graph(
+        #     shared.sd_model, quantization
+        # )
+        # load_graph(onediff_shared.current_unet_graph, compiler_cache)
+        # import ipdb; ipdb.set_trace()
         pass
         # import ipdb; ipdb.set_trace()
         # shared.sd_model.model.diffusion_model

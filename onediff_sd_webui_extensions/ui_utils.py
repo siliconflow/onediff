@@ -1,9 +1,11 @@
 import os
 from pathlib import Path
 from textwrap import dedent
-from onediff.infer_compiler import DeployableModule
 from zipfile import BadZipFile
+
 import onediff_shared
+
+from onediff.infer_compiler import DeployableModule
 
 hints_message = dedent(
     """\
@@ -114,3 +116,13 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
     saved_cache_name = all_compiler_caches_path() + f"/{saved_cache_name}"
     if not Path(saved_cache_name).exists():
         compiled_unet.save_graph(saved_cache_name)
+
+
+from contextlib import contextmanager
+@contextmanager
+def onediff_enabled():
+    onediff_shared.onediff_enabled = True
+    try:
+        yield
+    finally:
+        onediff_shared.onediff_enabled = False
