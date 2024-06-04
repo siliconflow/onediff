@@ -1,4 +1,3 @@
-import hashlib
 import importlib
 import os
 from typing import Dict
@@ -11,58 +10,57 @@ from .transform.builtin_transform import torch2oflow
 from .transform.manager import transform_mgr
 from .utils.cost_util import cost_time
 from ..env_var import OneflowCompileOptions
+from .utils.hash_utils import generate_input_structure_key, generate_model_structure_key
+
 from onediff.utils import logger
 
 
-def calculate_model_hash(model):
-    return hashlib.sha256(f"{model}".encode("utf-8")).hexdigest()
+def _prepare_file_path(file_path):
+    if isinstance(file_path, Path):
+        file_path = str(file_path)
+    if file_path.endswith(".graph"):
+        file_path = file_path[:-6]
+    return file_path
 
 
 @cost_time(debug=transform_mgr.debug_mode, message="generate graph file name")
 def generate_graph_file_name(file_path, deployable_module, args, kwargs):
-    if isinstance(file_path, Path):
-        file_path = str(file_path)
-
-    if file_path.endswith(".graph"):
-        file_path = file_path[:-6]
-
-    args_tree = ArgsTree((args, kwargs), False, tensor_type=torch.Tensor)
-    count = len([v for v in args_tree.iter_nodes() if isinstance(v, flow.Tensor)])
-
-    model = deployable_module._deployable_module_model.oneflow_module
-
-    cache_key = calculate_model_hash(model) + "_" + flow.__version__
-    return f"{file_path}_{count}_{cache_key}.graph"
+    file_path = _prepare_file_path(file_path)
+    args_tree = ArgsTree((args, kwargs), gen_name=False, tensor_type=torch.Tensor)
+    input_structure_key = generate_input_structure_key(args_tree)
+    model_structure_key = generate_model_structure_key(deployable_module)
+    # Combine cache keys
+    cache_key = f"{input_structure_key}_{model_structure_key}"
+    return f"{file_path}_{cache_key}.graph"
 
 
 def graph_file_management(func):
     @wraps(func)
-    def wrapper(self, *args, **kwargs):
+    def wrapper(self: "OneflowDeployableModule", *args, **kwargs):
         compile_options = (
             self._deployable_module_options
             if hasattr(self, "_deployable_module_options")
             else OneflowCompileOptions()
         )
         graph_file = compile_options.graph_file
+        is_first_load = self._load_graph_first_run and graph_file is not None
 
-        is_first_load = (
-            getattr(self, "_load_graph_first_run", True) and graph_file is not None
-        )
+        if self._deployable_module_input_structure_key is None:
+            args_tree = ArgsTree(
+                (args, kwargs), gen_name=False, tensor_type=torch.Tensor
+            )
+            self._deployable_module_input_structure_key = generate_input_structure_key(
+                args_tree
+            )
 
         if is_first_load:
-            graph_file = generate_graph_file_name(
-                graph_file, self, args=args, kwargs=kwargs
+            self._load_graph_first_run = False
+            input_structure_key = self._deployable_module_input_structure_key
+            model_structure_key = generate_model_structure_key(deployable_module=self)
+            file_path = _prepare_file_path(graph_file)
+            graph_file = (
+                f"{file_path}_{input_structure_key}_{model_structure_key}.graph"
             )
-            setattr(self, "_load_graph_first_run", False)
-            # Avoid graph file conflicts
-            if importlib.util.find_spec("register_comfy"):
-                from register_comfy import CrossAttntionStateDictPatch as state_patch
-
-                attn2_patch_sum = state_patch.attn2_patch_sum(input_kwargs=kwargs)
-                if attn2_patch_sum > 0:
-                    graph_file = graph_file.replace(
-                        ".graph", f"_attn2_{attn2_patch_sum}.graph"
-                    )
 
         def process_state_dict_before_saving(state_dict: Dict):
             nonlocal self, args, kwargs, graph_file
@@ -97,14 +95,15 @@ def graph_file_management(func):
             nonlocal graph_file, compile_options, is_first_load
             if not is_first_load:
                 return
-            try:
-                parent_dir = os.path.dirname(graph_file)
-                if parent_dir != "":
-                    os.makedirs(parent_dir, exist_ok=True)
 
-                # Avoid graph file conflicts
-                if os.path.exists(graph_file):
-                    raise FileExistsError(f"File {graph_file} exists!")
+            parent_dir = os.path.dirname(graph_file)
+            if parent_dir != "":
+                os.makedirs(parent_dir, exist_ok=True)
+
+            # Avoid graph file conflicts
+            if os.path.exists(graph_file):
+                raise FileExistsError(f"File {graph_file} exists!")
+            try:
 
                 self.save_graph(
                     graph_file, process_state_dict=process_state_dict_before_saving

@@ -72,6 +72,7 @@ class OneflowDeployableModule(DeployableModule):
         self._deployable_module_dpl_graph = None
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
+        self._deployable_module_input_structure_key = None
 
     @classmethod
     def from_existing(cls, existing_module, dynamic=True, options=None):
@@ -84,8 +85,8 @@ class OneflowDeployableModule(DeployableModule):
                 existing_module._deployable_module_dpl_graph
             )
         instance._load_graph_first_run = existing_module._load_graph_first_run
-        instance._deployable_module_input_count = (
-            existing_module._deployable_module_input_count
+        instance._deployable_module_input_structure_key = (
+            existing_module._deployable_module_input_structure_key
         )
         instance._deployable_module_quant_config = (
             existing_module._deployable_module_quant_config
@@ -211,6 +212,7 @@ class OneflowDeployableModule(DeployableModule):
     def _clear_old_graph(self):
         self._load_graph_first_run = True
         self._deployable_module_dpl_graph = None
+        self._deployable_module_input_structure_key = None
         del self._deployable_module_model.oneflow_module
 
     def get_graph_file(self):

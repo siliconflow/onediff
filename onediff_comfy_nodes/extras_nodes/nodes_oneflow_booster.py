@@ -10,24 +10,30 @@ from comfy.cli_args import args
 from onediff.utils.import_utils import is_onediff_quant_available
 from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
+
+from ..modules import BoosterScheduler
+from ..modules.oneflow import (
+    BasicOneFlowBoosterExecutor,
+    DeepcacheBoosterExecutor,
+    PatchBoosterExecutor,
+)
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from ..modules.oneflow.hijack_animatediff import animatediff_hijacker
+from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
 from ..modules.oneflow.hijack_ipadapter_plus import ipadapter_plus_hijacker
 from ..modules.oneflow.hijack_model_management import model_management_hijacker
+from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
 from ..modules.oneflow.hijack_nodes import nodes_hijacker
 from ..modules.oneflow.hijack_samplers import samplers_hijack
-from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
-from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
 from ..modules.oneflow.hijack_utils import comfy_utils_hijack
-from ..modules.oneflow import BasicOneFlowBoosterExecutor
-from ..modules.oneflow import DeepcacheBoosterExecutor
-from ..modules.oneflow import PatchBoosterExecutor
+
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..modules import BoosterScheduler
 
-
 if is_onediff_quant_available() and not is_community_version():
-    from ..modules.oneflow.booster_quantization import OnelineQuantizationBoosterExecutor  # type: ignore
+    from ..modules.oneflow.booster_quantization import (
+        OnelineQuantizationBoosterExecutor,
+    )  # type: ignore
 
 model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
 nodes_hijacker.hijack()
@@ -41,9 +47,8 @@ comfy_utils_hijack.hijack()
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple
 
-
 # https://github.com/comfyanonymous/ComfyUI/commit/bb4940d837f0cfd338ff64776b084303be066c67#diff-fab3fbd81daf87571b12fb3e4d80fc7d6bbbcf0f3dafed1dbc55d81998d82539L54
-if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention: 
+if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention:
     os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
