@@ -46,26 +46,10 @@ def input_output_processor(func):
             dpl_graph = self._deployable_module_graph_cache.get(
                 input_structure_key, None
             )
-
-            # Check if the current input structure key is not already in the cache
-            if (
-                self._deployable_module_input_structure_key
-                not in self._deployable_module_graph_cache
-            ):
-                current_cache_size = len(self._deployable_module_graph_cache)
-                max_cached_graph_size = (
-                    self._deployable_module_options.max_cached_graph_size
-                )
-
-                # Ensure the current cache size is within the allowed limit
-                assert current_cache_size < max_cached_graph_size, (
-                    f"Cache size exceeded! Current size: {current_cache_size}, "
-                    f"Maximum allowed size: {max_cached_graph_size}"
-                )
-
-                self._deployable_module_graph_cache[
-                    self._deployable_module_input_structure_key
-                ] = self._deployable_module_dpl_graph
+            self._deployable_module_graph_cache.put(
+                self._deployable_module_input_structure_key,
+                self._deployable_module_dpl_graph,
+            )
 
             # If a cached graph is found, update the deployable module graph and input structure key
             if dpl_graph is not None:

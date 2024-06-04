@@ -18,6 +18,7 @@ from .param_utils import parse_device, check_device, generate_constant_folding_i
 from .graph_management_utils import graph_file_management
 from .online_quantization_utils import quantize_and_deploy_wrapper
 from .env_var import OneflowCompileOptions
+from .graph import LRUCache
 
 
 @torch2oflow.register
@@ -70,7 +71,9 @@ class OneflowDeployableModule(DeployableModule):
             options if options is not None else OneflowCompileOptions()
         )
         self._deployable_module_dpl_graph = None
-        self._deployable_module_graph_cache = {}
+        self._deployable_module_graph_cache = LRUCache(
+            self._deployable_module_options.max_cached_graph_size
+        )
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
         self._deployable_module_input_structure_key = None
