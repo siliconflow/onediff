@@ -54,7 +54,12 @@ Advanced cache functionality is currently in development.
 Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. You just need to enable `dynamic` during compilation, as in `'{"mode": "max-autotune
 ", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the <https://pytorch.org/docs/stable/generated/torch.compile.html> and <https://github.com/pytorch/pytorch/blob/main/docs/source/torch.compiler_dynamic_shapes.rst> page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
 
-Test:
+Test SDXL:
 ```
-python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-MS/ --scheduler none --steps 20 --output-image ./pixart_alpha.png --height 512 --width 768 --compiler nexfort --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last", "dynamic": true}' --run_multiple_resolutions 1
+python3 ./onediff_diffusers_extensions/examples/text_to_image_sdxl.py --height 512 --width 768 --compiler nexfort --compiler-config '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last", "dynamic": true}' --run_multiple_resolutions 1 --run_rare_resolutions 1
+```
+
+Test PixArt alpha:
+```
+python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-MS/ --scheduler none --steps 20 --output-image ./pixart_alpha.png --height 512 --width 768 --compiler nexfort --compiler-config '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last", "dynamic": true}' --run_multiple_resolutions 1
 ```
