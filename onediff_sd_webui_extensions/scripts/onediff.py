@@ -5,13 +5,9 @@ import modules.scripts as scripts
 import modules.sd_models as sd_models
 import modules.shared as shared
 import onediff_shared
+import oneflow as flow
 import torch
-from compile import (
-    OneDiffCompiledGraph,
-    SD21CompileCtx,
-    VaeCompileCtx,
-    get_compiled_graph,
-)
+from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
 from modules import script_callbacks
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
@@ -97,7 +93,7 @@ class Script(scripts.Script):
         saved_cache_name="",
         always_recompile=False,
     ):
-        # restore checkpoint_info from refiner to base model
+        # restore checkpoint_info from refiner to base model if necessary
         if (
             sd_models.checkpoint_aliases.get(
                 p.override_settings.get("sd_model_checkpoint")
@@ -107,6 +103,7 @@ class Script(scripts.Script):
             p.override_settings.pop("sd_model_checkpoint", None)
             sd_models.reload_model_weights()
             torch.cuda.empty_cache()
+            flow.cuda.empty_cache()
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
@@ -136,11 +133,6 @@ class Script(scripts.Script):
             logger.info(
                 f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.current_unet_type}, skip compile"
             )
-
-        # register graph
-        onediff_shared.graph_dict[shared.sd_model.sd_model_hash] = OneDiffCompiledGraph(
-            shared.sd_model, graph_module=onediff_shared.current_unet_graph.graph_module
-        )
 
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(), onediff_enabled():
             proc = process_images(p)

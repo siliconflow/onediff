@@ -1,16 +1,14 @@
+from typing import Any, Mapping
+
 import torch
-from typing import Mapping, Any
+from modules import sd_models
+from modules.sd_hijack_utils import CondFunc
+from onediff_shared import onediff_enabled
 
 from onediff.infer_compiler import DeployableModule
 from onediff.infer_compiler.backends.oneflow.param_utils import (
     update_graph_related_tensor,
 )
-
-from onediff_shared import onediff_enabled
-
-from modules import sd_models
-from modules.sd_hijack_utils import CondFunc
-from compile import OneDiffCompiledGraph
 
 
 class HijackLoraActivate:
@@ -60,7 +58,11 @@ def hijacked_activate(activate_func):
                     continue
                 networks.network_apply_weights(sub_module)
                 if isinstance(sub_module, torch.nn.Conv2d):
-                    update_graph_related_tensor(sub_module)
+                    # TODO(WangYi): refine here
+                    try:
+                        update_graph_related_tensor(sub_module)
+                    except:
+                        pass
 
     activate._onediff_hijacked = True
     return activate
@@ -73,16 +75,20 @@ def onediff_hijack_load_model_weights(
     sd_model_hash = checkpoint_info.calculate_shorthash()
     import onediff_shared
 
-    cached_model: OneDiffCompiledGraph = onediff_shared.graph_dict.get(
-        sd_model_hash, None
-    )
-    if cached_model is not None:
-        model.model.diffusion_model = cached_model.graph_module
+    if onediff_shared.current_unet_graph.sha == sd_model_hash:
+        model.model.diffusion_model = onediff_shared.current_unet_graph.graph_module
         state_dict = {
             k: v
             for k, v in state_dict.items()
             if not k.startswith("model.diffusion_model.")
         }
+
+        # for stable-diffusion-webui/modules/sd_models.py:load_model_weights model.is_ssd check
+        state_dict[
+            "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight"
+        ] = model.get_parameter(
+            "model.diffusion_model.middle_block.1.transformer_blocks.0.attn1.to_q.weight"
+        )
     return orig_func(model, checkpoint_info, state_dict, timer)
 
 

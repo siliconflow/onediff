@@ -5,6 +5,7 @@ from typing import Dict, Union
 from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
 from modules.sd_models import select_checkpoint
 from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
+from ui_utils import check_structure_change_and_update
 
 from onediff.optimization.quant_optimizer import (
     quantize_model,
@@ -61,12 +62,7 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
 
 
 def get_compiled_graph(sd_model, quantization) -> OneDiffCompiledGraph:
-    from onediff_shared import graph_dict
-
-    if sd_model.sd_model_hash in graph_dict:
-        return graph_dict[sd_model.sd_model_hash]
-    else:
-        compiled_unet = compile_unet(
-            sd_model.model.diffusion_model, quantization=quantization
-        )
-        return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)
+    compiled_unet = compile_unet(
+        sd_model.model.diffusion_model, quantization=quantization
+    )
+    return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)

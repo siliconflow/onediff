@@ -83,6 +83,7 @@ def test_onediff_load_graph(url_txt2img):
 
 def test_onediff_refiner(url_txt2img):
     extra_args = {
+        "sd_model_checkpoint": "sd_xl_base_1.0.safetensors",
         "refiner_checkpoint" :"sd_xl_refiner_1.0.safetensors [7440042bbd]",
         "refiner_switch_at" : 0.8,
     }
