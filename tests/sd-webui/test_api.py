@@ -79,3 +79,14 @@ def test_onediff_load_graph(url_txt2img):
     }
     data = {**get_base_args(), **script_args}
     post_request_and_check(url_txt2img, data)
+
+
+def test_onediff_refiner(url_txt2img):
+    extra_args = {
+        "refiner_checkpoint" :"sd_xl_refiner_1.0.safetensors [7440042bbd]",
+        "refiner_switch_at" : 0.8,
+    }
+    data = {**get_base_args(), **extra_args}
+    # loop 5 times for checking model switching between base and refiner
+    for _ in range(5):
+        post_request_and_check(url_txt2img, data)
