@@ -56,5 +56,5 @@ Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. 
 
 Test:
 ```
-python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-MS/ --scheduler none --steps 20 --output-image ./pixart_alpha.png --compiler nexfort --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last", "dynamic": true}' --run_multiple_resolutions 1
+python3 ./benchmarks/text_to_image.py --model /data/hf_models/PixArt-XL-2-1024-MS/ --scheduler none --steps 20 --output-image ./pixart_alpha.png --height 512 --width 768 --compiler nexfort --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last", "dynamic": true}' --run_multiple_resolutions 1
 ```

@@ -349,10 +349,9 @@ def main():
     else:
         print("Please set `--output-image` to save the output image")
 
-    # The nexfort backend encounters an exception when dynamically switching resolution to 960x720
     if args.run_multiple_resolutions:
         print("Test run with multiple resolutions...")
-        sizes = [896, 768, 544, 408]
+        sizes = [1024, 512, 768, 256]
         for h in sizes:
             for w in sizes:
                 kwarg_inputs["height"] = h
