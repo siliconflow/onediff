@@ -1,4 +1,5 @@
 import os
+from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
 from zipfile import BadZipFile
@@ -118,7 +119,6 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
         compiled_unet.save_graph(saved_cache_name)
 
 
-from contextlib import contextmanager
 @contextmanager
 def onediff_enabled():
     onediff_shared.onediff_enabled = True

@@ -1,6 +1,3 @@
-import os
-
-# import modules.shared as shared
 import warnings
 from pathlib import Path
 from typing import Dict, Union
@@ -65,6 +62,7 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
 
 def get_compiled_graph(sd_model, quantization) -> OneDiffCompiledGraph:
     from onediff_shared import graph_dict
+
     if sd_model.sd_model_hash in graph_dict:
         return graph_dict[sd_model.sd_model_hash]
     else:

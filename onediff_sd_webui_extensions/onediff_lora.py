@@ -66,41 +66,44 @@ def hijacked_activate(activate_func):
     return activate
 
 
-# class HijackLoadModelWeights:
-#     # def __init__(self):
-#         # from modules import extra_networks
-
-#         # if "lora" in extra_networks.extra_network_registry:
-#         #     cls_extra_network_lora = type(extra_networks.extra_network_registry["lora"])
-#         # else:
-#         #     cls_extra_network_lora = None
-#         # self.lora_class = cls_extra_network_lora
-
-#     def __enter__(self):
-#         self.orig_func = sd_models.load_model_weights
-#         sd_models.load_model_weights = onediff_hijack_load_model_weights
-
-#     def __exit__(self, exc_type, exc_val, exc_tb):
-#         sd_models.load_model_weights = self.orig_func
-
-def onediff_hijack_load_model_weights(orig_func, model, checkpoint_info: sd_models.CheckpointInfo, state_dict: dict, timer):
+def onediff_hijack_load_model_weights(
+    orig_func, model, checkpoint_info: sd_models.CheckpointInfo, state_dict: dict, timer
+):
     # load_model_weights(model, checkpoint_info: CheckpointInfo, state_dict, timer)
     sd_model_hash = checkpoint_info.calculate_shorthash()
     import onediff_shared
-    cached_model: OneDiffCompiledGraph = onediff_shared.graph_dict.get(sd_model_hash, None)
+
+    cached_model: OneDiffCompiledGraph = onediff_shared.graph_dict.get(
+        sd_model_hash, None
+    )
     if cached_model is not None:
         model.model.diffusion_model = cached_model.graph_module
-        state_dict = {k: v for k, v in state_dict.items() if not k.startswith("model.diffusion_model.")}
+        state_dict = {
+            k: v
+            for k, v in state_dict.items()
+            if not k.startswith("model.diffusion_model.")
+        }
     return orig_func(model, checkpoint_info, state_dict, timer)
 
 
-def onediff_hijack_load_state_dict(orig_func, self, state_dict: Mapping[str, Any], strict: bool = True, assign: bool = False):
-    if len(state_dict) > 0 and next(iter(state_dict.values())).is_cuda and next(self.parameters()).is_meta:
+def onediff_hijack_load_state_dict(
+    orig_func,
+    self,
+    state_dict: Mapping[str, Any],
+    strict: bool = True,
+    assign: bool = False,
+):
+    if (
+        len(state_dict) > 0
+        and next(iter(state_dict.values())).is_cuda
+        and next(self.parameters()).is_meta
+    ):
         return orig_func(self, state_dict, strict, assign=True)
     else:
         return orig_func(self, state_dict, strict, assign)
 
 
+# fmt: off
 def onediff_hijaced_LoadStateDictOnMeta___enter__(orig_func, self):
     from modules import shared
     if shared.cmd_opts.disable_model_loading_ram_optimization:
@@ -171,7 +174,16 @@ def onediff_hijaced_LoadStateDictOnMeta___enter__(orig_func, self):
     mha_load_from_state_dict = self.replace(torch.nn.MultiheadAttention, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(mha_load_from_state_dict, *args, **kwargs))
     layer_norm_load_from_state_dict = self.replace(torch.nn.LayerNorm, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(layer_norm_load_from_state_dict, *args, **kwargs))
     group_norm_load_from_state_dict = self.replace(torch.nn.GroupNorm, '_load_from_state_dict', lambda *args, **kwargs: load_from_state_dict(group_norm_load_from_state_dict, *args, **kwargs))
+# fmt: on
 
 
-CondFunc("modules.sd_disable_initialization.LoadStateDictOnMeta.__enter__", onediff_hijaced_LoadStateDictOnMeta___enter__, lambda _, *args, **kwargs: onediff_enabled)
-CondFunc("modules.sd_models.load_model_weights", onediff_hijack_load_model_weights, lambda _, *args, **kwargs: onediff_enabled)
+CondFunc(
+    "modules.sd_disable_initialization.LoadStateDictOnMeta.__enter__",
+    onediff_hijaced_LoadStateDictOnMeta___enter__,
+    lambda _, *args, **kwargs: onediff_enabled,
+)
+CondFunc(
+    "modules.sd_models.load_model_weights",
+    onediff_hijack_load_model_weights,
+    lambda _, *args, **kwargs: onediff_enabled,
+)

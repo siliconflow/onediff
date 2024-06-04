@@ -9,14 +9,15 @@ from ldm.modules.attention import (
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 from modules import shared
+
+from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
+
 from .sd_webui_onediff_utils import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
     timestep_embedding,
 )
-
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 __all__ = ["compile_ldm_unet"]
 

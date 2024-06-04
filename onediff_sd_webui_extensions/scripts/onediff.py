@@ -1,15 +1,11 @@
-import os
-import torch
-import warnings
-import zipfile
 from pathlib import Path
-from typing import Dict, Union
 
 import gradio as gr
 import modules.scripts as scripts
-import modules.shared as shared
 import modules.sd_models as sd_models
+import modules.shared as shared
 import onediff_shared
+import torch
 from compile import (
     OneDiffCompiledGraph,
     SD21CompileCtx,
@@ -18,65 +14,23 @@ from compile import (
 )
 from modules import script_callbacks
 from modules.processing import process_images
-from modules.sd_models import select_checkpoint
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
-from oneflow import __version__ as oneflow_version
 from ui_utils import (
-    all_compiler_caches_path,
     check_structure_change_and_update,
     get_all_compiler_caches,
     hints_message,
     load_graph,
+    onediff_enabled,
     refresh_all_compiler_caches,
     save_graph,
-    onediff_enabled,
 )
 
-from onediff import __version__ as onediff_version
-from onediff.optimization.quant_optimizer import (
-    quantize_model,
-    varify_can_use_quantization,
-)
+from onediff.optimization.quant_optimizer import varify_can_use_quantization
 from onediff.utils import logger, parse_boolean_from_env
 
 """oneflow_compiled UNetModel"""
-# compiled_unet = {}
-# compiled_unet = None
-# is_unet_quantized = False
-# compiled_ckpt_name = None
-
-
-def generate_graph_path(ckpt_name: str, model_name: str) -> str:
-    base_output_dir = shared.opts.outdir_samples or shared.opts.outdir_txt2img_samples
-    save_ckpt_graphs_path = os.path.join(base_output_dir, "graphs", ckpt_name)
-    os.makedirs(save_ckpt_graphs_path, exist_ok=True)
-
-    file_name = f"{model_name}_graph_{onediff_version}_oneflow_{oneflow_version}"
-
-    graph_file_path = os.path.join(save_ckpt_graphs_path, file_name)
-
-    return graph_file_path
-
-
-def get_calibrate_info(filename: str) -> Union[None, Dict]:
-    calibration_path = Path(select_checkpoint().filename).parent / filename
-    if not calibration_path.exists():
-        return None
-
-    logger.info(f"Got calibrate info at {str(calibration_path)}")
-    calibrate_info = {}
-    with open(calibration_path, "r") as f:
-        for line in f.readlines():
-            line = line.strip()
-            items = line.split(" ")
-            calibrate_info[items[0]] = [
-                float(items[1]),
-                int(items[2]),
-                [float(x) for x in items[3].split(",")],
-            ]
-    return calibrate_info
 
 
 class UnetCompileCtx(object):
@@ -85,13 +39,11 @@ class UnetCompileCtx(object):
     and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
     """
 
-    # def __init__(self, compiled_unet):
-    #     self.compiled_unet = compiled_unet
-
     def __enter__(self):
         self._original_model = shared.sd_model.model.diffusion_model
-            # onediff_shared.current_unet_graph.graph_module
-        shared.sd_model.model.diffusion_model = onediff_shared.current_unet_graph.graph_module
+        shared.sd_model.model.diffusion_model = (
+            onediff_shared.current_unet_graph.graph_module
+        )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         shared.sd_model.model.diffusion_model = self._original_model
@@ -146,8 +98,13 @@ class Script(scripts.Script):
         always_recompile=False,
     ):
         # restore checkpoint_info from refiner to base model
-        if sd_models.checkpoint_aliases.get(p.override_settings.get('sd_model_checkpoint')) is None:
-            p.override_settings.pop('sd_model_checkpoint', None)
+        if (
+            sd_models.checkpoint_aliases.get(
+                p.override_settings.get("sd_model_checkpoint")
+            )
+            is None
+        ):
+            p.override_settings.pop("sd_model_checkpoint", None)
             sd_models.reload_model_weights()
             torch.cuda.empty_cache()
 
@@ -204,28 +161,9 @@ def on_ui_settings():
 
 
 def cfg_denoisers_callback(params):
-    # check refiner model
-    # print(f"current checkpoint: {shared.opts.sd_model_checkpoint}")
-    # import ipdb; ipdb.set_trace()
-    if "refiner" in shared.sd_model.sd_checkpoint_info.name:
-        # onediff_shared.current_unet_graph = get_compiled_graph(
-        #     shared.sd_model, quantization
-        # )
-        # load_graph(onediff_shared.current_unet_graph, compiler_cache)
-        # import ipdb; ipdb.set_trace()
-        pass
-        # import ipdb; ipdb.set_trace()
-        # shared.sd_model.model.diffusion_model
-
-    print(f"current checkpoint info: {shared.sd_model.sd_checkpoint_info.name}")
-    # shared.sd_model.model.diffusion_model = compile_unet(
-    #     shared.sd_model.model.diffusion_model
-    # )
-
-    # have to check if onediff enabled
-    # print('onediff denoiser callback')
+    pass
 
 
 script_callbacks.on_ui_settings(on_ui_settings)
-script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
+# script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
 onediff_do_hijack()
