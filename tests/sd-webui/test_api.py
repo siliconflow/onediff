@@ -16,8 +16,10 @@ from utils import (
     get_target_image_filename,
     is_txt2img,
     post_request_and_check,
+    save_image,
 )
 
+import os
 
 @pytest.fixture(scope="session", autouse=True)
 def prepare_target_images():
@@ -52,6 +54,14 @@ def test_image_ssim(base_url, data):
     url = f"{base_url}/{endpoint}"
     generated_image = get_image_array_from_response(post_request_and_check(url, data))
     target_image_path = get_target_image_filename(data)
+    directory, filename = os.path.split(target_image_path)
+
+    # 添加 "generate_" 前缀
+    new_filename = 'generated_' + filename
+    # 构建新的文件路径
+    new_filepath = os.path.join(directory, new_filename)
+    save_image(generated_image,new_filepath)
+
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
     assert ssim_value > 0.985

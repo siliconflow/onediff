@@ -80,7 +80,7 @@ def is_txt2img(data: Dict[str, Any]) -> bool:
 
 
 def is_refiner(data: Dict[str, Any]) -> bool:
-    return data["Refiner"]["args"][0] not in data
+    return data["Refiner"]["args"][0]
 
 
 def is_quant(data: Dict[str, Any]) -> bool:
@@ -105,6 +105,11 @@ def get_image_byte_from_response(response):
 def get_image_array_from_response(response):
     imgdata = base64.b64decode(response.json()["images"][0])
     return np.array(Image.open(io.BytesIO(imgdata)))
+
+
+def save_image(image_array, file_path):
+    image = Image.fromarray(image_array)
+    image.save(file_path)
 
 
 def get_init_image():
