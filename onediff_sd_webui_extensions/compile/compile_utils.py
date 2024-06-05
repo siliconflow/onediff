@@ -5,7 +5,6 @@ from typing import Dict, Union
 from ldm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelLDM
 from modules.sd_models import select_checkpoint
 from sgm.modules.diffusionmodules.openaimodel import UNetModel as UNetModelSGM
-from ui_utils import check_structure_change_and_update
 
 from onediff.optimization.quant_optimizer import (
     quantize_model,

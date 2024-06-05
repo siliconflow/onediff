@@ -6,9 +6,9 @@ import modules.sd_models as sd_models
 import modules.shared as shared
 import onediff_shared
 import oneflow as flow
-import torch
 from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
 from modules import script_callbacks
+from modules.devices import torch_gc
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
@@ -102,7 +102,7 @@ class Script(scripts.Script):
         ):
             p.override_settings.pop("sd_model_checkpoint", None)
             sd_models.reload_model_weights()
-            torch.cuda.empty_cache()
+            torch_gc()
             flow.cuda.empty_cache()
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
@@ -137,6 +137,8 @@ class Script(scripts.Script):
         with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(), onediff_enabled():
             proc = process_images(p)
         save_graph(onediff_shared.current_unet_graph, saved_cache_name)
+        torch_gc()
+        flow.cuda.empty_cache()
         return proc
 
 

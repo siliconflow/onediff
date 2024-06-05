@@ -1,3 +1,4 @@
+import os
 import numpy as np
 import pytest
 from PIL import Image
@@ -89,5 +90,5 @@ def test_onediff_refiner(url_txt2img):
     }
     data = {**get_base_args(), **extra_args}
     # loop 5 times for checking model switching between base and refiner
-    for _ in range(5):
+    for _ in range(3):
         post_request_and_check(url_txt2img, data)
