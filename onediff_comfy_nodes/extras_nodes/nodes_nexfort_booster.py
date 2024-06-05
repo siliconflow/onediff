@@ -1,4 +1,16 @@
+import collections
 from ..modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
+
+# https://github.com/siliconflow/nexfort?tab=readme-ov-file#suggested-combinations-of-compiler-modes
+compiler_modes = collections.OrderedDict(
+    {
+        "max-autotune:benchmark:low-precision:cudagraphs": "This is the most suggested combination of compiler modes. It will deliver a good balance between performance and compilation time.",
+        "max-autotune:low-precision": "This will deliver a good performance and adapt quickly to shape changes.",
+        "max-optimize:max-autotune:benchmark:low-precision:freezing:cudagraphs": "This is the most aggressive combination of compiler modes. It will deliver the best performance but might slow down the compilation significantly.",
+        "jit:benchmark:low-precision:freezing:cudagraphs": "This compiles the model very quickly, but the performance might be not as good as `TorchInductor` optimized models.",
+        "jit:disable-runtime-fusion:low-precision": "This compiles super quickly, but the performance might not be optimized very noticeably.",
+    }
+)
 
 
 class OneDiffNexfortBooster:
@@ -8,14 +20,7 @@ class OneDiffNexfortBooster:
             "required": {
                 "fullgraph": ([False, True],),
                 "dynamic": ([None, True, False],),
-                "mode": (
-                    [
-                        "max-optimize:max-autotune:freezing:benchmark:cudagraphs",
-                        "max-autotune:cudagraphs",
-                        "cudagraphs:benchmark:low-precision:freezing:jit",
-                        "max-optimize:max-autotune:cudagraphs:benchmark:low-precision:freezing",
-                    ],
-                ),
+                "mode": ([mode for mode in compiler_modes.keys()],),
                 "docs_link": (
                     "STRING",
                     {

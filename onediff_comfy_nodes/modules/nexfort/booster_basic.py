@@ -11,6 +11,7 @@ from nexfort.utils.memory_format import apply_memory_format
 from .onediff_controlnet import OneDiffControlLora
 from ..booster_interface import BoosterExecutor
 
+
 class BasicNexFortBoosterExecutor(BoosterExecutor):
     # https://pytorch.org/docs/stable/_modules/torch.html#compile
     def __init__(
@@ -25,6 +26,7 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
             "dynamic": dynamic,
             "fullgraph": fullgraph,
         }  # "memory_format": "channels_last"
+
         self.compile_fn = partial(compile, backend="nexfort", options=options)
 
     @singledispatchmethod
@@ -35,7 +37,9 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
     @torch.inference_mode()
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
         diffusion_model = model.model.diffusion_model
-        model.model.diffusion_model = apply_memory_format(diffusion_model, torch.channels_last)
+        model.model.diffusion_model = apply_memory_format(
+            diffusion_model, torch.channels_last
+        )
         model.model.diffusion_model = self.compile_fn(diffusion_model)
         model.weight_inplace_update = True
         return model
