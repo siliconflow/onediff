@@ -11,13 +11,13 @@ Before installing nextfort, please make sure that the corresponding PyTorch and 
 
 ```
 # PyTorch 2.3.0, CUDA 12.1
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch230cu121-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch230cu121-cp310-cp310-manylinux2014_x86_64.whl
 
 # PyTorch 2.4.0, CUDA 12.1
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch240dev20240507cu121-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch240dev20240507cu121-cp310-cp310-manylinux2014_x86_64.whl
 
 # PyTorch 2.4.0, CUDA 12.4
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch240dev20240507cu124-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev215%2Btorch240dev20240507cu124-cp310-cp310-manylinux2014_x86_64.whl
 ```
 
 ### Run pixart alpha (with nexfort backend)
@@ -32,7 +32,7 @@ Performance on NVIDIA A100-PCIE-40GB:
 - Iterations per second: 10.743
 - Max used CUDA memory: 13.855GiB
 
-### Compilation cache speeds up recompilation
+### Local cache speeds up recompilation
 
 Setting cache:
 ```
@@ -49,14 +49,3 @@ python3 -m nexfort.utils.clear_inductor_cache
 ```
 
 Advanced cache functionality is currently in development.
-
-### Dynamic shape
-Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. You just need to enable `dynamic` during compilation, as in `'{"mode": "max-autotune
-", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the <https://pytorch.org/docs/stable/generated/torch.compile.html> and <https://github.com/pytorch/pytorch/blob/main/docs/source/torch.compiler_dynamic_shapes.rst> page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
-
-Test:
-```
-python3 onediff_diffusers_extensions/examples/text_to_image_sdxl.py --compiler nexfort --run_multiple_resolutions 1 --run_rare_resolutions 1 --height 512 --width 768
-```
-
-
