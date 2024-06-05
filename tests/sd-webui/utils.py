@@ -59,10 +59,12 @@ def get_extra_args() -> List[Dict[str, Any]]:
         {"init_images": [get_init_image()]},
     ]
 
-    return [
-        quant_args,
-        txt2img_args,
+    refiner_args = [
+        {"Refiner": {"args": [x, "v1-5-pruned-emaonly.safetensors [6ce0161689]", 0.5]}}
+        for x in [True, False]
     ]
+
+    return [quant_args, txt2img_args, refiner_args]
 
 
 def get_all_args() -> Iterable[Dict[str, Any]]:
@@ -75,6 +77,10 @@ def get_all_args() -> Iterable[Dict[str, Any]]:
 
 def is_txt2img(data: Dict[str, Any]) -> bool:
     return "init_images" not in data
+
+
+def is_refiner(data: Dict[str, Any]) -> bool:
+    return data["Refiner"]["args"][0] not in data
 
 
 def is_quant(data: Dict[str, Any]) -> bool:
@@ -121,13 +127,15 @@ def generate_image(filename: str, data: Dict[str, Any]):
 
 
 def get_target_image_filename(data: Dict[str, Any]) -> str:
-    parent_path = TXT2IMG_TARGET_FOLDER if is_txt2img else IMG2IMG_TARGET_FOLDER
+    parent_path = TXT2IMG_TARGET_FOLDER if is_txt2img(data) else IMG2IMG_TARGET_FOLDER
     if not Path(parent_path).exists():
         Path(parent_path).mkdir(mode=777, parents=True)
 
     txt2img_str = "txt2img" if is_txt2img(data) else "img2img"
     quant_str = "-quant" if is_quant(data) else ""
-    return f"{parent_path}/onediff{quant_str}-{txt2img_str}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
+    refiner_str = "-refiner" if is_refiner(data) else ""
+
+    return f"{parent_path}/onediff{quant_str}{refiner_str}-{txt2img_str}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
 
 
 def check_and_generate_images():
@@ -136,12 +144,13 @@ def check_and_generate_images():
         if not Path(image_path).exists():
             print(f"Generating image for {get_data_summary(data)}...")
             generate_image(image_path, data)
-        print(f"Image for {get_data_summary(data)} exists, skip generating...")
-        generate_image(image_path, data)
+        else:
+            print(f"Image for {get_data_summary(data)} exists, skip generating...")
 
 
 def get_data_summary(data: Dict[str, Any]) -> Dict[str, bool]:
     return {
         "is_txt2img": is_txt2img(data),
         "is_quant": is_quant(data),
+        "is_refiner": is_refiner(data),
     }
