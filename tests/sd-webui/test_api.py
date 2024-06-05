@@ -1,95 +1,81 @@
-import base64
+import numpy as np
 import pytest
-import requests
-from pathlib import Path
+from PIL import Image
+from utils import (
+    IMG2IMG_API_ENDPOINT,
+    OPTIONS_API_ENDPOINT,
+    SAVED_GRAPH_NAME,
+    TXT2IMG_API_ENDPOINT,
+    WEBUI_SERVER_URL,
+    cal_ssim,
+    check_and_generate_images,
+    get_all_args,
+    get_base_args,
+    get_data_summary,
+    get_image_array_from_response,
+    get_target_image_filename,
+    is_txt2img,
+    post_request_and_check,
+)
 
-def encode_file_to_base64(path):
-    with open(path, "rb") as file:
-        return base64.b64encode(file.read()).decode("utf-8")
 
-def post_request(url, data):
-    response = requests.post(url, json=data)
-    assert response.status_code == 200
-    return response
+@pytest.fixture(scope="session", autouse=True)
+def prepare_target_images():
+    print("checking if target images exist...")
+    check_and_generate_images()
+
 
 @pytest.fixture()
 def base_url():
-    return f"http://127.0.0.1:7860"
+    return WEBUI_SERVER_URL
+
 
 @pytest.fixture()
 def url_txt2img(base_url):
-    return f"{base_url}/sdapi/v1/txt2img"
+    return f"{base_url}/{TXT2IMG_API_ENDPOINT}"
+
 
 @pytest.fixture()
 def url_img2img(base_url):
-    return f"{base_url}/sdapi/v1/img2img"
+    return f"{base_url}/{IMG2IMG_API_ENDPOINT}"
+
 
 @pytest.fixture()
 def url_set_config(base_url):
-    return f"{base_url}/sdapi/v1/options"
+    return f"{base_url}/{OPTIONS_API_ENDPOINT}"
 
-@pytest.fixture()
-def simple_txt2img_request():
-    return {
-        "prompt": "1girl",
-        "negative_prompt": "",
-        "seed": 1,
-        "steps": 20,
-        "width": 1024,
-        "height": 1024,
-        "cfg_scale": 7,
-        "n_iter": 1,
-        "batch_size": 1,
 
-        # Enable OneDiff speed up
-        "script_name": "onediff_diffusion_model",
+@pytest.mark.parametrize("data", get_all_args())
+def test_image_ssim(base_url, data):
+    print(f"testing: {get_data_summary(data)}")
+    endpoint = TXT2IMG_API_ENDPOINT if is_txt2img(data) else IMG2IMG_API_ENDPOINT
+    url = f"{base_url}/{endpoint}"
+    generated_image = get_image_array_from_response(post_request_and_check(url, data))
+    target_image_path = get_target_image_filename(data)
+    target_image = np.array(Image.open(target_image_path))
+    ssim_value = cal_ssim(generated_image, target_image)
+    assert ssim_value > 0.985
 
-        "script_args" : [
-            False, # quantization
+
+def test_onediff_save_graph(url_txt2img):
+    script_args = {
+        "script_args": [
+            False,  # quantization
             None,  # graph_checkpoint
-            "",    # saved_graph_name
-        ],
-    }
-
-def test_txt2img_onediff(url_txt2img, simple_txt2img_request):
-    data = simple_txt2img_request
-    post_request(url_txt2img, data)
-
-def test_img2img_onediff(url_img2img, simple_txt2img_request):
-    img_path = str(Path(__file__).parent / "cat.png")
-    init_images = {"init_images": [encode_file_to_base64(img_path)]}
-    data = {**simple_txt2img_request, **init_images}
-    post_request(url_img2img, data)
-
-def test_txt2img_onediff_quant(url_txt2img, simple_txt2img_request):
-    script_args = {
-        "script_args": [
-            True,           # quantization
-            None,           # graph_checkpoint
-            "saved_graph",  # saved_graph_name
+            SAVED_GRAPH_NAME,  # saved_graph_name
         ]
     }
-    data = {**simple_txt2img_request, **script_args}
-    post_request(url_txt2img, data)
+    data = {**get_base_args(), **script_args}
+    post_request_and_check(url_txt2img, data)
 
-def test_txt2img_onediff_save_graph(url_txt2img, simple_txt2img_request):
+
+def test_onediff_load_graph(url_txt2img):
     script_args = {
         "script_args": [
-            False,          # quantization
-            None,           # graph_checkpoint
-            "saved_graph",  # saved_graph_name
+            False,  # quantization
+            SAVED_GRAPH_NAME,  # graph_checkpoint
+            "",  # saved_graph_name
         ]
     }
-    data = {**simple_txt2img_request, **script_args}
-    post_request(url_txt2img, data)
-
-def test_txt2img_onediff_load_graph(url_txt2img, simple_txt2img_request):
-    script_args = {
-        "script_args": [
-            False,          # quantization
-            "saved_graph",  # graph_checkpoint
-            "",             # saved_graph_name
-        ]
-    }
-    data = {**simple_txt2img_request, **script_args}
-    post_request(url_txt2img, data)
+    data = {**get_base_args(), **script_args}
+    post_request_and_check(url_txt2img, data)
