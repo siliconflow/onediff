@@ -18,6 +18,7 @@ env:
   WEBUI_SRC_DIR: stable-diffusion-webui
   WEBUI_DEPENDENCIES_SUBDIR: repos
   SDXL_BASE: /share_nfs/hf_models/sd_xl_base_1.0.safetensors
+  REFINER_BASE: /share_nfs/onediff_ci/sd-webui/safetensors/sd_xl_refiner_1.0.safetensors
   UNET_INT8: /share_nfs/hf_models/unet_int8
   CONTROL_LORA_OPENPOSEXL2_RANK256: /share_nfs/hf_models/controlnet/control-lora-openposeXL2-rank256.safetensors
   SELENIUM_CONTAINER_NAME: selenium-test
@@ -379,6 +380,8 @@ jobs:
 
       - if: matrix.test-suite == 'webui'
         run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pytest -v -s tests/sd-webui/test_api.py
+        env:
+          REFINER_BASE: ${{ env.REFINER_BASE }}
 
       - name: Show WebUI Log
         if: matrix.test-suite == 'webui'

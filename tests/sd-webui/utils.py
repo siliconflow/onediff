@@ -60,7 +60,7 @@ def get_extra_args() -> List[Dict[str, Any]]:
     ]
 
     refiner_args = [
-        {"Refiner": {"args": [x, "v1-5-pruned-emaonly.safetensors [6ce0161689]", 0.5]}}
+        {"Refiner": {"args": [x, "sd_xl_refiner_1.0.safetensors", 0.5]}}
         for x in [True, False]
     ]
 
