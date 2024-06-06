@@ -1,5 +1,8 @@
 import importlib
+from inspect import ismodule
+import os
 import platform
+from types import ModuleType
 
 system = platform.system()
 
@@ -37,3 +40,30 @@ def is_onediff_quant_available():
 
 def is_nexfort_available():
     return _nexfort_available
+
+
+class DynamicModuleLoader(ModuleType):
+    def __init__(self, obj_entity: ModuleType, pkg_root=None, module_path=None):
+        self.obj_entity = obj_entity
+        self.pkg_root = pkg_root
+        self.module_path = module_path
+
+    @classmethod
+    def from_path(cls, module_path: str):
+        model_name = os.path.basename(module_path)
+        module = importlib.import_module(model_name)
+        return cls(module, module_path, module_path)
+
+    def __getattr__(self, name):
+        obj_entity = getattr(self.obj_entity, name, None)
+        module_path = os.path.join(self.module_path, name)
+        if obj_entity is None:
+            pkg_name = os.path.basename(self.pkg_root)
+            absolute_name = os.path.relpath(module_path, self.pkg_root).replace(
+                os.path.sep, "."
+            )
+            absolute_name = f"{pkg_name}.{absolute_name}"
+            obj_entity = importlib.import_module(absolute_name)
+        if ismodule(obj_entity):
+            return DynamicModuleLoader(obj_entity, self.pkg_root, module_path)
+        return obj_entity

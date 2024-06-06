@@ -11,7 +11,7 @@ class NexfortDeployableModule(DeployableModule):
         torch.nn.Module.__init__(self)
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_deployable_module_model", compiled_module)
-        if isinstance(torch_module, nn.Module):
+        if isinstance(torch_module, nn.Module) and hasattr(compiled_module, "_orig_mod"):
             object.__setattr__(self, "_modules", compiled_module._orig_mod._modules)
             object.__setattr__(
                 self, "_parameters", compiled_module._orig_mod._parameters
