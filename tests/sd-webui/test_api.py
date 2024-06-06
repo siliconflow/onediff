@@ -1,25 +1,15 @@
+import os
+
 import numpy as np
 import pytest
 from PIL import Image
-from utils import (
-    IMG2IMG_API_ENDPOINT,
-    OPTIONS_API_ENDPOINT,
-    SAVED_GRAPH_NAME,
-    TXT2IMG_API_ENDPOINT,
-    WEBUI_SERVER_URL,
-    cal_ssim,
-    check_and_generate_images,
-    get_all_args,
-    get_base_args,
-    get_data_summary,
-    get_image_array_from_response,
-    get_target_image_filename,
-    is_txt2img,
-    post_request_and_check,
-    save_image,
-)
+from utils import (IMG2IMG_API_ENDPOINT, OPTIONS_API_ENDPOINT,
+                   SAVED_GRAPH_NAME, TXT2IMG_API_ENDPOINT, WEBUI_SERVER_URL,
+                   cal_ssim, check_and_generate_images, get_all_args,
+                   get_base_args, get_data_summary,
+                   get_image_array_from_response, get_target_image_filename,
+                   is_txt2img, post_request_and_check, save_image)
 
-import os
 
 @pytest.fixture(scope="session", autouse=True)
 def prepare_target_images():
@@ -57,10 +47,10 @@ def test_image_ssim(base_url, data):
     directory, filename = os.path.split(target_image_path)
 
     # 添加 "generate_" 前缀
-    new_filename = 'generated_' + filename
+    new_filename = "generated_" + filename
     # 构建新的文件路径
     new_filepath = os.path.join(directory, new_filename)
-    save_image(generated_image,new_filepath)
+    # save_image(generated_image,new_filepath)
 
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
