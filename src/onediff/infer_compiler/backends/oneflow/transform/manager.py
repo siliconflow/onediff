@@ -25,6 +25,7 @@ class TransformManager:
         self._oflow_to_torch_cls_map = {}
         self._setup_logger()
         self.mocker = LazyMocker(prefix="", suffix="", tmp_dir=None)
+        self.loaded_modules = set()
 
     def _setup_logger(self):
         name = "ONEDIFF"
