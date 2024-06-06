@@ -121,7 +121,7 @@ def generate_image(filename: str, data: Dict[str, Any]):
 
 
 def get_target_image_filename(data: Dict[str, Any]) -> str:
-    parent_path = TXT2IMG_TARGET_FOLDER if is_txt2img else IMG2IMG_TARGET_FOLDER
+    parent_path = TXT2IMG_TARGET_FOLDER if is_txt2img(data) else IMG2IMG_TARGET_FOLDER
     if not Path(parent_path).exists():
         Path(parent_path).mkdir(mode=777, parents=True)
 
@@ -136,8 +136,8 @@ def check_and_generate_images():
         if not Path(image_path).exists():
             print(f"Generating image for {get_data_summary(data)}...")
             generate_image(image_path, data)
-        print(f"Image for {get_data_summary(data)} exists, skip generating...")
-        generate_image(image_path, data)
+        else:
+            print(f"Image for {get_data_summary(data)} exists, skip generating...")
 
 
 def get_data_summary(data: Dict[str, Any]) -> Dict[str, bool]:

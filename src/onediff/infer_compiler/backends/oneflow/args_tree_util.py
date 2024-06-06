@@ -42,12 +42,26 @@ def input_output_processor(func):
             and self._deployable_module_dpl_graph is not None
             and self._deployable_module_input_structure_key != input_structure_key
         ):
-            logger.warning(
-                "Input structure key has changed. Resetting the deployable module graph."
+            # Retrieve the deployable module graph from cache using the input structure key
+            dpl_graph = self._deployable_module_graph_cache.get(
+                input_structure_key, None
             )
-            self._deployable_module_dpl_graph = None
-            self._load_graph_first_run = True
-            self._deployable_module_input_structure_key = None
+            self._deployable_module_graph_cache.put(
+                self._deployable_module_input_structure_key,
+                self._deployable_module_dpl_graph,
+            )
+
+            # If a cached graph is found, update the deployable module graph and input structure key
+            if dpl_graph is not None:
+                self._deployable_module_dpl_graph = dpl_graph
+                self._deployable_module_input_structure_key = input_structure_key
+            else:
+                logger.warning(
+                    f"Input structure key {self._deployable_module_input_structure_key} to {input_structure_key} has changed. Resetting the deployable module graph. This may slow down the process."
+                )
+                self._deployable_module_dpl_graph = None
+                self._deployable_module_input_structure_key = None
+                self._load_graph_first_run = True
 
         output = func(self, *mapped_args, **mapped_kwargs)
         return process_output(output)
