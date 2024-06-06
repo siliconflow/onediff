@@ -30,6 +30,7 @@ def get_base_args() -> Dict[str, Any]:
     return {
         "prompt": "1girl",
         "negative_prompt": "",
+        "sd_model_checkpoint": "checkpoints/AWPainting_v1.2.safetensors",
         "seed": SEED,
         "steps": NUM_STEPS,
         "width": WIDTH,
