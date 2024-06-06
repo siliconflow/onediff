@@ -2,9 +2,20 @@ import torch
 import math
 import torch.nn.functional as F
 from comfy.ldm.modules.attention import optimized_attention
-from ._config import ipadapter_plus
 
-tensor_to_size = ipadapter_plus.utils.tensor_to_size
+
+def tensor_to_size(source, dest_size):
+    if isinstance(dest_size, torch.Tensor):
+        dest_size = dest_size.shape[0]
+    source_size = source.shape[0]
+
+    if source_size < dest_size:
+        shape = [dest_size - source_size] + [1] * (source.dim() - 1)
+        source = torch.cat((source, source[-1:].repeat(shape)), dim=0)
+    elif source_size > dest_size:
+        source = source[:dest_size]
+
+    return source
 
 
 class Attn2Replace:
