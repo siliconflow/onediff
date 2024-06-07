@@ -1,4 +1,5 @@
-# Run PixArt alpha (with nexfort backend)
+# Run PixArt alpha with nexfort backend(Beta Release)
+
 
 1. [Environment Setup](#environment-setup)
    - [Set up onediff](#set-up-onediff)
