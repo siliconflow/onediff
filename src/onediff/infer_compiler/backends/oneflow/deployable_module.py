@@ -18,7 +18,7 @@ from .args_tree_util import input_output_processor
 from .param_utils import parse_device, check_device, generate_constant_folding_info
 from .graph_management_utils import graph_file_management
 from .online_quantization_utils import quantize_and_deploy_wrapper
-from .env_var import OneflowCompileOptions
+from ..env_var import OneflowCompileOptions
 
 
 @torch2oflow.register
