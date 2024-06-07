@@ -77,7 +77,7 @@ def parse_args():
     parser.add_argument(
         "--run_multiple_resolutions",
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-        default=True,
+        default=False,
     )
     parser.add_argument("--quantize", action="store_true")
     parser.add_argument(
