@@ -21,15 +21,7 @@ We also support `torch 2.4.0` (nightly version) and the stable versions of `torc
 
 ### Run pixart alpha (with nexfort backend)
 
-```
-# model_id_or_path_to_PixArt-XL-2-1024-MS: /data/hf_models/PixArt-XL-2-1024-MS/ 
-python3 ./benchmarks/text_to_image.py --model model_id_or_path_to_PixArt-XL-2-1024-MS --scheduler none --steps 20 --compiler nexfort --output-image ./pixart_alpha_nex.png
-```
-Performance on NVIDIA A100-PCIE-40GB:
-- Warmup time: 771.418s
-- Inference time: 2.045s
-- Iterations per second: 10.743
-- Max used CUDA memory: 13.855GiB
+Details at: https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/pixart_alpha
 
 ### Compilation cache speeds up recompilation
 
