@@ -4,20 +4,14 @@
 pip3 install --pre -U torch==2.4.0.dev20240507 torchaudio==2.2.0.dev20240507+cu124 torchvision==0.19.0.dev20240507+cu124 --index-url https://download.pytorch.org/whl/nightly/cu124
 pip3 install -U torchao==0.1
 ```
+It also supports the stable versions of `torch2.3.0`, `torch2.2.0`, and `torch2.1.0`.
 
 ### Install nexfort
 
 Before installing nextfort, please make sure that the corresponding PyTorch and CUDA environments are installed.
 
 ```
-# PyTorch 2.3.0, CUDA 12.1
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch230cu121-cp310-cp310-manylinux2014_x86_64.whl
-
-# PyTorch 2.4.0, CUDA 12.1
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch240dev20240507cu121-cp310-cp310-manylinux2014_x86_64.whl
-
-# PyTorch 2.4.0, CUDA 12.4
-pip3 install https://nexfort-releases.oss-cn-hangzhou.aliyuncs.com/nexfort-0.1.dev236%2Btorch240dev20240507cu124-cp310-cp310-manylinux2014_x86_64.whl
+pip3 install nexfort
 ```
 
 ### Run pixart alpha (with nexfort backend)
