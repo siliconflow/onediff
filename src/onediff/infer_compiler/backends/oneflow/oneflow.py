@@ -21,7 +21,7 @@ def compile(torch_module: torch.nn.Module, *, options=None):
         - 'graph_file_device' (None) sets the device for the graph file, default None.  If set, the compilation result will be converted to the specified device.
     """
     from .deployable_module import OneflowDeployableModule, get_mixed_deployable_module
-    from .env_var import (
+    from ..env_var import (
         set_oneflow_default_env_vars,
         set_oneflow_env_vars,
         OneflowCompileOptions,
