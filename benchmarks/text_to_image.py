@@ -74,6 +74,11 @@ def parse_args():
         type=str,
         default=COMPILER_CONFIG,
     )
+    parser.add_argument(
+        "--run_multiple_resolutions",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=True,
+    )
     parser.add_argument("--quantize", action="store_true")
     parser.add_argument(
         "--quantize-config",
@@ -376,6 +381,19 @@ def main():
         output_images[0].save(args.output_image)
     else:
         print("Please set `--output-image` to save the output image")
+
+    if args.run_multiple_resolutions:
+        print("Test run with multiple resolutions...")
+        sizes = [1024, 512, 768, 256]
+        for h in sizes:
+            for w in sizes:
+                kwarg_inputs["height"] = h
+                kwarg_inputs["width"] = w
+                print(f"Running at resolution: {h}x{w}")
+                start_time = time.time()
+                image = pipe(**kwarg_inputs).images
+                end_time = time.time()
+                print(f"Inference time: {end_time - start_time:.2f} seconds")
 
     if args.throughput:
         steps_range = range(1, 100, 1)
