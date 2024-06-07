@@ -3,7 +3,7 @@ from .compilers.diffusion_pipeline_compiler import (
     compile_pipe,
     save_pipe,
     load_pipe,
-    nexfort_quant_pipe,
+    quantize_pipe,
 )
 from onediff.infer_compiler import OneflowCompileOptions
 
@@ -12,5 +12,5 @@ __all__ = [
     "save_pipe",
     "load_pipe",
     "OneflowCompileOptions",
-    "nexfort_quant_pipe",
+    "quantize_pipe",
 ]

@@ -35,7 +35,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-from onediffx import compile_pipe, nexfort_quant_pipe
+from onediffx import compile_pipe, quantize_pipe
 
 
 def parse_args():
@@ -249,14 +249,14 @@ def main():
                 quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
             if args.quant_submodules_config_path:
                 # download: https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8/blob/main/fp8_e4m3.json
-                pipe = nexfort_quant_pipe(
+                pipe = quantize_pipe(
                     pipe,
                     quant_submodules_config_path=args.quant_submodules_config_path,
                     ignores=[],
                     **quantize_config,
                 )
             else:
-                pipe = nexfort_quant_pipe(pipe, ignores=[], **quantize_config)
+                pipe = quantize_pipe(pipe, ignores=[], **quantize_config)
         if args.compiler_config is not None:
             # config with dict
             options = json.loads(args.compiler_config)

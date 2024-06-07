@@ -188,7 +188,7 @@ def load_pipe(
         patch_image_prcessor_(pipe.image_processor)
 
 
-def nexfort_quant_pipe(
+def quantize_pipe(
     pipe, quant_submodules_config_path=None, top_percentage=90, *, ignores=(), **kwargs
 ):
     from nexfort.ao import quantize
