@@ -1,4 +1,8 @@
-## nexfort backend for compiler in onediff
+## OneDiff Nexfort compiler backend(Beta Release)
+OneDiff Nexfort is a lightweight [torch 2.0 compiler backend](https://pytorch.org/docs/stable/torch.compiler.html) strongly optimized for Diffusion Models. 
+
+Currently, it is especially for DiT(Diffusion Transformer) models which is the backbone of [SD3](https://stability.ai/news/stable-diffusion-3) and [Sora](https://openai.com/sora/).
+
 ###  Dependency
 ```
 pip3 install --pre -U torch==2.4.0.dev20240507 torchaudio==2.2.0.dev20240507+cu124 torchvision==0.19.0.dev20240507+cu124 --index-url https://download.pytorch.org/whl/nightly/cu124
