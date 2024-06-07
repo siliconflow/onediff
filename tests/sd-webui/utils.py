@@ -60,12 +60,12 @@ def get_extra_args() -> List[Dict[str, Any]]:
     ]
 
     refiner_args = [
+        {},
         {
-            "refiner": x,
+            "refiner": True,
             "refiner_checkpoint": "sd_xl_refiner_1.0",
             "refiner_switch_at": 0.8,
-        }
-        for x in [True, False]
+        },
     ]
 
     return [quant_args, txt2img_args, refiner_args]
@@ -84,7 +84,7 @@ def is_txt2img(data: Dict[str, Any]) -> bool:
 
 
 def is_refiner(data: Dict[str, Any]) -> bool:
-    return data["refiner"]
+    return "refiner" in data
 
 
 def is_quant(data: Dict[str, Any]) -> bool:
