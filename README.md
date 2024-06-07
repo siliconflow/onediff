@@ -76,7 +76,7 @@ The Full Introduction of OneDiff:
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
   - [OneDiff Installation](#onediff-installation)
-    - [Install a backend engine](#install-a-backend-engine)
+    - [Install a compiler engine](#install-a-compiler-engine)
       - [(Optional) Install NexFort](#optional-install-nexfort)
       - [(Optional) Install OneFlow](#optional-install-oneflow)
     - [2. Install torch and diffusers](#2-install-torch-and-diffusers)
