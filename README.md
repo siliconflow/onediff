@@ -181,7 +181,7 @@ The OneDiff Enterprise Edition is available for a monthly subscription and is de
 ## Installation
 ### OneDiff Installation
 
-#### Install a backend engine
+#### Install a compiler backend
 When considering the choice between OneFlow and Nexfort, either one is optional, and only one is needed.
 
 - For DiT structural models or H100 devices, it is recommended to use Nexfort.
