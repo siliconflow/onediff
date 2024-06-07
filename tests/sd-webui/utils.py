@@ -29,6 +29,7 @@ os.makedirs(TXT2IMG_TARGET_FOLDER, exist_ok=True)
 def get_base_args() -> Dict[str, Any]:
     return {
         "prompt": "1girl",
+        "sd_model_checkpoint": "v1-5-pruned-emaonly.safetensors",
         "negative_prompt": "",
         "seed": SEED,
         "steps": NUM_STEPS,
