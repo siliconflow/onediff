@@ -13,7 +13,7 @@ Before installing nexfort, please make sure that the corresponding PyTorch and C
 pip3 install nexfort
 ```
 
-We also support `torch 2.4.0` (nightly version, faster inference speed) and the stable versions of `torch 2.2.0` and `torch 2.1.0`.
+We also support `torch 2.4.0` (nightly version) and the stable versions of `torch 2.2.0` and `torch 2.1.0`.
 
 ### Run pixart alpha (with nexfort backend)
 
