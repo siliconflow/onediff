@@ -35,7 +35,7 @@ import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-from onediffx import compile_pipe, quantize_pipe
+from onediffx import compile_pipe, quantize_pipe # quantize_pipe currently only supports the nexfort backend.
 
 
 def parse_args():
