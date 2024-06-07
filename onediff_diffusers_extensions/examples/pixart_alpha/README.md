@@ -58,14 +58,10 @@ python3 ./benchmarks/text_to_image.py \
 ```
 
 ## Performance comparation
-### nexfort compile config
-- compiler-config default is `{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`
-  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time and just slightly reduce the performance
-  - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 21.832s, but will reduce the performance
-- fuse_qkv_projections: True
 
 ### Metric
 
+#### On A100
 | Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-05-23                          |
@@ -76,11 +72,12 @@ python3 ./benchmarks/text_to_image.py \
 | PyTorch Max Mem Used                             | 14.445GiB                           |
 | OneDiff Max Mem Used                             | 13.855GiB                           |
 | PyTorch Warmup with Run time                     | 4.100s                              |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 776.170s                            |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 510.170s                            |
 | OneDiff Warmup with Cache time                   | 111.563s                            |
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz. Note this is just for reference, and it varies a lot on different CPU.
 
+#### On H800
 | Metric                                           |      NVIDIA H800 (1024 * 1024)      |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-05-29                          |
@@ -95,6 +92,14 @@ python3 ./benchmarks/text_to_image.py \
 | OneDiff Warmup with Cache time                   | 131.776s                            |
 
  <sup>2</sup> Intel(R) Xeon(R) Platinum 8468.
+
+#### nexfort compile config and warmup cost
+- compiler-config 
+  - default is `{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`, the compilation time is about 500 seconds
+  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time to about 60 seconds and just slightly reduce the performance
+  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}'` will help to make the best performance but the compilation time is about 700 seconds
+  - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 20 seconds, but will reduce the performance
+- fuse_qkv_projections: True
 
 ## Quantization
 

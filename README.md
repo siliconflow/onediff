@@ -77,7 +77,7 @@ The Full Introduction of OneDiff:
 - [Installation](#installation)
   - [OneDiff Installation](#onediff-installation)
     - [Install a compiler backend](#install-a-compiler-backend)
-      - [(Optional) Install NexFort](#optional-install-nexfort)
+      - [(Optional) Install Nexfort](#optional-install-nexfort)
       - [(Optional) Install OneFlow](#optional-install-oneflow)
     - [2. Install torch and diffusers](#2-install-torch-and-diffusers)
     - [3. Install OneDiff](#3-install-onediff)
@@ -188,10 +188,11 @@ When considering the choice between OneFlow and Nexfort, either one is optional,
 
 - For all other cases, it is recommended to use OneFlow. Note that optimizations within OneFlow will gradually transition to Nexfort in the future.
 
-##### (Optional) Install NexFort
+##### (Optional) Install Nexfort
+The detailed introduction of Nexfort is [here](https://github.com/siliconflow/onediff/tree/main/onediff/src/onediff/infer_compiler/backends/nexfort/README.md).
 
 ```bash
-python3 -m  pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+python3 -m  pip install -U torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 torchao==0.1
 python3 -m  pip install -U nexfort
 ```
 
