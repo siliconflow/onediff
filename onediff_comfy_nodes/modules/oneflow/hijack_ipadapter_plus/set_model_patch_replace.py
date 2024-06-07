@@ -37,7 +37,9 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
         split1dict = {}
         split2dict = {}
         for k, v in patch_kwargs.items():
-            if k in ["cond", "uncond", "mask", "weight"]:
+            if k in ["cond", "cond_alt", "uncond", "mask", "weight"] or isinstance(
+                v, torch.Tensor
+            ):
                 split1dict[k] = v
             else:
                 split2dict[k] = v

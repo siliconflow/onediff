@@ -5,6 +5,7 @@ from functools import wraps
 import oneflow as flow
 
 from onediff.utils import logger
+from onediff.utils.chache_utils import LRUCache
 
 from ..deployable_module import DeployableModule
 
@@ -70,6 +71,9 @@ class OneflowDeployableModule(DeployableModule):
             options if options is not None else OneflowCompileOptions()
         )
         self._deployable_module_dpl_graph = None
+        self._deployable_module_graph_cache = LRUCache(
+            self._deployable_module_options.max_cached_graph_size
+        )
         self._is_raw_deployable_module = True
         self._load_graph_first_run = True
         self._deployable_module_input_structure_key = None
@@ -84,6 +88,9 @@ class OneflowDeployableModule(DeployableModule):
             instance._deployable_module_dpl_graph = (
                 existing_module._deployable_module_dpl_graph
             )
+        instance._deployable_module_graph_cache = (
+            existing_module._deployable_module_graph_cache
+        )
         instance._load_graph_first_run = existing_module._load_graph_first_run
         instance._deployable_module_input_structure_key = (
             existing_module._deployable_module_input_structure_key
