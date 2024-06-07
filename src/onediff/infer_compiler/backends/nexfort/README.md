@@ -1,18 +1,19 @@
 ## nexfort backend for compiler in onediff
 ###  Dependency
 ```
-pip3 install --pre -U torch==2.4.0.dev20240507 torchaudio==2.2.0.dev20240507+cu124 torchvision==0.19.0.dev20240507+cu124 --index-url https://download.pytorch.org/whl/nightly/cu124
-pip3 install -U torchao==0.1
+pip3 install -U torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 torchao==0.1
 ```
-It also supports the stable versions of `torch2.3.0`, `torch2.2.0`, and `torch2.1.0`.
 
 ### Install nexfort
 
-Before installing nextfort, please make sure that the corresponding PyTorch and CUDA environments are installed.
+Before installing nexfort, please make sure that the corresponding PyTorch and CUDA environments are installed.
 
 ```
+# The current version of nexfort is compatible with torch 2.3.0.
 pip3 install nexfort
 ```
+
+We also support `torch 2.4.0` (nightly version, faster inference speed) and the stable versions of `torch 2.2.0` and `torch 2.1.0`.
 
 ### Run pixart alpha (with nexfort backend)
 
