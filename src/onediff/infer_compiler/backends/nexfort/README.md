@@ -56,6 +56,7 @@ Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. 
 
 Test SDXL:
 ```
+# The best practice mode configuration for dynamic shape is `max-optimize:max-autotune:freezing`.
 python3 ./onediff_diffusers_extensions/examples/text_to_image_sdxl.py \
 --height 512 \
 --width 768 \
