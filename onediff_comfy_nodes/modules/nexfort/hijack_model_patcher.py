@@ -14,7 +14,7 @@ def clone_nexfort(org_fn, self, *args, **kwargs):
     return n
 
 
-def cond_func(org_fn, self):
+def cond_func(org_fn, self, *args, **kwargs):
     return is_using_nexfort_backend(self)
 
 

@@ -1,14 +1,12 @@
 from ..booster_utils import is_using_nexfort_backend
-from ._config import comfyui_instantid_hijacker, comfyui_instantid_pt
+from ._config import comfyui_instantid_hijacker,comfyui_instantid
 from ..hijack_ipadapter_plus.set_model_patch_replace import set_model_patch_replace
 
-set_model_patch_replace_fn_pt = comfyui_instantid_pt.InstantID._set_model_patch_replace
+set_model_patch_replace_fn_pt = comfyui_instantid.InstantID._set_model_patch_replace
 
 
 def cond_func(org_fn, model, *args, **kwargs):
-    # TODO
-    raise RuntimeError(f"TODO")
-    # return is_using_nexfort_backend(model)
+    return is_using_nexfort_backend(model)
 
 
 comfyui_instantid_hijacker.register(

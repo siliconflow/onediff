@@ -16,29 +16,14 @@ def get_func_full_name(func: FunctionType):
     return f"{module.__name__}.{func.__qualname__}"
 
 
-class CondFuncWrapper:
-    def __init__(self, cond_func_instance):
-        self.cond_func_instance = cond_func_instance
-
-    def __call__(self, *args, **kwargs):
-        return self.cond_func_instance(*args, **kwargs)
-
-    def add_condition(self, sub_func: FunctionType, cond_func: FunctionType, last=True):
-        """Pairs are returned in LIFO order if last is true or FIFO order if false."""
-        instance: CondFunc = self.cond_func_instance
-        if last:
-            instance._sub_funcs.append(sub_func)
-            instance._cond_funcs.append(cond_func)
-        else:
-            instance._sub_funcs.appendleft(sub_func)
-            instance._cond_funcs.appendleft(cond_func)
-
-
 class CondFunc:
     """A function that conditionally calls another function.
 
     Copied from: https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/master/modules/sd_hijack_utils.py
     """
+
+    # Dictionary to store hijacked methods and their corresponding CondFunc instances
+    hijacked_registry = {}
 
     def __new__(
         cls,
@@ -50,6 +35,7 @@ class CondFunc:
         self = super(CondFunc, cls).__new__(cls)
         if isinstance(orig_func, FunctionType):
             orig_func = get_func_full_name(orig_func)
+
         assert isinstance(orig_func, str)
 
         func_path = orig_func.split(".")
@@ -65,18 +51,31 @@ class CondFunc:
 
         for attr_name in func_path[i:-1]:
             resolved_obj = getattr(resolved_obj, attr_name)
+
         orig_func = getattr(resolved_obj, func_path[-1])
-        wrapper = CondFuncWrapper(self)
+
+        def hijacked_method(*args, **kwargs):
+            return self(*args, **kwargs)
+
         setattr(
-            resolved_obj, func_path[-1], wrapper,
+            resolved_obj, func_path[-1], hijacked_method,
         )
 
         def unhijack_func():
             setattr(resolved_obj, func_path[-1], orig_func)
+            del cls.hijacked_registry[hijacked_method]
 
         self.__init__(orig_func, sub_funcs, cond_funcs)
+        cls.hijacked_registry[hijacked_method] = self
+        return (hijacked_method, unhijack_func)
 
-        return (wrapper, unhijack_func)
+    @staticmethod
+    def is_hijacked_method(func: Callable):
+        return func in CondFunc.hijacked_registry
+
+    @staticmethod
+    def get_hijacked_instance(func: Callable):
+        return CondFunc.hijacked_registry.get(func)
 
     def __init__(
         self,
@@ -94,6 +93,16 @@ class CondFunc:
                 return sub_func(self._orig_func, *args, **kwargs)
         else:
             return self._orig_func(*args, **kwargs)
+
+    def add_condition(self, sub_func: FunctionType, cond_func: FunctionType, last=True):
+        """Pairs are returned in LIFO order if last is true or FIFO order if false."""
+        instance: CondFunc = self
+        if last:
+            instance._sub_funcs.append(sub_func)
+            instance._cond_funcs.append(cond_func)
+        else:
+            instance._sub_funcs.appendleft(sub_func)
+            instance._cond_funcs.appendleft(cond_func)
 
 
 def ensure_list(obj: Union[FunctionType, List[FunctionType]]) -> List[FunctionType]:
@@ -129,9 +138,10 @@ def hijack_func(
         >>> foo()
         bar
     """
-    if isinstance(orig_func, CondFuncWrapper):
-        orig_func.add_condition(sub_func, cond_func, last=last)
-        return orig_func
+    if CondFunc.is_hijacked_method(orig_func):
+        ins = CondFunc.get_hijacked_instance(orig_func)
+        ins.add_condition(sub_func, cond_func, last=last)
+        return orig_func, lambda: None
 
     if isinstance(orig_func, FunctionType):
         orig_func = get_func_full_name(orig_func)
@@ -178,12 +188,15 @@ if __name__ == "__main__":
 
     def orig_func(*args, **kwargs):
         print("Original function")
+        return "orig_func"
 
     def sub_func_0(orig_func, *args, **kwargs):
         print(f"Called sub_func_0")
+        return "sub_func_0"
 
     def sub_func_1(orig_func, *args, **kwargs):
         print(f"Called sub_func_1")
+        return "sub_func_1"
 
     cond_0 = True
 
@@ -194,13 +207,35 @@ if __name__ == "__main__":
         return True
 
     hijack_func(orig_func, sub_func_0, cond_func_0)
-    orig_func()  # Output: Called sub_func_0
+    assert orig_func() == "sub_func_0"  # Output: Called sub_func_0
 
     hijack_func(orig_func, sub_func_1, cond_func_1)
     cond_0 = False
-    orig_func()  # Output: Called sub_func_1
+    assert orig_func() == "sub_func_1"  # Output: Called sub_func_1
     cond_0 = True
-    orig_func()  # Called sub_func_0
+    assert orig_func() == "sub_func_0"  # Called sub_func_0
     hijack_func(orig_func, sub_func_1, cond_func_1, last=False)
     cond_0 = True
-    orig_func()  # Called sub_func_1
+    assert orig_func() == "sub_func_1"  # Called sub_func_1
+
+    class Case1:
+        def clone(self):
+            print(f"{type(self)}.clone")
+
+    def cond_func(org_fn, self):
+        return True
+
+    def custom_clone(org_fn, self):
+        print(f"custom_clone")
+        return "custom_clone"
+
+    hijack_func(Case1.clone, custom_clone, cond_func)
+
+    def custom_clone_1(org_fn, self):
+        print(f"custom_clone_1")
+        return "custom_clone_1"
+
+    assert Case1().clone() == "custom_clone"
+    hijack_func(Case1.clone, custom_clone_1, cond_func, last=False)
+
+    assert Case1().clone() == "custom_clone_1"
