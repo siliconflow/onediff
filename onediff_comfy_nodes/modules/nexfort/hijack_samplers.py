@@ -3,12 +3,13 @@ commit: 4bd7d55b9028d79829a645edfe8259f7b7a049c0
 Date:   Thu Apr 11 22:43:05 2024 -0400
 """
 
+from typing import Dict
 import torch
 from comfy.samplers import calc_cond_batch, can_concat_cond, cond_cat, get_area_and_mult
 
 from ..sd_hijack_utils import Hijacker
 from .patch_management import PatchType, create_patch_executor
-from .utils.booster_utils import is_using_oneflow_backend
+from .booster_utils import is_using_nexfort_backend
 
 
 def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
@@ -95,17 +96,31 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
 
         diff_model = model.diffusion_model
+        transformer_options["sigmas"] = timestep
 
         if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(
             diff_model
         ):
-            transformer_options["sigmas"] = timestep[0].item()
             patch_executor = create_patch_executor(PatchType.UNetExtraInputOptions)
-            transformer_options["_attn2"] = patch_executor.get_patch(diff_model)[
+            extra_options = transformer_options
+            sigma = extra_options["sigmas"][0].item() if 'sigmas' in extra_options else 999999999.9
+            assert "_sigmas" not in extra_options
+            extra_options["_sigmas"] = {}
+            attn2_patch_dict = extra_options['patches_replace']["attn2"]
+            for k, attn_m in attn2_patch_dict.items():
+                out_lst = []
+                for i, callback in enumerate(attn_m.callback):
+                    if sigma <= attn_m.kwargs[i]["sigma_start"] and sigma >= attn_m.kwargs[i]["sigma_end"]:
+                        out_lst.append(1)
+                    else:
+                        out_lst.append(0)
+                # extra inputs
+                transformer_options["_sigmas"][attn_m.forward_patch_key] = torch.randn(*out_lst)
+
+            # extra inputs
+            transformer_options["_attn2"] =  patch_executor.get_patch(diff_model)[
                 "attn2"
             ]
-        else:
-            transformer_options["sigmas"] = timestep
 
         c["transformer_options"] = transformer_options
         if "model_function_wrapper" in model_options:
@@ -142,9 +157,29 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
 
     return out_conds
 
+    #     for o in range(batch_chunks):
+    #         cond_index = cond_or_uncond[o]
+    #         out_conds[cond_index][
+    #             :,
+    #             :,
+    #             area[o][2] : area[o][0] + area[o][2],
+    #             area[o][3] : area[o][1] + area[o][3],
+    #         ] += (output[o] * mult[o])
+    #         out_counts[cond_index][
+    #             :,
+    #             :,
+    #             area[o][2] : area[o][0] + area[o][2],
+    #             area[o][3] : area[o][1] + area[o][3],
+    #         ] += mult[o]
+
+    # for i in range(len(out_conds)):
+    #     out_conds[i] /= out_counts[i]
+
+    # return out_conds
+
 
 def cond_func(orig_func, model, *args, **kwargs):
-    return is_using_oneflow_backend(model)
+    return is_using_nexfort_backend(model)
 
 
 samplers_hijack = Hijacker()

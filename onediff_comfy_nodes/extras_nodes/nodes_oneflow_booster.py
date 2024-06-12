@@ -7,9 +7,9 @@ import torch
 from comfy import model_management
 from comfy.cli_args import args
 
-from onediff.infer_compiler.backends.oneflow.utils.version_util import (
-    is_community_version,
-)
+from onediff.utils.import_utils import is_onediff_quant_available
+from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
+
 
 from ..modules import BoosterScheduler
 from ..modules.oneflow import (
@@ -28,7 +28,7 @@ from ..modules.oneflow.hijack_samplers import samplers_hijack
 from ..modules.oneflow.hijack_utils import comfy_utils_hijack
 
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
-from ..utils.import_utils import is_onediff_quant_available
+from ..modules import BoosterScheduler
 
 if is_onediff_quant_available() and not is_community_version():
     from ..modules.oneflow.booster_quantization import (
