@@ -1,4 +1,5 @@
 import importlib
+import traceback
 from inspect import ismodule
 import os
 import platform
@@ -13,7 +14,8 @@ def check_module_availability(module_name):
     if spec:
         try:
             importlib.import_module(module_name)
-        except ImportError:
+        except ImportError as e:
+            print(traceback.format_exc())
             return False
     else:
         return False

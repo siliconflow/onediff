@@ -45,7 +45,7 @@ class OneDiffNexfortBooster:
     ):
         return (
             BasicNexFortBoosterExecutor(
-                fullgraph=fullgraph, mode=mode, dynamic=dynamic
+                fullgraph=fullgraph, mode=f"{mode}:cache-all", dynamic=dynamic
             ),
         )
 
