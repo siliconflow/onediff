@@ -10,7 +10,7 @@ device = torch.device("cuda")
 class SD3Generator:
     def __init__(self, model, compiler_config=None, quantize_config=None):
         self.pipe = StableDiffusion3Pipeline.from_pretrained(
-            model, torch_dtype=torch.float16
+            model, torch_dtype=torch.float16, revision="refs/pr/26"
         )
         self.pipe.to(device)
 
@@ -36,7 +36,7 @@ class SD3Generator:
     def generate(self, args):
         self.warmup(args)
 
-        seed = args.pop("seed", 1)
+        seed = 333
         args["generator"] = torch.Generator(device=device).manual_seed(seed)
 
         # Run the model
@@ -44,8 +44,8 @@ class SD3Generator:
         images = self.pipe(**args).images
         end_time = time.time()
 
-        saved_image = args.get("saved_image", "output.png")
-        images[0].save(saved_image)
+        # saved_image = args.get("saved_image", "output.png")
+        images[0].save("./sd3.png")
 
         return images[0], end_time - start_time
 
@@ -66,8 +66,6 @@ args = {
     "num_inference_steps": 28,
     "height": 1024,
     "width": 1024,
-    "saved_image": "./sd3.png",
-    "seed": 333,
 }
 
 # Compiler and quantization configurations
