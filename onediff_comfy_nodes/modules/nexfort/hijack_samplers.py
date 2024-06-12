@@ -138,23 +138,44 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
 
         for o in range(batch_chunks):
             cond_index = cond_or_uncond[o]
-            out_conds[cond_index][
-                :,
-                :,
-                area[o][2] : area[o][0] + area[o][2],
-                area[o][3] : area[o][1] + area[o][3],
-            ] += (output[o] * mult[o])
-            out_counts[cond_index][
-                :,
-                :,
-                area[o][2] : area[o][0] + area[o][2],
-                area[o][3] : area[o][1] + area[o][3],
-            ] += mult[o]
+            a = area[o]
+            if a is None:
+                out_conds[cond_index] += output[o] * mult[o]
+                out_counts[cond_index] += mult[o]
+            else:
+                out_c = out_conds[cond_index]
+                out_cts = out_counts[cond_index]
+                dims = len(a) // 2
+                for i in range(dims):
+                    out_c = out_c.narrow(i + 2, a[i + dims], a[i])
+                    out_cts = out_cts.narrow(i + 2, a[i + dims], a[i])
+                out_c += output[o] * mult[o]
+                out_cts += mult[o]
 
     for i in range(len(out_conds)):
         out_conds[i] /= out_counts[i]
 
     return out_conds
+
+    #     for o in range(batch_chunks):
+    #         cond_index = cond_or_uncond[o]
+    #         out_conds[cond_index][
+    #             :,
+    #             :,
+    #             area[o][2] : area[o][0] + area[o][2],
+    #             area[o][3] : area[o][1] + area[o][3],
+    #         ] += (output[o] * mult[o])
+    #         out_counts[cond_index][
+    #             :,
+    #             :,
+    #             area[o][2] : area[o][0] + area[o][2],
+    #             area[o][3] : area[o][1] + area[o][3],
+    #         ] += mult[o]
+
+    # for i in range(len(out_conds)):
+    #     out_conds[i] /= out_counts[i]
+
+    # return out_conds
 
 
 def cond_func(orig_func, model, *args, **kwargs):
