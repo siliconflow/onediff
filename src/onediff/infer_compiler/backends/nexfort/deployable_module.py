@@ -2,7 +2,6 @@ from types import FunctionType
 from typing import Type, Union
 import torch
 from torch import nn
-
 from ..deployable_module import DeployableModule
 
 
@@ -11,14 +10,15 @@ class NexfortDeployableModule(DeployableModule):
         torch.nn.Module.__init__(self)
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_deployable_module_model", compiled_module)
-        if isinstance(torch_module, nn.Module) and hasattr(compiled_module, "_orig_mod"):
+        # https://github.com/pytorch/pytorch/blob/main/torch/_dynamo/eval_frame.py#L148
+        if isinstance(torch_module, nn.Module) and isinstance(compiled_module, torch._dynamo.eval_frame.OptimizedModule):
             object.__setattr__(self, "_modules", compiled_module._orig_mod._modules)
             object.__setattr__(
                 self, "_parameters", compiled_module._orig_mod._parameters
             )
             object.__setattr__(self, "_buffers", compiled_module._orig_mod._buffers)
 
-    def __call__(self, *args, **kwargs):
+    def forward(self, *args, **kwargs):
         return self._deployable_module_model(*args, **kwargs)
 
     def __getattr__(self, name):
