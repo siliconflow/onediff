@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default="a photo of a cat holding a sign that says hello world",
+        default="photo of a dog and a cat both standing on a red box, with a blue ball in the middle with a parrot standing on top of the ball. The box has the text 'onediff'",
         help="Prompt for the image generation.",
     )
     parser.add_argument(
@@ -48,7 +48,7 @@ def parse_args():
         help="Path to save the generated image.",
     )
     parser.add_argument(
-        "--seed", type=int, default=333, help="Seed for random number generation."
+        "--seed", type=int, default=1, help="Seed for random number generation."
     )
     return parser.parse_args()
 
@@ -126,6 +126,8 @@ def main():
     print(
         f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
     )
+    cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
+    print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
 
 
 if __name__ == "__main__":
