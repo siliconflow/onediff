@@ -40,4 +40,8 @@ Testing on H800, with image size of 1024*1024, iterating 28 steps.
 
 
 ## Quality
-TODO
+When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.
+
+<p align="center">
+<img src="../../../imgs/nexfort_sample_quality.png">
+</p>
