@@ -7,8 +7,13 @@ https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
 ### Set up nexfort backend
 https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort
 
+### Set up diffusers
+
+```
+pip install git+https://github.com/huggingface/diffusers.git@main
+```
 ### Set up SD3
-HF model: https://huggingface.co/stabilityai/stable-diffusion-3-medium
+Model version for diffusers: https://huggingface.co/stabilityai/stable-diffusion-3-medium/tree/refs%2Fpr%2F26
 
 HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/stable_diffusion/stable_diffusion_3.md
 
