@@ -80,5 +80,5 @@ sd3 = SD3Generator(
 )
 image, inference_time = sd3.generate(args)
 print(
-    f"Generated image saved to {args['saved_image']} in {inference_time:.2f} seconds."
+    f"Generated image in {inference_time:.2f} seconds."
 )
