@@ -47,12 +47,12 @@ Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. 
 
 Test SDXL:
 ```
-# The best practice mode configuration for dynamic shape is `max-optimize:max-autotune:freezing`.
+# The best practice mode configuration for dynamic shape is `max-optimize:max-autotune:low-precision`.
 python3 ./onediff_diffusers_extensions/examples/text_to_image_sdxl.py \
 --height 512 \
 --width 768 \
 --compiler nexfort \
---compiler-config '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last", "dynamic": true}' \
+--compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "dynamic": true}' \
 --run_multiple_resolutions 1 \
 --run_rare_resolutions 1
 ```
@@ -60,12 +60,12 @@ python3 ./onediff_diffusers_extensions/examples/text_to_image_sdxl.py \
 Test PixArt alpha:
 ```
 python3 ./benchmarks/text_to_image.py \
---model /data/hf_models/PixArt-XL-2-1024-MS/ \
+--model PixArt-alpha/PixArt-XL-2-1024-MS \
 --scheduler none \
 --steps 20 \
 --height 512 \
 --width 768 \
 --compiler nexfort \
---compiler-config '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last", "dynamic": true}' \
+--compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "dynamic": true}' \
 --run_multiple_resolutions 1
 ```

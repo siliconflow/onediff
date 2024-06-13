@@ -189,7 +189,7 @@ When considering the choice between OneFlow and Nexfort, either one is optional,
 - For all other cases, it is recommended to use OneFlow. Note that optimizations within OneFlow will gradually transition to Nexfort in the future.
 
 ##### (Optional) Install Nexfort
-The detailed introduction of Nexfort is [here](https://github.com/siliconflow/onediff/tree/main/onediff/src/onediff/infer_compiler/backends/nexfort/README.md).
+The detailed introduction of Nexfort is [here](https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort#readme).
 
 ```bash
 python3 -m  pip install -U torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 torchao==0.1
