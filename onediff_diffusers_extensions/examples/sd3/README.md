@@ -41,14 +41,14 @@ Testing on H800, with image size of 1024*1024, iterating 28 steps.
 |                 | Iteration speed      | E2E Inference Time | Max CUDA Memory Used |
 | --------------- | -------------------- | ------------------ | -------------------- |
 | Baseline        | 15.56 it/s           | 1.96 s             | 18.784 GiB           |
-| Nexfort compile | 25.91 it/s (+66.52%) | 1.15 s (-41.33%)   | 18.324 GiB           |
+| Nexfort compile | 25.91 it/s (+66.5%) | 1.15 s (-41.3%)   | 18.324 GiB           |
 
-Testing on A100-PCIE-40GB , with image size of 1024*1024, iterating 28 steps.
+Testing on A100-PCIE-40GB, with image size of 1024*1024, iterating 28 steps.
 
 |                 | Iteration speed    | E2E Inference Time | Max CUDA Memory Used |
 | --------------- | ------------------ | ------------------ | -------------------- |
 | Baseline        | 6.66 it/s          | 4.50 s             | 18.762 GiB           |
-| Nexfort compile | 9.39 it/s (+40.9%) | 3.15 s (-30%)      | 17.939 GiB           |
+| Nexfort compile | 9.39 it/s (+40.9%) | 3.15 s (-30.0%)      | 17.939 GiB           |
 
 
 ## Quality
