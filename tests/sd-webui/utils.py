@@ -30,7 +30,6 @@ def get_base_args() -> Dict[str, Any]:
     return {
         "prompt": "1girl",
         "negative_prompt": "",
-        "sd_model_checkpoint": "checkpoints/AWPainting_v1.2.safetensors",
         "seed": SEED,
         "steps": NUM_STEPS,
         "width": WIDTH,
@@ -146,3 +145,9 @@ def get_data_summary(data: Dict[str, Any]) -> Dict[str, bool]:
         "is_txt2img": is_txt2img(data),
         "is_quant": is_quant(data),
     }
+
+
+def dump_image(src_img: np.ndarray, target_img: np.ndarray, filename: str):
+    combined_img = np.concatenate((src_img, target_img), axis=1)  
+    image = Image.fromarray(combined_img)  
+    image.save(f'{filename}.png')
