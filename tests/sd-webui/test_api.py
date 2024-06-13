@@ -46,8 +46,19 @@ def url_set_config(base_url):
     return f"{base_url}/{OPTIONS_API_ENDPOINT}"
 
 
+def test_onediff_refiner(url_txt2img):
+    extra_args = {
+        "sd_model_checkpoint": "sd_xl_base_1.0.safetensors",
+        "refiner_checkpoint" :"sd_xl_refiner_1.0.safetensors [7440042bbd]",
+        "refiner_switch_at" : 0.8,
+    }
+    data = {**get_base_args(), **extra_args}
+    # loop 5 times for checking model switching between base and refiner
+    for _ in range(3):
+        post_request_and_check(url_txt2img, data)
+
+
 @pytest.mark.parametrize("data", get_all_args())
-@pytest.mark.skip()
 def test_image_ssim(base_url, data):
     print(f"testing: {get_data_summary(data)}")
     endpoint = TXT2IMG_API_ENDPOINT if is_txt2img(data) else IMG2IMG_API_ENDPOINT
@@ -81,15 +92,3 @@ def test_onediff_load_graph(url_txt2img):
     }
     data = {**get_base_args(), **script_args}
     post_request_and_check(url_txt2img, data)
-
-
-def test_onediff_refiner(url_txt2img):
-    extra_args = {
-        "sd_model_checkpoint": "sd_xl_base_1.0.safetensors",
-        "refiner_checkpoint" :"sd_xl_refiner_1.0.safetensors [7440042bbd]",
-        "refiner_switch_at" : 0.8,
-    }
-    data = {**get_base_args(), **extra_args}
-    # loop 5 times for checking model switching between base and refiner
-    for _ in range(3):
-        post_request_and_check(url_txt2img, data)
