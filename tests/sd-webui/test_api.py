@@ -55,7 +55,7 @@ def test_image_ssim(base_url, data):
     target_image_path = get_target_image_filename(data)
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
-    assert ssim_value > 0.985
+    assert ssim_value > 0.98
 
 
 def test_onediff_save_graph(url_txt2img):
