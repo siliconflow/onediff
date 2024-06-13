@@ -61,7 +61,11 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
 
 
 def get_compiled_graph(sd_model, quantization) -> OneDiffCompiledGraph:
+    diffusion_model = sd_model.model.diffusion_model
+    # for controlnet
+    if "forward" in diffusion_model.__dict__:
+        diffusion_model.__dict__.pop("forward")
     compiled_unet = compile_unet(
-        sd_model.model.diffusion_model, quantization=quantization
+        diffusion_model, quantization=quantization
     )
     return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)

@@ -13,14 +13,15 @@ from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
-from ui_utils import (
+import onediff_controlnet
+from onediff_utils import (
     check_structure_change_and_update,
     get_all_compiler_caches,
     hints_message,
     load_graph,
-    onediff_enabled,
     refresh_all_compiler_caches,
     save_graph,
+    onediff_enabled_decorator,
 )
 
 from onediff.optimization.quant_optimizer import varify_can_use_quantization
@@ -34,19 +35,25 @@ class UnetCompileCtx(object):
     The global variables need to be replaced with compiled_unet before process_images is run,
     and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
     """
+    def __init__(self, enabled):
+        self.enabled = enabled
 
     def __enter__(self):
+        if not self.enabled:
+            return
         self._original_model = shared.sd_model.model.diffusion_model
         shared.sd_model.model.diffusion_model = (
             onediff_shared.current_unet_graph.graph_module
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.enabled:
+            return
         shared.sd_model.model.diffusion_model = self._original_model
-        return False
 
 
 class Script(scripts.Script):
+
     def title(self):
         return "onediff_diffusion_model"
 
@@ -85,6 +92,7 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
+    @onediff_enabled_decorator
     def run(
         self,
         p,
@@ -93,6 +101,10 @@ class Script(scripts.Script):
         saved_cache_name="",
         always_recompile=False,
     ):
+        controlnet_enabled = onediff_controlnet.check_if_controlnet_enabled(p)
+        if controlnet_enabled:
+            onediff_controlnet.create_condfunc(p)
+
         # restore checkpoint_info from refiner to base model if necessary
         if (
             sd_models.checkpoint_aliases.get(
@@ -116,27 +128,39 @@ class Script(scripts.Script):
         quantization_changed = (
             quantization != onediff_shared.current_unet_graph.quantized
         )
+        controlnet_enabled_status_changed = (
+            controlnet_enabled != onediff_shared.current_is_controlnet
+        )
         need_recompile = (
             (
                 quantization and ckpt_changed
             )  # always recompile when switching ckpt with 'int8 speed model' enabled
             or structure_changed  # always recompile when switching model to another structure
             or quantization_changed  # always recompile when switching model from non-quantized to quantized (and vice versa)
+            or controlnet_enabled_status_changed
             or always_recompile
         )
         if need_recompile:
-            onediff_shared.current_unet_graph = get_compiled_graph(
-                shared.sd_model, quantization
-            )
-            load_graph(onediff_shared.current_unet_graph, compiler_cache)
+            if not controlnet_enabled:
+                onediff_shared.current_unet_graph = get_compiled_graph(
+                    shared.sd_model, quantization
+                )
+                load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:
             logger.info(
                 f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.current_unet_type}, skip compile"
             )
 
-        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(), onediff_enabled():
+        with UnetCompileCtx(not controlnet_enabled), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         save_graph(onediff_shared.current_unet_graph, saved_cache_name)
+
+        if controlnet_enabled:
+            onediff_shared.current_is_controlnet = True
+        else:
+            onediff_shared.controlnet_compiled = False
+            onediff_shared.current_is_controlnet = False
+
         torch_gc()
         flow.cuda.empty_cache()
         return proc

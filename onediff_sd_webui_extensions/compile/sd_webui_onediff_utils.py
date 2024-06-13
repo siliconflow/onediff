@@ -13,17 +13,20 @@ class GroupNorm32Oflow(nn.GroupNorm):
 
 
 # https://github.com/Stability-AI/generative-models/blob/059d8e9cd9c55aea1ef2ece39abf605efb8b7cc9/sgm/modules/diffusionmodules/util.py#L207
-def timestep_embedding(timesteps, dim, max_period=10000):
-    half = dim // 2
-    freqs = flow.exp(
-        -math.log(max_period)
-        * flow.arange(start=0, end=half, dtype=flow.float32)
-        / half
-    ).to(device=timesteps.device)
-    args = timesteps[:, None].float() * freqs[None]
-    embedding = flow.cat([flow.cos(args), flow.sin(args)], dim=-1)
-    if dim % 2:
-        embedding = flow.cat([embedding, flow.zeros_like(embedding[:, :1])], dim=-1)
+def timestep_embedding(timesteps, dim, max_period=10000, repeat_only=False):
+    if not repeat_only:
+        half = dim // 2
+        freqs = flow.exp(
+            -math.log(max_period)
+            * flow.arange(start=0, end=half, dtype=flow.float32)
+            / half
+        ).to(device=timesteps.device)
+        args = timesteps[:, None].float() * freqs[None]
+        embedding = flow.cat([flow.cos(args), flow.sin(args)], dim=-1)
+        if dim % 2:
+            embedding = flow.cat([embedding, flow.zeros_like(embedding[:, :1])], dim=-1)
+    else:
+        raise NotImplementedError("repeat_only=True is not implemented in timestep_embedding")
     return embedding
 
 

@@ -9,3 +9,7 @@ current_unet_type = {
     "is_ssd": False,
 }
 onediff_enabled = False
+
+# controlnet
+controlnet_compiled = False
+current_is_controlnet = False

@@ -1,4 +1,5 @@
 import os
+from functools import wraps
 from contextlib import contextmanager
 from pathlib import Path
 from textwrap import dedent
@@ -119,10 +120,22 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
         compiled_unet.save_graph(saved_cache_name)
 
 
-@contextmanager
-def onediff_enabled():
-    onediff_shared.onediff_enabled = True
-    try:
-        yield
-    finally:
-        onediff_shared.onediff_enabled = False
+def onediff_enabled_decorator(func):
+    @wraps(func)
+    def wrapper(*arg, **kwargs):
+        onediff_shared.onediff_enabled = True
+        try:
+            return func(*arg, **kwargs)
+        finally:
+            onediff_shared.onediff_enabled = False
+    return wrapper
+
+
+def singleton_decorator(func):
+    has_been_called = False
+    def wrapper(*args, **kwargs):
+        nonlocal has_been_called
+        if not has_been_called:
+            has_been_called = True
+            return func(*args, **kwargs)
+    return wrapper
