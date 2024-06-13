@@ -1,3 +1,4 @@
+from typing import Callable, Optional
 import torch
 
 from .deployable_module import DeployableModule
@@ -6,7 +7,7 @@ _DEFAULT_BACKEND = "oneflow"
 
 
 def compile(
-    torch_module: torch.nn.Module, *, backend=_DEFAULT_BACKEND, options=None
+    torch_module: Optional[Callable] = None, *, backend=_DEFAULT_BACKEND, options=None
 ) -> DeployableModule:
     from .registry import lookup_backend
 
