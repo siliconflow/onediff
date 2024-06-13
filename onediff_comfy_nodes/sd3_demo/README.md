@@ -7,15 +7,14 @@ huggingface: https://huggingface.co/stabilityai/stable-diffusion-3-medium
 
 ### Performance
 
-- Timings for 28 steps at 1024x1024
-- OneDiff[Nexfort] Compile mode: max-optimize:max-autotune:low-precision
+- Testing on NVIDIA A800-SXM4-80GB, with image size of 1024*1024, iterating 28 steps. 
+- OneDiff[Nexfort] Compile mode: 
+`max-optimize:max-autotune:low-precision`
 
-| Accelerator           | Baseline (non-optimized) | OneDiff (optimized) | Percentage improvement |
-| --------------------- | ------------------------ | ------------------- | ---------------------- |
-| NVIDIA A800-SXM4-80GB | ~4.03 sec                | ~2.93 sec           | ~27.29 %               |
-
-
-
+|                          | Iteration speed    | E2E Inference Time | Max CUDA Memory Used |
+| ------------------------ | ------------------ | ------------------ | -------------------- |
+| Baseline (non-optimized) | 7.44it/s           | 4.03 s             | 18.827 GiB           |
+| OneDiff (optimized)      | 10.51it/s (+41.2%) | 2.96 s (-26.5%)    | 20.766 GiB           |
 
 The following table shows the comparison of the plot, seed=1, Baseline (non optimized) on the left, and OneDiff (optimized) on the right
 
@@ -29,18 +28,18 @@ test with multiple resolutions and support shape switching in a single line of P
 ```
 [print(f"Testing resolution: {h}x{w}") for h in [1024, 512, 768, 256] for w in [1024, 512, 768, 256]]
 ```
-
-## Usage Example
-
-### Install
-
+## Environment setup
+### Set SD3 requirements
 ```shell
 # python 3.10 
 COMFYUI_DIR=$pwd/ComfyUI
+# install ComfyUI
+git clone https://github.com/comfyanonymous/ComfyUI.git
+
+# install onediff & onediff_comfy_nodes
 git clone https://github.com/siliconflow/onediff.git 
 cd onediff && pip install -r onediff_comfy_nodes/sd3_demo/requirements.txt && pip install -e .
 ln -s $pwd/onediff/onediff_comfy_nodes  $COMFYUI_DIR/custom_nodes
-git clone https://github.com/comfyanonymous/ComfyUI.git
 ```
 
 <details close>
@@ -72,7 +71,33 @@ with torch.inference_mode():
     
 print("Successfully installed～")
 ```
+
 </details>
+
+### Download relevant models
+
+- step1: Get User Access Tokens here https://huggingface.co/settings/tokens
+
+- step2: Download relevant models
+```shell
+export ACCESS_TOKEN="User Access Tokens"
+wget --header="Authorization: Bearer $ACCESS_TOKEN" \
+https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/sd3_medium.safetensors -O models/checkpoints/sd3_medium.safetensors 
+
+wget --header="Authorization: Bearer $ACCESS_TOKEN" \
+https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_encoders/clip_g.safetensors -O models/clip/clip_g.safetensors
+    
+wget --header="Authorization: Bearer $ACCESS_TOKEN" \
+https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_encoders/clip_l.safetensors -O models/clip/clip_l.safetensors
+
+# wget --header="Authorization: Bearer $ACCESS_TOKEN" \
+# https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_encoders/t5xxl_fp16.safetensors -O models/clip/t5xxl_fp16.safetensors
+
+wget --header="Authorization: Bearer $ACCESS_TOKEN" \
+https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_encoders/t5xxl_fp8_e4m3fn.safetensors -O models/clip/t5xxl_fp8_e4m3fn.safetensors
+```
+
+## Usage Example
 
 ### Run ComfyUI
 ```shell
@@ -93,5 +118,6 @@ cd $COMFYUI_DIR && python main.py --gpu-only --disable-cuda-malloc
 ```
 
 ### WorkFlow
+Here is a very basic example how to use it:
 ![WorkFlow](https://github.com/siliconflow/onediff/assets/109639975/a385fac5-1f82-4905-a941-4c71ff1c616e)
 
