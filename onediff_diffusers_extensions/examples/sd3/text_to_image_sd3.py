@@ -9,7 +9,7 @@ from onediffx import compile_pipe, quantize_pipe
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Generate images with Stable Diffusion 3 using onediif (nexfort) speed up."
+        description="Use onediif (nexfort) to accelerate image generation with Stable Diffusion 3."
     )
     parser.add_argument(
         "--model",
