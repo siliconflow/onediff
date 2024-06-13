@@ -36,6 +36,12 @@ def parse_args():
         "--width", type=int, default=1024, help="Width of the generated image."
     )
     parser.add_argument(
+        "--num-inference-steps",
+        type=int,
+        default=28,
+        help="Number of inference steps."
+    )
+    parser.add_argument(
         "--saved-image",
         type=str,
         default="./sd3.png",
@@ -69,7 +75,6 @@ class SD3Generator:
 
     def warmup(self, gen_args, warmup_iterations=1):
         warmup_args = gen_args.copy()
-        warmup_args["num_inference_steps"] = 28
 
         warmup_args["generator"] = torch.Generator(device=device).manual_seed(0)
 
@@ -112,7 +117,7 @@ def main():
 
     gen_args = {
         "prompt": args.prompt,
-        "num_inference_steps": 28,
+        "num_inference_steps": args.num_inference_steps,
         "height": args.height,
         "width": args.width,
     }
