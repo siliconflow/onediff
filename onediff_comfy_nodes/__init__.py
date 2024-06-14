@@ -1,17 +1,19 @@
 """OneDiff ComfyUI Speedup Module"""
+from onediff.utils.import_utils import is_nexfort_available, is_oneflow_available
 from ._config import is_disable_oneflow_backend
 from ._nodes import (
+    ControlnetSpeedup,
     ModelSpeedup,
     OneDiffApplyModelBooster,
     OneDiffCheckpointLoaderSimple,
     OneDiffControlNetLoader,
     VaeSpeedup,
 )
-from .utils.import_utils import is_nexfort_available, is_oneflow_available
 
 NODE_CLASS_MAPPINGS = {
     "ModelSpeedup": ModelSpeedup,
     "VaeSpeedup": VaeSpeedup,
+    "ControlnetSpeedup": ControlnetSpeedup,
     "OneDiffModelBooster": OneDiffApplyModelBooster,
     "OneDiffCheckpointLoaderSimple": OneDiffCheckpointLoaderSimple,
     "OneDiffControlNetLoader": OneDiffControlNetLoader,
@@ -20,7 +22,8 @@ NODE_CLASS_MAPPINGS = {
 NODE_DISPLAY_NAME_MAPPINGS = {
     "ModelSpeedup": "Model Speedup",
     "VaeSpeedup": "VAE Speedup",
-    "OneDiffModelBooster": "Apply Model Booster - OneDff",
+    "OneDiffModelBooster": "Apply Model Booster - OneDiff",
+    "ControlnetSpeedup": "ControlNet Speedup",
     "OneDiffCheckpointLoaderSimple": "Load Checkpoint - OneDiff",
 }
 
@@ -37,7 +40,7 @@ def lazy_load_extra_nodes():
     update_node_mappings(nodes_torch_compile_booster)
 
     if is_oneflow_available() and not is_disable_oneflow_backend():
-        from .extras_nodes import nodes_oneflow_booster, nodes_compare
+        from .extras_nodes import nodes_compare, nodes_oneflow_booster
 
         update_node_mappings(nodes_oneflow_booster)
         update_node_mappings(nodes_compare)

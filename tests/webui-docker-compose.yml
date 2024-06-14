@@ -1,0 +1,57 @@
+version: "3.8"
+
+services:
+  onediff-test:
+    container_name: ${CONTAINER_NAME}
+    image: ${ACR_ORG}/${MATRIX_IMAGE}
+    command:  sleep 5400
+    privileged: true
+    shm_size: 8g
+    network_mode: host
+    pids_limit: 2000
+    cap_add:
+      - SYS_PTRACE
+    security_opt:
+      - seccomp=unconfined
+    environment:
+      HF_HUB_OFFLINE: "1"
+      ONEFLOW_MLIR_ENABLE_TIMING: "1"
+      ONEFLOW_MLIR_PRINT_STATS: "1"
+      CI: "1"
+      SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
+
+      INDEX_URL: "https://pypi.tuna.tsinghua.edu.cn/simple"
+      CLIP_PACKAGE: "git+file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/CLIP"
+      OPENCLIP_PACKAGE: "git+file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/open_clip"
+      ASSETS_REPO: "file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/stable-diffusion-webui-assets"
+      STABLE_DIFFUSION_REPO: "file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/stable-diffusion-stability-ai"
+      STABLE_DIFFUSION_XL_REPO: "file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/generative-models"
+      K_DIFFUSION_REPO: "file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/k-diffusion"
+      BLIP_REPO: "file:///app/${WEBUI_SRC_DIR}/${WEBUI_DEPENDENCIES_SUBDIR}/BLIP"
+
+      ASSETS_COMMIT_HASH: ${ASSETS_COMMIT_HASH}
+      STABLE_DIFFUSION_COMMIT_HASH: ${STABLE_DIFFUSION_COMMIT_HASH}
+      STABLE_DIFFUSION_XL_COMMIT_HASH: ${STABLE_DIFFUSION_XL_COMMIT_HASH}
+      K_DIFFUSION_COMMIT_HASH: ${K_DIFFUSION_COMMIT_HASH}
+      BLIP_COMMIT_HASH: ${BLIP_COMMIT_HASH}
+
+      SAFE_DIRECTORIES: |
+        CLIP
+        open_clip
+        stable-diffusion-webui-assets
+        stable-diffusion-stability-ai
+        generative-models
+        k-diffusion
+        BLIP
+
+
+    volumes:
+      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
+      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
+      - /share_nfs:/share_nfs:ro
+      - /share_nfs/onediff_ci/sd-webui/images:/share_nfs/onediff_ci/sd-webui/images:rw
+      - ${PWD}/${WEBUI_SRC_DIR}:/app/${WEBUI_SRC_DIR}
+      - ${PWD}/onediff_sd_webui_extensions:/app/${WEBUI_SRC_DIR}/extensions/onediff_sd_webui_extensions
+      - $PWD:/src/onediff
+    working_dir: /src/onediff
+    restart: "no"

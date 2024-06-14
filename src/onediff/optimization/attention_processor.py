@@ -84,7 +84,7 @@ class FusedSelfAttnProcessor:
             hidden_states = flow.bmm(attention_probs, value)
             hidden_states = attn.batch_to_head_dim(hidden_states)
         else:
-            from ..infer_compiler.utils import (
+            from onediff.utils import (
                 parse_boolean_from_env,
                 set_boolean_env_var,
             )
@@ -123,7 +123,7 @@ class FusedSelfAttnProcessor:
 
 
 try:
-    from onediff.infer_compiler.transform import register
+    from onediff.infer_compiler.backends.oneflow.transform import register
 
     def convert_fused_self_attn_processor(
         mod: FusedSelfAttnProcessor, verbose=True
@@ -132,4 +132,4 @@ try:
 
     register(torch2oflow_funcs=convert_fused_self_attn_processor)
 except:
-    print("Skip onediff.infer_compiler.transform.register")
+    print("Skip onediff.infer_compiler.backends.oneflow.transform.register")

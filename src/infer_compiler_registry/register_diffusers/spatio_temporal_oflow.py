@@ -30,7 +30,7 @@ diffusers_0240_v = version.parse("0.24.0")
 
 if diffusers_version >= diffusers_0240_v:
 
-    from onediff.infer_compiler.transform import transform_mgr
+    from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
     transformed_diffusers = transform_mgr.transform_package("diffusers")
 

@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 
 # oneflow_compile should be imported before importing any diffusers
-from onediff.infer_compiler import oneflow_compile, compile_options
+from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 
 
 def parse_args():
@@ -90,7 +90,8 @@ for sub_module_name, sub_calibrate_info in calibrate_info.items():
         pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
-compile_options.oneflow.use_graph = args.graph
+compile_options = OneflowCompileOptions()
+compile_options.use_graph = args.graph
 
 if args.compile_text_encoder:
     if pipe.text_encoder is not None:
@@ -104,7 +105,6 @@ if args.compile:
     pipe.unet = oneflow_compile(pipe.unet, options=compile_options)
     pipe.vae.decoder = oneflow_compile(pipe.vae.decoder, options=compile_options)
 
-torch.manual_seed(args.seed)
 
 if args.load_graph:
     print("Loading graphs to avoid compilation...")
@@ -115,18 +115,21 @@ if args.load_graph:
     print(f"warmup with loading graph elapsed: {end_t - start_t} s")
     start_t = time.time()
     for _ in range(args.warmup):
+        torch.manual_seed(args.seed)
         image = pipe(**infer_args).images[0]
     end_t = time.time()
     print(f"warmup with run elapsed: {end_t - start_t} s")
 else:
     start_t = time.time()
     for _ in range(args.warmup):
+        torch.manual_seed(args.seed)
         image = pipe(**infer_args).images[0]
     end_t = time.time()
     print(f"warmup with run elapsed: {end_t - start_t} s")
 
 start_t = time.time()
 
+torch.manual_seed(args.seed)
 torch.cuda.cudart().cudaProfilerStart()
 image = pipe(**infer_args).images[0]
 torch.cuda.cudart().cudaProfilerStop()

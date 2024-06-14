@@ -208,7 +208,7 @@ pipe = StableVideoDiffusionPipeline.from_pretrained(
 )
 pipe.to("cuda")
 
-compile_options.oneflow.attention_allow_half_precision_score_accumulation_max_m = 0
+compile_options.attention_allow_half_precision_score_accumulation_max_m = 0
 pipe = compile_pipe(pipe, options=compile_options)
 
 input_image = load_image("https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/svd/rocket.png?download=true")
@@ -281,11 +281,11 @@ Set the LoRA layers of `adapter_name` for the unet and text-encoder(s) with rela
 
 #### `onediffx.lora.delete_adapters`
 
-`onediffx.lora.delete_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str])`
+`onediffx.lora.delete_adapters(pipeline: LoraLoaderMixin, adapter_names: Union[List[str], str] = None)`
 
 Deletes the LoRA layers of `adapter_name` for the unet and text-encoder(s).
 
-- adapter_names (`str` or `List[str]`): The names of the adapter to delete. Can be a single string or a list of strings
+- adapter_names (`str` or `List[str]`, *optional*): The names of the adapter to delete. Can be a single string or a list of strings. If is None, all adapters will be deleted.
 
 #### `onediffx.lora.update_graph_with_constant_folding_info`
 

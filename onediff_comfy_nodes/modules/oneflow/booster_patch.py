@@ -1,8 +1,13 @@
 import os
 from functools import singledispatchmethod
 
+from comfy.sd import VAE
 from comfy.model_patcher import ModelPatcher
-from onediff.infer_compiler.oneflow import OneflowDeployableModule as DeployableModule
+from comfy.controlnet import ControlLora, ControlNet
+from onediff.infer_compiler.backends.oneflow import (
+    OneflowDeployableModule as DeployableModule,
+)
+
 
 from ..booster_interface import BoosterExecutor
 
@@ -18,7 +23,7 @@ class PatchBoosterExecutor(BoosterExecutor):
             file_path = diff_model.get_graph_file()
             if file_path is None:
                 return diff_model
-            
+
             file_dir = os.path.dirname(file_path)
             file_name = os.path.basename(file_path)
             names = file_name.split("_")

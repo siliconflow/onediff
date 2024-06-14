@@ -4,18 +4,18 @@ Date:   Thu Apr 11 22:43:05 2024 -0400
 """
 
 import torch
-from comfy.samplers import (calc_cond_batch, can_concat_cond, cond_cat,
-                            get_area_and_mult)
+from comfy.samplers import calc_cond_batch, can_concat_cond, cond_cat, get_area_and_mult
 
 from ..sd_hijack_utils import Hijacker
 from .patch_management import PatchType, create_patch_executor
 from .utils.booster_utils import is_using_oneflow_backend
 
+
 def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
     out_conds = []
     out_counts = []
     to_run = []
-    
+
     for i in range(len(conds)):
         out_conds.append(torch.zeros_like(x_in))
         out_counts.append(torch.ones_like(x_in) * 1e-37)
@@ -72,11 +72,13 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         timestep_ = torch.cat([timestep] * batch_chunks)
 
         if control is not None:
-            c['control'] = control.get_control(input_x, timestep_, c, len(cond_or_uncond))
+            c["control"] = control.get_control(
+                input_x, timestep_, c, len(cond_or_uncond)
+            )
 
         transformer_options = {}
-        if 'transformer_options' in model_options:
-            transformer_options = model_options['transformer_options'].copy()
+        if "transformer_options" in model_options:
+            transformer_options = model_options["transformer_options"].copy()
 
         if patches is not None:
             if "patches" in transformer_options:
@@ -93,27 +95,48 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         transformer_options["cond_or_uncond"] = cond_or_uncond[:]
 
         diff_model = model.diffusion_model
-        
-        if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(diff_model):
+
+        if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(
+            diff_model
+        ):
             transformer_options["sigmas"] = timestep[0].item()
-            masks_patch_executor = create_patch_executor(PatchType.CrossAttentionForwardMasksPatch)
-            transformer_options["_masks"] = masks_patch_executor.get_patch(diff_model)
+            patch_executor = create_patch_executor(PatchType.UNetExtraInputOptions)
+            transformer_options["_attn2"] = patch_executor.get_patch(diff_model)[
+                "attn2"
+            ]
         else:
             transformer_options["sigmas"] = timestep
 
-        
-        c['transformer_options'] = transformer_options
-        if 'model_function_wrapper' in model_options:
-            output = model_options['model_function_wrapper'](model.apply_model, {"input": input_x, "timestep": timestep_, "c": c, "cond_or_uncond": cond_or_uncond}).chunk(batch_chunks)
+        c["transformer_options"] = transformer_options
+        if "model_function_wrapper" in model_options:
+            output = model_options["model_function_wrapper"](
+                model.apply_model,
+                {
+                    "input": input_x,
+                    "timestep": timestep_,
+                    "c": c,
+                    "cond_or_uncond": cond_or_uncond,
+                },
+            ).chunk(batch_chunks)
         else:
             output = model.apply_model(input_x, timestep_, **c).chunk(batch_chunks)
 
- 
         for o in range(batch_chunks):
             cond_index = cond_or_uncond[o]
-            out_conds[cond_index][:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += output[o] * mult[o]
-            out_counts[cond_index][:,:,area[o][2]:area[o][0] + area[o][2],area[o][3]:area[o][1] + area[o][3]] += mult[o]
-    
+            a = area[o]
+            if a is None:
+                out_conds[cond_index] += output[o] * mult[o]
+                out_counts[cond_index] += mult[o]
+            else:
+                out_c = out_conds[cond_index]
+                out_cts = out_counts[cond_index]
+                dims = len(a) // 2
+                for i in range(dims):
+                    out_c = out_c.narrow(i + 2, a[i + dims], a[i])
+                    out_cts = out_cts.narrow(i + 2, a[i + dims], a[i])
+                out_c += output[o] * mult[o]
+                out_cts += mult[o]
+
     for i in range(len(out_conds)):
         out_conds[i] /= out_counts[i]
 
@@ -126,7 +149,5 @@ def cond_func(orig_func, model, *args, **kwargs):
 
 samplers_hijack = Hijacker()
 samplers_hijack.register(
-    orig_func=calc_cond_batch,
-    sub_func=calc_cond_batch_of,
-    cond_func=cond_func,
+    orig_func=calc_cond_batch, sub_func=calc_cond_batch_of, cond_func=cond_func,
 )

@@ -57,16 +57,31 @@ The latest news:
 ---
 The Full Introduction of OneDiff:
 <!-- toc -->
+- [OneDiff](#onediff)
+- [News](#news)
+- [Community and Support](#community-and-support)
+- [OS and GPU Compatibility](#os-and-gpu-compatibility)
 - [About OneDiff](#about-onediff)
   - [Architecture](#architecture)
   - [State-of-the-art performance](#state-of-the-art-performance)
+    - [SDXL E2E time](#sdxl-e2e-time)
+    - [SVD E2E time](#svd-e2e-time)
   - [Features](#features)
   - [Acceleration for State-of-the-art models](#acceleration-for-state-of-the-art-models)
   - [Acceleration for production environment](#acceleration-for-production-environment)
+    - [PyTorch Module compilation](#pytorch-module-compilation)
+    - [Avoid compilation time for new input shape](#avoid-compilation-time-for-new-input-shape)
+    - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
   - [OneDiff Quality Evaluation](#onediff-quality-evaluation)
   - [OneDiff Enterprise Edition](#onediff-enterprise-edition)
 - [Installation](#installation)
-- [Release](#release)
+  - [OneDiff Installation](#onediff-installation)
+    - [Install a compiler backend](#install-a-compiler-backend)
+      - [(Optional) Install Nexfort](#optional-install-nexfort)
+      - [(Optional) Install OneFlow](#optional-install-oneflow)
+    - [2. Install torch and diffusers](#2-install-torch-and-diffusers)
+    - [3. Install OneDiff](#3-install-onediff)
+    - [4. (Optional)Login huggingface-cli](#4-optionallogin-huggingface-cli)
 <!-- tocstop -->
 
 ## About OneDiff
@@ -166,7 +181,22 @@ The OneDiff Enterprise Edition is available for a monthly subscription and is de
 ## Installation
 ### OneDiff Installation
 
-#### 1. Install OneFlow
+#### Install a compiler backend
+When considering the choice between OneFlow and Nexfort, either one is optional, and only one is needed.
+
+- For DiT structural models or H100 devices, it is recommended to use Nexfort.
+
+- For all other cases, it is recommended to use OneFlow. Note that optimizations within OneFlow will gradually transition to Nexfort in the future.
+
+##### (Optional) Install Nexfort
+The detailed introduction of Nexfort is [here](https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort#readme).
+
+```bash
+python3 -m  pip install -U torch==2.3.0 torchvision==0.18.0 torchaudio==2.3.0 torchao==0.1
+python3 -m  pip install -U nexfort
+```
+
+##### (Optional) Install OneFlow
 > **_NOTE:_** We have updated OneFlow frequently for OneDiff, so please install OneFlow by the links below.
 
 - **CUDA 11.8**
