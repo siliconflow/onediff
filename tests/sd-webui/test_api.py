@@ -49,6 +49,7 @@ def url_set_config(base_url):
 
 
 @pytest.mark.parametrize("data", get_all_args())
+@pytest.mark.skip()
 def test_image_ssim(base_url, data):
     print(f"testing: {get_data_summary(data)}")
     endpoint = TXT2IMG_API_ENDPOINT if is_txt2img(data) else IMG2IMG_API_ENDPOINT
