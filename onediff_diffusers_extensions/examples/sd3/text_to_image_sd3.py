@@ -50,6 +50,11 @@ def parse_args():
     parser.add_argument(
         "--seed", type=int, default=1, help="Seed for random number generation."
     )
+    parser.add_argument(
+        "--run_multiple_resolutions",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=False,
+    )
     return parser.parse_args()
 
 
@@ -84,8 +89,6 @@ class SD3Generator:
         print("Warmup complete.")
 
     def generate(self, gen_args):
-        self.warmup(gen_args)
-
         gen_args["generator"] = torch.Generator(device=device).manual_seed(args.seed)
 
         # Run the model
@@ -110,8 +113,8 @@ class SD3Generator:
 
 
 def main():
-    compiler_config = eval(args.compiler_config) if args.compiler_config else None
-    quantize_config = eval(args.quantize_config) if args.quantize_config else None
+    compiler_config = json.loads(args.compiler_config) if args.compiler_config else None
+    quantize_config = json.loads(args.quantize_config) if args.quantize_config else None
 
     sd3 = SD3Generator(args.model, compiler_config, quantize_config)
 
@@ -122,6 +125,7 @@ def main():
         "width": args.width,
     }
 
+    sd3.warmup(gen_args)
     image, inference_time = sd3.generate(gen_args)
     print(
         f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
@@ -129,6 +133,18 @@ def main():
     cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
 
+    if args.run_multiple_resolutions:
+        print("Test run with multiple resolutions...")
+        sizes = [1536, 1024, 768, 720, 576, 512, 256]
+        for h in sizes:
+            for w in sizes:
+                gen_args["height"] = h
+                gen_args["width"] = w
+                print(f"Running at resolution: {h}x{w}")
+                start_time = time.time()
+                sd3.generate(gen_args)
+                end_time = time.time()
+                print(f"Inference time: {end_time - start_time:.2f} seconds")
 
 if __name__ == "__main__":
     main()
