@@ -112,11 +112,6 @@ def get_image_array_from_response(response):
     return np.array(Image.open(io.BytesIO(imgdata)))
 
 
-def save_image(image_array, file_path):
-    image = Image.fromarray(image_array)
-    image.save(file_path)
-
-
 def get_init_image():
     img_path = str(Path(__file__).parent / "cat.png")
     return encode_file_to_base64(img_path)
