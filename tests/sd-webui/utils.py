@@ -151,3 +151,9 @@ def dump_image(src_img: np.ndarray, target_img: np.ndarray, filename: str):
     combined_img = np.concatenate((src_img, target_img), axis=1)  
     image = Image.fromarray(combined_img)  
     image.save(f'{filename}.png')
+
+def get_threshold(data: Dict[str, Any]):
+    if is_quant(data):
+        return 0.7
+    else:
+        return 0.95

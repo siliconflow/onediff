@@ -19,6 +19,7 @@ from utils import (
     is_txt2img,
     post_request_and_check,
     dump_image,
+    get_threshold,
 )
 
 THRESHOLD = 0.97
@@ -66,9 +67,9 @@ def test_image_ssim(base_url, data):
     target_image_path = get_target_image_filename(data)
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
-    if ssim_value < THRESHOLD:
+    if ssim_value < get_threshold(data):
         dump_image(target_image, generated_image, Path(target_image_path).name)
-    assert ssim_value > THRESHOLD
+    assert ssim_value > get_threshold(data)
 
 
 def test_onediff_save_graph(url_txt2img):
@@ -95,7 +96,7 @@ def test_onediff_load_graph(url_txt2img):
     post_request_and_check(url_txt2img, data)
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_onediff_refiner(url_txt2img):
     extra_args = {
         "sd_model_checkpoint": "sd_xl_base_1.0.safetensors",
