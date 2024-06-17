@@ -44,7 +44,10 @@ Updated on January 23, 2024. Device: RTX 3090
     - [Basic Node Usage](#basic-node-usage)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Quantization](#quantization)
+    - [Compiler Cache](#compiler-cache)
+      - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
   - [OneDiff Community Examples](#onediff-community-examples)
+    - [IPAdapter](#ipadapter)
     - [LoRA](#lora)
     - [ControlNet](#controlnet)
     - [SVD](#svd)
@@ -84,7 +87,9 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
     ```bash
     cd onediff
-    cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+    # or
+    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
     ```
 
 </details>
@@ -113,7 +118,6 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 
 ![](workflows/model-speedup.png)
 
-
 The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
 
@@ -123,12 +127,18 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
-If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Hugginface/siliconflow](https://huggingface.co/siliconflow). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
 ![](workflows/onediff_quant_base.png)
 
+### Compiler Cache 
+#### Avoid compilation time for online serving
+The `"Load Checkpoint - OneDiff"` node automatically caches compiled results locally in the default directory `ComfyUI/input/graphs`. To save graphs in a custom directory, utilize `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
 
 ## OneDiff Community Examples 
+
+### IPAdapter
+> doc link: [Accelerating cubiq/ComfyUI_IPAdapter_plus with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md)
 
 ### LoRA                  
 
@@ -164,9 +174,13 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 [Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
 
-### InstantID
 
-> [doc link](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ComfyUI_InstantID_OneDiff.md)
+### InstantID 
+
+> doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
+
+> doc link: [Accelerating ZHO-ZHO-ZHO/ComfyUI-InstantID with OneDiff](./workflows/ComfyUI_InstantID_OneDiff.md)
+
 
 ## Contact
 

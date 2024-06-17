@@ -1,10 +1,14 @@
+from typing import Union
+
 import torch
 from comfy import model_management
-from comfy.model_base import SVD_img2vid
+from comfy.model_base import BaseModel, SVD_img2vid
 from comfy.model_patcher import ModelPatcher
-from onediff.infer_compiler.oneflow import \
-    OneflowDeployableModule as DeployableModule
-from onediff.infer_compiler.utils import set_boolean_env_var
+
+from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.utils import set_boolean_env_var
+
+from ..patch_management import PatchType, create_patch_executor
 
 
 def set_compiled_options(module: DeployableModule, graph_file="unet"):
@@ -29,6 +33,7 @@ def is_fp16_model(model):
             return True
     return False
 
+
 def get_model_type(model):
     """
     Get the types of the parameters in the model.
@@ -44,6 +49,7 @@ def get_model_type(model):
         type_set.add(param.dtype)
     return type_set
 
+
 def set_environment_for_svd_img2vid(model: ModelPatcher):
     if isinstance(model, ModelPatcher) and isinstance(model.model, SVD_img2vid):
         # TODO(fengwen) check it affect performance
@@ -54,3 +60,58 @@ def set_environment_for_svd_img2vid(model: ModelPatcher):
         )
 
 
+def is_using_oneflow_backend(module):
+    dc_patch_executor = create_patch_executor(PatchType.DCUNetExecutorPatch)
+    if isinstance(module, ModelPatcher):
+        deep_cache_module = dc_patch_executor.get_patch(module)
+        if deep_cache_module[0] and isinstance(deep_cache_module[0], DeployableModule):
+            return True
+        if hasattr(module.model, "diffusion_model"):
+            diff_model = module.model.diffusion_model
+            return isinstance(diff_model, DeployableModule)
+        else:
+            return False
+
+    if isinstance(module, BaseModel):
+        if dc_patch_executor.is_use_deep_cache_unet(module):
+            return True
+        if hasattr(module, "diffusion_model"):
+            return isinstance(module.diffusion_model, DeployableModule)
+        else:
+            return False
+
+    if isinstance(module, DeployableModule):
+        return True
+
+    raise RuntimeError("")
+
+
+def clear_deployable_module_cache_and_unbind(
+    module: Union[ModelPatcher, DeployableModule]
+):
+    if isinstance(module, ModelPatcher):
+        dcu_patch = create_patch_executor(PatchType.DCUNetExecutorPatch)
+        if dcu_patch.check_patch(module):
+            for sub_module in dcu_patch.get_patch(module):
+                sub_module._clear_old_graph()
+
+        diff_model = module.model.diffusion_model
+        if isinstance(diff_model, DeployableModule):
+            diff_model._clear_old_graph()
+        create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
+            diff_model
+        )
+        create_patch_executor(PatchType.UNetExtraInputOptions).clear_patch(
+            diff_model
+        )
+    elif isinstance(module, DeployableModule):
+        diff_model = module
+        diff_model._clear_old_graph()
+        create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
+            diff_model
+        )
+        create_patch_executor(PatchType.CrossAttentionForwardMasksPatch).clear_patch(
+            diff_model
+        )
+    else:
+        raise RuntimeError(f"Unexpected module type: {type(module)}.")

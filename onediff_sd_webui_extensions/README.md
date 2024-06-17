@@ -4,8 +4,10 @@
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
     - [Fast Model Switching](#fast-model-switching)
+    - [Compiler cache saving and loading](#compiler-cache-saving-and-loading)
     - [LoRA](#lora)
 - [Quantization](#quantization)
+- [Use OneDiff by API](#use-onediff-by-api)
 - [Contact](#contact)
 
 ## Performance of Community Edition
@@ -66,6 +68,33 @@ Select `onediff_diffusion_model` from the Script menu, enter a prompt in the tex
 When switching models, if the new model has the same structure as the old model, OneDiff will reuse the previously compiled graph, which means you don't need to compile the new model again, which significantly reduces the time it takes you to switch models.
 
 > Note: The feature is not supported for quantized model.
+
+
+### Compiler cache saving and loading
+
+OneDiff supports saving compiler cache to disk and loading cache from disk. In scenarios where recompiling is required after switching model, you can skip the compilation process by loading the compiler cache from the disk, to saving time of model switching.
+
+The compiler cache will be saved at `/path/to/your/stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/` by default. If you want to specify the path, you can modify it in webui settings.
+
+![Path to save compiler cache in Settings](./images/setting_dir_of_compiler_cache.png)
+
+#### Compiler cache saving
+
+After selecting onediff, a text box named `Saved cache name` will appear at the bottom right. You can input the file name of the compiler cache you want to save here. After generating the image, the compiler cache will be saved in the `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/your-compiler-cache-name` path.
+
+![Compiler caches](./images/saved_cache_name.png)
+
+
+> Note: When the text box is empty or the file with the specified name already exists, the compiler cache will not be saved.
+
+
+#### Compiler cache loading
+
+After selecting onediff, a dropdown menu named `Compile cache` will appear at the bottom left. Here, you can select the compiler cache you want to load. This dropdown menu will display all files located in the path `stable-diffusion-webui/extensions/onediff_sd_webui_extensions/compiler_caches/`. And click the button on the right side to refresh the `Compile cache` list.
+
+![Compiler cache loading](./images/compiler_caches.png)
+
+> Note: To properly use this feature, please ensure that you have added the `--disable-safe-unpickle` parameter when launching sd-webui.
 
 ### LoRA
 
