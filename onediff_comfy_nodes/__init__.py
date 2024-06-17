@@ -50,6 +50,8 @@ def lazy_load_extra_nodes():
 
         update_node_mappings(nodes_nexfort_booster)
 
+    from .extras_nodes import nodes_prompt_styler
+    update_node_mappings(nodes_prompt_styler)
 
 # Lazy load all extra nodes when needed
 lazy_load_extra_nodes()
