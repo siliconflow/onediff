@@ -36,10 +36,7 @@ def parse_args():
         "--width", type=int, default=1024, help="Width of the generated image."
     )
     parser.add_argument(
-        "--num-inference-steps",
-        type=int,
-        default=28,
-        help="Number of inference steps."
+        "--num-inference-steps", type=int, default=28, help="Number of inference steps."
     )
     parser.add_argument(
         "--saved-image",
@@ -55,12 +52,49 @@ def parse_args():
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
         default=False,
     )
+    parser.add_argument(
+        "--run_multiple_prompts",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=False,
+    )
     return parser.parse_args()
 
 
 args = parse_args()
 
 device = torch.device("cuda")
+
+
+def generate_texts(min_length=50, max_length=302):
+    base_text = "a female character with long, flowing hair that appears to be made of ethereal, swirling patterns resembling the Northern Lights or Aurora Borealis. The background is dominated by deep blues and purples, creating a mysterious and dramatic atmosphere. The character's face is serene, with pale skin and striking features. She"
+
+    additional_words = [
+        "gracefully",
+        "beautifully",
+        "elegant",
+        "radiant",
+        "mysteriously",
+        "vibrant",
+        "softly",
+        "gently",
+        "luminescent",
+        "sparkling",
+        "delicately",
+        "glowing",
+        "brightly",
+        "shimmering",
+        "enchanting",
+        "gloriously",
+        "magnificent",
+        "majestic",
+        "fantastically",
+        "dazzlingly",
+    ]
+
+    for i in range(min_length, max_length):
+        idx = i % len(additional_words)
+        base_text += " " + additional_words[idx]
+        yield base_text
 
 
 class SD3Generator:
@@ -118,6 +152,12 @@ def main():
 
     sd3 = SD3Generator(args.model, compiler_config, quantize_config)
 
+    if args.run_multiple_prompts:
+        dynamic_prompts = generate_texts(max_length=101)
+        prompt_list = list(dynamic_prompts)
+    else:
+        prompt_list = [args.prompt]
+
     gen_args = {
         "prompt": args.prompt,
         "num_inference_steps": args.num_inference_steps,
@@ -126,14 +166,19 @@ def main():
     }
 
     sd3.warmup(gen_args)
-    image, inference_time = sd3.generate(gen_args)
-    print(
-        f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
-    )
-    cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
-    print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
+
+    for prompt in prompt_list:
+        gen_args["prompt"] = prompt
+        print(f"Processing prompt of length {len(prompt)} characters.")
+        image, inference_time = sd3.generate(gen_args)
+        print(
+            f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
+        )
+        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
+        print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
 
     if args.run_multiple_resolutions:
+        gen_args["prompt"] = args.prompt
         print("Test run with multiple resolutions...")
         sizes = [1536, 1024, 768, 720, 576, 512, 256]
         for h in sizes:
@@ -145,6 +190,7 @@ def main():
                 sd3.generate(gen_args)
                 end_time = time.time()
                 print(f"Inference time: {end_time - start_time:.2f} seconds")
+
 
 if __name__ == "__main__":
     main()
