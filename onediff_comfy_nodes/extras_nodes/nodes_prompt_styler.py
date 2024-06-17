@@ -89,6 +89,7 @@ class CLIPTextEncodePromptStyle:
                         }
                 }
     RETURN_TYPES = ("CONDITIONING","CONDITIONING", )
+    RETURN_NAMES = ("positive", "negative", )
 
     FUNCTION = "encode"
 
