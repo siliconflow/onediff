@@ -92,6 +92,9 @@ class VaeSpeedup(SpeedupMixin):
         }
 
     RETURN_TYPES = ("VAE",)
+    
+    def speedup(self, vae, inplace=False, custom_booster: BoosterScheduler = None):
+        return super().speedup(vae, inplace, custom_booster)
 
 
 class ControlnetSpeedup:

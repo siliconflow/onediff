@@ -1,22 +1,48 @@
 import torch
 import traceback
 from collections import OrderedDict
+from functools import singledispatch
+from comfy.controlnet import ControlLora, ControlNet
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
 from onediff.torch_utils.module_operations import get_sub_module
 from onediff.utils.import_utils import is_oneflow_available
+from .._config import is_disable_oneflow_backend
 
-if is_oneflow_available():
+
+if not is_disable_oneflow_backend() and is_oneflow_available():
     from .oneflow.utils.booster_utils import is_using_oneflow_backend
 
 
-def switch_to_cached_model(new_model: ModelPatcher, cache_model):
-    assert type(new_model.model) == type(cache_model)
-    for k, v in new_model.model.state_dict().items():
+@singledispatch
+def get_target_model(model):
+    raise NotImplementedError(f"{type(model)=} cache is not supported.")
+
+@get_target_model.register(ModelPatcher)
+def _(model):
+    return model.model
+
+@get_target_model.register(VAE)
+def _(model):
+    return model.first_stage_model
+
+@get_target_model.register(ControlNet)
+def _(model):
+    return model.control_model
+
+@get_target_model.register(ControlLora)
+def _(model):
+    return model
+
+
+def switch_to_cached_model(new_model, cache_model):
+    target_model = get_target_model(new_model)
+    assert type(target_model) == type(cache_model)
+    for k, v in target_model.state_dict().items():
         cached_v: torch.Tensor = get_sub_module(cache_model, k)
         assert v.dtype == cached_v.dtype
         cached_v.copy_(v)
-    new_model.model = cache_model
+    target_model = cache_model
     return new_model
 
 
@@ -27,9 +53,9 @@ class BoosterCacheService:
         if key is None:
             return
         # oneflow backends output image error
-        if is_oneflow_available() and is_using_oneflow_backend(model):
+        if not is_disable_oneflow_backend() and is_oneflow_available() and is_using_oneflow_backend(model):
             return
-        self._cache[key] = model.model
+        self._cache[key] = get_target_model(model)
 
     def get(self, key, default=None):
         return self._cache.get(key, default)
