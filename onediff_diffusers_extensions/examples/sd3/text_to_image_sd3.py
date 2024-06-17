@@ -100,8 +100,7 @@ def generate_texts(min_length=50, max_length=302):
 class SD3Generator:
     def __init__(self, model, compiler_config=None, quantize_config=None):
         self.pipe = StableDiffusion3Pipeline.from_pretrained(
-            model, torch_dtype=torch.float16, revision="refs/pr/26"
-        )
+            model, torch_dtype=torch.float16,)
         self.pipe.to(device)
 
         if compiler_config:
