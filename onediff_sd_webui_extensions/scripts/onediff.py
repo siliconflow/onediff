@@ -53,7 +53,6 @@ class UnetCompileCtx(object):
 
 
 class Script(scripts.Script):
-
     def title(self):
         return "onediff_diffusion_model"
 
