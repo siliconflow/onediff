@@ -1,11 +1,15 @@
+from functools import wraps
+
 import onediff_shared
 import oneflow as flow
 import torch
 import torch as th
 from compile import OneDiffCompiledGraph
-from compile.sd_webui_onediff_utils import (CrossAttentionOflow,
-                                            GroupNorm32Oflow,
-                                            timestep_embedding)
+from compile.sd_webui_onediff_utils import (
+    CrossAttentionOflow,
+    GroupNorm32Oflow,
+    timestep_embedding,
+)
 from ldm.modules.attention import BasicTransformerBlock, CrossAttention
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
@@ -14,10 +18,10 @@ from modules.sd_hijack_utils import CondFunc
 from onediff_utils import singleton_decorator
 
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.backends.oneflow.transform import (proxy_class,
-                                                               register)
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
 
+# https://github.com/Mikubill/sd-webui-controlnet/blob/8bbbd0e55ef6e5d71b09c2de2727b36e7bc825b0/scripts/hook.py#L238
 def torch_aligned_adding(base, x, require_channel_alignment):
     if isinstance(x, float):
         if x == 0.0:
@@ -41,8 +45,12 @@ def torch_aligned_adding(base, x, require_channel_alignment):
     return base + x
 
 
+# Due to the tracing mechanism in OneFlow, it's crucial to ensure that
+# the same conditional branches are taken during the first run as in subsequent runs.
+# Therefore, certain "optimizations" have been modified.
 def oneflow_aligned_adding(base, x, require_channel_alignment):
     if isinstance(x, float):
+        # remove `if x == 0.0: return base` here
         return base + x
 
     if require_channel_alignment:
@@ -226,13 +234,31 @@ class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
         return h
 
 
+def onediff_controlnet_decorator(func):
+    @wraps(func)
+    def wrapper(self, p, *arg, **kwargs):
+        try:
+            onediff_shared.controlnet_enabled = check_if_controlnet_enabled(p)
+            if onediff_shared.controlnet_enabled:
+                hijack_controlnet_extension(p)
+            return func(self, p, *arg, **kwargs)
+        finally:
+            if onediff_shared.controlnet_enabled:
+                onediff_shared.previous_is_controlnet = True
+            else:
+                onediff_shared.controlnet_compiled = False
+                onediff_shared.previous_is_controlnet = False
+
+    return wrapper
+
+
 def compile_controlnet_ldm_unet(sd_model, unet_model, *, options=None):
     for module in unet_model.modules():
         if isinstance(module, BasicTransformerBlock):
             module.checkpoint = False
         if isinstance(module, ResBlock):
             module.use_checkpoint = False
-    # return oneflow_compile(unet_model, options=options)
+    # TODO: refine here
     compiled_model = oneflow_compile(unet_model, options=options)
     compiled_graph = OneDiffCompiledGraph(sd_model, compiled_model)
     compiled_graph.eager_module = unet_model
@@ -260,8 +286,6 @@ def hijacked_main_entry(self, p):
     unet = sd_ldm.model.diffusion_model
 
     if onediff_shared.controlnet_compiled is False:
-    # if not getattr(self, "compiled", False):
-        from onediff_controlnet import TorchOnediffControlNetModel
         onediff_model = TorchOnediffControlNetModel(unet)
         onediff_shared.current_unet_graph = compile_controlnet_ldm_unet(
             sd_ldm, onediff_model
@@ -269,8 +293,6 @@ def hijacked_main_entry(self, p):
         onediff_shared.controlnet_compiled = True
     else:
         pass
-
-
 
 
 def get_controlnet_script(p):
@@ -282,15 +304,21 @@ def get_controlnet_script(p):
 
 def check_if_controlnet_enabled(p):
     controlnet_script_class = get_controlnet_script(p)
-    if controlnet_script_class is None:
-        return False
-    return len(controlnet_script_class.get_enabled_units(p)) != 0
+    return (
+        controlnet_script_class is not None
+        and len(controlnet_script_class.get_enabled_units(p)) != 0
+    )
 
 
+# When OneDiff is initializing, the controlnet extension has not yet been loaded.
+# Therefore, this function should be called during image generation
+# rather than during the initialization of the OneDiff.
 @singleton_decorator
-def create_condfunc(p):
+def hijack_controlnet_extension(p):
     CondFunc(
-        "scripts.hook.UnetHook.hook", hijacked_hook, lambda _, *arg, **kwargs: True
+        "scripts.hook.UnetHook.hook",
+        hijacked_controlnet_hook,
+        lambda _, *arg, **kwargs: onediff_shared.onediff_enabled,
     )
     # get controlnet script
     controlnet_script = get_controlnet_script(p)
@@ -305,8 +333,18 @@ def create_condfunc(p):
     )
 
 
+# We were intended to only hack the closure function `forward`
+# in the member function `hook` of the UnetHook class in the ControlNet extension.
+# But due to certain limitations, we were unable to directly only hack
+# the closure function `forward` within the `hook` method.
+# So we have to hack the entire member function `hook` in the `UnetHook` class.
 
-def hijacked_hook(
+# The function largely retains its original content,
+# with modifications specifically made within the `forward` function.
+# To identify the altered parts, you can search for the tag "modified by OneDiff"
+
+# https://github.com/Mikubill/sd-webui-controlnet/blob/8bbbd0e55ef6e5d71b09c2de2727b36e7bc825b0/scripts/hook.py#L442
+def hijacked_controlnet_hook(
     orig_func,
     self,
     model,
@@ -319,10 +357,17 @@ def hijacked_hook(
     from modules import devices, lowvram, scripts, shared
     from scripts.controlnet_sparsectrl import SparseCtrl
     from scripts.enums import AutoMachine, ControlModelType, HiResFixOption
-    from scripts.hook import (AbstractLowScaleModel, blur, mark_prompt_context,
-                              predict_noise_from_start, predict_q_sample,
-                              predict_start_from_noise, register_schedule,
-                              torch_dfs, unmark_prompt_context)
+    from scripts.hook import (
+        AbstractLowScaleModel,
+        blur,
+        mark_prompt_context,
+        predict_noise_from_start,
+        predict_q_sample,
+        predict_start_from_noise,
+        register_schedule,
+        torch_dfs,
+        unmark_prompt_context,
+    )
     from scripts.ipadapter.ipadapter_model import ImageEmbed
     from scripts.logging import logger
 
@@ -731,6 +776,7 @@ def hijacked_hook(
             outer.attention_auto_machine = AutoMachine.Read
             outer.gn_auto_machine = AutoMachine.Read
 
+        # modified by OneDiff
         h = onediff_shared.current_unet_graph.graph_module(
             x,
             timesteps,
@@ -807,10 +853,20 @@ def hijacked_hook(
                 param.control_model.to("cpu")
 
     def forward_webui(*args, **kwargs):
+        # ------ modified by OneDiff below ------
         forward_func = None
-        if "forward" in onediff_shared.current_unet_graph.graph_module._torch_module.__dict__:
-            forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop("forward")
-            _original_forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop("_original_forward")
+        if (
+            "forward"
+            in onediff_shared.current_unet_graph.graph_module._torch_module.__dict__
+        ):
+            forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop(
+                "forward"
+            )
+            _original_forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop(
+                "_original_forward"
+            )
+        # ------ modified by OneDiff above ------
+
         # webui will handle other compoments
         try:
             if shared.cmd_opts.lowvram:
@@ -822,9 +878,16 @@ def hijacked_hook(
         finally:
             if outer.lowvram:
                 move_all_control_model_to_cpu()
+
+            # ------ modified by OneDiff below ------
             if forward_func is not None:
-                onediff_shared.current_unet_graph.graph_module._torch_module.forward = forward_func
-                onediff_shared.current_unet_graph.graph_module._torch_module._original_forward = _original_forward_func
+                onediff_shared.current_unet_graph.graph_module._torch_module.forward = (
+                    forward_func
+                )
+                onediff_shared.current_unet_graph.graph_module._torch_module._original_forward = (
+                    _original_forward_func
+                )
+            # ------ modified by OneDiff above ------
 
     def hacked_basic_transformer_inner_forward(self, x, context=None):
         x_norm1 = self.norm1(x)

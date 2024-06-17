@@ -11,5 +11,6 @@ current_unet_type = {
 onediff_enabled = False
 
 # controlnet
+controlnet_enabled = False
 controlnet_compiled = False
-current_is_controlnet = False
+previous_is_controlnet = False

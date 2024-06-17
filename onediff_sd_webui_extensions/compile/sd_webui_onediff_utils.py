@@ -26,7 +26,9 @@ def timestep_embedding(timesteps, dim, max_period=10000, repeat_only=False):
         if dim % 2:
             embedding = flow.cat([embedding, flow.zeros_like(embedding[:, :1])], dim=-1)
     else:
-        raise NotImplementedError("repeat_only=True is not implemented in timestep_embedding")
+        raise NotImplementedError(
+            "repeat_only=True is not implemented in timestep_embedding"
+        )
     return embedding
 
 

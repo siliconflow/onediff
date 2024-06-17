@@ -21,7 +21,6 @@ from utils import (
     get_threshold,
 )
 
-THRESHOLD = 0.97
 
 @pytest.fixture(scope="session", autouse=True)
 def change_model():

@@ -1,11 +1,13 @@
 import os
-from functools import wraps
 from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
 from textwrap import dedent
 from zipfile import BadZipFile
 
 import onediff_shared
+import oneflow as flow
+from modules.devices import torch_gc
 
 from onediff.infer_compiler import DeployableModule
 
@@ -122,20 +124,25 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
 
 def onediff_enabled_decorator(func):
     @wraps(func)
-    def wrapper(*arg, **kwargs):
+    def wrapper(self, p, *arg, **kwargs):
         onediff_shared.onediff_enabled = True
         try:
-            return func(*arg, **kwargs)
+            return func(self, p, *arg, **kwargs)
         finally:
             onediff_shared.onediff_enabled = False
+            torch_gc()
+            flow.cuda.empty_cache()
+
     return wrapper
 
 
 def singleton_decorator(func):
     has_been_called = False
+
     def wrapper(*args, **kwargs):
         nonlocal has_been_called
         if not has_been_called:
             has_been_called = True
             return func(*args, **kwargs)
+
     return wrapper

@@ -4,6 +4,7 @@ import gradio as gr
 import modules.scripts as scripts
 import modules.sd_models as sd_models
 import modules.shared as shared
+import onediff_controlnet
 import onediff_shared
 import oneflow as flow
 from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
@@ -13,15 +14,14 @@ from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
-import onediff_controlnet
 from onediff_utils import (
     check_structure_change_and_update,
     get_all_compiler_caches,
     hints_message,
     load_graph,
+    onediff_enabled_decorator,
     refresh_all_compiler_caches,
     save_graph,
-    onediff_enabled_decorator,
 )
 
 from onediff.optimization.quant_optimizer import varify_can_use_quantization
@@ -35,6 +35,7 @@ class UnetCompileCtx(object):
     The global variables need to be replaced with compiled_unet before process_images is run,
     and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
     """
+
     def __init__(self, enabled):
         self.enabled = enabled
 
@@ -92,6 +93,7 @@ class Script(scripts.Script):
         return True
 
     @onediff_enabled_decorator
+    @onediff_controlnet.onediff_controlnet_decorator
     def run(
         self,
         p,
@@ -100,10 +102,6 @@ class Script(scripts.Script):
         saved_cache_name="",
         always_recompile=False,
     ):
-        controlnet_enabled = onediff_controlnet.check_if_controlnet_enabled(p)
-        if controlnet_enabled:
-            onediff_controlnet.create_condfunc(p)
-
         # restore checkpoint_info from refiner to base model if necessary
         if (
             sd_models.checkpoint_aliases.get(
@@ -128,7 +126,7 @@ class Script(scripts.Script):
             quantization != onediff_shared.current_unet_graph.quantized
         )
         controlnet_enabled_status_changed = (
-            controlnet_enabled != onediff_shared.current_is_controlnet
+            onediff_shared.controlnet_enabled != onediff_shared.previous_is_controlnet
         )
         need_recompile = (
             (
@@ -140,7 +138,7 @@ class Script(scripts.Script):
             or always_recompile
         )
         if need_recompile:
-            if not controlnet_enabled:
+            if not onediff_shared.controlnet_enabled:
                 onediff_shared.current_unet_graph = get_compiled_graph(
                     shared.sd_model, quantization
                 )
@@ -150,18 +148,12 @@ class Script(scripts.Script):
                 f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.current_unet_type}, skip compile"
             )
 
-        with UnetCompileCtx(not controlnet_enabled), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
+        with UnetCompileCtx(
+            not onediff_shared.controlnet_enabled
+        ), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         save_graph(onediff_shared.current_unet_graph, saved_cache_name)
 
-        if controlnet_enabled:
-            onediff_shared.current_is_controlnet = True
-        else:
-            onediff_shared.controlnet_compiled = False
-            onediff_shared.current_is_controlnet = False
-
-        torch_gc()
-        flow.cuda.empty_cache()
         return proc
 
 
