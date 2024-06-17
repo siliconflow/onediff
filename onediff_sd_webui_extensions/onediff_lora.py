@@ -53,7 +53,11 @@ def hijacked_activate(activate_func):
                     continue
                 networks.network_apply_weights(sub_module)
                 if isinstance(sub_module, torch.nn.Conv2d):
-                    update_graph_related_tensor(sub_module)
+                    # TODO(WangYi): refine here
+                    try:
+                        update_graph_related_tensor(sub_module)
+                    except:
+                        pass
 
     activate._onediff_hijacked = True
     return activate

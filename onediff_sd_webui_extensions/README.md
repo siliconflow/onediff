@@ -4,8 +4,10 @@
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
     - [Fast Model Switching](#fast-model-switching)
+    - [Compiler cache saving and loading](#compiler-cache-saving-and-loading)
     - [LoRA](#lora)
 - [Quantization](#quantization)
+- [Use OneDiff by API](#use-onediff-by-api)
 - [Contact](#contact)
 
 ## Performance of Community Edition
