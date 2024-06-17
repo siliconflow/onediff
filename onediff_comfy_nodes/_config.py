@@ -1,5 +1,6 @@
 import os
 import sys
+import torch
 import folder_paths
 
 __all__ = [
@@ -7,6 +8,14 @@ __all__ = [
     "is_default_using_nexfort_backend",
     "is_disable_oneflow_backend",
 ]
+
+# https://huggingface.co/blog/sd3#performance-optimizations-for-sd3
+torch.set_float32_matmul_precision("high")
+torch._inductor.config.conv_1x1_as_mm = True
+torch._inductor.config.coordinate_descent_tuning = True
+torch._inductor.config.epilogue_fusion = False
+torch._inductor.config.coordinate_descent_check_all_directions = True
+
 
 # https://github.com/comfyanonymous/ComfyUI/blob/master/folder_paths.py#L9
 os.environ["COMFYUI_ROOT"] = folder_paths.base_path
