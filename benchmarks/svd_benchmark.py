@@ -9,7 +9,7 @@ from PIL import Image, ImageDraw
 
 import oneflow as flow
 import torch
-from onediffx import compile_pipe, compiler_config
+from onediffx import compile_pipe
 from diffusers.utils import load_image, export_to_video
 
 from benchmark_base import BaseBenchmark
@@ -84,13 +84,15 @@ class SVDBenchmark(BaseBenchmark):
         self.alter_height = alter_height
         self.alter_width = alter_width
 
+        if self.deepcache:
+            from onediffx.deep_cache import StableVideoDiffusionPipeline as pipeline_cls
+        else:
+            from diffusers import StableVideoDiffusionPipeline as pipeline_cls
+        self.pipeline_cls = pipeline_cls
         self.device = get_device(device)
 
     def load_pipeline_from_diffusers(self):
-        if self.deepcache:
-            from onediffx.deep_cache import StableVideoDiffusionPipeline
-        else:
-            from diffusers import StableVideoDiffusionPipeline
+
         if self.model_dir:
             print("Use Local Model.")
             self.model_path = os.path.join(
@@ -98,7 +100,7 @@ class SVDBenchmark(BaseBenchmark):
             )
             if os.path.exists(self.model_path):
                 self.pipe = load_sd_pipe(
-                    pipeline_cls=StableVideoDiffusionPipeline,
+                    pipeline_cls=self.pipeline_cls,
                     model_name=self.model_path,
                     dtype=torch.float16,
                     variant=self.variant,
@@ -113,7 +115,7 @@ class SVDBenchmark(BaseBenchmark):
         else:
             print("Use HF Model")
             self.pipe = load_sd_pipe(
-                pipeline_cls=StableVideoDiffusionPipeline,
+                pipeline_cls=self.pipeline_cls,
                 model_name=self.model_name,
                 variant=self.variant,
                 custom_pipeline=self.custom_pipeline,

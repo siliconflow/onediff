@@ -36,6 +36,7 @@ class StableDiffusionBenchmark(BaseBenchmark):
         input_image=None,
         control_image=None,
         output_image=None,
+        conmpiler_config=None,
         *args,
         **kwargs,
     ):
@@ -74,6 +75,7 @@ class StableDiffusionBenchmark(BaseBenchmark):
         self.pipeline_cls = pipeline_cls
         for key, value in kwargs.items():
             setattr(self, key, value)
+        self.results = {}
 
     def load_pipeline_from_diffusers(self):
         if self.model_dir is not None:
@@ -116,6 +118,17 @@ class StableDiffusionBenchmark(BaseBenchmark):
         elif self.compiler == "oneflow":
             self.pipe = compile_pipe(self.pipe)
             print("Compile pipeline with OneFlow")
+        # compile with nexfort
+        elif self.compiler == "nexfort":
+            if self.kwargs.get("compiler_config") is not None:
+                # config with dict
+                options = json.loads(self.kwargs["compiler_config"])
+            else:
+                # config with string
+                options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
+            pipe = compile_pipe(
+                pipe, backend="nexfort", options=options, fuse_qkv_projections=True
+            )
         elif self.compiler in ("compile", "compile-max-autotune"):
             mode = "max-autotune" if self.compiler == "compile-max-autotune" else None
             self.pipe.unet = torch.compile(self.pipe.unet, mode=mode)
@@ -126,7 +139,7 @@ class StableDiffusionBenchmark(BaseBenchmark):
             raise ValueError(f"Unknown compiler: {self.compiler}")
 
     def benchmark_model(self):
-        self.results = {}
+
         self.kwarg_inputs = get_kwarg_inputs(
             prompt=self.prompt,
             negative_prompt=self.negative_prompt,
@@ -176,16 +189,25 @@ class StableDiffusionBenchmark(BaseBenchmark):
         self.results["host_mem_after_used"] = host_mem_after_used / 1024
         print("=======================================")
 
+    def throughput_benchmark(self, steps_range=range(1, 100, 1)):
+        (
+            self.results["average_throughput"],
+            self.results["base_time_without_base_cost"],
+        ) = generate_data_and_fit_model(
+            self.prompt, self.height, self.width, steps_range, self.pipe
+        )
+
 
 if __name__ == "__main__":
     benchmark = StableDiffusionBenchmark(
         model_dir="/data/home/wangerlie/onediff/benchmarks/models",
-        model_name="stabilityai/stable-diffusion-xl-base-1.0-deepcache-int8",
+        model_name="stable-diffusion-v1-5",
         compiler="oneflow",
-        height=1024,
-        width=1024,
+        height=512,
+        width=512,
         deepcache=True,
     )
     benchmark.load_pipeline_from_diffusers()
     benchmark.compile_pipeline()
     benchmark.benchmark_model()
+    benchmark.throughput_benchmark()

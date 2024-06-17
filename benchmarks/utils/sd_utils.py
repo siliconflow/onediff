@@ -6,8 +6,12 @@ import time
 import json
 import torch
 from PIL import Image, ImageDraw
+import numpy as np
 from diffusers.utils import load_image
 from safetensors.torch import load_file
+
+import oneflow as flow
+from onediffx import compile_pipe
 
 
 def load_sd_pipe(
@@ -279,3 +283,51 @@ class IterationProfiler:
             self.end = event
             self.num_iterations += 1
         return callback_kwargs
+
+
+def calculate_inference_time_and_throughput(prompt, height, width, n_steps, model):
+    start_time = time.time()
+    model(prompt=prompt, height=height, width=width, num_inference_steps=n_steps)
+    end_time = time.time()
+    inference_time = end_time - start_time
+    # pixels_processed = height * width * n_steps
+    # throughput = pixels_processed / inference_time
+    throughput = n_steps / inference_time
+    return inference_time, throughput
+
+
+def generate_data_and_fit_model(prompt, height, width, steps_range, model):
+    data = {"steps": [], "inference_time": [], "throughput": []}
+    print(f"Fitting model...height:{height},width:{width}")
+    for n_steps in steps_range:
+        inference_time, throughput = calculate_inference_time_and_throughput(
+            prompt, height, width, n_steps, model
+        )
+        data["steps"].append(n_steps)
+        data["inference_time"].append(inference_time)
+        data["throughput"].append(throughput)
+        print(
+            f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s"
+        )
+    average_throughput = np.mean(data["throughput"])
+    print(f"Average Throughput: {average_throughput:.2f} steps/s")
+
+    coefficients = np.polyfit(data["steps"], data["inference_time"], 1)
+    base_time_without_base_cost = 1 / coefficients[0]
+    print(f"Throughput without base cost: {base_time_without_base_cost:.2f} steps/s")
+    print(
+        f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}"
+    )
+    return average_throughput, base_time_without_base_cost
+
+
+def plot_data_and_model(data, coefficients, output_path):
+    plt.figure(figsize=(10, 5))
+    plt.scatter(data["steps"], data["inference_time"], color="blue")
+    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color="red")
+    plt.title("Inference Time vs. Steps")
+    plt.xlabel("Steps")
+    plt.ylabel("Inference Time (seconds)")
+    plt.grid(True)
+    plt.savefig("output.png")
+    plt.show()

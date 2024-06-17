@@ -1,6 +1,6 @@
 import os
-from sd_benchamrk import StableDiffusionBenchmark
-from sdxl_light_benchamrk import SDXLLightBenchmark
+from sd_benchmark import StableDiffusionBenchmark
+from sdxl_light_benchmark import SDXLLightBenchmark
 from svd_benchmark import SVDBenchmark
 
 
