@@ -37,17 +37,16 @@ def register_torch2oflow_func(func, first_param_type=None, verbose=False):
 
 
 def set_default_registry():
-    mocked_packages = transform_mgr.get_mocked_packages()
-
     def import_module_safely(module_path, module_name):
-        nonlocal mocked_packages
 
-        if module_name in mocked_packages:
+        if module_name in transform_mgr.loaded_modules:
             return
         try:
             import_module_from_path(module_path)
         except Exception as e:
             logger.warning(f"Failed to import {module_name} from {module_path}. {e=}")
+        finally:
+            transform_mgr.loaded_modules.add(module_name)
 
     # compiler_registry_path
     registry_path = Path(__file__).parents[5] / "infer_compiler_registry"

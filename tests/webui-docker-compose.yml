@@ -4,7 +4,7 @@ services:
   onediff-test:
     container_name: ${CONTAINER_NAME}
     image: ${ACR_ORG}/${MATRIX_IMAGE}
-    command: sleep 5400
+    command:  sleep 5400
     privileged: true
     shm_size: 8g
     network_mode: host
@@ -49,6 +49,7 @@ services:
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
+      - /share_nfs/onediff_ci/sd-webui/images:/share_nfs/onediff_ci/sd-webui/images:rw
       - ${PWD}/${WEBUI_SRC_DIR}:/app/${WEBUI_SRC_DIR}
       - ${PWD}/onediff_sd_webui_extensions:/app/${WEBUI_SRC_DIR}/extensions/onediff_sd_webui_extensions
       - $PWD:/src/onediff

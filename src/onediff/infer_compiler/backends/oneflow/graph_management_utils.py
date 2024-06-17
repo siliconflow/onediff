@@ -9,7 +9,7 @@ from oneflow.framework.args_tree import ArgsTree
 from .transform.builtin_transform import torch2oflow
 from .transform.manager import transform_mgr
 from .utils.cost_util import cost_time
-from .env_var import OneflowCompileOptions
+from ..env_var import OneflowCompileOptions
 from .utils.hash_utils import generate_input_structure_key, generate_model_structure_key
 
 from onediff.utils import logger
