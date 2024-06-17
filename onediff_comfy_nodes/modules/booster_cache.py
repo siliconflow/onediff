@@ -42,7 +42,16 @@ def switch_to_cached_model(new_model, cache_model):
         cached_v: torch.Tensor = get_sub_module(cache_model, k)
         assert v.dtype == cached_v.dtype
         cached_v.copy_(v)
-    target_model = cache_model
+    if isinstance(new_model, ModelPatcher):
+        new_model.model = cache_model
+    elif isinstance(new_model, VAE):
+        new_model.first_stage_model = cache_model
+    elif isinstance(new_model, ControlNet):
+        new_model.control_model = cache_model
+    elif isinstance(new_model, ControlLora):
+        new_model = cache_model
+    else:
+        raise NotImplementedError(f"{type(new_model)=} cache is not supported.")
     return new_model
 
 
