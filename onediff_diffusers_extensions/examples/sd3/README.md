@@ -29,8 +29,7 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 
 ```
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
-    --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", \
-    "memory_format": "channels_last"}' \
+    --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}' \
     --saved-image sd3_compile.png
 ```
 
@@ -50,6 +49,19 @@ Testing on A100-PCIE-40GB, with image size of 1024*1024, iterating 28 steps.
 | Baseline        | 6.66 it/s          | 4.50 s             | 18.762 GiB           |
 | Nexfort compile | 9.39 it/s (+40.9%) | 3.15 s (-30.0%)      | 17.939 GiB           |
 
+
+## Dynamic shape for SD3.
+
+Run:
+
+```
+python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
+    --compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "dynamic": true}' \
+    --height 512 \
+    --width 768 \
+    --run_multiple_resolutions 1 \
+    --saved-image sd3_compile.png
+```
 
 ## Quality
 When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.
