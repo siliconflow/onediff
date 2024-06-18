@@ -1,6 +1,7 @@
 from functools import wraps
 
 import onediff_shared
+from onediff_utils import check_structure_change_and_update
 import oneflow as flow
 import torch
 import torch as th
@@ -285,7 +286,10 @@ def hijacked_main_entry(self, p):
     sd_ldm = p.sd_model
     unet = sd_ldm.model.diffusion_model
 
-    if onediff_shared.controlnet_compiled is False:
+    structure_changed = check_structure_change_and_update(
+        onediff_shared.current_unet_type, sd_ldm
+    )
+    if onediff_shared.controlnet_compiled is False or structure_changed:
         onediff_model = TorchOnediffControlNetModel(unet)
         onediff_shared.current_unet_graph = compile_controlnet_ldm_unet(
             sd_ldm, onediff_model
