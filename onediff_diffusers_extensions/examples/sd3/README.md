@@ -29,8 +29,7 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 
 ```
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
-    --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", \
-    "memory_format": "channels_last"}' \
+    --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}' \
     --saved-image sd3_compile.png
 ```
 

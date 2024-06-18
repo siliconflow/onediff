@@ -100,7 +100,9 @@ def generate_texts(min_length=50, max_length=302):
 class SD3Generator:
     def __init__(self, model, compiler_config=None, quantize_config=None):
         self.pipe = StableDiffusion3Pipeline.from_pretrained(
-            model, torch_dtype=torch.float16,)
+            model,
+            torch_dtype=torch.float16,
+        )
         self.pipe.to(device)
 
         if compiler_config:
@@ -152,6 +154,8 @@ def main():
     sd3 = SD3Generator(args.model, compiler_config, quantize_config)
 
     if args.run_multiple_prompts:
+        # Note: diffusers will truncate the input prompt (limited to 77 tokens).
+        # https://github.com/huggingface/diffusers/blob/8e1b7a084addc4711b8d9be2738441dfad680ce0/src/diffusers/pipelines/stable_diffusion_3/pipeline_stable_diffusion_3.py#L238
         dynamic_prompts = generate_texts(max_length=101)
         prompt_list = list(dynamic_prompts)
     else:
@@ -170,6 +174,7 @@ def main():
         gen_args["prompt"] = prompt
         print(f"Processing prompt of length {len(prompt)} characters.")
         image, inference_time = sd3.generate(gen_args)
+        assert inference_time < 20, "Prompt inference took too long"
         print(
             f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
         )
@@ -189,6 +194,9 @@ def main():
                 sd3.generate(gen_args)
                 end_time = time.time()
                 print(f"Inference time: {end_time - start_time:.2f} seconds")
+                assert (
+                    end_time - start_time
+                ) < 20, "Resolution switch test took too long"
 
 
 if __name__ == "__main__":
