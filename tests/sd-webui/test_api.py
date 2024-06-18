@@ -1,9 +1,5 @@
 import os
-<<<<<<< HEAD
-
-=======
 from pathlib import Path
->>>>>>> 156d4f098c20c9daf13f051896646d56880f38ab
 import numpy as np
 import pytest
 from PIL import Image
@@ -31,7 +27,7 @@ THRESHOLD = 0.97
 @pytest.fixture(scope="session", autouse=True)
 def change_model():
     option_payload = {
-        "sd_model_checkpoint": "checkpoints/AWPainting_v1.2.safetensors",
+        "sd_model_checkpoint": "AWPainting_v1.2.safetensors",
     }
     post_request_and_check(f"{WEBUI_SERVER_URL}/{OPTIONS_API_ENDPOINT}", option_payload)
 
