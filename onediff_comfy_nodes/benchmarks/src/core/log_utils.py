@@ -3,7 +3,6 @@ import os
 from pathlib import Path
 
 from onediff.utils.log_utils import ConfigurableLogger
-
 from .system_info import get_system_info, system_info_to_markdown
 
 

@@ -7,4 +7,6 @@
 
 # Run the Python script
 # python3 scripts/text_to_image.py -w resources/example_workflow_api.json --comfy-pid 1438896
-python3 scripts/text_to_image.py -w resources/sd3_workflow_api.json --comfy-pid 1463234
+comfy_pid=2222
+# python3 scripts/text_to_image.py -w  resources/baseline/sd3_baseline.json  --comfy-pid $comfy_pid  --output-images
+python3 scripts/text_to_image.py -w  resources/nexfort/sd3_unet_vae_speedup.json --comfy-pid $comfy_pid # --output-images

@@ -1,73 +1,50 @@
 import json
+from typing import NamedTuple
+from core import create_constructor_registry, ComfyGraph, logger
 
-from core import create_constructor_registry, logger
+
+def read_prompts(file_path="resources/prompts.txt"):
+    with open(file_path, "r", encoding="utf-8") as fp:
+        lines = fp.readlines()
+    return [line.strip() for line in lines if line.strip()]
+
 
 # Create register and get functions
 register_constructor, get_input_constructor = create_constructor_registry()
 
 
-def generate_texts(min_length=50, max_length=302):
-    # 50 world
-    base_text = "a female character with long, flowing hair that appears to be made of ethereal, swirling patterns resembling the Northern Lights or Aurora Borealis. The background is dominated by deep blues and purples, creating a mysterious and dramatic atmosphere. The character's face is serene, with pale skin and striking features. She"
-
-    # Additional words pool
-    additional_words = [
-        "gracefully",
-        "beautifully",
-        "elegant",
-        "radiant",
-        "mysteriously",
-        "vibrant",
-        "softly",
-        "gently",
-        "luminescent",
-        "sparkling",
-        "delicately",
-        "glowing",
-        "brightly",
-        "shimmering",
-        "enchanting",
-        "gloriously",
-        "magnificent",
-        "majestic",
-        "fantastically",
-        "dazzlingly",
-    ]
-    for i in range(min_length, max_length):
-        idx = i % len(additional_words)
-        base_text = base_text + " " + additional_words[idx]
-        yield base_text
-
-
 @register_constructor("resources/example_workflow_api.json")
 def _(workflow_api_file_path):
     with open(workflow_api_file_path, "r") as fp:
-        prompt = json.load(fp)
-    prompt["6"]["inputs"]["text"] = "masterpiece best quality man"
-    yield prompt
+        workflow = json.load(fp)
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
+    graph.set_prompt("masterpiece best quality man")
+    yield graph
     for height in [1024, 768, 512]:
         for width in [1024, 768, 512]:
-            logger.info(f"Graph: {height=} {width=}")
-            prompt["5"]["inputs"]["height"] = height
-            prompt["5"]["inputs"]["width"] = width
-            yield prompt
+            logger.info(f"ComfyGraph: {height=} {width=}")
+            graph.set_image_size(height=height, width=width)
+            yield graph
 
 
-@register_constructor("resources/sd3_workflow_api.json")
+SD3_WORKFLOWS = [
+    "resources/baseline/sd3_baseline.json",
+    "resources/nexfort/sd3_unet_speedup.json",
+    "resources/nexfort/sd3_unet_vae_speedup.json",
+]
+
+
+@register_constructor(SD3_WORKFLOWS)
 def _(workflow_api_file_path):
     with open(workflow_api_file_path, "r") as fp:
-        prompt = json.load(fp)
+        workflow = json.load(fp)
 
-    prompt["135"]["inputs"]["height"] = 1024
-    prompt["135"]["inputs"]["width"] = 1024
-    generated_texts = list(generate_texts(max_length=101))
-    generated_texts.reverse()
-
-    for text in generate_texts():
-        for height in [1024]:
-            for width in [1024]:
-                logger.info(f"Graph: {height=} {width=}")
-                prompt["6"]["inputs"]["text"] = text
-                prompt["135"]["inputs"]["height"] = height
-                prompt["135"]["inputs"]["width"] = width
-                yield prompt
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["271"])
+    texts = read_prompts()
+    for height in [1024, 768, 512]:
+        for width in [1024, 768, 512]:
+            for text in texts[-5:]:
+                graph.set_prompt(prompt=text)
+                logger.info(f"ComfyGraph: {height=} {width=}")
+                graph.set_image_size(height=height, width=width)
+                yield graph

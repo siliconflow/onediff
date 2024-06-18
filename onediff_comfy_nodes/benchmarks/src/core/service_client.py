@@ -10,6 +10,48 @@ from .log_utils import logger
 from .monitor_memory import get_process_memory
 
 
+class ComfyGraph:
+    def __init__(
+        self, graph: dict, sampler_nodes: list[str],
+    ):
+        self.graph = graph
+        self.sampler_nodes = sampler_nodes
+
+    def set_prompt(self, prompt, negative_prompt=None):
+        # Sets the prompt for the sampler nodes (eg. base and refiner)
+        for node in self.sampler_nodes:
+            prompt_node = self.graph[node]["inputs"]["positive"][0]
+            self.graph[prompt_node]["inputs"]["text"] = prompt
+            if negative_prompt:
+                negative_prompt_node = self.graph[node]["inputs"]["negative"][0]
+                self.graph[negative_prompt_node]["inputs"]["text"] = negative_prompt
+
+    def set_sampler_name(
+        self, sampler_name: str,
+    ):
+        # sets the sampler name for the sampler nodes (eg. base and refiner)
+        for node in self.sampler_nodes:
+            self.graph[node]["inputs"]["sampler_name"] = sampler_name
+
+    def set_scheduler(self, scheduler: str):
+        # sets the sampler name for the sampler nodes (eg. base and refiner)
+        for node in self.sampler_nodes:
+            self.graph[node]["inputs"]["scheduler"] = scheduler
+
+    def set_filename_prefix(self, prefix: str):
+        # sets the filename prefix for the save nodes
+        for node in self.graph:
+            if self.graph[node]["class_type"] == "SaveImage":
+                self.graph[node]["inputs"]["filename_prefix"] = prefix
+
+    def set_image_size(self, height: int, width: int, batch_size: int = 1):
+        for node in self.sampler_nodes:
+            size_node = self.graph[node]["inputs"]["latent_image"][0]
+            self.graph[size_node]["inputs"]["height"] = height
+            self.graph[size_node]["inputs"]["width"] = width
+            self.graph[size_node]["inputs"]["batch_size"] = batch_size
+
+
 class ComfyClient:
     def __init__(self) -> None:
         self.comfy_pid = None
