@@ -86,7 +86,7 @@ def parse_args():
         "--compiler",
         type=str,
         default="nexfort",
-        choices=["none", "oneflow", "nexfort"],
+        choices=["none", "nexfort"],
     )
     parser.add_argument(
         "--compiler-config", type=str, default=COMPILER_CONFIG,
@@ -182,13 +182,6 @@ def main():
 
     if args.compiler == "none":
         pass
-    elif args.compiler == "oneflow":
-        print("Oneflow backend is now active...")
-        compile_options = OneflowCompileOptions()
-        compile_options.attention_allow_half_precision_score_accumulation_max_m = (
-            args.attention_fp16_score_accum_max_m
-        )
-        pipe = compile_pipe(pipe, options=compile_options)
     elif args.compiler == "nexfort":
         print("Nexfort backend is now active...")
         if args.compiler_config is not None:
