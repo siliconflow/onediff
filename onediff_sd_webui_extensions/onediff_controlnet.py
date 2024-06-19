@@ -1,7 +1,6 @@
 from functools import wraps
 
 import onediff_shared
-from onediff_utils import check_structure_change_and_update
 import oneflow as flow
 import torch
 import torch as th
@@ -16,7 +15,7 @@ from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 from modules import devices
 from modules.sd_hijack_utils import CondFunc
-from onediff_utils import singleton_decorator
+from onediff_utils import check_structure_change_and_update, singleton_decorator
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register

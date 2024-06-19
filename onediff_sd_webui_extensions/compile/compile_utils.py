@@ -60,10 +60,20 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
     return calibrate_info
 
 
-def get_compiled_graph(sd_model, quantization) -> OneDiffCompiledGraph:
+def get_compiled_graph(
+    sd_model, quantization, backend="nexfort"
+) -> OneDiffCompiledGraph:
     diffusion_model = sd_model.model.diffusion_model
-    # for controlnet
-    if "forward" in diffusion_model.__dict__:
-        diffusion_model.__dict__.pop("forward")
-    compiled_unet = compile_unet(diffusion_model, quantization=quantization)
+
+    if backend == "oneflow":
+        # for controlnet
+        if "forward" in diffusion_model.__dict__:
+            diffusion_model.__dict__.pop("forward")
+        compiled_unet = compile_unet(diffusion_model, quantization=quantization)
+    elif backend == "nexfort":
+        from .compile_nexfort_backend import nexfort_compile_ldm_unet
+
+        compiled_unet = nexfort_compile_ldm_unet(diffusion_model)
+    else:
+        raise NotImplementedError
     return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)
