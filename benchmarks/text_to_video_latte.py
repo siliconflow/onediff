@@ -146,8 +146,7 @@ def main():
     torch.set_grad_enabled(False)
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    from onediffx.text_to_video import LatteT2V
-    from onediffx.text_to_video.pipeline_latte import LattePipeline
+    from onediffx.text_to_video.latte import LatteT2V, LattePipeline
 
     transformer_model = LatteT2V.from_pretrained(
         model_path, subfolder="transformer", video_length=args.video_length
