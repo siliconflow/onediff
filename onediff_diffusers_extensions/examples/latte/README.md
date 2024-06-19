@@ -6,8 +6,8 @@
    - [Set up nexfort backend](#set-up-nexfort-backend)
    - [Set up Latte](#set-up-latte)
 2. [Run](#run)
-   - [Run 1024*1024 without compile](#run-10241024-without-compile)
-   - [Run 1024*1024 with compile](#run-10241024-with-compile)
+   - [Run without compile](#run-without-compile)
+   - [Run with compile](#run-with-compile)
 3. [Performance Comparison](#performance-comparison)
 4. [Quality](#quality)
 
@@ -21,7 +21,7 @@ https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/back
 ### Set up Latte
 HF model: https://huggingface.co/maxin-cn/Latte-1
 
-GIthub source: https://github.com/Vchitect/Latte
+Github source: https://github.com/Vchitect/Latte
 
 ## Run
 model_id_or_path_to_latte is the model id or model path of latte, such as `maxin-cn/Latte-1` or `/data/hf_models/Latte-1/`
@@ -31,7 +31,7 @@ model_id_or_path_to_latte is the model id or model path of latte, such as `maxin
 cd onediff
 ```
 
-### Run 1024*1024 without compile(the original pytorch HF diffusers pipeline)
+### Run without compile(the original pytorch HF diffusers pipeline)
 ```
 python3 ./benchmarks/text_to_video_latte.py \
 --model maxin-cn/Latte-1 \
@@ -41,7 +41,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 --prompt "a cat wearing sunglasses and working as a lifeguard at pool."
 ```
 
-### Run 1024*1024 with compile
+### Run with compile
 ```
 python3 ./benchmarks/text_to_video_latte.py \
 --model maxin-cn/Latte-1 \
@@ -56,7 +56,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 ### Metric
 
 #### On A100
-| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
+| Metric                                           | NVIDIA A100-PCIE-40GB (512 * 512) |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-06-19                          |
 | PyTorch iteration speed                          | 1.60it/s                            |
