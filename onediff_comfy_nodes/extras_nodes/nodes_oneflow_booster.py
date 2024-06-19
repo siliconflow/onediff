@@ -18,15 +18,6 @@ from ..modules.oneflow import (
     PatchBoosterExecutor,
 )
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-from ..modules.oneflow.hijack_animatediff import animatediff_hijacker
-from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
-from ..modules.oneflow.hijack_ipadapter_plus import ipadapter_plus_hijacker
-from ..modules.oneflow.hijack_model_management import model_management_hijacker
-from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
-from ..modules.oneflow.hijack_nodes import nodes_hijacker
-from ..modules.oneflow.hijack_samplers import samplers_hijack
-from ..modules.oneflow.hijack_utils import comfy_utils_hijack
-from ..modules.oneflow.hijack_pulid_comfyui import pulid_comfyui_hijacker
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..modules import BoosterScheduler
 
@@ -35,15 +26,6 @@ if is_onediff_quant_available() and not is_community_version():
         OnelineQuantizationBoosterExecutor,
     )  # type: ignore
 
-model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
-nodes_hijacker.hijack()
-samplers_hijack.hijack()
-animatediff_hijacker.hijack()
-ipadapter_plus_hijacker.hijack()
-comfyui_instantid_hijacker.hijack()
-model_patch_hijacker.hijack()
-comfy_utils_hijack.hijack()
-pulid_comfyui_hijacker.hijack()
 
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple

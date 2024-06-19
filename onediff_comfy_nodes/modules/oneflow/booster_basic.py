@@ -7,7 +7,9 @@ from comfy.controlnet import ControlLora, ControlNet
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import (
+    OneflowDeployableModule as DeployableModule,
+)
 
 from ..booster_interface import BoosterExecutor
 from .onediff_controlnet import OneDiffControlLora
@@ -46,8 +48,7 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
                 f"{ckpt_name}_{type(model.model).__name__}", torch_model
             )
             set_compiled_options(compiled_model, graph_file)
-
-
+        model.weight_inplace_update = True
         return model
 
     @execute.register(ControlNet)

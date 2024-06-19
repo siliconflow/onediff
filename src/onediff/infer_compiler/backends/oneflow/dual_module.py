@@ -100,21 +100,18 @@ class DualModule(torch.nn.Module):
         if name in ["_torch_module", "_oneflow_module"]:
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
-            _torch_module: torch.nn.Module = self._torch_module
+            module: torch.nn.Module = self._torch_module
             if (
-                hasattr(_torch_module, "_disable_param_update")
-                and _torch_module._disable_param_update
+                hasattr(module, "_disable_param_update")
+                and module._disable_param_update
             ):
                 return
 
-            if self._oneflow_module is not None:
-                v = torch2oflow(value)
-                if isinstance(v, flow.Tensor):
-                    obj = getattr(self._oneflow_module, name)
-                    obj.copy_(v)
-                else:
-                    setattr(self._oneflow_module, name, v)
-            setattr(_torch_module, name, value)
+            torch_obj = getattr(module, name)
+            if hasattr(torch_obj, "copy_"):
+                torch_obj.copy_(value)
+            else:
+                setattr(module, name, value)
 
     def extra_repr(self) -> str:
         return self._torch_module.extra_repr()
