@@ -226,3 +226,74 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
 
 def is_crossAttention_patch(module) -> bool:
     return getattr(module, "_use_crossAttention_patch", False)
+
+
+def pulid_attention(out, q, k, v, extra_options, module_key='', pulid=None, cond=None, uncond=None, weight=1.0, ortho=False, ortho_v2=False, mask=None, optimized_attention=None, **kwargs):
+    k_key = module_key + "_to_k_ip"
+    v_key = module_key + "_to_v_ip"
+
+    dtype = q.dtype
+    seq_len = q.shape[1]
+    cond_or_uncond = extra_options["cond_or_uncond"]
+    b = q.shape[0]
+    batch_prompt = b // len(cond_or_uncond)
+    _, _, oh, ow = extra_options["original_shape"]
+
+    #conds = torch.cat([uncond.repeat(batch_prompt, 1, 1), cond.repeat(batch_prompt, 1, 1)], dim=0)
+    #zero_tensor = torch.zeros((conds.size(0), num_zero, conds.size(-1)), dtype=conds.dtype, device=conds.device)
+    #conds = torch.cat([conds, zero_tensor], dim=1)
+    #ip_k = pulid.ip_layers.to_kvs[k_key](conds)
+    #ip_v = pulid.ip_layers.to_kvs[v_key](conds)
+
+    k_cond = pulid.ip_layers.to_kvs[k_key](cond).repeat(batch_prompt, 1, 1)
+    k_uncond = pulid.ip_layers.to_kvs[k_key](uncond).repeat(batch_prompt, 1, 1)
+    v_cond = pulid.ip_layers.to_kvs[v_key](cond).repeat(batch_prompt, 1, 1)
+    v_uncond = pulid.ip_layers.to_kvs[v_key](uncond).repeat(batch_prompt, 1, 1)
+    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
+    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
+
+    out_ip = optimized_attention(q, ip_k, ip_v, extra_options["n_heads"])
+
+    if ortho:
+        out = out.to(dtype=torch.float32)
+        out_ip = out_ip.to(dtype=torch.float32)
+        projection = (torch.sum((out * out_ip), dim=-2, keepdim=True) / torch.sum((out * out), dim=-2, keepdim=True) * out)
+        orthogonal = out_ip - projection
+        out_ip = weight * orthogonal
+    elif ortho_v2:
+        out = out.to(dtype=torch.float32)
+        out_ip = out_ip.to(dtype=torch.float32)
+        attn_map = q @ ip_k.transpose(-2, -1)
+        attn_mean = attn_map.softmax(dim=-1).mean(dim=1, keepdim=True)
+        attn_mean = attn_mean[:, :, :5].sum(dim=-1, keepdim=True)
+        projection = (torch.sum((out * out_ip), dim=-2, keepdim=True) / torch.sum((out * out), dim=-2, keepdim=True) * out)
+        orthogonal = out_ip + (attn_mean - 1) * projection
+        out_ip = weight * orthogonal
+    else:
+        out_ip = out_ip * weight
+
+    if mask is not None:
+        mask_h = oh / math.sqrt(oh * ow / seq_len)
+        mask_h = int(mask_h) + int((seq_len % int(mask_h)) != 0)
+        mask_w = seq_len // mask_h
+
+        mask = F.interpolate(mask.unsqueeze(1), size=(mask_h, mask_w), mode="bilinear").squeeze(1)
+        mask = tensor_to_size(mask, batch_prompt)
+
+        mask = mask.repeat(len(cond_or_uncond), 1, 1)
+        mask = mask.view(mask.shape[0], -1, 1).repeat(1, 1, out.shape[2])
+
+        # covers cases where extreme aspect ratios can cause the mask to have a wrong size
+        mask_len = mask_h * mask_w
+        if mask_len < seq_len:
+            pad_len = seq_len - mask_len
+            pad1 = pad_len // 2
+            pad2 = pad_len - pad1
+            mask = F.pad(mask, (0, 0, pad1, pad2), value=0.0)
+        elif mask_len > seq_len:
+            crop_start = (mask_len - seq_len) // 2
+            mask = mask[:, crop_start:crop_start+seq_len, :]
+
+        out_ip = out_ip * mask
+
+    return out_ip.to(dtype=dtype)
