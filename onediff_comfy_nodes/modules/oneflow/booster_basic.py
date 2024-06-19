@@ -47,7 +47,7 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
             )
             set_compiled_options(compiled_model, graph_file)
 
-
+        model.weight_inplace_update = True
         return model
 
     @execute.register(ControlNet)
