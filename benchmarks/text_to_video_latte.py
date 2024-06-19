@@ -86,7 +86,7 @@ def parse_args():
         "--compiler",
         type=str,
         default="nexfort",
-        choices=["none", "nexfort"],
+        choices=["none", "nexfort", "compile"],
     )
     parser.add_argument(
         "--compiler-config", type=str, default=COMPILER_CONFIG,
@@ -195,6 +195,14 @@ def main():
         pipe = compile_pipe(
             pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
+    elif args.compiler == "compile":
+        if hasattr(pipe, "unet"):
+            pipe.unet = torch.compile(pipe.unet)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = torch.compile(pipe.transformer)
+        if hasattr(pipe, "controlnet"):
+            pipe.controlnet = torch.compile(pipe.controlnet)
+        pipe.vae = torch.compile(pipe.vae)
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
