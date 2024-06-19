@@ -38,7 +38,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 --steps 50 \
 --compiler none \
 ----output-video ./latte.mp4 \
---prompt "a cat wearing sunglasses and working as a lifeguard at pool."
+--prompt "An epic tornado attacking above aglowing city at night."
 ```
 
 ### Run with compile
@@ -48,7 +48,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 --steps 50 \
 --compiler nexfort \
 ----output-video ./latte_compile.mp4 \
---prompt "a cat wearing sunglasses and working as a lifeguard at pool."
+--prompt "An epic tornado attacking above aglowing city at night."
 ```
 
 ## Performance Comparison
