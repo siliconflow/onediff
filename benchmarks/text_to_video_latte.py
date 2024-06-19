@@ -11,8 +11,6 @@ STEPS = 50
 SEED = 25
 WARMUPS = 1
 BATCH = 1
-ALTER_HEIGHT = None
-ALTER_WIDTH = None
 HEIGHT = 512
 WIDTH = 512
 VIDEO_LENGTH = 16
@@ -97,12 +95,6 @@ def parse_args():
         "--attention-fp16-score-accum-max-m",
         type=int,
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
-    )
-    parser.add_argument(
-        "--alter-height", type=int, default=ALTER_HEIGHT,
-    )
-    parser.add_argument(
-        "--alter-width", type=int, default=ALTER_WIDTH,
     )
     return parser.parse_args()
 
@@ -213,75 +205,68 @@ def main():
     else:
         raise ValueError(f"Unknown compiler: {args.compiler}")
 
-    resolutions = [[args.height, args.width]]
-    if args.alter_height is not None:
-        # Test dynamic shape.
-        assert args.alter_width is not None
-        resolutions.append([args.alter_height, args.alter_width])
-    for height, width in resolutions:
+    def get_kwarg_inputs():
+        kwarg_inputs = dict(
+            prompt=args.prompt,
+            video_length=args.video_length,
+            height=args.height,
+            width=args.width,
+            num_inference_steps=args.steps,
+            guidance_scale=args.guidance_scale,
+            enable_temporal_attentions=args.enable_temporal_attentions,
+            num_images_per_prompt=1,
+            mask_feature=True,
+            enable_vae_temporal_decoder=args.enable_vae_temporal_decoder,
+            **(
+                dict()
+                if args.extra_call_kwargs is None
+                else json.loads(args.extra_call_kwargs)
+            ),
+        )
+        return kwarg_inputs
 
-        def get_kwarg_inputs():
-            kwarg_inputs = dict(
-                prompt=args.prompt,
-                video_length=args.video_length,
-                height=height,
-                width=width,
-                num_inference_steps=args.steps,
-                guidance_scale=args.guidance_scale,
-                enable_temporal_attentions=args.enable_temporal_attentions,
-                num_images_per_prompt=1,
-                mask_feature=True,
-                enable_vae_temporal_decoder=args.enable_vae_temporal_decoder,
-                **(
-                    dict()
-                    if args.extra_call_kwargs is None
-                    else json.loads(args.extra_call_kwargs)
-                ),
-            )
-            return kwarg_inputs
-
-        if args.warmups > 0:
-            print("=======================================")
-            print("Begin warmup")
-            begin = time.time()
-            for _ in range(args.warmups):
-                pipe(**get_kwarg_inputs()).video
-            end = time.time()
-            print("End warmup")
-            print(f"Warmup time: {end - begin:.3f}s")
-
-            print("=======================================")
-
-        kwarg_inputs = get_kwarg_inputs()
-        iter_profiler = IterationProfiler()
-        if "callback_on_step_end" in inspect.signature(pipe).parameters:
-            kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
-        elif "callback" in inspect.signature(pipe).parameters:
-            kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
-        torch.manual_seed(args.seed)
+    if args.warmups > 0:
+        print("=======================================")
+        print("Begin warmup")
         begin = time.time()
-        videos = pipe(**kwarg_inputs).video
+        for _ in range(args.warmups):
+            pipe(**get_kwarg_inputs()).video
         end = time.time()
+        print("End warmup")
+        print(f"Warmup time: {end - begin:.3f}s")
 
-        print(f"Inference time: {end - begin:.3f}s")
-        iter_per_sec = iter_profiler.get_iter_per_sec()
-        if iter_per_sec is not None:
-            print(f"Iterations per second: {iter_per_sec:.3f}")
-        cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-        host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-        print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
-        print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+        print("=======================================")
 
-        if args.output_video is not None:
-            # export_to_video(output_frames[0], args.output_video, fps=args.fps)
-            try:
-                imageio.mimwrite(
-                    args.output_video, videos[0], fps=8, quality=9
-                )  # highest quality is 10, lowest is 0
-            except:
-                print("Error when saving {}".format(prompt))
-        else:
-            print("Please set `--output-video` to save the output video")
+    kwarg_inputs = get_kwarg_inputs()
+    iter_profiler = IterationProfiler()
+    if "callback_on_step_end" in inspect.signature(pipe).parameters:
+        kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
+    elif "callback" in inspect.signature(pipe).parameters:
+        kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
+    torch.manual_seed(args.seed)
+    begin = time.time()
+    videos = pipe(**kwarg_inputs).video
+    end = time.time()
+
+    print(f"Inference time: {end - begin:.3f}s")
+    iter_per_sec = iter_profiler.get_iter_per_sec()
+    if iter_per_sec is not None:
+        print(f"Iterations per second: {iter_per_sec:.3f}")
+    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
+    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
+    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
+    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+
+    if args.output_video is not None:
+        # export_to_video(output_frames[0], args.output_video, fps=args.fps)
+        try:
+            imageio.mimwrite(
+                args.output_video, videos[0], fps=8, quality=9
+            )  # highest quality is 10, lowest is 0
+        except:
+            print("Error when saving {}".format(prompt))
+    else:
+        print("Please set `--output-video` to save the output video")
 
 
 if __name__ == "__main__":
