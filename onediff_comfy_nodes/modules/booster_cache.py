@@ -5,10 +5,6 @@ from comfy.model_patcher import ModelPatcher
 from functools import singledispatch
 from comfy.sd import VAE
 from onediff.torch_utils.module_operations import get_sub_module
-from onediff.utils.import_utils import is_oneflow_available
-
-if is_oneflow_available():
-    from .oneflow.utils.booster_utils import is_using_oneflow_backend
 
 
 @singledispatch
@@ -18,7 +14,9 @@ def switch_to_cached_model(new_model, cached_model):
 
 @switch_to_cached_model.register
 def _(new_model: ModelPatcher, cached_model):
-    assert type(new_model.model) == type(cached_model)
+    assert type(new_model.model) == type(
+        cached_model
+    ), f"Model type mismatch: expected {type(cached_model)}, got {type(new_model.model)}"
     for k, v in new_model.model.state_dict().items():
         cached_v: torch.Tensor = get_sub_module(cached_model, k)
         assert v.dtype == cached_v.dtype
@@ -52,8 +50,8 @@ def _(model: ModelPatcher):
 @get_cached_model.register
 def _(model: VAE):
     # TODO(TEST) if support cache
-    # return model.first_stage_model
     return None
+    # return model.first_stage_model
 
 
 class BoosterCacheService:
@@ -63,8 +61,6 @@ class BoosterCacheService:
         if key is None:
             return
         # oneflow backends output image error
-        if is_oneflow_available() and is_using_oneflow_backend(model):
-            return
         cached_model = get_cached_model(model)
         if cached_model:
             self._cache[key] = cached_model

@@ -3,7 +3,8 @@ This benchmarks the production environment stability by testing:
 - ✅ Memory prediction time
 - ✅ First AUTOTUNE duration
 - ✅ Startup time with warmup
-- [ ]TODO Join CI
+- [x] TODO Join CI
+- [x] SSIM 验证准确度
 
 ##  “disable auto tune”
 https://discuss.pytorch.org/t/how-to-use-auto-tune-with-pytorch/64669
