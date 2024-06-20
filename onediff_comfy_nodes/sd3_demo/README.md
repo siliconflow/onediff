@@ -8,7 +8,7 @@ huggingface: https://huggingface.co/stabilityai/stable-diffusion-3-medium
 ### Performance
 ### Metric
 
-- Testing on NVIDIA A800-SXM4-80GB, with image size of 1024*1024, iterating 28 steps. 
+- Testing on NVIDIA GeForce RTX 4090, with image size of 1024*1024, iterating 28 steps. 
 - OneDiff[Nexfort] Compile mode: 
 `max-optimize:max-autotune:low-precision`
 
