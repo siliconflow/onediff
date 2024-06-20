@@ -156,6 +156,7 @@ class ModuleDeepCacheSpeedup:
         start_step,
         end_step,
     ):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         booster = BoosterScheduler(
             DeepcacheBoosterExecutor(
                 cache_interval=cache_interval,
@@ -308,6 +309,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         start_step=0,
         end_step=1000,
     ):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(
             ckpt_name, output_vae, output_clip
@@ -381,6 +383,7 @@ class SVDSpeedup:
         cache_name="svd",
         custom_booster: BoosterScheduler = None,
     ):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         if custom_booster:
             booster = custom_booster
             booster.inplace = inplace
@@ -410,6 +413,7 @@ class VaeGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, vae, graph):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         vae_model = vae.first_stage_model
         device = model_management.vae_offload_device()
         load_graph(vae_model, graph, device, subfolder="vae")
@@ -433,6 +437,7 @@ class VaeGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, images, vae, filename_prefix):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         vae_model = vae.first_stage_model
         vae_device = model_management.vae_offload_device()
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
@@ -458,6 +463,7 @@ class ModelGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, model, graph):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
 
         diffusion_model = model.model.diffusion_model
 
@@ -482,6 +488,7 @@ class ModelGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, samples, model, filename_prefix):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         diffusion_model = model.model.diffusion_model
         save_graph(diffusion_model, filename_prefix, "cuda", subfolder="unet")
         return {}
@@ -535,6 +542,7 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff"
 
         def load_unet_int8(self, model_path):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             from ..modules.oneflow.utils.onediff_quant_utils import (
                 replace_module_with_quantizable_module,
             )
@@ -573,6 +581,7 @@ if is_onediff_quant_available() and not is_community_version():
         OUTPUT_NODE = True
 
         def quantize_model(self, model, output_dir, conv, linear):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             from ..modules.oneflow.utils import quantize_and_save_model
 
             diffusion_model = model.model.diffusion_model
@@ -604,6 +613,8 @@ if is_onediff_quant_available() and not is_community_version():
         def onediff_load_checkpoint(
             self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
         ):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )
@@ -663,6 +674,7 @@ if is_onediff_quant_available() and not is_community_version():
             output_clip=True,
         ):
             need_compile = compile == "enable"
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
 
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
@@ -717,6 +729,7 @@ if is_onediff_quant_available() and not is_community_version():
             output_vae=True,
             output_clip=True,
         ):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )
