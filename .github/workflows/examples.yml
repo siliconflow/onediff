@@ -470,6 +470,7 @@ jobs:
         run: |
           env
           docker compose -f benchmarks/benchmark-docker-compose.yml up -d
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
         env:
           CONTAINER_NAME: ${{ env.CONTAINER_NAME }}
           ACR_ORG: ${{ env.ACR_ORG }}
