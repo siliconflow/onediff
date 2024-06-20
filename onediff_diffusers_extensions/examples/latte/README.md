@@ -2,9 +2,9 @@
 
 
 1. [Environment Setup](#environment-setup)
-   - [Set up onediff](#set-up-onediff)
-   - [Set up nexfort backend](#set-up-nexfort-backend)
    - [Set up Latte](#set-up-latte)
+   - [Set up nexfort backend](#set-up-nexfort-backend)
+   - [Set up onediff](#set-up-onediff)
 2. [Run](#run)
    - [Run without compile](#run-without-compile)
    - [Run with compile](#run-with-compile)
@@ -12,16 +12,19 @@
 4. [Quality](#quality)
 
 ## Environment setup
-### Set up onediff
-https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
+### Set up Latte
+HF model: https://huggingface.co/maxin-cn/Latte-1
+```bash
+git clone -b run https://github.com/siliconflow/dit_Latte/
+cd dit_Latte
+export PYTHONPATH=`pwd`:$PYTHONPATH
+```
 
 ### Set up nexfort backend
 https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort
 
-### Set up Latte
-HF model: https://huggingface.co/maxin-cn/Latte-1
-
-Github source: https://github.com/Vchitect/Latte
+### Set up onediff
+https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
 
 ## Run
 model_id_or_path_to_latte is the model id or model path of latte, such as `maxin-cn/Latte-1` or `/data/hf_models/Latte-1/`
