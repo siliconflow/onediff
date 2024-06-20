@@ -6,15 +6,26 @@ huggingface: https://huggingface.co/stabilityai/stable-diffusion-3-medium
 - ✅ Multiple resolutions
 
 ### Performance
+### Metric
 
 - Testing on NVIDIA A800-SXM4-80GB, with image size of 1024*1024, iterating 28 steps. 
 - OneDiff[Nexfort] Compile mode: 
 `max-optimize:max-autotune:low-precision`
 
-|                          | Iteration speed    | E2E Inference Time | Max CUDA Memory Used |
-| ------------------------ | ------------------ | ------------------ | -------------------- |
-| Baseline (non-optimized) | 7.44it/s           | 4.03 s             | 18.827 GiB           |
-| OneDiff (optimized)      | 10.51it/s (+41.2%) | 2.96 s (-26.5%)    | 20.766 GiB           |
+
+| Metric                                           | NVIDIA GeForce RTX 4090 (1024 * 1024) |
+| ------------------------------------------------ | ------------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-19                            |
+| PyTorch E2E time                                 | 4.27 s                                |
+| OneDiff E2E time                                 | 3.17 s(-25.7%)                        |
+| PyTorch Max Mem Used                             | 18.445GiB                             |
+| OneDiff Max Mem Used                             | 19.199GiB                             |
+| PyTorch Warmup with Run time                     | 10s                                   |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 209s                                  |
+| OneDiff Warmup with Cache time                   | 45s                                   |
+
+ <sup>1</sup> OneDiff Warmup with Compilation time is tested on  AMD EPYC 7543 32-Core Processor CPU. Note this is just for reference, and it varies a lot on different CPU.
+
 
 The following table shows the comparison of the plot, seed=1, Baseline (non optimized) on the left, and OneDiff (optimized) on the right
 
@@ -103,7 +114,7 @@ https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_e
 ```shell
 # run comfyui
 # For CUDA Graph
-export NEXFORT_FX_CUDAGRAPHS=1
+# export NEXFORT_FX_CUDAGRAPHS=1 
 # For best performance
 export TORCHINDUCTOR_MAX_AUTOTUNE=1
 # Enable CUDNN benchmark
@@ -119,5 +130,6 @@ cd $COMFYUI_DIR && python main.py --gpu-only --disable-cuda-malloc
 
 ### WorkFlow
 Here is a very basic example how to use it:
-![WorkFlow](https://github.com/siliconflow/onediff/assets/109639975/a385fac5-1f82-4905-a941-4c71ff1c616e)
+[workflow_sd3_speedup.json](https://github.com/user-attachments/files/15907863/sd3_suppedup.json)
+![sd3_speedup_workflow](https://github.com/siliconflow/onediff/assets/109639975/c1e955ae-7cc5-4197-9635-7cc05d5fd7a6)
 
