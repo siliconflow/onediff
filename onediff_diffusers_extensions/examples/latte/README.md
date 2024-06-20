@@ -15,8 +15,8 @@
 ### Set up Latte
 HF model: https://huggingface.co/maxin-cn/Latte-1
 ```bash
-git clone -b run https://github.com/siliconflow/dit_Latte/
-cd dit_Latte
+git clone -b run https://github.com/siliconflow/dit_latte/
+cd dit_latte
 export PYTHONPATH=`pwd`:$PYTHONPATH
 ```
 
