@@ -1,4 +1,5 @@
 import json
+import threading
 import time
 import urllib.parse
 import urllib.request
@@ -99,9 +100,42 @@ class ComfyClient:
                 print(f"({i+1}/{n_tries}) Retrying...")
             else:
                 logger.info(f"Connected to server: {self.server_address}")
+                threading.Thread(
+                    target=self.fetch_system_stats_periodically, daemon=True
+                ).start()
                 break
         if not self.ws:
             raise RuntimeError(f"Could not connect to server: {self.server_address}")
+
+    def fetch_system_stats_periodically(self):
+        max_vram_used_gb = 0
+        last_print_time = time.time()
+        BYTES_TO_GB = 1024 * 1024 * 1024
+        poll_interval = 0.5  # sec
+        while True:
+            try:
+                stats = self.get_system_stats()
+                for device in stats["devices"]:
+                    vram_total = device["vram_total"]
+                    vram_free = device["vram_free"]
+                    vram_used = vram_total - vram_free
+
+                    vram_used_gb = vram_used / BYTES_TO_GB
+
+                    if vram_used_gb > max_vram_used_gb:
+                        max_vram_used_gb = vram_used_gb
+
+                current_time = time.time()
+                if current_time - last_print_time >= 2:
+                    logger.info(
+                        f"Current VRAM used: {vram_used:.2f} GB\tMaximum VRAM used: {max_vram_used_gb:.2f} GB"
+                    )
+                    last_print_time = current_time
+
+                time.sleep(poll_interval)
+            except Exception as e:
+                print(f"{e=}")
+                break
 
     def close(self):
         self.ws.close()
