@@ -238,12 +238,3 @@ class SVDBenchmark(BaseBenchmark):
             export_to_video(output_frames[0], self.output_video, fps=self.fps)
         else:
             print("Please set `--output-video` to save the output video")
-
-
-if __name__ == "__main__":
-    benchmark = SVDBenchmark(
-        model_dir=r"/data/home/wangerlie/onediff/benchmarks/models"
-    )
-    benchmark.load_pipeline_from_diffusers()
-    benchmark.compile_pipeline()
-    benchmark.benchmark_model()

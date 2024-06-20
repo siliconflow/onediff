@@ -196,14 +196,3 @@ class SDXLLightBenchmark(BaseBenchmark):
         self.results["cuda_mem_after_used"] = cuda_mem_after_used / 1024
         self.results["host_mem_after_used"] = host_mem_after_used / 1024
         print("=======================================")
-
-
-if __name__ == "__main__":
-    benchmark = SDXLLightBenchmark(
-        model_dir="/data/home/wangerlie/onediff/benchmarks/models",
-        compiler=None,
-    )
-    benchmark.load_pipeline_from_diffusers()
-    benchmark.compile_pipeline()
-    benchmark.benchmark_model()
-    print(benchmark.results)

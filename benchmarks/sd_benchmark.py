@@ -196,18 +196,3 @@ class StableDiffusionBenchmark(BaseBenchmark):
         ) = generate_data_and_fit_model(
             self.prompt, self.height, self.width, steps_range, self.pipe
         )
-
-
-if __name__ == "__main__":
-    benchmark = StableDiffusionBenchmark(
-        model_dir="/data/home/wangerlie/onediff/benchmarks/models",
-        model_name="stable-diffusion-v1-5",
-        compiler="oneflow",
-        height=512,
-        width=512,
-        deepcache=True,
-    )
-    benchmark.load_pipeline_from_diffusers()
-    benchmark.compile_pipeline()
-    benchmark.benchmark_model()
-    benchmark.throughput_benchmark()
