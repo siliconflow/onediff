@@ -1,4 +1,27 @@
+import platform
 from collections import namedtuple
+
+
+def get_cpu_model() -> str:
+    try:
+        if platform.system() == "Windows":
+            return platform.processor()
+        elif platform.system() == "Linux":
+            with open("/proc/cpuinfo") as f:
+                for line in f:
+                    if "model name" in line:
+                        return line.split(":")[1].strip()
+        elif platform.system() == "Darwin":
+            from subprocess import check_output
+
+            return (
+                check_output(["sysctl", "-n", "machdep.cpu.brand_string"])
+                .strip()
+                .decode()
+            )
+    except Exception as e:
+        return "Unknown"
+    return "Unknown"
 
 
 def generate_markdown_table(data, output_file="metrics.md"):

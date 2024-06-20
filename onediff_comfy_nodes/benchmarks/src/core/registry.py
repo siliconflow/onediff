@@ -1,4 +1,4 @@
-from typing import Callable, Dict, List, NamedTuple, Union, Tuple
+from typing import Callable, Dict, List, NamedTuple, Tuple, Union
 
 
 def create_constructor_registry():
