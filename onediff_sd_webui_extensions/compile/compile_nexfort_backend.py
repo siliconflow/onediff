@@ -5,6 +5,7 @@ from ldm.modules.attention import BasicTransformerBlock
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import timestep_embedding
 from modules.sd_hijack_utils import CondFunc
+from modules.sd_hijack import apply_optimizations
 from onediff_utils import singleton_decorator
 
 from onediff.infer_compiler import compile
@@ -12,6 +13,7 @@ from onediff.infer_compiler import compile
 
 def nexfort_compile_ldm_unet(unet_model, *, options=None):
     create_cond_func()
+    apply_optimizations("sdp-no-mem - scaled dot product without memory efficient attention")
     if not isinstance(unet_model, UNetModel):
         return
     for module in unet_model.modules():
