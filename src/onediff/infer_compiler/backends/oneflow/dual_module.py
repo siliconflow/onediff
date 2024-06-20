@@ -100,7 +100,8 @@ class DualModule(torch.nn.Module):
         if name in ["_torch_module", "_oneflow_module"]:
             super().__setattr__(name, value)
         else:  # TODO: aviod memory up when set attr
-            module: torch.nn.Module = self._torch_module
+
+            module = self._torch_module
             if (
                 hasattr(module, "_disable_param_update")
                 and module._disable_param_update
@@ -108,7 +109,8 @@ class DualModule(torch.nn.Module):
                 return
 
             torch_obj = getattr(module, name)
-            if hasattr(torch_obj, "copy_"):
+
+            if hasattr(torch_obj, 'copy_'):
                 torch_obj.copy_(value)
             else:
                 setattr(module, name, value)
