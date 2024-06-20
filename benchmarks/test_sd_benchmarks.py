@@ -8,9 +8,9 @@ import oneflow
 import onediff
 from sd_benchmark import StableDiffusionBenchmark
 
-SD15_THRESHOLD = [4, 4, 4, 4]
-SD21_THRESHOLD = [4, 4, 4, 4]
-SDXL_THRESHOLD = [4, 4, 4, 4]
+SD15_THRESHOLD = [3.4, 3, 2, 0.8]
+SD21_THRESHOLD = [3.7, 3.4, 2, 0.8]
+SDXL_THRESHOLD = [4.4, 4.2, 3, 1.3]
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
