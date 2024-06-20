@@ -8,6 +8,7 @@ from onediff.utils import logger
 
 from .utils import OneDiffCompiledGraph
 
+
 def get_calibrate_info(filename: str) -> Union[None, Dict]:
     calibration_path = Path(select_checkpoint().filename).parent / filename
     if not calibration_path.exists():
@@ -25,4 +26,3 @@ def get_calibrate_info(filename: str) -> Union[None, Dict]:
                 [float(x) for x in items[3].split(",")],
             ]
     return calibrate_info
-

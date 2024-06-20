@@ -2,7 +2,7 @@ from modules.sd_hijack import apply_optimizations
 
 from onediff.infer_compiler import compile, oneflow_compile
 
-from .utils import disable_unet_checkpointing, OneDiffCompiledGraph
+from .utils import OneDiffCompiledGraph, disable_unet_checkpointing
 
 
 def get_compiled_graph(sd_model, quantization, *, options=None) -> OneDiffCompiledGraph:

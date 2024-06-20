@@ -227,14 +227,3 @@ CondFunc(
     onediff_hijack_load_model_weights,
     lambda _, *args, **kwargs: onediff_enabled,
 )
-
-
-def hijack_devices_manual_cast(orig_func, *args, **kwargs):
-    yield None
-
-
-# CondFunc(
-#     "devices.manual_cast",
-#     hijack_devices_manual_cast,
-#     lambda _, *args, **kwargs: onediff_enabled,
-# )

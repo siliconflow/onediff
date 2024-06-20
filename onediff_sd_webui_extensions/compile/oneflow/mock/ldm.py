@@ -11,7 +11,6 @@ from .common import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
 # https://github.com/Stability-AI/stablediffusion/blob/b4bdae9916f628461e1e4edbc62aafedebb9f7ed/ldm/modules/diffusionmodules/openaimodel.py#L775
 class UNetModelOflow(proxy_class(UNetModel)):
     def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
-        self.convert_to_fp16()
         assert (y is not None) == (
             self.num_classes is not None
         ), "must specify y if and only if the model is class-conditional"

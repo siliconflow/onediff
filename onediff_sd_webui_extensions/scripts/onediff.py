@@ -8,6 +8,7 @@ import onediff_controlnet
 import onediff_shared
 import oneflow as flow
 from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
+from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
 from modules.devices import torch_gc
 from modules.processing import process_images
@@ -177,6 +178,5 @@ script_callbacks.on_ui_settings(on_ui_settings)
 # script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
 onediff_do_hijack()
 
-from compile.nexfort.utils import add_nexfort_optimizer
 
 script_callbacks.on_list_optimizers(add_nexfort_optimizer)
