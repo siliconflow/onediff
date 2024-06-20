@@ -1,4 +1,4 @@
-from compile.onediff_compiled_graph import OneDiffCompiledGraph
+from compile import OneDiffCompiledGraph
 
 current_unet_graph = OneDiffCompiledGraph()
 current_quantization = False

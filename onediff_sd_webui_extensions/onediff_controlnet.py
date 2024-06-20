@@ -5,7 +5,7 @@ import oneflow as flow
 import torch
 import torch as th
 from compile import OneDiffCompiledGraph
-from compile.sd_webui_onediff_utils import (
+from compile.oneflow.mock.common import (
     CrossAttentionOflow,
     GroupNorm32Oflow,
     timestep_embedding,

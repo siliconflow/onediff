@@ -3,11 +3,14 @@ from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from textwrap import dedent
+from typing import Union
 from zipfile import BadZipFile
 
 import onediff_shared
 import oneflow as flow
+from ldm.modules.diffusionmodules.openaimodel import UNetModel as LdmUNetModel
 from modules.devices import torch_gc
+from sgm.modules.diffusionmodules.openaimodel import UNetModel as SgmUNetModel
 
 from onediff.infer_compiler import DeployableModule
 
@@ -146,3 +149,19 @@ def singleton_decorator(func):
             return func(*args, **kwargs)
 
     return wrapper
+
+
+# def disable_unet_checkpointing(
+#     unet_model: Union[LdmUNetModel, SgmUNetModel]
+# ) -> Union[LdmUNetModel, SgmUNetModel]:
+#     from ldm.modules.attention import BasicTransformerBlock as LdmBasicTransformerBlock
+#     from ldm.modules.diffusionmodules.openaimodel import ResBlock as LdmResBlock
+#     from sgm.modules.attention import BasicTransformerBlock as SgmBasicTransformerBlock
+#     from sgm.modules.diffusionmodules.openaimodel import ResBlock as SgmResBlock
+
+#     for module in unet_model.modules():
+#         if isinstance(module, (LdmBasicTransformerBlock, SgmBasicTransformerBlock)):
+#             module.checkpoint = False
+#         if isinstance(module, (LdmResBlock, SgmResBlock)):
+#             module.use_checkpoint = False
+#     return unet_model

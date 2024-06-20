@@ -176,3 +176,7 @@ def cfg_denoisers_callback(params):
 script_callbacks.on_ui_settings(on_ui_settings)
 # script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
 onediff_do_hijack()
+
+from compile.nexfort.utils import add_nexfort_optimizer
+
+script_callbacks.on_list_optimizers(add_nexfort_optimizer)

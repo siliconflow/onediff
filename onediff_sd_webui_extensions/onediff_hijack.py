@@ -2,7 +2,7 @@ from typing import Any, Mapping
 
 import oneflow
 import torch
-from compile import compile_ldm, compile_sgm
+from compile.oneflow.mock import ldm, sgm
 from modules import sd_models
 from modules.sd_hijack_utils import CondFunc
 from onediff_shared import onediff_enabled
@@ -66,8 +66,8 @@ def unhijack_function(module, name, new_name):
 
 
 def do_hijack():
-    compile_ldm.flow = hijack_flow
-    compile_sgm.flow = hijack_flow
+    ldm.flow = hijack_flow
+    sgm.flow = hijack_flow
     from modules import script_callbacks, sd_models
 
     script_callbacks.on_script_unloaded(undo_hijack)
@@ -86,8 +86,8 @@ def do_hijack():
 
 
 def undo_hijack():
-    compile_ldm.flow = oneflow
-    compile_sgm.flow = oneflow
+    ldm.flow = oneflow
+    sgm.flow = oneflow
     from modules import sd_models
 
     unhijack_function(
@@ -227,3 +227,14 @@ CondFunc(
     onediff_hijack_load_model_weights,
     lambda _, *args, **kwargs: onediff_enabled,
 )
+
+
+def hijack_devices_manual_cast(orig_func, *args, **kwargs):
+    yield None
+
+
+# CondFunc(
+#     "devices.manual_cast",
+#     hijack_devices_manual_cast,
+#     lambda _, *args, **kwargs: onediff_enabled,
+# )
