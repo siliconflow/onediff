@@ -5,6 +5,8 @@ from comfy.model_patcher import ModelPatcher
 from functools import singledispatch
 from comfy.sd import VAE
 from onediff.torch_utils.module_operations import get_sub_module
+from onediff.utils.import_utils import is_oneflow_available
+from .._config import is_disable_oneflow_backend
 
 
 @singledispatch
@@ -44,6 +46,12 @@ def get_cached_model(model):
 
 @get_cached_model.register
 def _(model: ModelPatcher):
+    if is_oneflow_available() and not is_disable_oneflow_backend():
+        from .oneflow.utils.booster_utils import is_using_oneflow_backend
+
+        if is_using_oneflow_backend(model):
+            return None
+
     return model.model
 
 

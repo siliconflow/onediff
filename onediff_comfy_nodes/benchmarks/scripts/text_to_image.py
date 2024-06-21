@@ -99,6 +99,7 @@ def run_workflow(
         for i, comfy_graph in enumerate(dispatch_generator(workflow)):
             start_time = time.time()
             images = client.get_images(comfy_graph.graph)
+            end_time = time.time()
 
             if not images:
                 logger.error("No images generated")
@@ -115,9 +116,7 @@ def run_workflow(
                 for image_data in images_output:
                     processor.process_image(image_data, i)
 
-            logger.info(
-                f"Workflow {i} completed in {time.time() - start_time:.2f} seconds"
-            )
+            logger.info(f"Workflow {i} E2E:  {end_time - start_time:.2f} seconds")
 
 
 if __name__ == "__main__":
