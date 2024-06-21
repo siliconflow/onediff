@@ -8,6 +8,7 @@ from zipfile import BadZipFile
 import onediff_shared
 import oneflow as flow
 from modules.devices import torch_gc
+from modules import shared
 
 from onediff.infer_compiler import DeployableModule
 
@@ -60,18 +61,8 @@ def refresh_all_compiler_caches(path: Path = None):
     all_compiler_caches = [f.stem for f in Path(path).iterdir() if f.is_file()]
 
 
-def check_structure_change_and_update(current_type: dict[str, bool], model):
-    def get_model_type(model):
-        return {
-            "is_sdxl": model.is_sdxl,
-            "is_sd2": model.is_sd2,
-            "is_sd1": model.is_sd1,
-            "is_ssd": model.is_ssd,
-        }
-
-    changed = current_type != get_model_type(model)
-    current_type.update(**get_model_type(model))
-    return changed
+def check_structure_change(current_type: dict[str, bool], model):
+    return current_type != get_model_type(model)
 
 
 def load_graph(compiled_unet: DeployableModule, compiler_cache: str):
@@ -130,6 +121,7 @@ def onediff_enabled_decorator(func):
             return func(self, p, *arg, **kwargs)
         finally:
             onediff_shared.onediff_enabled = False
+            onediff_shared.previous_unet_type.update(**get_model_type(shared.sd_model))
             torch_gc()
             flow.cuda.empty_cache()
 
@@ -146,3 +138,11 @@ def singleton_decorator(func):
             return func(*args, **kwargs)
 
     return wrapper
+
+def get_model_type(model):
+    return {
+        "is_sdxl": model.is_sdxl,
+        "is_sd2": model.is_sd2,
+        "is_sd1": model.is_sd1,
+        "is_ssd": model.is_ssd,
+    }

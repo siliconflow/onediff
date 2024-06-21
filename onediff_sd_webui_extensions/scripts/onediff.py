@@ -15,7 +15,7 @@ from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
 from onediff_utils import (
-    check_structure_change_and_update,
+    check_structure_change,
     get_all_compiler_caches,
     hints_message,
     load_graph,
@@ -119,8 +119,8 @@ class Script(scripts.Script):
             shared.sd_model.sd_checkpoint_info.name
             != onediff_shared.current_unet_graph.name
         )
-        structure_changed = check_structure_change_and_update(
-            onediff_shared.current_unet_type, shared.sd_model
+        structure_changed = check_structure_change(
+            onediff_shared.previous_unet_type, shared.sd_model
         )
         quantization_changed = (
             quantization != onediff_shared.current_unet_graph.quantized
@@ -145,7 +145,7 @@ class Script(scripts.Script):
                 load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:
             logger.info(
-                f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.current_unet_type}, skip compile"
+                f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.previous_unet_type}, skip compile"
             )
 
         with UnetCompileCtx(
