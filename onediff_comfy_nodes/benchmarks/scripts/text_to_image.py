@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument(
         "-w", "--workflow", type=str, required=True, help="Workflow file"
     )
-    
+
     parser.add_argument(
         "--listen", type=str, default=DEFAULT_HOST, help="service listen"
     )
@@ -43,7 +43,7 @@ def run_workflow(
     output_images=True,
 ):
     logger, result_dir = setup_logging(exp_name="exp")
-    print(f"====\n {result_dir=}\n====")
+    logger.info(f"====\n {result_dir=}\n====")
 
     with comfy_client_context(port=comfy_port) as client:
         logger.info(f"Test {workflow}")
@@ -53,10 +53,12 @@ def run_workflow(
             assert len(images) != 0, "No images generated"
             # assert all images are not blank
             duration = time.time() - start_time
-            logger.info(f"E2E time: {duration} seconds")
             for images_output in images.values():
                 for image_data in images_output:
                     pil_image = Image.open(BytesIO(image_data))
+                    logger.info(
+                        f"Output Image Size - Height: {pil_image.height}px, Width: {pil_image.width}px"
+                    )
                     assert numpy.array(pil_image).any() != 0, "Image is blank"
                     if output_images:
                         out_img_path = os.path.join(result_dir, "imgs")
@@ -64,6 +66,9 @@ def run_workflow(
                         image_path = os.path.join(out_img_path, f"image_{i}.png")
                         logger.info(f"Saved image to: {image_path}")
                         pil_image.save(image_path)
+
+            logger.info(f"E2E time: {duration} seconds")
+
 
 if __name__ == "__main__":
     args = parse_args()
