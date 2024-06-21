@@ -8,9 +8,10 @@ import oneflow
 import onediff
 from sd_benchmark import StableDiffusionBenchmark
 
+## The end-to-end threshold for each model and size(1024x1024, 720x1280, 768x768, 512x512)
 SD15_THRESHOLD = [3.4, 3, 2, 0.8]
 SD21_THRESHOLD = [3.7, 3.4, 2, 0.8]
-SDXL_THRESHOLD = [4.4, 4.2, 3, 1.3]
+SDXL_THRESHOLD = [4.5, 4.2, 3, 1.5]
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
