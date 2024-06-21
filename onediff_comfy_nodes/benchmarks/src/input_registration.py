@@ -1,7 +1,6 @@
 import json
 import os
-from typing import Dict, NamedTuple
-from dataclasses import dataclass
+from typing import NamedTuple
 from core.registry import create_generator_registry
 from core.service_client import ComfyGraph
 
@@ -90,6 +89,9 @@ def _(workflow_path, *args, **kwargs):
         graph.graph["12"]["inputs"]["image"] = image
         for height in [768, 512]:
             for width in [768, 512]:
+                positive_prompt = "in a peaceful spring morning a woman wearing a white shirt is sitting in a park on a bench\n\nhigh quality, detailed, diffuse light"
+                negative_prompt = "blurry, noisy, messy, lowres, jpeg, artifacts, ill, distorted, malformed"
+                graph.set_prompt(positive_prompt, negative_prompt)
                 graph.set_image_size(height=height, width=width)
                 yield InputParams(graph=graph)
 
@@ -105,17 +107,23 @@ def _(workflow_path, *args, **kwargs):
 def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
-    
+
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
     graph.set_prompt("masterpiece best quality girl, hanfu", "bad hands")
     root_path = "sd15/"
     checkpoint_nodes = []
-    for  node in graph.graph.values():
-        if node["class_type"] in  ["CheckpointLoaderSimple", "OneDiffCheckpointLoaderSimple"]:
+    for node in graph.graph.values():
+        if node["class_type"] in [
+            "CheckpointLoaderSimple",
+            "OneDiffCheckpointLoaderSimple",
+        ]:
             checkpoint_nodes.append(node)
     assert len(checkpoint_nodes) == 1
-    
-    for file_name in ["020.realisticVisionV51_v51VAE.safetensors", "v1-5-pruned-emaonly.ckpt"]:
+
+    for file_name in [
+        "020.realisticVisionV51_v51VAE.safetensors",
+        "v1-5-pruned-emaonly.ckpt",
+    ]:
         checkpoint_path = os.path.join(root_path, file_name)
-        checkpoint_nodes[0]['inputs']['ckpt_name'] = checkpoint_path
+        checkpoint_nodes[0]["inputs"]["ckpt_name"] = checkpoint_path
         yield InputParams(graph=graph)

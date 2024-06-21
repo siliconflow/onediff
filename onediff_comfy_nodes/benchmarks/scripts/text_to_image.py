@@ -79,6 +79,7 @@ class WorkflowProcessor:
             baseline_image = Image.open(baseline_image_path)
             ssim_value = calculate_ssim(pil_image, baseline_image)
             self.logger.info(f"SSIM value with baseline: {ssim_value}")
+            assert ssim_value > 0.6
 
 
 def run_workflow(
@@ -116,7 +117,10 @@ def run_workflow(
                 for image_data in images_output:
                     processor.process_image(image_data, i)
 
-            logger.info(f"Workflow {i} E2E:  {end_time - start_time:.2f} seconds")
+            e2e_time = end_time - start_time
+            logger.info(f"Workflow {i} E2E:  {e2e_time:.2f} seconds")
+            # if i>0: # TODO refine
+            #     assert e2e_time < 10 # sec
 
 
 if __name__ == "__main__":

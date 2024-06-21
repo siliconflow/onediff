@@ -2,7 +2,7 @@
   "3": {
     "inputs": {
       "seed": 1,
-      "steps": 20,
+      "steps": 30,
       "cfg": 6.5,
       "sampler_name": "ddpm",
       "scheduler": "karras",
@@ -44,7 +44,7 @@
     "inputs": {
       "text": "in a peaceful spring morning a woman wearing a white shirt is sitting in a park on a bench\n\nhigh quality, detailed, diffuse light",
       "clip": [
-        "23",
+        "18",
         1
       ]
     },
@@ -57,7 +57,7 @@
     "inputs": {
       "text": "blurry, noisy, messy, lowres, jpeg, artifacts, ill, distorted, malformed",
       "clip": [
-        "23",
+        "18",
         1
       ]
     },
@@ -73,7 +73,7 @@
         0
       ],
       "vae": [
-        "23",
+        "18",
         2
       ]
     },
@@ -84,7 +84,7 @@
   },
   "9": {
     "inputs": {
-      "filename_prefix": "IPAdapter_ci_output",
+      "filename_prefix": "IPAdapter",
       "images": [
         "8",
         0
@@ -97,7 +97,7 @@
   },
   "12": {
     "inputs": {
-      "image": "input_image_vermeer.png",
+      "image": "sam_resize.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
@@ -107,14 +107,14 @@
   },
   "14": {
     "inputs": {
-      "weight": 0.5,
+      "weight": 0.8,
       "weight_type": "linear",
       "combine_embeds": "concat",
       "start_at": 0,
       "end_at": 1,
       "embeds_scaling": "V only",
       "model": [
-        "28",
+        "18",
         0
       ],
       "ipadapter": [
@@ -168,26 +168,14 @@
       "title": "Prep Image For ClipVision"
     }
   },
-  "23": {
+  "18": {
     "inputs": {
-      "ckpt_name": "sd15/020.realisticVisionV51_v51VAE.safetensors"
+      "ckpt_name": "sd15/020.realisticVisionV51_v51VAE.safetensors",
+      "vae_speedup": "enable"
     },
-    "class_type": "CheckpointLoaderSimple",
+    "class_type": "OneDiffCheckpointLoaderSimple",
     "_meta": {
-      "title": "Load Checkpoint"
-    }
-  },
-  "28": {
-    "inputs": {
-      "inplace": true,
-      "model": [
-        "23",
-        0
-      ]
-    },
-    "class_type": "ModelSpeedup",
-    "_meta": {
-      "title": "Model Speedup"
+      "title": "Load Checkpoint - OneDiff"
     }
   }
 }
