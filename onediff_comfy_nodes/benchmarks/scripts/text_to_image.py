@@ -3,14 +3,17 @@ import os
 import sys
 import time
 from io import BytesIO
+from typing import List, Union
 
-import numpy
+import numpy as np
 from PIL import Image
+from skimage.metrics import structural_similarity as ssim
 
 sys.path.append("./src")
+
 from core.log_utils import setup_logging
 from core.service_client import comfy_client_context
-from input_registration import get_input_constructor
+from input_registration import dispatch_generator
 
 DEFAULT_HOST = "127.0.0.1"
 DEFAULT_COMFY_PORT = "8188"
@@ -19,11 +22,10 @@ DEFAULT_COMFY_PORT = "8188"
 def parse_args():
     parser = argparse.ArgumentParser(description="Test ComfyUI workflow")
     parser.add_argument(
-        "-w", "--workflow", type=str, required=True, help="Workflow file"
+        "-w", "--workflow", type=str, nargs="+", required=True, help="Workflow file(s)"
     )
-
     parser.add_argument(
-        "--listen", type=str, default=DEFAULT_HOST, help="service listen"
+        "--listen", type=str, default=DEFAULT_HOST, help="Service listen address"
     )
     parser.add_argument(
         "--comfy-port",
@@ -34,42 +36,90 @@ def parse_args():
     parser.add_argument(
         "--output-images", action="store_true", help="Enable output of images."
     )
+    parser.add_argument(
+        "--baseline-dir", type=str, help="Directory for baseline output."
+    )
     return parser.parse_args()
 
 
+def save_image(image_data: bytes, output_dir: str, image_name: str) -> str:
+    os.makedirs(output_dir, exist_ok=True)
+    image_path = os.path.join(output_dir, image_name)
+    Image.open(BytesIO(image_data)).save(image_path)
+    return image_path
+
+
+def calculate_ssim(image1: Image.Image, image2: Image.Image) -> float:
+    image1_np = np.array(image1.convert("RGB"))
+    image2_np = np.array(image2.convert("RGB"))
+    assert image1_np.shape == image2_np.shape, "Images must have the same dimensions"
+    return ssim(image1_np, image2_np, channel_axis=2)
+
+
+class WorkflowProcessor:
+    def __init__(self, output_images: bool, output_dir: str, baseline_dir: str, logger):
+        self.output_images = output_images
+        self.output_dir = output_dir
+        self.baseline_dir = baseline_dir
+        self.logger = logger
+
+    def process_image(self, image_data: bytes, index: int) -> None:
+        pil_image = Image.open(BytesIO(image_data))
+        self.logger.info(
+            f"Image Size - Height: {pil_image.height}px, Width: {pil_image.width}px"
+        )
+        assert np.array(pil_image).any() != 0, "Image is blank"
+
+        if self.output_images:
+            image_path = save_image(image_data, self.output_dir, f"image_{index}.png")
+            self.logger.info(f"Saved image to: {image_path}")
+
+        if self.baseline_dir:
+            baseline_image_path = os.path.join(self.baseline_dir, f"image_{index}.png")
+            baseline_image = Image.open(baseline_image_path)
+            ssim_value = calculate_ssim(pil_image, baseline_image)
+            self.logger.info(f"SSIM value with baseline: {ssim_value}")
+
+
 def run_workflow(
-    workflow="resources/example_workflow_api.json",
-    comfy_port=DEFAULT_COMFY_PORT,
-    output_images=True,
-):
+    workflow: Union[str, List[str]],
+    comfy_port: str = DEFAULT_COMFY_PORT,
+    output_images: bool = True,
+    baseline_dir: str = None,
+) -> None:
     logger, result_dir = setup_logging(exp_name="exp")
-    logger.info(f"====\n {result_dir=}\n====")
+    logger.info(f"Result directory: {result_dir}")
+
+    processor = WorkflowProcessor(
+        output_images, os.path.join(result_dir, "imgs"), baseline_dir, logger
+    )
 
     with comfy_client_context(port=comfy_port) as client:
-        logger.info(f"Test {workflow}")
-        for i, comfy_graph in enumerate(get_input_constructor(workflow)):
+        logger.info(f"Testing workflows: {workflow}")
+        for i, comfy_graph in enumerate(dispatch_generator(workflow)):
             start_time = time.time()
             images = client.get_images(comfy_graph.graph)
-            assert len(images) != 0, "No images generated"
-            # assert all images are not blank
-            duration = time.time() - start_time
+
+            if not images:
+                logger.error("No images generated")
+                raise ValueError("No images generated")
+            if len(images) != 1:
+                logger.error(
+                    f"Expected 1 image, but got {len(images)} images. Batch Size == 1"
+                )
+                raise ValueError(
+                    f"Expected 1 image, but got {len(images)} images. Batch Size == 1"
+                )
+
             for images_output in images.values():
                 for image_data in images_output:
-                    pil_image = Image.open(BytesIO(image_data))
-                    logger.info(
-                        f"Output Image Size - Height: {pil_image.height}px, Width: {pil_image.width}px"
-                    )
-                    assert numpy.array(pil_image).any() != 0, "Image is blank"
-                    if output_images:
-                        out_img_path = os.path.join(result_dir, "imgs")
-                        os.makedirs(out_img_path, exist_ok=True)
-                        image_path = os.path.join(out_img_path, f"image_{i}.png")
-                        logger.info(f"Saved image to: {image_path}")
-                        pil_image.save(image_path)
+                    processor.process_image(image_data, i)
 
-            logger.info(f"E2E time: {duration} seconds")
+            logger.info(
+                f"Workflow {i} completed in {time.time() - start_time:.2f} seconds"
+            )
 
 
 if __name__ == "__main__":
     args = parse_args()
-    run_workflow(args.workflow, args.comfy_port, args.output_images)
+    run_workflow(args.workflow, args.comfy_port, args.output_images, args.baseline_dir)

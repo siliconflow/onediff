@@ -44,6 +44,7 @@ class SpeedupMixin:
         model,
         inplace: bool = False,
         custom_booster: Optional[BoosterScheduler] = None,
+        booster_settings: Optional[BoosterSettings] = None,
         *args,
         **kwargs
     ) -> Tuple:
@@ -60,7 +61,7 @@ class SpeedupMixin:
         Returns:
             Tuple: Tuple containing the optimized model.
         """
-        if not hasattr(self, "booster_settings"):
+        if booster_settings is None and not hasattr(self, "booster_settings"):
             self.booster_settings = BoosterSettings(tmp_cache_key=str(uuid.uuid4()))
 
         if custom_booster:
@@ -68,7 +69,7 @@ class SpeedupMixin:
             booster.inplace = inplace
         else:
             booster = BoosterScheduler(BasicBoosterExecutor(), inplace=inplace)
-        booster.settings = self.booster_settings
+        booster.settings = self.booster_settings if booster_settings is None else booster_settings
         return (booster(model, *args, **kwargs),)
 
 
@@ -210,18 +211,22 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple, SpeedupMixin):
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_checkpoint"
 
+    def __init__(self) -> None:
+        super().__init__()
+        self.unet_booster_settings = BoosterSettings(tmp_cache_key=str(uuid.uuid4()))
+        self.vae_booster_settings = BoosterSettings(tmp_cache_key=str(uuid.uuid4()))
+
     @torch.inference_mode()
     def onediff_load_checkpoint(
         self, ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None,
     ):
         modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
-
         modelpatcher = self.speedup(
-            modelpatcher, inplace=True, custom_booster=custom_booster
+            modelpatcher, inplace=True, custom_booster=custom_booster, booster_settings=self.unet_booster_settings
         )[0]
 
         if vae_speedup == "enable":
-            vae = self.speedup(vae, inplace=True, custom_booster=custom_booster)[0]
+            vae = self.speedup(vae, inplace=True, custom_booster=custom_booster,booster_settings = self.vae_booster_settings)[0]
 
         # Set weight inplace update
         modelpatcher.weight_inplace_update = True

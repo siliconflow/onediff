@@ -9,3 +9,7 @@
 # python3 scripts/text_to_image.py -w resources/example_workflow_api.json
 # python3 scripts/text_to_image.py -w  resources/baseline/sd3_baseline.json  --output-images
 # python3 scripts/text_to_image.py -w  resources/nexfort/sd3_unet_vae_speedup.json --output-images
+python3 scripts/text_to_image.py \
+    -w resources/baseline/lora.json resources/baseline/lora_multiple.json \
+    --output-images 
+    # --baseline-dir /home/fengwen/worksplace/packages/onediff/onediff_comfy_nodes/benchmarks/results/exp12/imgs

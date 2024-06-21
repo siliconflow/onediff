@@ -4,7 +4,8 @@ This benchmarks the production environment stability by testing:
 - ✅ First AUTOTUNE duration
 - ✅ Startup time with warmup
 - [x] TODO Join CI
-- [x] SSIM 验证准确度
+- [ ] https://github.com/Fannovel16/comfyui_controlnet_aux 耗时测试
+- [ ] SSIM 验证准确度
 
 ##  “disable auto tune”
 https://discuss.pytorch.org/t/how-to-use-auto-tune-with-pytorch/64669

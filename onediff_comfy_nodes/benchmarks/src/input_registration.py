@@ -1,14 +1,13 @@
 import json
 import os
-from typing import NamedTuple
-from core import ComfyGraph, create_constructor_registry, logger
+from typing import Dict, NamedTuple
+from dataclasses import dataclass
+from core.registry import create_generator_registry
+from core.service_client import ComfyGraph
 
 
 class InputParams(NamedTuple):
     graph: ComfyGraph
-    height: int = None 
-    width: int = None
-
 
 
 def read_prompts(file_path="resources/prompts.txt"):
@@ -31,18 +30,19 @@ def get_all_images(
 
 
 # Create register and get functions
-register_constructor, get_input_constructor = create_constructor_registry()
+register_generator, dispatch_generator = create_generator_registry()
 
 
-@register_constructor("resources/example_workflow_api.json")
-def _(workflow_api_file_path):
-    with open(workflow_api_file_path, "r") as fp:
+@register_generator("resources/example_workflow_api.json")
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
     for height in [1024, 768, 512]:
         for width in [1024, 768, 512]:
             graph.set_image_size(height=height, width=width)
-            yield InputParams(graph=graph,height=height, width=width)
+            yield InputParams(graph=graph)
+
 
 SD3_WORKFLOWS = [
     "resources/baseline/sd3_baseline.json",
@@ -51,9 +51,9 @@ SD3_WORKFLOWS = [
 ]
 
 
-@register_constructor(SD3_WORKFLOWS)
-def _(workflow_api_file_path):
-    with open(workflow_api_file_path, "r") as fp:
+@register_generator(SD3_WORKFLOWS)
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
 
     graph = ComfyGraph(graph=workflow, sampler_nodes=["271"])
@@ -63,28 +63,26 @@ def _(workflow_api_file_path):
             for text in texts[-5:]:
                 graph.set_prompt(prompt=text)
                 graph.set_image_size(height=height, width=width)
-                yield InputParams(graph=graph,height=height, width=width)
+                yield InputParams(graph=graph)
 
 
-
-@register_constructor("resources/oneflow/sdxl-control-lora-speedup.json")
-def _(workflow_api_file_path):
-    with open(workflow_api_file_path, "r") as fp:
+@register_generator("resources/oneflow/sdxl-control-lora-speedup.json")
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
 
     graph = ComfyGraph(graph=workflow, sampler_nodes=["1"])
     yield InputParams(graph=graph)
 
 
-
-@register_constructor(
+@register_generator(
     [
         "resources/baseline/ComfyUI_IPAdapter_plus/ipadapter_advanced.json",
         "resources/oneflow/ComfyUI_IPAdapter_plus/ipadapter_advanced.json",
     ]
 )
-def _(workflow_api_file_path):
-    with open(workflow_api_file_path, "r") as fp:
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
 
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
@@ -93,5 +91,31 @@ def _(workflow_api_file_path):
         for height in [768, 512]:
             for width in [768, 512]:
                 graph.set_image_size(height=height, width=width)
-                yield InputParams(graph=graph,height=height, width=width)
+                yield InputParams(graph=graph)
 
+
+@register_generator(
+    [
+        "resources/baseline/lora.json",
+        "resources/baseline/lora_multiple.json",
+        "resources/oneflow/lora_speedup.json",
+        "resources/oneflow/lora_multiple_speedup.json",
+    ]
+)
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
+        workflow = json.load(fp)
+    
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
+    graph.set_prompt("masterpiece best quality girl, hanfu", "bad hands")
+    root_path = "sd15/"
+    checkpoint_nodes = []
+    for  node in graph.graph.values():
+        if node["class_type"] in  ["CheckpointLoaderSimple", "OneDiffCheckpointLoaderSimple"]:
+            checkpoint_nodes.append(node)
+    assert len(checkpoint_nodes) == 1
+    
+    for file_name in ["020.realisticVisionV51_v51VAE.safetensors", "v1-5-pruned-emaonly.ckpt"]:
+        checkpoint_path = os.path.join(root_path, file_name)
+        checkpoint_nodes[0]['inputs']['ckpt_name'] = checkpoint_path
+        yield InputParams(graph=graph)
