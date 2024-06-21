@@ -6,7 +6,7 @@ services:
     image: registry.cn-beijing.aliyuncs.com/oneflow/benchmark-community-default:v1_864
     command: sleep 5400
     privileged: true
-    shm_size: 8g
+    shm_size: 12g
     network_mode: host
     pids_limit: 2000
     cap_add:
