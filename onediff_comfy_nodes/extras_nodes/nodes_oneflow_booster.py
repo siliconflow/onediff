@@ -8,7 +8,9 @@ from comfy import model_management
 from comfy.cli_args import args
 
 from onediff.utils.import_utils import is_onediff_quant_available
-from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
+from onediff.infer_compiler.backends.oneflow.utils.version_util import (
+    is_community_version,
+)
 
 
 from ..modules import BoosterScheduler
@@ -300,8 +302,6 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         self,
         ckpt_name,
         vae_speedup,
-        output_vae=True,
-        output_clip=True,
         static_mode="enable",
         cache_interval=3,
         cache_layer_id=0,
@@ -311,9 +311,7 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
     ):
         print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         # CheckpointLoaderSimple.load_checkpoint
-        modelpatcher, clip, vae = self.load_checkpoint(
-            ckpt_name, output_vae, output_clip
-        )
+        modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
         booster = BoosterScheduler(
             DeepcacheBoosterExecutor(
                 cache_interval=cache_interval,
@@ -610,14 +608,10 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff/Loaders"
         FUNCTION = "onediff_load_checkpoint"
 
-        def onediff_load_checkpoint(
-            self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
-        ):
-            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
 
-            modelpatcher, clip, vae = self.load_checkpoint(
-                ckpt_name, output_vae, output_clip
-            )
+        def onediff_load_checkpoint(self, ckpt_name, vae_speedup):
+            modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             booster = BoosterScheduler(
                 OnelineQuantizationBoosterExecutor(
                     conv_percentage=100,
@@ -665,20 +659,12 @@ if is_onediff_quant_available() and not is_community_version():
         FUNCTION = "onediff_load_checkpoint"
 
         def onediff_load_checkpoint(
-            self,
-            ckpt_name,
-            model_path,
-            compile,
-            vae_speedup,
-            output_vae=True,
-            output_clip=True,
+            self, ckpt_name, model_path, compile, vae_speedup,
         ):
             need_compile = compile == "enable"
             print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
 
-            modelpatcher, clip, vae = self.load_checkpoint(
-                ckpt_name, output_vae, output_clip
-            )
+            modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
             # TODO fix by op.compile
             from ..modules.oneflow.utils.onediff_load_utils import (
                 onediff_load_quant_checkpoint_advanced,
