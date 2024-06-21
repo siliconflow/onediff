@@ -254,10 +254,14 @@ def onediff_controlnet_decorator(func):
 
 
 def compile_controlnet_ldm_unet(sd_model, unet_model, *, options=None):
+    from sgm.modules.attention import BasicTransformerBlock as BasicTransformerBlockSGM
+    from ldm.modules.attention import BasicTransformerBlock as BasicTransformerBlockLDM
+    from sgm.modules.diffusionmodules.openaimodel import ResBlock as ResBlockSGM
+    from ldm.modules.diffusionmodules.openaimodel import ResBlock as ResBlockLDM
     for module in unet_model.modules():
-        if isinstance(module, BasicTransformerBlock):
+        if isinstance(module, (BasicTransformerBlockLDM, BasicTransformerBlockSGM)):
             module.checkpoint = False
-        if isinstance(module, ResBlock):
+        if isinstance(module, (ResBlockLDM, ResBlockSGM)):
             module.use_checkpoint = False
     # TODO: refine here
     compiled_model = oneflow_compile(unet_model, options=options)
