@@ -1,12 +1,24 @@
-import warnings
 from pathlib import Path
 from typing import Dict, Union
 
 from modules.sd_models import select_checkpoint
 
 from onediff.utils import logger
+from onediff.optimization.quant_optimizer import (
+    quantize_model,
+    varify_can_use_quantization,
+)
 
-from .utils import OneDiffCompiledGraph
+
+def quant_unet_oneflow(compiled_unet):
+    if varify_can_use_quantization():
+        calibrate_info = get_calibrate_info(
+            f"{Path(select_checkpoint().filename).stem}_sd_calibrate_info.txt"
+        )
+        compiled_unet = quantize_model(
+            compiled_unet, inplace=False, calibrate_info=calibrate_info
+        )
+    return compiled_unet
 
 
 def get_calibrate_info(filename: str) -> Union[None, Dict]:

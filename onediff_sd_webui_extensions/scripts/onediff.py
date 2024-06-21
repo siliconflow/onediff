@@ -102,6 +102,7 @@ class Script(scripts.Script):
         compiler_cache=None,
         saved_cache_name="",
         always_recompile=False,
+        backend=None,
     ):
         # restore checkpoint_info from refiner to base model if necessary
         if (
@@ -114,6 +115,8 @@ class Script(scripts.Script):
             sd_models.reload_model_weights()
             torch_gc()
             flow.cuda.empty_cache()
+
+        backend = backend or shared.opts.onediff_compiler_backend
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
@@ -141,7 +144,7 @@ class Script(scripts.Script):
         if need_recompile:
             if not onediff_shared.controlnet_enabled:
                 onediff_shared.current_unet_graph = get_compiled_graph(
-                    shared.sd_model, quantization
+                    shared.sd_model, quantization=quantization, backend=backend,
                 )
                 load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:
@@ -165,6 +168,16 @@ def on_ui_settings():
         shared.OptionInfo(
             str(Path(__file__).parent.parent / "compiler_caches"),
             "Directory for onediff compiler caches",
+            section=section,
+        ),
+    )
+    shared.opts.add_option(
+        "onediff_compiler_backend",
+        shared.OptionInfo(
+            "oneflow",
+            "Backend for onediff compiler",
+            gr.Radio,
+            {"choices": ["oneflow", "nexfort"]},
             section=section,
         ),
     )
