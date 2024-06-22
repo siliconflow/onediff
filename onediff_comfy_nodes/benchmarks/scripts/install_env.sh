@@ -9,8 +9,8 @@ fi
 COMFYUI_ROOT=$1
 CUSTOM_NODES=$COMFYUI_ROOT/custom_nodes
 
-if [ ! -d "$directory" ]; then
-  echo "Error: Directory $directory does not exist."
+if [ ! -d "$COMFYUI_ROOT" ]; then
+  echo "Error: Directory $COMFYUI_ROOT does not exist."
   exit 1
 fi
 
