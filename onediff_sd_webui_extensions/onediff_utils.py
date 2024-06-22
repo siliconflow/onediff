@@ -61,23 +61,8 @@ def refresh_all_compiler_caches(path: Path = None):
     all_compiler_caches = [f.stem for f in Path(path).iterdir() if f.is_file()]
 
 
-<<<<<<< HEAD
-def check_structure_change_and_update(current_type: dict[str, bool], model):
-    def get_model_type(model):
-        return {
-            "is_sdxl": model.is_sdxl,
-            "is_sd2": model.is_sd2,
-            "is_sd1": model.is_sd1,
-            "is_ssd": model.is_ssd,
-        }
-
-    changed = current_type != get_model_type(model)
-    current_type.update(**get_model_type(model))
-    return changed
-=======
 def check_structure_change(current_type: dict[str, bool], model):
     return current_type != get_model_type(model)
->>>>>>> main
 
 
 def load_graph(compiled_unet: DeployableModule, compiler_cache: str):
