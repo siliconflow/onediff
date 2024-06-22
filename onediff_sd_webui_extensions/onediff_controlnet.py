@@ -1,6 +1,7 @@
 from functools import wraps
 
 import onediff_shared
+from onediff_utils import check_structure_change
 import oneflow as flow
 import torch
 import torch as th
@@ -15,7 +16,7 @@ from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 from modules import devices
 from modules.sd_hijack_utils import CondFunc
-from onediff_utils import check_structure_change_and_update, singleton_decorator
+from onediff_utils import singleton_decorator
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
@@ -253,10 +254,14 @@ def onediff_controlnet_decorator(func):
 
 
 def compile_controlnet_ldm_unet(sd_model, unet_model, *, options=None):
+    from sgm.modules.attention import BasicTransformerBlock as BasicTransformerBlockSGM
+    from ldm.modules.attention import BasicTransformerBlock as BasicTransformerBlockLDM
+    from sgm.modules.diffusionmodules.openaimodel import ResBlock as ResBlockSGM
+    from ldm.modules.diffusionmodules.openaimodel import ResBlock as ResBlockLDM
     for module in unet_model.modules():
-        if isinstance(module, BasicTransformerBlock):
+        if isinstance(module, (BasicTransformerBlockLDM, BasicTransformerBlockSGM)):
             module.checkpoint = False
-        if isinstance(module, ResBlock):
+        if isinstance(module, (ResBlockLDM, ResBlockSGM)):
             module.use_checkpoint = False
     # TODO: refine here
     compiled_model = oneflow_compile(unet_model, options=options)
@@ -285,8 +290,8 @@ def hijacked_main_entry(self, p):
     sd_ldm = p.sd_model
     unet = sd_ldm.model.diffusion_model
 
-    structure_changed = check_structure_change_and_update(
-        onediff_shared.current_unet_type, sd_ldm
+    structure_changed = check_structure_change(
+        onediff_shared.previous_unet_type, sd_ldm
     )
     if onediff_shared.controlnet_compiled is False or structure_changed:
         onediff_model = TorchOnediffControlNetModel(unet)
