@@ -4,6 +4,9 @@ from typing import NamedTuple
 from core.registry import create_generator_registry
 from core.service_client import ComfyGraph
 
+FACE_IMAGE_DIR = "/share_nfs/hf_models/comfyui_resources/input/faces"
+POSE_IMAGE_DIR = "/share_nfs/hf_models/comfyui_resources/input/poses"
+
 
 class InputParams(NamedTuple):
     graph: ComfyGraph
@@ -16,7 +19,7 @@ def read_prompts(file_path="resources/prompts.txt"):
 
 
 def get_all_images(
-    directory="/share_nfs/hf_models/comfyui_resources/input/faces",
+    directory=FACE_IMAGE_DIR,
     image_extensions=set([".jpg", ".jpeg", ".png", ".gif", ".bmp"]),
 ):
     all_files = [os.path.join(directory, f) for f in os.listdir(directory)]
@@ -127,3 +130,24 @@ def _(workflow_path, *args, **kwargs):
         checkpoint_path = os.path.join(root_path, file_name)
         checkpoint_nodes[0]["inputs"]["ckpt_name"] = checkpoint_path
         yield InputParams(graph=graph)
+
+
+@register_generator(
+    [
+        "resources/baseline/ComfyUI_InstantID/instantid_posed.json",
+        "resources/oneflow/ComfyUI_InstantID/instantid_posed_speedup.json",
+    ]
+)
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
+        workflow = json.load(fp)
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
+
+    face_imgs = get_all_images(FACE_IMAGE_DIR)
+    pose_imgs = get_all_images(POSE_IMAGE_DIR)
+    for face_img in face_imgs:
+        for pose_img in pose_imgs:
+            # print(f'{face_img=} {pose_img=}')
+            graph.graph["13"]["inputs"]["image"] = face_img
+            graph.graph["67"]["inputs"]["image"] = pose_img
+            yield InputParams(graph=graph)
