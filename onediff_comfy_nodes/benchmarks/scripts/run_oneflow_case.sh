@@ -31,13 +31,13 @@ python3 scripts/text_to_image.py \
 
 
 
-# # # Baseline 
-# # python3 scripts/text_to_image.py \
-# #     --comfy-port $COMFY_PORT \
-# #     -w resources/baseline/ComfyUI_InstantID/instantid_posed.json \
-# #     --output-images
-python3 scripts/text_to_image.py \
-    --comfy-port $COMFY_PORT \
-    -w resources/oneflow/ComfyUI_InstantID/instantid_posed_speedup.json \
-    --output-images
-#     --baseline-dir /home/fengwen/worksplace/packages/onediff/onediff_comfy_nodes/benchmarks/results/exp/imgs
+# # # # Baseline 
+# # # python3 scripts/text_to_image.py \
+# # #     --comfy-port $COMFY_PORT \
+# # #     -w resources/baseline/ComfyUI_InstantID/instantid_posed.json \
+# # #     --output-images
+# python3 scripts/text_to_image.py \
+#     --comfy-port $COMFY_PORT \
+#     -w resources/oneflow/ComfyUI_InstantID/instantid_posed_speedup.json \
+#     --output-images
+# #     --baseline-dir /home/fengwen/worksplace/packages/onediff/onediff_comfy_nodes/benchmarks/results/exp/imgs
