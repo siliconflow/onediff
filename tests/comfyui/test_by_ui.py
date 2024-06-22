@@ -40,7 +40,9 @@ docker compose -f tests/comfy-docker-compose.yml down
 """
 import argparse
 import os
+from pathlib import Path
 import time
+from typing import List, Union
 
 from PIL import Image
 from selenium import webdriver
@@ -53,7 +55,11 @@ from selenium.common.exceptions import TimeoutException
 def parse_args():
     parser = argparse.ArgumentParser(description="Test ComfyUI workflow by Selenium.")
     parser.add_argument(
-        "-w", "--workflow", type=str, required=True, help="Workflow file",
+        "-w",
+        "--workflow",
+        type=str,
+        required=True,
+        help="Workflow file or directory containing JSON files.",
     )
     parser.add_argument(
         "-t", "--timeout", type=int, default="200",
@@ -79,6 +85,16 @@ def extract_metadata_from_png(png_file_path):
     metadata = img.info
     img.close()
     return metadata
+
+
+def process_workflow(workflow: Union[str, Path]) -> List[Path]:
+    workflow_path = Path(workflow)
+    if workflow_path.is_file():
+        return [workflow_path]
+    elif workflow_path.is_dir():
+        return list(workflow_path.glob("*.json"))
+    else:
+        return []
 
 
 def read_workflow_json(filename) -> str:
@@ -158,34 +174,35 @@ def launch_prompt(driver):
         time.sleep(0.1)
         start_time = time.time()
 
-        wait_until_app_ready(driver)
+        for workflow_path in process_workflow(args.workflow):
+            wait_until_app_ready(driver)
 
-        print("clear the workflow...")
-        clear_curernt_workflow(driver)
-        print("workflow cleard")
+            print("clear the workflow...")
+            clear_curernt_workflow(driver)
+            print("workflow cleard")
 
-        print("load the target workflow...")
-        load_workflow_graph(driver, read_workflow_json(args.workflow))
-        print(f"{args.workflow} loaded")
+            print("load the target workflow...")
+            load_workflow_graph(driver, read_workflow_json(workflow_path))
+            print(f"{workflow_path} loaded")
 
-        print("check the nodes type of workflow...")
-        check_graph_node_types(driver)
-        print(f"{args.workflow} workflow checked")
+            print("check the nodes type of workflow...")
+            check_graph_node_types(driver)
+            print(f"{workflow_path} workflow checked")
 
-        print(f"launch the queue prompt (timeout: {args.timeout}s) ...")
-        launch_and_wait(driver, timeout=args.timeout)
+            print(f"launch the queue prompt (timeout: {args.timeout}s) ...")
+            launch_and_wait(driver, timeout=args.timeout)
 
-        duration = time.time() - start_time
-        print(
-            f"{args.workflow} has finished, time elapsed: {duration:.1f}"
-        )
-        
-        if duration < 2:
-            raise ValueError("Execution duration is too short, possible error in workflow execution")
+            duration = time.time() - start_time
+            print(f"{workflow_path} has finished, time elapsed: {duration:.1f}")
 
-        print(f"check if error occurs...")
-        check_error_occurs(driver)
-        print(f"no error occurs when executing workflow")
+            if duration < 2:
+                raise ValueError(
+                    "Execution duration is too short, possible error in workflow execution"
+                )
+
+            print(f"check if error occurs...")
+            check_error_occurs(driver)
+            print(f"no error occurs when executing workflow")
     except TimeoutException:
         print("Time out")
         exit(1)
