@@ -4,18 +4,18 @@ set -e
 STANDARD_OUTPUT=/share_nfs/hf_models/comfyui_resources/standard_output
 COMFY_PORT=8188
 
-# python3 scripts/text_to_image.py \
-#     --comfy-port $COMFY_PORT \
-#     -w resources/oneflow/sdxl-control-lora-speedup.json 
+python3 scripts/text_to_image.py \
+    --comfy-port $COMFY_PORT \
+    -w resources/oneflow/sdxl-control-lora-speedup.json 
 
 # # Baseline 
 # python3 scripts/text_to_image.py \
 #     -w resources/baseline/lora.json resources/baseline/lora_multiple.json \
 #     --output-images 
-# python3 scripts/text_to_image.py \
-#     --comfy-port $COMFY_PORT \
-#     -w resources/oneflow/lora_speedup.json resources/oneflow/lora_multiple_speedup.json \
-#     --baseline-dir $STANDARD_OUTPUT/test_lora_speedup 
+python3 scripts/text_to_image.py \
+    --comfy-port $COMFY_PORT \
+    -w resources/oneflow/lora_speedup.json resources/oneflow/lora_multiple_speedup.json \
+    --baseline-dir $STANDARD_OUTPUT/test_lora_speedup 
 
 # # Baseline 
 # python3 scripts/text_to_image.py \
