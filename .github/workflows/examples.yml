@@ -306,8 +306,11 @@ jobs:
           # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
           # run_comfy_test "workflows/text-to-video-speedup.json" 5000
           docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
-          docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/run_oneflow_case.sh
-
+          docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/run_oneflow_case.sh || {
+              echo "test_by_ui.py fails! print the ComfyUI logs..."
+              docker exec onediff-test cat /app/ComfyUI/onediff_comfyui.log
+              false
+            }
 
       - name: Show ComfyUI Log
         if: matrix.test-suite == 'comfy'

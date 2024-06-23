@@ -17,7 +17,6 @@ python3 scripts/text_to_image.py \
     -w resources/oneflow/lora_speedup.json resources/oneflow/lora_multiple_speedup.json \
     --baseline-dir $STANDARD_OUTPUT/test_lora_speedup 
 
-
 # # Baseline 
 # python3 scripts/text_to_image.py \
 #      --comfy-port $COMFY_PORT \ 
