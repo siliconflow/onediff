@@ -4,9 +4,9 @@ set -e
 STANDARD_OUTPUT=/share_nfs/hf_models/comfyui_resources/standard_output
 COMFY_PORT=8188
 
-python3 scripts/text_to_image.py \
-    --comfy-port $COMFY_PORT \
-    -w  resources/oneflow/sdxl-control-lora-speedup.json 
+# python3 scripts/text_to_image.py \
+#     --comfy-port $COMFY_PORT \
+#     -w resources/oneflow/sdxl-control-lora-speedup.json 
 
 # # Baseline 
 # python3 scripts/text_to_image.py \
