@@ -29,7 +29,6 @@ python3 scripts/text_to_image.py \
     --baseline-dir $STANDARD_OUTPUT/test_ipa
 
 
-
 # # # # Baseline 
 # # # python3 scripts/text_to_image.py \
 # # #     --comfy-port $COMFY_PORT \
