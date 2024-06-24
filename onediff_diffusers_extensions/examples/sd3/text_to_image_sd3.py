@@ -14,7 +14,7 @@ def parse_args():
     parser.add_argument(
         "--model",
         type=str,
-        default="stabilityai/stable-diffusion-3-medium",
+        default="stabilityai/stable-diffusion-3-medium-diffusers",
         help="Model path or identifier.",
     )
     parser.add_argument(
@@ -30,10 +30,19 @@ def parse_args():
         help="Prompt for the image generation.",
     )
     parser.add_argument(
+        "--negative_prompt",
+        type=str,
+        default="",
+        help="Negative prompt for the image generation.",
+    )
+    parser.add_argument(
         "--height", type=int, default=1024, help="Height of the generated image."
     )
     parser.add_argument(
         "--width", type=int, default=1024, help="Width of the generated image."
+    )
+    parser.add_argument(
+        "--guidance_scale", type=float, default=4.5, help="The scale factor for the guidance."
     )
     parser.add_argument(
         "--num-inference-steps", type=int, default=28, help="Number of inference steps."
@@ -119,9 +128,12 @@ class SD3Generator:
         warmup_args["generator"] = torch.Generator(device=device).manual_seed(0)
 
         print("Starting warmup...")
+        start_time = time.time()
         for _ in range(warmup_iterations):
             self.pipe(**warmup_args)
+        end_time = time.time()
         print("Warmup complete.")
+        print(f"Warmup time: {end_time - start_time:.2f} seconds")
 
     def generate(self, gen_args):
         gen_args["generator"] = torch.Generator(device=device).manual_seed(args.seed)
@@ -166,6 +178,8 @@ def main():
         "num_inference_steps": args.num_inference_steps,
         "height": args.height,
         "width": args.width,
+        "guidance_scale": args.guidance_scale,
+        "negative_prompt": args.negative_prompt,
     }
 
     sd3.warmup(gen_args)
