@@ -6,14 +6,15 @@ from compile.oneflow.mock.common import (
     GroupNorm32Oflow,
     timestep_embedding,
 )
-from ldm.modules.attention import BasicTransformerBlock, CrossAttention
-from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
+from ldm.modules.attention import CrossAttention
+from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 from modules import devices
 
-from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 
 cond_cast_unet = getattr(devices, "cond_cast_unet", lambda x: x)
+
 
 # https://github.com/Mikubill/sd-webui-controlnet/blob/8bbbd0e55ef6e5d71b09c2de2727b36e7bc825b0/scripts/hook.py#L238
 def torch_aligned_adding(base, x, require_channel_alignment):

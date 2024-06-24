@@ -1,12 +1,16 @@
 import os
-from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from textwrap import dedent
 from zipfile import BadZipFile
 
 import onediff_shared
-import oneflow as flow
+
+from onediff.utils.import_utils import is_oneflow_available
+
+if is_oneflow_available():
+    import oneflow as flow
+from compile import is_oneflow_backend
 from modules import shared
 from modules.devices import torch_gc
 
@@ -123,7 +127,8 @@ def onediff_enabled_decorator(func):
             onediff_shared.onediff_enabled = False
             onediff_shared.previous_unet_type.update(**get_model_type(shared.sd_model))
             torch_gc()
-            flow.cuda.empty_cache()
+            if is_oneflow_backend():
+                flow.cuda.empty_cache()
 
     return wrapper
 
@@ -151,5 +156,5 @@ def get_model_type(model):
 
 def onediff_gc():
     torch_gc()
-    if shared.opts.onediff_compiler_backend == "oneflow":
+    if is_oneflow_backend():
         flow.cuda.empty_cache()

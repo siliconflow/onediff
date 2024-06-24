@@ -3,7 +3,7 @@ from ldm.modules.attention import CrossAttention, SpatialTransformer
 from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
 
-from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 
 from .common import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
 

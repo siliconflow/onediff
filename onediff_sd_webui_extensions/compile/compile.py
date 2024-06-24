@@ -2,8 +2,15 @@ from modules.sd_hijack import apply_optimizations
 
 from onediff.infer_compiler import compile, oneflow_compile
 
+from compile import OneDiffBackend
+
 from .quantization import quant_unet_oneflow
-from .utils import OneDiffCompiledGraph, disable_unet_checkpointing
+from .utils import (
+    OneDiffCompiledGraph,
+    disable_unet_checkpointing,
+    is_nexfort_backend,
+    is_oneflow_backend,
+)
 
 
 def get_compiled_graph(
@@ -16,12 +23,18 @@ def get_compiled_graph(
     return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)
 
 
-def onediff_compile(unet_model, *, quantization=False, backend="oneflow", options=None):
-    if backend == "oneflow":
+def onediff_compile(
+    unet_model,
+    *,
+    quantization: bool = False,
+    backend: OneDiffBackend = None,
+    options=None,
+):
+    if is_oneflow_backend(backend):
         return compile_unet_oneflow(
             unet_model, quantization=quantization, options=options
         )
-    elif backend == "nexfort":
+    elif is_nexfort_backend(backend):
         return compile_unet_nexfort(
             unet_model, quantization=quantization, options=options
         )

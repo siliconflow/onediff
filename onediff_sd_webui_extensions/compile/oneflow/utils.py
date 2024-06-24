@@ -1,13 +1,12 @@
 from onediff_utils import singleton_decorator
 
 from onediff.infer_compiler.backends.oneflow.transform import register
+from onediff.utils.import_utils import is_oneflow_available
 
 
 @singleton_decorator
 def init_oneflow_backend():
-    try:
-        import oneflow as flow
-    except ImportError:
+    if not is_oneflow_available():
         raise RuntimeError(
             "Backend oneflow for OneDiff is invalid, please make sure you have installed OneFlow"
         )
@@ -20,5 +19,3 @@ def init_oneflow_backend():
         package_names=["scripts.hook"],
         torch2oflow_class_map=controlnet.torch2oflow_class_map,
     )
-
-

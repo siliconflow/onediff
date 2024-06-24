@@ -3,10 +3,12 @@ from typing import Union
 
 import torch
 from ldm.modules.diffusionmodules.openaimodel import UNetModel as LdmUNetModel
-from modules import sd_models_types
+from modules import sd_models_types, shared
 from sgm.modules.diffusionmodules.openaimodel import UNetModel as SgmUNetModel
 
 from onediff.infer_compiler import DeployableModule
+
+from .backend import OneDiffBackend
 
 
 def disable_unet_checkpointing(
@@ -23,6 +25,18 @@ def disable_unet_checkpointing(
         if isinstance(module, (LdmResBlock, SgmResBlock)):
             module.use_checkpoint = False
     return unet_model
+
+
+def get_onediff_backend() -> OneDiffBackend:
+    return OneDiffBackend(shared.opts.onediff_compiler_backend)
+
+
+def is_oneflow_backend(backend: Union[OneDiffBackend, None] = None) -> bool:
+    return (backend or get_onediff_backend()) == OneDiffBackend.ONEFLOW
+
+
+def is_nexfort_backend(backend: Union[OneDiffBackend, None] = None) -> bool:
+    return (backend or get_onediff_backend()) == OneDiffBackend.NEXFORT
 
 
 @dataclasses.dataclass

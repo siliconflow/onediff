@@ -6,10 +6,17 @@ import modules.sd_models as sd_models
 import modules.shared as shared
 import onediff_controlnet
 import onediff_shared
-from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
+from compile import (
+    OneDiffBackend,
+    SD21CompileCtx,
+    VaeCompileCtx,
+    get_compiled_graph,
+    get_onediff_backend,
+    is_nexfort_backend,
+    is_oneflow_backend,
+)
 from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
-from modules.devices import torch_gc
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
@@ -115,18 +122,17 @@ class Script(scripts.Script):
             sd_models.reload_model_weights()
             onediff_gc()
 
-        backend = backend or shared.opts.onediff_compiler_backend
+        backend = backend or get_onediff_backend()
 
-        if backend == "oneflow":
+        # init backend
+        if is_oneflow_backend(backend):
             from compile.oneflow.utils import init_oneflow_backend
 
             init_oneflow_backend()
-        elif backend == "nexfort":
+        elif is_nexfort_backend(backend):
             from compile.nexfort.utils import init_nexfort_backend
 
             init_nexfort_backend()
-
-        backend = backend or shared.opts.onediff_compiler_backend
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
@@ -187,7 +193,7 @@ def on_ui_settings():
             "oneflow",
             "Backend for onediff compiler",
             gr.Radio,
-            {"choices": ["oneflow", "nexfort"]},
+            {"choices": [OneDiffBackend.ONEFLOW, OneDiffBackend.NEXFORT]},
             section=section,
         ),
     )

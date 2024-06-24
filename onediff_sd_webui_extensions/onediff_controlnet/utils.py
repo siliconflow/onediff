@@ -1,5 +1,7 @@
 from functools import wraps
+
 import onediff_shared
+
 
 def check_if_controlnet_ext_loaded() -> bool:
     from modules import extensions
@@ -20,4 +22,3 @@ def check_if_controlnet_enabled(p):
         controlnet_script_class is not None
         and len(controlnet_script_class.get_enabled_units(p)) != 0
     )
-
