@@ -2,8 +2,8 @@ from modules.sd_hijack import apply_optimizations
 
 from onediff.infer_compiler import compile, oneflow_compile
 
-from .utils import OneDiffCompiledGraph, disable_unet_checkpointing
 from .quantization import quant_unet_oneflow
+from .utils import OneDiffCompiledGraph, disable_unet_checkpointing
 
 
 def get_compiled_graph(

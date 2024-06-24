@@ -6,7 +6,6 @@ import modules.sd_models as sd_models
 import modules.shared as shared
 import onediff_controlnet
 import onediff_shared
-import oneflow as flow
 from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
 from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
@@ -21,6 +20,7 @@ from onediff_utils import (
     hints_message,
     load_graph,
     onediff_enabled_decorator,
+    onediff_gc,
     refresh_all_compiler_caches,
     save_graph,
 )
@@ -113,10 +113,18 @@ class Script(scripts.Script):
         ):
             p.override_settings.pop("sd_model_checkpoint", None)
             sd_models.reload_model_weights()
-            torch_gc()
-            flow.cuda.empty_cache()
+            onediff_gc()
 
         backend = backend or shared.opts.onediff_compiler_backend
+
+        if backend == "oneflow":
+            from compile.oneflow.utils import init_oneflow_backend
+
+            init_oneflow_backend()
+        elif backend == "nexfort":
+            from compile.nexfort.utils import init_nexfort_backend
+
+            init_nexfort_backend()
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (

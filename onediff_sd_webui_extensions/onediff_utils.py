@@ -7,8 +7,8 @@ from zipfile import BadZipFile
 
 import onediff_shared
 import oneflow as flow
-from modules.devices import torch_gc
 from modules import shared
+from modules.devices import torch_gc
 
 from onediff.infer_compiler import DeployableModule
 
@@ -139,6 +139,7 @@ def singleton_decorator(func):
 
     return wrapper
 
+
 def get_model_type(model):
     return {
         "is_sdxl": model.is_sdxl,
@@ -146,3 +147,9 @@ def get_model_type(model):
         "is_sd1": model.is_sd1,
         "is_ssd": model.is_ssd,
     }
+
+
+def onediff_gc():
+    torch_gc()
+    if shared.opts.onediff_compiler_backend == "oneflow":
+        flow.cuda.empty_cache()

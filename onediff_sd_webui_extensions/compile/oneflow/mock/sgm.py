@@ -67,4 +67,3 @@ torch2oflow_class_map = {
     SpatialTransformer: SpatialTransformerOflow,
     UNetModel: UNetModelOflow,
 }
-register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
