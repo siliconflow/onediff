@@ -4,7 +4,9 @@ from .hijack import hijack_controlnet_extension
 import onediff_shared
 from functools import wraps
 from onediff.infer_compiler import oneflow_compile
-from compile.utils import disable_unet_checkpointing
+from compile.utils import disable_unet_checkpointing, OneDiffCompiledGraph
+
+
 def onediff_controlnet_decorator(func):
     @wraps(func)
     # TODO: restore hijacked func here
