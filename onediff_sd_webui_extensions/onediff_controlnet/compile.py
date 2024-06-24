@@ -1,18 +1,16 @@
 from functools import wraps
-import networks
 
+import networks
 import onediff_shared
+from compile import get_compiled_graph
 from compile.utils import (
     disable_unet_checkpointing,
     is_nexfort_backend,
     is_oneflow_backend,
 )
-from compile import get_compiled_graph
 
 from .hijack import hijack_controlnet_extension
 from .utils import check_if_controlnet_enabled
-
-from compile.oneflow.mock.controlnet import OneFlowOnediffControlNetModel
 
 
 def onediff_controlnet_decorator(func):
@@ -36,7 +34,10 @@ def onediff_controlnet_decorator(func):
 
 def compile_controlnet_ldm_unet(sd_model, unet_model, *, backend=None, options=None):
     if is_oneflow_backend():
+        from compile.oneflow.mock.controlnet import OneFlowOnediffControlNetModel
+
         from onediff.infer_compiler.backends.oneflow.transform import register
+
         from .model import OnediffControlNetModel
 
         register(

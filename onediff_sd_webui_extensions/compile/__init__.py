@@ -4,9 +4,9 @@ from .sd2 import SD21CompileCtx
 from .utils import (
     OneDiffCompiledGraph,
     get_onediff_backend,
+    init_backend,
     is_nexfort_backend,
     is_oneflow_backend,
-    init_backend,
 )
 from .vae import VaeCompileCtx
 

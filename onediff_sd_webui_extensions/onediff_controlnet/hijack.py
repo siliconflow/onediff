@@ -9,9 +9,8 @@ from .utils import get_controlnet_script
 
 
 def hijacked_main_entry(self, p):
-    from .model import OnediffControlNetModel
-
     from .compile import compile_controlnet_ldm_unet
+    from .model import OnediffControlNetModel
 
     self._original_controlnet_main_entry(p)
     sd_ldm = p.sd_model

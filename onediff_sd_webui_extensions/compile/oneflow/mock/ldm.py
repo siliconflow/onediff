@@ -8,6 +8,14 @@ from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 from .common import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
 
 
+def cat(tensors, *args, **kwargs):
+    if len(tensors) == 2:
+        a, b = tensors
+        a = flow.nn.functional.interpolate_like(a, like=b, mode="nearest")
+        tensors = (a, b)
+    return flow.cat(tensors, *args, **kwargs)
+
+
 # https://github.com/Stability-AI/stablediffusion/blob/b4bdae9916f628461e1e4edbc62aafedebb9f7ed/ldm/modules/diffusionmodules/openaimodel.py#L775
 class UNetModelOflow(proxy_class(UNetModel)):
     def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
@@ -28,7 +36,7 @@ class UNetModelOflow(proxy_class(UNetModel)):
             hs.append(h)
         h = self.middle_block(h, emb, context)
         for module in self.output_blocks:
-            h = flow.cat([h, hs.pop()], dim=1)
+            h = cat([h, hs.pop()], dim=1)
             h = module(h, emb, context)
         if self.predict_codebook_ids:
             return self.id_predictor(h)

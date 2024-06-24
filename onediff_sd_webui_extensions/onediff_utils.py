@@ -5,17 +5,18 @@ from textwrap import dedent
 from zipfile import BadZipFile
 
 import onediff_shared
+from importlib_metadata import version
 
 from onediff.utils.import_utils import is_oneflow_available
 
 if is_oneflow_available():
     import oneflow as flow
-from compile import is_oneflow_backend
+
+from compile import init_backend, is_oneflow_backend
 from modules import shared
 from modules.devices import torch_gc
 
 from onediff.infer_compiler import DeployableModule
-from compile import init_backend
 
 hints_message = dedent(
     """\
@@ -174,3 +175,18 @@ def onediff_gc():
     torch_gc()
     if is_oneflow_backend():
         flow.cuda.empty_cache()
+
+
+def varify_can_use_quantization():
+    try:
+        import oneflow
+
+        if version("oneflow") < "0.9.1":
+            return False
+    except ImportError as e:
+        return False
+    try:
+        import onediff_quant
+    except ImportError as e:
+        return False
+    return hasattr(oneflow._C, "dynamic_quantization")

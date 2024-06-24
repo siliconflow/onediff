@@ -1,10 +1,8 @@
+from compile import OneDiffBackend
 from modules.sd_hijack import apply_optimizations
 
 from onediff.infer_compiler import compile, oneflow_compile
 
-from compile import OneDiffBackend
-
-from .quantization import quant_unet_oneflow
 from .utils import (
     OneDiffCompiledGraph,
     disable_unet_checkpointing,
@@ -57,6 +55,8 @@ def compile_unet_oneflow(unet_model, *, quantization=False, options=None):
 
     compiled_unet_model = oneflow_compile(unet_model, options=options)
     if quantization:
+        from .quantization import quant_unet_oneflow
+
         compiled_unet_model = quant_unet_oneflow(compiled_unet_model)
     return compiled_unet_model
 

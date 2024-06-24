@@ -21,6 +21,8 @@ from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
+
+# from onediff.optimization.quant_optimizer import varify_can_use_quantization
 from onediff_utils import (
     check_structure_change,
     get_all_compiler_caches,
@@ -30,9 +32,9 @@ from onediff_utils import (
     onediff_gc,
     refresh_all_compiler_caches,
     save_graph,
+    varify_can_use_quantization,
 )
 
-from onediff.optimization.quant_optimizer import varify_can_use_quantization
 from onediff.utils import logger, parse_boolean_from_env
 
 """oneflow_compiled UNetModel"""
