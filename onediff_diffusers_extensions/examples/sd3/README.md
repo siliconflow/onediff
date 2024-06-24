@@ -59,7 +59,7 @@ Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
 | PyTorch Max Mem Used                             | 18.784 GiB                          |
 | OneDiff Max Mem Used                             | 18.324 GiB                          |
 | PyTorch Warmup with Run time                     | TODO                                |
-| OneDiff Warmup with Compilation time<sup>3</sup> | TODO                                |
+| OneDiff Warmup with Compilation time<sup>1</sup> | TODO                                |
 | OneDiff Warmup with Cache time                   | TODO                                |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU.
@@ -76,7 +76,7 @@ Testing on 4090:
 | PyTorch Max Mem Used                             | 18.799 GiB                          |
 | OneDiff Max Mem Used                             | 17.902 GiB                          |
 | PyTorch Warmup with Run time                     | 4.99 s                              |
-| OneDiff Warmup with Compilation time<sup>3</sup> | 302.79 s                            |
+| OneDiff Warmup with Compilation time<sup>2</sup> | 302.79 s                            |
 | OneDiff Warmup with Cache time                   | 51.96 s                             |
 
  <sup>2</sup> AMD EPYC 7543 32-Core Processor
