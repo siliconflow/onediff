@@ -22,12 +22,11 @@ from utils import (
     get_threshold,
 )
 
-THRESHOLD = 0.97
 
 @pytest.fixture(scope="session", autouse=True)
 def change_model():
     option_payload = {
-        "sd_model_checkpoint": "checkpoints/AWPainting_v1.2.safetensors",
+        "sd_model_checkpoint": "AWPainting_v1.2.safetensors",
     }
     post_request_and_check(f"{WEBUI_SERVER_URL}/{OPTIONS_API_ENDPOINT}", option_payload)
 
