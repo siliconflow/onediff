@@ -77,7 +77,7 @@ Testing on 4090:
 | OneDiff Max Mem Used                             | 17.902 GiB                          |
 | PyTorch Warmup with Run time                     | 4.99 s                              |
 | OneDiff Warmup with Compilation time<sup>3</sup> | 302.79 s                            |
-| OneDiff Warmup with Cache time                   | 118.94 s                            |
+| OneDiff Warmup with Cache time                   | 51.96 s                             |
 
  <sup>2</sup> AMD EPYC 7543 32-Core Processor
 
