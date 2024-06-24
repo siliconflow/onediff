@@ -95,6 +95,17 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --run_multiple_resolutions 1 \
     --saved-image sd3_compile.png
 ```
+## Quantization
+
+TODO
+
+Run:
+
+python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
+    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision:freezing:benchmark", "memory_format": "channels_last"}' \
+    --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}' \
+    --quant-submodules-config-path /home/lixiang/onediff/test.json \
+    --saved-image sd3_fp8_90%.png
 
 ## Quality
 When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.

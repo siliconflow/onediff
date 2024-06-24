@@ -66,6 +66,7 @@ def parse_args():
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
         default=False,
     )
+    parser.add_argument("--quant-submodules-config-path", type=str, default=None)
     return parser.parse_args()
 
 
@@ -155,7 +156,17 @@ class SD3Generator:
         return pipe
 
     def quantize_pipe(self, pipe, quantize_config):
-        pipe = quantize_pipe(pipe, ignores=[], **quantize_config)
+        if args.quant_submodules_config_path:
+            # download: 
+            pipe = quantize_pipe(
+                pipe,
+                quant_submodules_config_path=args.quant_submodules_config_path,
+                top_percentage=70,
+                ignores=[],
+                **quantize_config,
+            )
+        else:
+            pipe = quantize_pipe(pipe, ignores=[], **quantize_config)
         return pipe
 
 
