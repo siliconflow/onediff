@@ -29,6 +29,7 @@ os.makedirs(TXT2IMG_TARGET_FOLDER, exist_ok=True)
 def get_base_args() -> Dict[str, Any]:
     return {
         "prompt": "1girl",
+        "sd_model_checkpoint": "AWPainting_v1.2.safetensors",
         "negative_prompt": "",
         "seed": SEED,
         "steps": NUM_STEPS,
@@ -59,10 +60,16 @@ def get_extra_args() -> List[Dict[str, Any]]:
         {"init_images": [get_init_image()]},
     ]
 
-    return [
-        quant_args,
-        txt2img_args,
+    refiner_args = [
+        {},
+        {
+            "refiner": True,
+            "refiner_checkpoint": "sd_xl_refiner_1.0",
+            "refiner_switch_at": 0.8,
+        },
     ]
+
+    return [quant_args, txt2img_args, refiner_args]
 
 
 def get_all_args() -> Iterable[Dict[str, Any]]:
@@ -75,6 +82,10 @@ def get_all_args() -> Iterable[Dict[str, Any]]:
 
 def is_txt2img(data: Dict[str, Any]) -> bool:
     return "init_images" not in data
+
+
+def is_refiner(data: Dict[str, Any]) -> bool:
+    return "refiner" in data
 
 
 def is_quant(data: Dict[str, Any]) -> bool:
@@ -127,7 +138,9 @@ def get_target_image_filename(data: Dict[str, Any]) -> str:
 
     txt2img_str = "txt2img" if is_txt2img(data) else "img2img"
     quant_str = "-quant" if is_quant(data) else ""
-    return f"{parent_path}/onediff{quant_str}-{txt2img_str}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
+    refiner_str = "-refiner" if is_refiner(data) else ""
+
+    return f"{parent_path}/onediff{quant_str}{refiner_str}-{txt2img_str}-w{WIDTH}-h{HEIGHT}-seed-{SEED}-numstep-{NUM_STEPS}.png"
 
 
 def check_and_generate_images():
@@ -144,6 +157,7 @@ def get_data_summary(data: Dict[str, Any]) -> Dict[str, bool]:
     return {
         "is_txt2img": is_txt2img(data),
         "is_quant": is_quant(data),
+        "is_refiner": is_refiner(data),
     }
 
 

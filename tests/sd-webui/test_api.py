@@ -20,13 +20,14 @@ from utils import (
     post_request_and_check,
     dump_image,
     get_threshold,
+
 )
 
 
 @pytest.fixture(scope="session", autouse=True)
 def change_model():
     option_payload = {
-        "sd_model_checkpoint": "checkpoints/AWPainting_v1.2.safetensors",
+        "sd_model_checkpoint": "AWPainting_v1.2.safetensors",
     }
     post_request_and_check(f"{WEBUI_SERVER_URL}/{OPTIONS_API_ENDPOINT}", option_payload)
 
@@ -64,6 +65,7 @@ def test_image_ssim(base_url, data):
     url = f"{base_url}/{endpoint}"
     generated_image = get_image_array_from_response(post_request_and_check(url, data))
     target_image_path = get_target_image_filename(data)
+    directory, filename = os.path.split(target_image_path)
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
     if ssim_value < get_threshold(data):
