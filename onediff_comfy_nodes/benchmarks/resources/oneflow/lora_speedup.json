@@ -98,7 +98,7 @@
   "11": {
     "inputs": {
       "ckpt_name": "v1-5-pruned-emaonly.ckpt",
-      "vae_speedup": "enable"
+      "vae_speedup": "disable"
     },
     "class_type": "OneDiffCheckpointLoaderSimple",
     "_meta": {

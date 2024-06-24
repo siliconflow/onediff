@@ -171,7 +171,7 @@
   "18": {
     "inputs": {
       "ckpt_name": "sd15/020.realisticVisionV51_v51VAE.safetensors",
-      "vae_speedup": "enable"
+      "vae_speedup": "disable"
     },
     "class_type": "OneDiffCheckpointLoaderSimple",
     "_meta": {
