@@ -1,10 +1,14 @@
 import os
 from contextlib import contextmanager
+from functools import wraps
 from pathlib import Path
 from textwrap import dedent
 from zipfile import BadZipFile
 
 import onediff_shared
+import oneflow as flow
+from modules.devices import torch_gc
+from modules import shared
 
 from onediff.infer_compiler import DeployableModule
 
@@ -57,6 +61,10 @@ def refresh_all_compiler_caches(path: Path = None):
     all_compiler_caches = [f.stem for f in Path(path).iterdir() if f.is_file()]
 
 
+def check_structure_change(current_type: dict[str, bool], model):
+    return current_type != get_model_type(model)
+
+
 def load_graph(compiled_unet: DeployableModule, compiler_cache: str):
     from compile import OneDiffCompiledGraph
 
@@ -105,10 +113,36 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
         compiled_unet.save_graph(saved_cache_name)
 
 
-@contextmanager
-def onediff_enabled():
-    onediff_shared.onediff_enabled = True
-    try:
-        yield
-    finally:
-        onediff_shared.onediff_enabled = False
+def onediff_enabled_decorator(func):
+    @wraps(func)
+    def wrapper(self, p, *arg, **kwargs):
+        onediff_shared.onediff_enabled = True
+        try:
+            return func(self, p, *arg, **kwargs)
+        finally:
+            onediff_shared.onediff_enabled = False
+            onediff_shared.previous_unet_type.update(**get_model_type(shared.sd_model))
+            torch_gc()
+            flow.cuda.empty_cache()
+
+    return wrapper
+
+
+def singleton_decorator(func):
+    has_been_called = False
+
+    def wrapper(*args, **kwargs):
+        nonlocal has_been_called
+        if not has_been_called:
+            has_been_called = True
+            return func(*args, **kwargs)
+
+    return wrapper
+
+def get_model_type(model):
+    return {
+        "is_sdxl": model.is_sdxl,
+        "is_sd2": model.is_sd2,
+        "is_sd1": model.is_sd1,
+        "is_ssd": model.is_ssd,
+    }
