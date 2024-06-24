@@ -1,25 +1,14 @@
 import oneflow as flow
-from sgm.modules.attention import (
-    BasicTransformerBlock,
-    CrossAttention,
-    SpatialTransformer,
-)
-from sgm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
-from sgm.modules.diffusionmodules.util import GroupNorm32
+from ldm.modules.attention import CrossAttention, SpatialTransformer
+from ldm.modules.diffusionmodules.openaimodel import UNetModel
+from ldm.modules.diffusionmodules.util import GroupNorm32
 
-from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
 
-from .sd_webui_onediff_utils import (
-    CrossAttentionOflow,
-    GroupNorm32Oflow,
-    timestep_embedding,
-)
-
-__all__ = ["compile_sgm_unet"]
+from .common import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
 
 
-# https://github.com/Stability-AI/generative-models/blob/059d8e9cd9c55aea1ef2ece39abf605efb8b7cc9/sgm/modules/diffusionmodules/openaimodel.py#L816
+# https://github.com/Stability-AI/stablediffusion/blob/b4bdae9916f628461e1e4edbc62aafedebb9f7ed/ldm/modules/diffusionmodules/openaimodel.py#L775
 class UNetModelOflow(proxy_class(UNetModel)):
     def forward(self, x, timesteps=None, context=None, y=None, **kwargs):
         assert (y is not None) == (
@@ -29,8 +18,7 @@ class UNetModelOflow(proxy_class(UNetModel)):
         t_emb = timestep_embedding(timesteps, self.model_channels).half()
         emb = self.time_embed(t_emb)
         x = x.half()
-        context = context.half() if context is not None else context
-        y = y.half() if y is not None else y
+        context = context.half()
         if self.num_classes is not None:
             assert y.shape[0] == x.shape[0]
             emb = emb + self.label_emb(y)
@@ -42,12 +30,14 @@ class UNetModelOflow(proxy_class(UNetModel)):
         for module in self.output_blocks:
             h = flow.cat([h, hs.pop()], dim=1)
             h = module(h, emb, context)
-        h = h.type(x.dtype)
-        return self.out(h)
+        if self.predict_codebook_ids:
+            return self.id_predictor(h)
+        else:
+            return self.out(h)
 
 
 class SpatialTransformerOflow(proxy_class(SpatialTransformer)):
-    # https://github.com/Stability-AI/generative-models/blob/059d8e9cd9c55aea1ef2ece39abf605efb8b7cc9/sgm/modules/attention.py#L702
+    # https://github.com/Stability-AI/stablediffusion/blob/e1797ae248408ea47561eeb8755737f1e35784f2/ldm/modules/attention.py#L321
     def forward(self, x, context=None):
         # note: if no context is given, cross-attention defaults to self-attention
         if not isinstance(context, list):
@@ -61,8 +51,6 @@ class SpatialTransformerOflow(proxy_class(SpatialTransformer)):
         if self.use_linear:
             x = self.proj_in(x)
         for i, block in enumerate(self.transformer_blocks):
-            if i > 0 and len(context) == 1:
-                i = 0  # use same context for each block
             x = block(x, context=context[i])
         if self.use_linear:
             x = self.proj_out(x)
@@ -78,15 +66,5 @@ torch2oflow_class_map = {
     SpatialTransformer: SpatialTransformerOflow,
     UNetModel: UNetModelOflow,
 }
-register(package_names=["sgm"], torch2oflow_class_map=torch2oflow_class_map)
 
-
-def compile_sgm_unet(unet_model, *, options=None):
-    if not isinstance(unet_model, UNetModel):
-        return
-    for module in unet_model.modules():
-        if isinstance(module, BasicTransformerBlock):
-            module.checkpoint = False
-        if isinstance(module, ResBlock):
-            module.use_checkpoint = False
-    return oneflow_compile(unet_model, options=options)
+register(package_names=["ldm"], torch2oflow_class_map=torch2oflow_class_map)
