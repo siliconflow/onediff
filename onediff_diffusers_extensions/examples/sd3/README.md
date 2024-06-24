@@ -1,5 +1,17 @@
 # Run SD3 with nexfort backend (Beta Release)
 
+1. [Environment Setup](#environment-setup)
+   - [Set Up OneDiff](#set-up-onediff)
+   - [Set Up NexFort Backend](#set-up-nexfort-backend)
+   - [Set Up Diffusers Library](#set-up-diffusers-library)
+   - [Download SD3 Model for Diffusers](#download-sd3-model-for-diffusers)
+2. [Execution Instructions](#execution-instructions)
+   - [Run Without Compilation (Baseline)](#run-without-compilation-baseline)
+   - [Run With Compilation](#run-with-compilation)
+3. [Performance Comparison](#performance-comparison)
+4. [Dynamic Shape for SD3](#dynamic-shape-for-sd3)
+5. [Quality](#quality)
+
 ## Environment setup
 ### Set up onediff
 https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
@@ -10,10 +22,11 @@ https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/back
 ### Set up diffusers
 
 ```
-pip install git+https://github.com/huggingface/diffusers.git@main
+# Ensure diffusers include the SD3 pipeline.
+pip3 install --upgrade diffusers[torch]
 ```
 ### Set up SD3
-Model version for diffusers: https://huggingface.co/stabilityai/stable-diffusion-3-medium/tree/refs%2Fpr%2F26
+Model version for diffusers: https://huggingface.co/stabilityai/stable-diffusion-3-medium-diffusers
 
 HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/stable_diffusion/stable_diffusion_3.md
 
@@ -29,32 +42,68 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 
 ```
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
-    --compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}' \
+    --compiler-config '{"mode": "max-optimize:max-autotune:low-precision:cache-all:freezing:benchmark", "memory_format": "channels_last"}' \
     --saved-image sd3_compile.png
 ```
 
 ## Performance comparation
 
-Testing on H800, with image size of 1024*1024, iterating 28 steps.
+Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
+| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
+| PyTorch iteration speed                          | 15.56 it/s                          |
+| OneDiff iteration speed                          | 25.91 it/s (+66.5%)                 |
+| PyTorch E2E time                                 | 1.96 s                              |
+| OneDiff E2E time                                 | 1.15 s (-41.3%)                     |
+| PyTorch Max Mem Used                             | 18.784 GiB                          |
+| OneDiff Max Mem Used                             | 18.324 GiB                          |
+| PyTorch Warmup with Run time                     | TODO                                |
+| OneDiff Warmup with Compilation time<sup>3</sup> | TODO                                |
+| OneDiff Warmup with Cache time                   | TODO                                |
 
-|                 | Iteration speed      | E2E Inference Time | Max CUDA Memory Used |
-| --------------- | -------------------- | ------------------ | -------------------- |
-| Baseline        | 15.56 it/s           | 1.96 s             | 18.784 GiB           |
-| Nexfort compile | 25.91 it/s (+66.5%) | 1.15 s (-41.3%)   | 18.324 GiB           |
+<sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU.
 
-Testing on A100-PCIE-40GB, with image size of 1024*1024, iterating 28 steps.
 
-|                 | Iteration speed    | E2E Inference Time | Max CUDA Memory Used |
-| --------------- | ------------------ | ------------------ | -------------------- |
-| Baseline        | 6.66 it/s          | 4.50 s             | 18.762 GiB           |
-| Nexfort compile | 9.39 it/s (+40.9%) | 3.15 s (-30.0%)      | 17.939 GiB           |
+Testing on 4090:
+| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
+| PyTorch iteration speed                          | 6.67 it/s                           |
+| OneDiff iteration speed                          | 12.24 it/s (+83.3%)                 |
+| PyTorch E2E time                                 | 4.90 s                              |
+| OneDiff E2E time                                 | 2.48 s (-49.4%)                     |
+| PyTorch Max Mem Used                             | 18.799 GiB                          |
+| OneDiff Max Mem Used                             | 17.902 GiB                          |
+| PyTorch Warmup with Run time                     | 4.99 s                              |
+| OneDiff Warmup with Compilation time<sup>3</sup> | 302.79 s                            |
+| OneDiff Warmup with Cache time                   | 118.94 s                            |
 
+ <sup>2</sup> AMD EPYC 7543 32-Core Processor
+
+
+Testing on A100-PCIE-40GB:
+| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
+| PyTorch iteration speed                          | 6.66 it/s                           |
+| OneDiff iteration speed                          | 9.39 it/s (+40.9%)                  |
+| PyTorch E2E time                                 | 4.50 s                              |
+| OneDiff E2E time                                 | 3.15 s (-30.0%)                     |
+| PyTorch Max Mem Used                             | 18.762 GiB                          |
+| OneDiff Max Mem Used                             | 17.939 GiB                          |
+| PyTorch Warmup with Run time                     | TODO                                |
+| OneDiff Warmup with Compilation time<sup>3</sup> | TODO                                |
+| OneDiff Warmup with Cache time                   | TODO                                |
+
+ <sup>3</sup> Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz
 
 ## Dynamic shape for SD3.
 
 Run:
 
 ```
+# The best practice mode configuration for dynamic shape is `max-optimize:max-autotune:low-precision`.
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "dynamic": true}' \
     --height 512 \
