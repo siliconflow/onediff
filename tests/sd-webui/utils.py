@@ -111,7 +111,7 @@ def get_extra_args() -> List[Dict[str, Any]]:
                         }
                     ]
                 }
-            }
+            } if x else {}
         }
         for x in [True, False]
         for module in control_modules
@@ -132,7 +132,10 @@ def get_all_args() -> Iterable[Dict[str, Any]]:
 
 
 def get_controlnet_model(data: Dict[str, Any]) -> bool:
-    return data["alwayson_scripts"]["controlnet"]["args"][0]["model"]
+    try:
+        return data["alwayson_scripts"]["controlnet"]["args"][0]["model"]
+    except (KeyError, IndexError):
+        return False
 
 
 def is_txt2img(data: Dict[str, Any]) -> bool:
@@ -143,7 +146,10 @@ def is_quant(data: Dict[str, Any]) -> bool:
     return data["script_args"][0]
 
 def is_controlnet(data: Dict[str, Any]) -> bool:
-    return data["alwayson_scripts"]["controlnet"]["args"][0]["enabled"]
+    try:
+        return data["alwayson_scripts"]["controlnet"]["args"][0]["enabled"]
+    except (KeyError, IndexError):
+        return False
 
 
 def encode_file_to_base64(path: str) -> str:
@@ -211,7 +217,8 @@ def get_data_summary(data: Dict[str, Any]) -> Dict[str, bool]:
     return {
         "is_txt2img": is_txt2img(data),
         "is_quant": is_quant(data),
-        "is_controlnet":is_controlnet(data)
+        "is_controlnet":is_controlnet(data),
+        "controlnet_model":get_controlnet_model(data) if is_controlnet(data) else "",
     }
 
 
