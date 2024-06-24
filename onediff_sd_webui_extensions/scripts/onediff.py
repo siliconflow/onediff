@@ -126,6 +126,8 @@ class Script(scripts.Script):
 
             init_nexfort_backend()
 
+        backend = backend or shared.opts.onediff_compiler_backend
+
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
             shared.sd_model.sd_checkpoint_info.name

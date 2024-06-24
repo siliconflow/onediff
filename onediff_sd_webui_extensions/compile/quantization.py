@@ -3,11 +3,11 @@ from typing import Dict, Union
 
 from modules.sd_models import select_checkpoint
 
+from onediff.utils import logger
 from onediff.optimization.quant_optimizer import (
     quantize_model,
     varify_can_use_quantization,
 )
-from onediff.utils import logger
 
 
 def quant_unet_oneflow(compiled_unet):

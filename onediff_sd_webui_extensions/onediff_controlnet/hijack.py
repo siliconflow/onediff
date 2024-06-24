@@ -2,6 +2,13 @@ import onediff_shared
 import torch
 from modules.sd_hijack_utils import CondFunc
 from onediff_utils import check_structure_change, singleton_decorator
+import torch as th
+from compile import OneDiffCompiledGraph
+from compile.oneflow.mock.common import (
+    CrossAttentionOflow,
+    GroupNorm32Oflow,
+    timestep_embedding,
+)
 from ldm.modules.attention import BasicTransformerBlock, CrossAttention
 from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32
