@@ -49,7 +49,7 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 ## Performance comparation
 
 Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
-| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
+| Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
 | PyTorch iteration speed                          | 15.56 it/s                          |
@@ -66,7 +66,7 @@ Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
 
 
 Testing on 4090:
-| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
+| Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
 | PyTorch iteration speed                          | 6.67 it/s                           |
