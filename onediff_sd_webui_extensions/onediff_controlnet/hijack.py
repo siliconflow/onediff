@@ -1,15 +1,7 @@
 import onediff_shared
 import torch
-import torch as th
-from compile import OneDiffCompiledGraph
-from compile.oneflow.mock.common import (
-    CrossAttentionOflow,
-    GroupNorm32Oflow,
-    timestep_embedding,
-)
-from ldm.modules.attention import BasicTransformerBlock, CrossAttention
-from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
-from ldm.modules.diffusionmodules.util import GroupNorm32
+from compile import is_oneflow_backend
+from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from modules.sd_hijack_utils import CondFunc
 from onediff_utils import check_structure_change, singleton_decorator
 
@@ -17,7 +9,7 @@ from .utils import get_controlnet_script
 
 
 def hijacked_main_entry(self, p):
-    from compile.oneflow.mock.controlnet import TorchOnediffControlNetModel
+    from .model import OnediffControlNetModel
 
     from .compile import compile_controlnet_ldm_unet
 
@@ -28,8 +20,9 @@ def hijacked_main_entry(self, p):
     structure_changed = check_structure_change(
         onediff_shared.previous_unet_type, sd_ldm
     )
+    # TODO: restore here
     if onediff_shared.controlnet_compiled is False or structure_changed:
-        onediff_model = TorchOnediffControlNetModel(unet)
+        onediff_model = OnediffControlNetModel(unet)
         onediff_shared.current_unet_graph = compile_controlnet_ldm_unet(
             sd_ldm, onediff_model
         )
@@ -504,7 +497,10 @@ def hijacked_controlnet_hook(
             outer.attention_auto_machine = AutoMachine.Read
             outer.gn_auto_machine = AutoMachine.Read
 
-        # modified by OneDiff
+        # ------ modified by OneDiff below ------
+        x = x.half()
+        context = context.half()
+        y = y.half() if y is not None else y
         h = onediff_shared.current_unet_graph.graph_module(
             x,
             timesteps,
@@ -515,6 +511,7 @@ def hijacked_controlnet_hook(
             is_sdxl,
             require_inpaint_hijack,
         )
+        # ------ modified by OneDiff above ------
 
         # Post-processing for color fix
         for param in outer.control_params:
@@ -583,16 +580,13 @@ def hijacked_controlnet_hook(
     def forward_webui(*args, **kwargs):
         # ------ modified by OneDiff below ------
         forward_func = None
-        if (
-            "forward"
-            in onediff_shared.current_unet_graph.graph_module._torch_module.__dict__
-        ):
-            forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop(
-                "forward"
-            )
-            _original_forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop(
-                "_original_forward"
-            )
+        graph_module = onediff_shared.current_unet_graph.graph_module
+        if is_oneflow_backend():
+            if "forward" in graph_module._torch_module.__dict__:
+                forward_func = graph_module._torch_module.__dict__.pop("forward")
+                _original_forward_func = graph_module._torch_module.__dict__.pop(
+                    "_original_forward"
+                )
         # ------ modified by OneDiff above ------
 
         # webui will handle other compoments
@@ -608,13 +602,12 @@ def hijacked_controlnet_hook(
                 move_all_control_model_to_cpu()
 
             # ------ modified by OneDiff below ------
-            if forward_func is not None:
-                onediff_shared.current_unet_graph.graph_module._torch_module.forward = (
-                    forward_func
-                )
-                onediff_shared.current_unet_graph.graph_module._torch_module._original_forward = (
-                    _original_forward_func
-                )
+            if is_oneflow_backend():
+                if forward_func is not None:
+                    graph_module._torch_module.forward = forward_func
+                    graph_module._torch_module._original_forward = (
+                        _original_forward_func
+                    )
             # ------ modified by OneDiff above ------
 
     def hacked_basic_transformer_inner_forward(self, x, context=None):

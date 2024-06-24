@@ -14,13 +14,13 @@ from .utils import (
 
 
 def get_compiled_graph(
-    sd_model, *, backend, quantization=None, options=None
+    sd_model, unet_model=None, *, backend=None, quantization=None, options=None
 ) -> OneDiffCompiledGraph:
-    diffusion_model = sd_model.model.diffusion_model
+    diffusion_model = unet_model or sd_model.model.diffusion_model
     compiled_unet = onediff_compile(
         diffusion_model, backend=backend, quantization=quantization, options=options
     )
-    return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)
+    return OneDiffCompiledGraph(sd_model, diffusion_model, compiled_unet, quantization)
 
 
 def onediff_compile(
@@ -62,6 +62,7 @@ def compile_unet_oneflow(unet_model, *, quantization=False, options=None):
 
 
 def compile_unet_nexfort(unet_model, *, quantization=False, options=None):
+    # TODO: support nexfort quant
     if quantization:
         raise NotImplementedError(
             "Quantization for nexfort backend is not implemented yet."

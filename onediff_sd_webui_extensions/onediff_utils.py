@@ -15,6 +15,7 @@ from modules import shared
 from modules.devices import torch_gc
 
 from onediff.infer_compiler import DeployableModule
+from compile import init_backend
 
 hints_message = dedent(
     """\
@@ -119,16 +120,31 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
 
 def onediff_enabled_decorator(func):
     @wraps(func)
-    def wrapper(self, p, *arg, **kwargs):
+    def wrapper(
+        self,
+        p,
+        quantization=False,
+        compiler_cache=None,
+        saved_cache_name="",
+        always_recompile=False,
+        backend=None,
+    ):
         onediff_shared.onediff_enabled = True
+        init_backend(backend)
         try:
-            return func(self, p, *arg, **kwargs)
+            return func(
+                self,
+                p,
+                quantization=False,
+                compiler_cache=None,
+                saved_cache_name="",
+                always_recompile=False,
+                backend=None,
+            )
         finally:
             onediff_shared.onediff_enabled = False
             onediff_shared.previous_unet_type.update(**get_model_type(shared.sd_model))
-            torch_gc()
-            if is_oneflow_backend():
-                flow.cuda.empty_cache()
+            onediff_gc()
 
     return wrapper
 

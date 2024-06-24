@@ -1,5 +1,4 @@
-from .compile import compile_controlnet_ldm_unet, onediff_controlnet_decorator
-from .hijack import hijack_controlnet_extension
+from .compile import onediff_controlnet_decorator
 
 __all__ = [
     "onediff_controlnet_decorator",

@@ -1,8 +1,3 @@
-from functools import wraps
-
-import onediff_shared
-
-
 def check_if_controlnet_ext_loaded() -> bool:
     from modules import extensions
 

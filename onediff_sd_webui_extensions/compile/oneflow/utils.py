@@ -11,11 +11,7 @@ def init_oneflow_backend():
             "Backend oneflow for OneDiff is invalid, please make sure you have installed OneFlow"
         )
 
-    from .mock import controlnet, ldm, sgm
+    from .mock import ldm, sgm
 
     register(package_names=["ldm"], torch2oflow_class_map=ldm.torch2oflow_class_map)
     register(package_names=["sgm"], torch2oflow_class_map=sgm.torch2oflow_class_map)
-    register(
-        package_names=["scripts.hook"],
-        torch2oflow_class_map=controlnet.torch2oflow_class_map,
-    )

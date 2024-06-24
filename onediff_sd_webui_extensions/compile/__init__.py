@@ -6,6 +6,7 @@ from .utils import (
     get_onediff_backend,
     is_nexfort_backend,
     is_oneflow_backend,
+    init_backend,
 )
 from .vae import VaeCompileCtx
 
@@ -18,4 +19,5 @@ __all__ = [
     "get_onediff_backend",
     "is_oneflow_backend",
     "is_nexfort_backend",
+    "init_backend",
 ]

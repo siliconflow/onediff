@@ -66,4 +66,4 @@ def get_compiled_graph(sd_model, quantization) -> OneDiffCompiledGraph:
     if "forward" in diffusion_model.__dict__:
         diffusion_model.__dict__.pop("forward")
     compiled_unet = compile_unet(diffusion_model, quantization=quantization)
-    return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)
+    return OneDiffCompiledGraph(sd_model, diffusion_model, compiled_unet, quantization)

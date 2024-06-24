@@ -1,23 +1,19 @@
-import oneflow as flow
-from compile.oneflow.mock.common import timestep_embedding
-from ldm.modules.diffusionmodules.openaimodel import UNetModel
+import torch
+import torch as th
 from modules import devices
-
-from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 
 cond_cast_unet = getattr(devices, "cond_cast_unet", lambda x: x)
 
 
-# Due to the tracing mechanism in OneFlow, it's crucial to ensure that
-# the same conditional branches are taken during the first run as in subsequent runs.
-# Therefore, certain "optimizations" have been modified.
+# https://github.com/Mikubill/sd-webui-controlnet/blob/8bbbd0e55ef6e5d71b09c2de2727b36e7bc825b0/scripts/hook.py#L238
 def aligned_adding(base, x, require_channel_alignment):
     if isinstance(x, float):
-        # remove `if x == 0.0: return base` here
+        if x == 0.0:
+            return base
         return base + x
 
     if require_channel_alignment:
-        zeros = flow.zeros_like(base)
+        zeros = torch.zeros_like(base)
         zeros[:, : x.shape[1], ...] = x
         x = zeros
 
@@ -25,13 +21,29 @@ def aligned_adding(base, x, require_channel_alignment):
     base_h, base_w = base.shape[-2:]
     xh, xw = x.shape[-2:]
 
-    if xh > 1 or xw > 1 and (base_h != xh or base_w != xw):
-        # logger.info('[Warning] ControlNet finds unexpected mis-alignment in tensor shape.')
-        x = flow.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
-    return base + x
+    if xh > 1 or xw > 1:
+        if base_h != xh or base_w != xw:
+            # logger.info('[Warning] ControlNet finds unexpected mis-alignment in tensor shape.')
+            x = th.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
+
+    return base + x.half()
 
 
-class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
+class OnediffControlNetModel(torch.nn.Module):
+    def __init__(self, unet):
+        super().__init__()
+        self.time_embed = unet.time_embed
+        self.input_blocks = unet.input_blocks
+        self.label_emb = getattr(unet, "label_emb", None)
+        self.middle_block = unet.middle_block
+        self.output_blocks = unet.output_blocks
+        self.out = unet.out
+        self.model_channels = unet.model_channels
+        # import ipdb; ipdb.set_trace()
+        self.convert_to_fp16 = unet.convert_to_fp16.__get__(self)
+        # print("something")
+
+    @torch.autocast(device_type="cuda", enabled=False)
     def forward(
         self,
         x,
@@ -43,20 +55,26 @@ class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
         is_sdxl,
         require_inpaint_hijack,
     ):
+        from ldm.modules.diffusionmodules.util import timestep_embedding
+
+        # cast to half
         x = x.half()
+        context = context.half()
         if y is not None:
             y = y.half()
-        context = context.half()
+
         hs = []
-        with flow.no_grad():
+        with th.no_grad():
             t_emb = cond_cast_unet(
                 timestep_embedding(timesteps, self.model_channels, repeat_only=False)
             )
-            emb = self.time_embed(t_emb.half())
+
+            t_emb = t_emb.half()
+            emb = self.time_embed(t_emb).half()
 
             if is_sdxl:
                 assert y.shape[0] == x.shape[0]
-                emb = emb + self.label_emb(y)
+                emb = emb + self.label_emb(y).half()
 
             h = x
             for i, module in enumerate(self.input_blocks):
@@ -86,7 +104,7 @@ class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
         # U-Net Decoder
         for i, module in enumerate(self.output_blocks):
             self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-            h = flow.cat(
+            h = th.cat(
                 [
                     h,
                     aligned_adding(
@@ -97,7 +115,6 @@ class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
                 ],
                 dim=1,
             )
-            h = h.half()
             h = module(h, emb, context)
 
         # U-Net Output

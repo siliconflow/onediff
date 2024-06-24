@@ -1,19 +1,18 @@
 from functools import wraps
+import networks
 
 import onediff_shared
 from compile.utils import (
-    OneDiffCompiledGraph,
     disable_unet_checkpointing,
-    get_onediff_backend,
     is_nexfort_backend,
     is_oneflow_backend,
 )
-from modules import shared
-
-from onediff.infer_compiler import oneflow_compile
+from compile import get_compiled_graph
 
 from .hijack import hijack_controlnet_extension
 from .utils import check_if_controlnet_enabled
+
+from compile.oneflow.mock.controlnet import OneFlowOnediffControlNetModel
 
 
 def onediff_controlnet_decorator(func):
@@ -36,17 +35,24 @@ def onediff_controlnet_decorator(func):
 
 
 def compile_controlnet_ldm_unet(sd_model, unet_model, *, backend=None, options=None):
-    backend = backend or get_onediff_backend()
-
     if is_oneflow_backend():
-        disable_unet_checkpointing(unet_model)
-        compiled_model = oneflow_compile(unet_model, options=options)
-    elif is_nexfort_backend():
-        raise NotImplementedError(
-            "nexfort backend for controlnet is not implemented yet"
+        from onediff.infer_compiler.backends.oneflow.transform import register
+        from .model import OnediffControlNetModel
+
+        register(
+            package_names=["scripts.hook"],
+            torch2oflow_class_map={
+                OnediffControlNetModel: OneFlowOnediffControlNetModel,
+            },
         )
+    elif is_nexfort_backend():
+        # TODO: restore LoRA here
+        if networks.originals is not None:
+            networks.originals.undo()
     # TODO: refine here
-    compiled_graph = OneDiffCompiledGraph(sd_model, compiled_model)
+    compiled_graph = get_compiled_graph(
+        sd_model, unet_model, backend=backend, options=options
+    )
     compiled_graph.eager_module = unet_model
     compiled_graph.name += "_controlnet"
     return compiled_graph

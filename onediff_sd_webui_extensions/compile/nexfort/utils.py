@@ -28,6 +28,21 @@ def init_nexfort_backend():
         lambda orig_func, *args, **kwargs: onediff_shared.onediff_enabled,
     )
 
+    def hijack_groupnorm32_forward(orig_func, self, x):
+        return super(type(self), self).forward(x)
+        # return self.forward(x)
+
+    CondFunc(
+        "ldm.modules.diffusionmodules.util.GroupNorm32.forward",
+        hijack_groupnorm32_forward,
+        lambda orig_func, *args, **kwargs: onediff_shared.onediff_enabled,
+    )
+    CondFunc(
+        "sgm.modules.diffusionmodules.util.GroupNorm32.forward",
+        hijack_groupnorm32_forward,
+        lambda orig_func, *args, **kwargs: onediff_shared.onediff_enabled,
+    )
+
 
 @torch.autocast("cuda", enabled=False)
 def onediff_nexfort_unet_sgm_forward(
@@ -134,7 +149,7 @@ class SdOptimizationNexfort(SdOptimization):
     priority = 10
 
     def is_available(self):
-        is_nexfort_available()
+        return is_nexfort_available()
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = (
