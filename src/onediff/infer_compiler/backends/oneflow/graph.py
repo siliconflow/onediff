@@ -30,48 +30,36 @@ class OneflowGraph(flow.nn.Graph):
 
     @cost_cnt(transform_mgr.debug_mode)
     def save_graph(self, file_path, *, process_state_dict: lambda x: x):
-        try:
+        if hasattr(self, "graph_state_dict"):
+            flow.save(self.graph_state_dict, file_path)
+            return
 
-            if hasattr(self, "graph_state_dict"):
-                logger.debug(f"debug ci,")
-                flow.save(self.graph_state_dict, file_path)
-                return
-            logger.debug(f"debug ci,")
-            state_dict = self.runtime_state_dict()
-            logger.debug(f"debug ci,")
-            import oneflow.framework.args_tree as args_tree
+        state_dict = self.runtime_state_dict()
 
-            logger.debug(f"debug ci,")
+        import oneflow.framework.args_tree as args_tree
 
-            def disabled_dataclass(value):
-                return False
+        def disabled_dataclass(value):
+            return False
 
-            logger.debug(f"debug ci,")
-            original_is_dataclass = args_tree._is_dataclass
-            args_tree._is_dataclass = disabled_dataclass
+        original_is_dataclass = args_tree._is_dataclass
+        args_tree._is_dataclass = disabled_dataclass
 
-            import dataclasses
+        import dataclasses
 
-            def reverse_dataclass(value):
-                if dataclasses.is_dataclass(value):
-                    return reverse_proxy_class(type(value))(**value)
-                else:
-                    return value
+        def reverse_dataclass(value):
+            if dataclasses.is_dataclass(value):
+                return reverse_proxy_class(type(value))(**value)
+            else:
+                return value
 
-            for name, rsd in state_dict.items():
-                output = state_dict[name]["outputs_original"]
-                out_tree = args_tree.ArgsTree((output, None), False)
-                # dataclass type needs to be reversed to torch type to avoid saving error.
-                out = out_tree.map_leaf(reverse_dataclass)
-                state_dict[name]["outputs_original"] = out[0]
-            logger.debug(f"debug ci,")
-            args_tree._is_dataclass = original_is_dataclass
-            logger.debug(f"debug ci,")
-            state_dict = process_state_dict(state_dict)
-            logger.debug(f"debug ci,")
-            flow.save(state_dict, file_path)
-        except Exception as e:
-            import traceback
+        for name, rsd in state_dict.items():
+            output = state_dict[name]["outputs_original"]
+            out_tree = args_tree.ArgsTree((output, None), False)
+            # dataclass type needs to be reversed to torch type to avoid saving error.
+            out = out_tree.map_leaf(reverse_dataclass)
+            state_dict[name]["outputs_original"] = out[0]
 
-            print(f"{e=}")
-            print(traceback.format_exc())
+        args_tree._is_dataclass = original_is_dataclass
+
+        state_dict = process_state_dict(state_dict)
+        flow.save(state_dict, file_path)
