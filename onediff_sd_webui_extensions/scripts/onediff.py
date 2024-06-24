@@ -8,6 +8,7 @@ import onediff_controlnet
 import onediff_shared
 import oneflow as flow
 from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
+from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
 from modules.devices import torch_gc
 from modules.processing import process_images
@@ -101,6 +102,7 @@ class Script(scripts.Script):
         compiler_cache=None,
         saved_cache_name="",
         always_recompile=False,
+        backend=None,
     ):
         # restore checkpoint_info from refiner to base model if necessary
         if (
@@ -113,6 +115,8 @@ class Script(scripts.Script):
             sd_models.reload_model_weights()
             torch_gc()
             flow.cuda.empty_cache()
+
+        backend = backend or shared.opts.onediff_compiler_backend
 
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
@@ -140,7 +144,7 @@ class Script(scripts.Script):
         if need_recompile:
             if not onediff_shared.controlnet_enabled:
                 onediff_shared.current_unet_graph = get_compiled_graph(
-                    shared.sd_model, quantization
+                    shared.sd_model, quantization=quantization, backend=backend,
                 )
                 load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:
@@ -167,6 +171,16 @@ def on_ui_settings():
             section=section,
         ),
     )
+    shared.opts.add_option(
+        "onediff_compiler_backend",
+        shared.OptionInfo(
+            "oneflow",
+            "Backend for onediff compiler",
+            gr.Radio,
+            {"choices": ["oneflow", "nexfort"]},
+            section=section,
+        ),
+    )
 
 
 def cfg_denoisers_callback(params):
@@ -176,3 +190,6 @@ def cfg_denoisers_callback(params):
 script_callbacks.on_ui_settings(on_ui_settings)
 # script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
 onediff_do_hijack()
+
+
+script_callbacks.on_list_optimizers(add_nexfort_optimizer)
