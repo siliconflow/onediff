@@ -58,9 +58,9 @@ Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
 | OneDiff E2E time                                 | 1.15 s (-41.3%)                     |
 | PyTorch Max Mem Used                             | 18.784 GiB                          |
 | OneDiff Max Mem Used                             | 18.324 GiB                          |
-| PyTorch Warmup with Run time                     | TODO                                |
-| OneDiff Warmup with Compilation time<sup>1</sup> | TODO                                |
-| OneDiff Warmup with Cache time                   | TODO                                |
+| PyTorch Warmup with Run time                     | 2.86 s                              |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 889.25 s                            |
+| OneDiff Warmup with Cache time                   | 44.38 s                             |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU.
 
@@ -81,22 +81,6 @@ Testing on 4090:
 
  <sup>2</sup> AMD EPYC 7543 32-Core Processor
 
-
-Testing on A100-PCIE-40GB:
-| Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
-| PyTorch iteration speed                          | 6.66 it/s                           |
-| OneDiff iteration speed                          | 9.39 it/s (+40.9%)                  |
-| PyTorch E2E time                                 | 4.50 s                              |
-| OneDiff E2E time                                 | 3.15 s (-30.0%)                     |
-| PyTorch Max Mem Used                             | 18.762 GiB                          |
-| OneDiff Max Mem Used                             | 17.939 GiB                          |
-| PyTorch Warmup with Run time                     | TODO                                |
-| OneDiff Warmup with Compilation time<sup>3</sup> | TODO                                |
-| OneDiff Warmup with Cache time                   | TODO                                |
-
- <sup>3</sup> Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz
 
 ## Dynamic shape for SD3.
 
