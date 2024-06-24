@@ -1,7 +1,7 @@
 import os
-from pathlib import Path
 import numpy as np
 import pytest
+from pathlib import Path
 from PIL import Image
 from utils import (
     IMG2IMG_API_ENDPOINT,
