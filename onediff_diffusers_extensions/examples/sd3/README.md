@@ -98,6 +98,8 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 ```
 ## Quantization
 
+Note: Quantization is a feature for Onediff enterprise.
+
 ### Run
 
 Quantization of the model's layers can be selectively performed based on precision. Download `fp8_e4m3.json` or `fp8_e4m3_per_tensor.json` from https://huggingface.co/siliconflow/stable-diffusion-3-onediff-nexfort-fp8.
