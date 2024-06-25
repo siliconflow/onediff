@@ -5,7 +5,6 @@ from modules.sd_vae_approx import sd_vae_approx_models
 
 from onediff.infer_compiler import compile
 
-
 __all__ = ["VaeCompileCtx"]
 
 compiled_models = {}
@@ -24,7 +23,6 @@ class VaeCompileCtx(object):
         self.backend = backend
 
     def __enter__(self):
-        # TODO: support nexfort here
         if self._original_model is None:
             return
         global compiled_models

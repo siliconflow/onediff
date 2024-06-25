@@ -9,26 +9,24 @@ from .utils import get_controlnet_script
 
 
 def hijacked_main_entry(self, p):
+    self._original_controlnet_main_entry(p)
+    from .compile import compile_controlnet_ldm_unet
     from .model import OnediffControlNetModel
 
-    from .compile import compile_controlnet_ldm_unet
-
-    self._original_controlnet_main_entry(p)
+    if not onediff_shared.onediff_enabled:
+        return
     sd_ldm = p.sd_model
     unet = sd_ldm.model.diffusion_model
 
     structure_changed = check_structure_change(
         onediff_shared.previous_unet_type, sd_ldm
     )
-    # TODO: restore here
-    if onediff_shared.controlnet_compiled is False or structure_changed:
+    if not onediff_shared.controlnet_compiled or structure_changed:
         onediff_model = OnediffControlNetModel(unet)
         onediff_shared.current_unet_graph = compile_controlnet_ldm_unet(
             sd_ldm, onediff_model
         )
         onediff_shared.controlnet_compiled = True
-    else:
-        pass
 
 
 # When OneDiff is initializing, the controlnet extension has not yet been loaded.
@@ -60,7 +58,9 @@ def unhijack_controlnet_extension(p):
         return
 
     if hasattr(controlnet_script, "_original_controlnet_main_entry"):
-        controlnet_script.controlnet_main_entry = controlnet_script._original_controlnet_main_entry
+        controlnet_script.controlnet_main_entry = (
+            controlnet_script._original_controlnet_main_entry
+        )
         delattr(controlnet_script, "_original_controlnet_main_entry")
 
 

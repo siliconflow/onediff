@@ -1,4 +1,4 @@
-from compile import OneDiffBackend, OneDiffCompiledGraph
+from compile import OneDiffCompiledGraph
 
 current_unet_graph = OneDiffCompiledGraph()
 current_quantization = False
@@ -9,7 +9,7 @@ previous_unet_type = {
     "is_ssd": False,
 }
 onediff_enabled = False
-onediff_backend = OneDiffBackend.NEXFORT
+onediff_backend = None
 
 # controlnet
 controlnet_enabled = False

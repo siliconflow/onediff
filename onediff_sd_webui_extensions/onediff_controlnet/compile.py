@@ -1,12 +1,8 @@
 from functools import wraps
 
-import networks
 import onediff_shared
 from compile import get_compiled_graph
-from compile.utils import (
-    is_nexfort_backend,
-    is_oneflow_backend,
-)
+from compile.utils import is_nexfort_backend, is_oneflow_backend
 
 from .hijack import hijack_controlnet_extension
 from .utils import check_if_controlnet_enabled
@@ -46,10 +42,8 @@ def compile_controlnet_ldm_unet(sd_model, unet_model, *, backend=None, options=N
             },
         )
     elif is_nexfort_backend():
-        # TODO: restore LoRA here
-        if networks.originals is not None:
-            networks.originals.undo()
-    # TODO: refine here
+        # nothing need to do
+        pass
     compiled_graph = get_compiled_graph(
         sd_model, unet_model, backend=backend, options=options
     )

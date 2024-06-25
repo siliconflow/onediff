@@ -4,6 +4,7 @@ from pathlib import Path
 from textwrap import dedent
 from zipfile import BadZipFile
 
+import networks
 import onediff_shared
 from importlib_metadata import version
 
@@ -15,7 +16,6 @@ if is_oneflow_available():
 from compile import init_backend, is_oneflow_backend
 from modules import shared
 from modules.devices import torch_gc
-from modules.sd_hijack_utils import CondFunc
 
 from onediff.infer_compiler import DeployableModule
 
@@ -132,6 +132,8 @@ def onediff_enabled_decorator(func):
         backend=None,
     ):
         onediff_shared.onediff_enabled = True
+        if networks.originals is not None:
+            networks.originals.undo()
         init_backend(backend)
         try:
             return func(
@@ -144,6 +146,8 @@ def onediff_enabled_decorator(func):
                 backend=backend,
             )
         finally:
+            if networks.originals is not None:
+                networks.originals.__init__()
             onediff_shared.onediff_enabled = False
             onediff_shared.previous_unet_type.update(**get_model_type(shared.sd_model))
             onediff_gc()
