@@ -9,6 +9,7 @@ fi
 
 sh download_models.sh models
 if [ $? != 0 ]; then
+  echo "failed to download models"
 fi
 
 docker run -it --rm --gpus all --shm-size 12g --ipc=host --security-opt seccomp=unconfined --privileged=true \
