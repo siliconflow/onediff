@@ -130,8 +130,8 @@ The performance of above quantization types on the H800-NVL-80GB is as follows:
 
 | quant_type                       | E2E Inference Time | Iteration speed    | Max Used CUDA Memory |
 |----------------------------------|--------------------|--------------------|----------------------|
-| fp8_e4m3_e4m3_dynamic            | 1.15 s (-43.4%)    | 26.30 it/s (+74.1%)| 16.933 GiB           |
-| fp8_e4m3_e4m3_dynamic_per_tensor | 1.09 s (-46.3%)    | 27.75 it/s (+83.7%)| 17.098 GiB           |
+| fp8_e4m3_e4m3_dynamic_per_tensor | 1.15 s (-43.4%)    | 26.30 it/s (+74.1%)| 16.933 GiB           |
+| fp8_e4m3_e4m3_dynamic            | 1.09 s (-46.3%)    | 27.75 it/s (+83.7%)| 17.098 GiB           |
 
 ## Quality
 When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.

@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default="photo of a dog and a cat both standing on a red box, with a blue ball in the middle with a parrot standing on top of the ball. The box has the text 'nexfort'",
+        default="photo of a dog and a cat both standing on a red box, with a blue ball in the middle with a parrot standing on top of the ball. The box has the text 'OneDiff'",
         help="Prompt for the image generation.",
     )
     parser.add_argument(
