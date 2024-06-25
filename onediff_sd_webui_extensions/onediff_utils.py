@@ -15,6 +15,7 @@ if is_oneflow_available():
 from compile import init_backend, is_oneflow_backend
 from modules import shared
 from modules.devices import torch_gc
+from modules.sd_hijack_utils import CondFunc
 
 from onediff.infer_compiler import DeployableModule
 
@@ -136,11 +137,11 @@ def onediff_enabled_decorator(func):
             return func(
                 self,
                 p,
-                quantization=False,
-                compiler_cache=None,
-                saved_cache_name="",
-                always_recompile=False,
-                backend=None,
+                quantization=quantization,
+                compiler_cache=compiler_cache,
+                saved_cache_name=saved_cache_name,
+                always_recompile=always_recompile,
+                backend=backend,
             )
         finally:
             onediff_shared.onediff_enabled = False

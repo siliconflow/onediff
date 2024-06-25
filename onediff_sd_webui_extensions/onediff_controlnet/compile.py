@@ -4,7 +4,6 @@ import networks
 import onediff_shared
 from compile import get_compiled_graph
 from compile.utils import (
-    disable_unet_checkpointing,
     is_nexfort_backend,
     is_oneflow_backend,
 )
@@ -54,6 +53,5 @@ def compile_controlnet_ldm_unet(sd_model, unet_model, *, backend=None, options=N
     compiled_graph = get_compiled_graph(
         sd_model, unet_model, backend=backend, options=options
     )
-    compiled_graph.eager_module = unet_model
     compiled_graph.name += "_controlnet"
     return compiled_graph

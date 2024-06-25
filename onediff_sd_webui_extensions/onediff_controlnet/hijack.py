@@ -9,8 +9,9 @@ from .utils import get_controlnet_script
 
 
 def hijacked_main_entry(self, p):
-    from .compile import compile_controlnet_ldm_unet
     from .model import OnediffControlNetModel
+
+    from .compile import compile_controlnet_ldm_unet
 
     self._original_controlnet_main_entry(p)
     sd_ldm = p.sd_model
@@ -51,6 +52,16 @@ def hijack_controlnet_extension(p):
     controlnet_script.controlnet_main_entry = hijacked_main_entry.__get__(
         controlnet_script
     )
+
+
+def unhijack_controlnet_extension(p):
+    controlnet_script = get_controlnet_script(p)
+    if controlnet_script is None:
+        return
+
+    if hasattr(controlnet_script, "_original_controlnet_main_entry"):
+        controlnet_script.controlnet_main_entry = controlnet_script._original_controlnet_main_entry
+        delattr(controlnet_script, "_original_controlnet_main_entry")
 
 
 # We were intended to only hack the closure function `forward`
