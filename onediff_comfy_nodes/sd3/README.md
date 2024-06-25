@@ -113,8 +113,12 @@ Here is a very basic example how to use it:
 
 **Q: How to use different resolutions in a production environment?**
 
-A: Warmup: Perform inference at different resolutions before deployment to ensure stability and performance; (utilize NVIDIA AUTO TUNE: Automatically optimize GPU settings when switching resolutions to enhance performance.)
+A: Warmup: Perform inference at different resolutions before deployment to ensure stability and performance;
 
+
+**Q: Why is warmup necessary when switching resolutions?**
+
+A: Warmup is necessary because NVIDIA AUTO TUNE automatically optimizes GPU settings during this process to enhance system efficiency when switching resolutions.
 
 
 ## Quality
