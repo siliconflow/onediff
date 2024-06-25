@@ -98,7 +98,8 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 ```
 ## Quantization
 
-Note: Quantization is a feature for Onediff enterprise.
+> [!NOTE]
+Quantization is a feature for Onediff enterprise.
 
 ### Run
 
