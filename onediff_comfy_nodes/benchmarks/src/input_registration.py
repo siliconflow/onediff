@@ -4,9 +4,9 @@ from typing import NamedTuple
 from core.registry import create_generator_registry
 from core.service_client import ComfyGraph
 
+WORKFLOW_DIR = "resources/workflows"
 FACE_IMAGE_DIR = "/share_nfs/hf_models/comfyui_resources/input/faces"
 POSE_IMAGE_DIR = "/share_nfs/hf_models/comfyui_resources/input/poses"
-
 
 class InputParams(NamedTuple):
     graph: ComfyGraph
@@ -35,7 +35,7 @@ def get_all_images(
 register_generator, dispatch_generator = create_generator_registry()
 
 
-@register_generator("resources/example_workflow_api.json")
+@register_generator(f"{WORKFLOW_DIR}/example_workflow_api.json")
 def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
@@ -47,9 +47,9 @@ def _(workflow_path, *args, **kwargs):
 
 
 SD3_WORKFLOWS = [
-    "resources/baseline/sd3_baseline.json",
-    "resources/nexfort/sd3_unet_speedup.json",
-    "resources/nexfort/sd3_unet_vae_speedup.json",
+    f"{WORKFLOW_DIR}/baseline/sd3_baseline.json",
+    f"{WORKFLOW_DIR}/nexfort/sd3_unet_speedup.json",
+    f"{WORKFLOW_DIR}/nexfort/sd3_unet_vae_speedup.json",
 ]
 
 
@@ -68,7 +68,7 @@ def _(workflow_path, *args, **kwargs):
                 yield InputParams(graph=graph)
 
 
-@register_generator("resources/oneflow/sdxl-control-lora-speedup.json")
+@register_generator(f"{WORKFLOW_DIR}/oneflow/sdxl-control-lora-speedup.json")
 def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
@@ -79,8 +79,8 @@ def _(workflow_path, *args, **kwargs):
 
 @register_generator(
     [
-        "resources/baseline/ComfyUI_IPAdapter_plus/ipadapter_advanced.json",
-        "resources/oneflow/ComfyUI_IPAdapter_plus/ipadapter_advanced.json",
+        f"{WORKFLOW_DIR}/baseline/ComfyUI_IPAdapter_plus/ipadapter_advanced.json",
+        f"{WORKFLOW_DIR}/oneflow/ComfyUI_IPAdapter_plus/ipadapter_advanced.json",
     ]
 )
 def _(workflow_path, *args, **kwargs):
@@ -101,10 +101,10 @@ def _(workflow_path, *args, **kwargs):
 
 @register_generator(
     [
-        "resources/baseline/lora.json",
-        "resources/baseline/lora_multiple.json",
-        "resources/oneflow/lora_speedup.json",
-        "resources/oneflow/lora_multiple_speedup.json",
+        f"{WORKFLOW_DIR}/baseline/lora.json",
+        f"{WORKFLOW_DIR}/baseline/lora_multiple.json",
+        f"{WORKFLOW_DIR}/oneflow/lora_speedup.json",
+        f"{WORKFLOW_DIR}/oneflow/lora_multiple_speedup.json",
     ]
 )
 def _(workflow_path, *args, **kwargs):
@@ -134,8 +134,8 @@ def _(workflow_path, *args, **kwargs):
 
 @register_generator(
     [
-        "resources/baseline/ComfyUI_InstantID/instantid_posed.json",
-        "resources/oneflow/ComfyUI_InstantID/instantid_posed_speedup.json",
+        f"{WORKFLOW_DIR}/baseline/ComfyUI_InstantID/instantid_posed.json",
+        f"{WORKFLOW_DIR}/oneflow/ComfyUI_InstantID/instantid_posed_speedup.json",
     ]
 )
 def _(workflow_path, *args, **kwargs):

@@ -3,10 +3,11 @@ set -e
 
 STANDARD_OUTPUT=/share_nfs/hf_models/comfyui_resources/standard_output
 COMFY_PORT=8188
+WORKFLOW_DIR=resources/workflows/oneflow
 
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
-    -w resources/oneflow/sdxl-control-lora-speedup.json 
+    -w $WORKFLOW_DIR/sdxl-control-lora-speedup.json 
 
 # # Baseline 
 # python3 scripts/text_to_image.py \
@@ -14,7 +15,7 @@ python3 scripts/text_to_image.py \
 #     --output-images 
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
-    -w resources/oneflow/lora_speedup.json resources/oneflow/lora_multiple_speedup.json \
+    -w $WORKFLOW_DIR/lora_speedup.json $WORKFLOW_DIR/lora_multiple_speedup.json \
     --baseline-dir $STANDARD_OUTPUT/test_lora_speedup 
 
 # # Baseline 
@@ -24,18 +25,9 @@ python3 scripts/text_to_image.py \
 #     --output-images
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
-    -w resources/oneflow/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
+    -w $WORKFLOW_DIR/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
     --baseline-dir $STANDARD_OUTPUT/test_ipa
     # --output-images \
 
 
-# # # # Baseline 
-# # # python3 scripts/text_to_image.py \
-# # #     --comfy-port $COMFY_PORT \
-# # #     -w resources/baseline/ComfyUI_InstantID/instantid_posed.json \
-# # #     --output-images
-# python3 scripts/text_to_image.py \
-#     --comfy-port $COMFY_PORT \
-#     -w resources/oneflow/ComfyUI_InstantID/instantid_posed_speedup.json \
-#     --output-images
-# #     --baseline-dir /home/fengwen/worksplace/packages/onediff/onediff_comfy_nodes/benchmarks/results/exp/imgs
+

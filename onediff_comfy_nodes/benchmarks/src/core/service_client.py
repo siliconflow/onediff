@@ -128,7 +128,7 @@ class ComfyClient:
                 current_time = time.time()
                 if current_time - last_print_time >= 2:
                     logger.info(
-                        f"Current VRAM used: {vram_used:.2f} GB\tMaximum VRAM used: {max_vram_used_gb:.2f} GB"
+                        f"Current VRAM used: {vram_used_gb:.2f} GB\tMaximum VRAM used: {max_vram_used_gb:.2f} GB"
                     )
                     last_print_time = current_time
 

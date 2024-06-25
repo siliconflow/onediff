@@ -39,6 +39,12 @@ def parse_args():
     parser.add_argument(
         "--baseline-dir", type=str, help="Directory for baseline output."
     )
+    parser.add_argument(
+        "--ssim-threshold",
+        type=float,
+        default=0.5,
+        help="SSIM threshold for image comparison.",
+    )
     return parser.parse_args()
 
 
@@ -57,11 +63,19 @@ def calculate_ssim(image1: Image.Image, image2: Image.Image) -> float:
 
 
 class WorkflowProcessor:
-    def __init__(self, output_images: bool, output_dir: str, baseline_dir: str, logger):
+    def __init__(
+        self,
+        output_images: bool,
+        output_dir: str,
+        baseline_dir: str,
+        logger,
+        ssim_threshold,
+    ):
         self.output_images = output_images
         self.output_dir = output_dir
         self.baseline_dir = baseline_dir
         self.logger = logger
+        self.ssim_threshold = ssim_threshold
 
     def process_image(self, image_data: bytes, index: int) -> None:
         pil_image = Image.open(BytesIO(image_data))
@@ -79,7 +93,7 @@ class WorkflowProcessor:
             baseline_image = Image.open(baseline_image_path)
             ssim_value = calculate_ssim(pil_image, baseline_image)
             self.logger.info(f"SSIM value with baseline: {ssim_value}")
-            assert ssim_value > 0.5
+            assert ssim_value > self.ssim_threshold
 
 
 def run_workflow(
@@ -87,12 +101,17 @@ def run_workflow(
     comfy_port: str = DEFAULT_COMFY_PORT,
     output_images: bool = True,
     baseline_dir: str = None,
+    ssim_threshold: float = 0.5,
 ) -> None:
     logger, result_dir = setup_logging(exp_name="exp")
     logger.info(f"Result directory: {result_dir}")
 
     processor = WorkflowProcessor(
-        output_images, os.path.join(result_dir, "imgs"), baseline_dir, logger
+        output_images,
+        os.path.join(result_dir, "imgs"),
+        baseline_dir,
+        logger,
+        ssim_threshold,
     )
 
     with comfy_client_context(port=comfy_port) as client:
@@ -125,4 +144,10 @@ def run_workflow(
 
 if __name__ == "__main__":
     args = parse_args()
-    run_workflow(args.workflow, args.comfy_port, args.output_images, args.baseline_dir)
+    run_workflow(
+        args.workflow,
+        args.comfy_port,
+        args.output_images,
+        args.baseline_dir,
+        args.ssim_threshold,
+    )

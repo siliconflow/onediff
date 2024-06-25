@@ -14,15 +14,19 @@ if [ ! -d "$COMFYUI_ROOT" ]; then
   exit 1
 fi
 
+# comfyui_controlnet_aux  ComfyUI_InstantID  ComfyUI_IPAdapter_plus  PuLID_ComfyUI
 ln -s /share_nfs/hf_models/comfyui_resources/custom_nodes/* $CUSTOM_NODES/
 
-echo "Installing dependencies..."
-pip install -r $COMFYUI_ROOT/requirements.txt --user
-pip install websocket-client==1.8.0 -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install numpy==1.26.4
-pip install scikit-image
-# pip install pynvml==11.5.0
 
-# pip install -r $CUSTOM_NODES/ComfyUI_InstantID/requirements.txt
-# pip uninstall onnxruntime-gpu onnxruntime -y
-# pip install onnxruntime-gpu --extra-index-url https://aiinfra.pkgs.visualstudio.com/PublicPackages/_packaging/onnxruntime-cuda-12/pypi/simple/
+echo "Installing dependencies..."
+if [ "$CI" = "1" ]; then
+    echo "Detected CI environment. Skipping local environment-specific dependencies."
+else
+    echo "Detected local environment. Installing local environment-specific dependencies."
+    pip install -r $CUSTOM_NODES/ComfyUI_InstantID/requirements.txt
+    pip install -r $CUSTOM_NODES/PuLID_ComfyUI/requirements.txt
+fi
+
+echo "Installing common dependencies..."
+pip install websocket-client==1.8.0 numpy==1.26.4 scikit-image -i https://pypi.tuna.tsinghua.edu.cn/simple
+pip install nexfort
