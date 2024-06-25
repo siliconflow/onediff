@@ -26,7 +26,7 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default="photo of a dog and a cat both standing on a red box, with a blue ball in the middle with a parrot standing on top of the ball. The box has the text 'onediff'",
+        default="photo of a dog and a cat both standing on a red box, with a blue ball in the middle with a parrot standing on top of the ball. The box has the text 'nexfort'",
         help="Prompt for the image generation.",
     )
     parser.add_argument(
@@ -54,7 +54,7 @@ def parse_args():
         help="Path to save the generated image.",
     )
     parser.add_argument(
-        "--seed", type=int, default=1, help="Seed for random number generation."
+        "--seed", type=int, default=2, help="Seed for random number generation."
     )
     parser.add_argument(
         "--run_multiple_resolutions",
@@ -157,11 +157,11 @@ class SD3Generator:
 
     def quantize_pipe(self, pipe, quantize_config):
         if args.quant_submodules_config_path:
-            # download: 
+            # Quantitative submodules configuration file download: https://huggingface.co/siliconflow/stable-diffusion-3-onediff-nexfort-fp8
             pipe = quantize_pipe(
                 pipe,
                 quant_submodules_config_path=args.quant_submodules_config_path,
-                top_percentage=70,
+                top_percentage=75,
                 ignores=[],
                 **quantize_config,
             )
