@@ -99,7 +99,7 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 ## Quantization
 
 > [!NOTE]
-Quantization is a feature for Onediff enterprise.
+Quantization is a feature for onediff enterprise.
 
 ### Run
 
@@ -135,7 +135,7 @@ The performance of above quantization types on the H800-NVL-80GB is as follows:
 | fp8_e4m3_e4m3_dynamic            | 1.09 s (-46.3%)    | 27.75 it/s (+83.7%)| 17.098 GiB           |
 
 ## Quality
-When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.
+When using nexfort as the backend for onediff compilation acceleration, the generated images are almost lossless.
 
 <p align="center">
 <img src="../../../imgs/nexfort_sd3_demo.png">
