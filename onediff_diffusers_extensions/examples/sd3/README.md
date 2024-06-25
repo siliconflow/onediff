@@ -102,6 +102,8 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 
 Quantization of the model's layers can be selectively performed based on precision. Download `fp8_e4m3.json` or `fp8_e4m3_per_tensor.json` from https://huggingface.co/siliconflow/stable-diffusion-3-onediff-nexfort-fp8.
 
+The --arg `quant-submodules-config-path` is optional. If left `None`, it will quantize all linear layers.
+
 ```
 # Applies dynamic symmetric per-tensor activation and per-tensor weight quantization to all linear layers. Both activations and weights are quantized to e4m3 format.
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
