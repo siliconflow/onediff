@@ -7,27 +7,24 @@ WORKFLOW_DIR=resources/workflows/oneflow
 
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
-    -w $WORKFLOW_DIR/sdxl-control-lora-speedup.json 
+    -w $WORKFLOW_DIR/sdxl-control-lora-speedup.json
 
-# # Baseline 
+# # Baseline
 # python3 scripts/text_to_image.py \
 #     -w resources/baseline/lora.json resources/baseline/lora_multiple.json \
-#     --output-images 
+#     --output-images
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
     -w $WORKFLOW_DIR/lora_speedup.json $WORKFLOW_DIR/lora_multiple_speedup.json \
-    --baseline-dir $STANDARD_OUTPUT/test_lora_speedup 
+    --baseline-dir $STANDARD_OUTPUT/test_lora_speedup
 
-# # Baseline 
+# # Baseline
 # python3 scripts/text_to_image.py \
-#      --comfy-port $COMFY_PORT \ 
+#      --comfy-port $COMFY_PORT \
 #     -w resources/baseline/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
 #     --output-images
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
     -w $WORKFLOW_DIR/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
     --baseline-dir $STANDARD_OUTPUT/test_ipa
-    # --output-images \
-
-
-
+# --output-images \

@@ -17,14 +17,13 @@ fi
 # comfyui_controlnet_aux  ComfyUI_InstantID  ComfyUI_IPAdapter_plus  PuLID_ComfyUI
 ln -s /share_nfs/hf_models/comfyui_resources/custom_nodes/* $CUSTOM_NODES/
 
-
 echo "Installing dependencies..."
 if [ "$CI" = "1" ]; then
-    echo "Detected CI environment. Skipping local environment-specific dependencies."
+  echo "Detected CI environment. Skipping local environment-specific dependencies."
 else
-    echo "Detected local environment. Installing local environment-specific dependencies."
-    pip install -r $CUSTOM_NODES/ComfyUI_InstantID/requirements.txt
-    pip install -r $CUSTOM_NODES/PuLID_ComfyUI/requirements.txt
+  echo "Detected local environment. Installing local environment-specific dependencies."
+  pip install -r $CUSTOM_NODES/ComfyUI_InstantID/requirements.txt
+  pip install -r $CUSTOM_NODES/PuLID_ComfyUI/requirements.txt
 fi
 
 echo "Installing common dependencies..."
