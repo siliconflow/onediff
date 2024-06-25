@@ -4,21 +4,23 @@ import gradio as gr
 import modules.scripts as scripts
 import modules.sd_models as sd_models
 import modules.shared as shared
+import onediff_controlnet
 import onediff_shared
 import oneflow as flow
 from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
+from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
 from modules.devices import torch_gc
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
-from ui_utils import (
-    check_structure_change_and_update,
+from onediff_utils import (
+    check_structure_change,
     get_all_compiler_caches,
     hints_message,
     load_graph,
-    onediff_enabled,
+    onediff_enabled_decorator,
     refresh_all_compiler_caches,
     save_graph,
 )
@@ -35,15 +37,21 @@ class UnetCompileCtx(object):
     and then the original model restored so that subsequent reasoning with onediff disabled meets expectations.
     """
 
+    def __init__(self, enabled):
+        self.enabled = enabled
+
     def __enter__(self):
+        if not self.enabled:
+            return
         self._original_model = shared.sd_model.model.diffusion_model
         shared.sd_model.model.diffusion_model = (
             onediff_shared.current_unet_graph.graph_module
         )
 
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if not self.enabled:
+            return
         shared.sd_model.model.diffusion_model = self._original_model
-        return False
 
 
 class Script(scripts.Script):
@@ -85,6 +93,8 @@ class Script(scripts.Script):
     def show(self, is_img2img):
         return True
 
+    @onediff_enabled_decorator
+    @onediff_controlnet.onediff_controlnet_decorator
     def run(
         self,
         p,
@@ -92,6 +102,7 @@ class Script(scripts.Script):
         compiler_cache=None,
         saved_cache_name="",
         always_recompile=False,
+        backend=None,
     ):
         # restore checkpoint_info from refiner to base model if necessary
         if (
@@ -105,16 +116,21 @@ class Script(scripts.Script):
             torch_gc()
             flow.cuda.empty_cache()
 
+        backend = backend or shared.opts.onediff_compiler_backend
+
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
             shared.sd_model.sd_checkpoint_info.name
             != onediff_shared.current_unet_graph.name
         )
-        structure_changed = check_structure_change_and_update(
-            onediff_shared.current_unet_type, shared.sd_model
+        structure_changed = check_structure_change(
+            onediff_shared.previous_unet_type, shared.sd_model
         )
         quantization_changed = (
             quantization != onediff_shared.current_unet_graph.quantized
+        )
+        controlnet_enabled_status_changed = (
+            onediff_shared.controlnet_enabled != onediff_shared.previous_is_controlnet
         )
         need_recompile = (
             (
@@ -122,23 +138,26 @@ class Script(scripts.Script):
             )  # always recompile when switching ckpt with 'int8 speed model' enabled
             or structure_changed  # always recompile when switching model to another structure
             or quantization_changed  # always recompile when switching model from non-quantized to quantized (and vice versa)
+            or controlnet_enabled_status_changed
             or always_recompile
         )
         if need_recompile:
-            onediff_shared.current_unet_graph = get_compiled_graph(
-                shared.sd_model, quantization
-            )
-            load_graph(onediff_shared.current_unet_graph, compiler_cache)
+            if not onediff_shared.controlnet_enabled:
+                onediff_shared.current_unet_graph = get_compiled_graph(
+                    shared.sd_model, quantization=quantization, backend=backend,
+                )
+                load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:
             logger.info(
-                f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.current_unet_type}, skip compile"
+                f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.previous_unet_type}, skip compile"
             )
 
-        with UnetCompileCtx(), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate(), onediff_enabled():
+        with UnetCompileCtx(
+            not onediff_shared.controlnet_enabled
+        ), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         save_graph(onediff_shared.current_unet_graph, saved_cache_name)
-        torch_gc()
-        flow.cuda.empty_cache()
+
         return proc
 
 
@@ -152,6 +171,16 @@ def on_ui_settings():
             section=section,
         ),
     )
+    shared.opts.add_option(
+        "onediff_compiler_backend",
+        shared.OptionInfo(
+            "oneflow",
+            "Backend for onediff compiler",
+            gr.Radio,
+            {"choices": ["oneflow", "nexfort"]},
+            section=section,
+        ),
+    )
 
 
 def cfg_denoisers_callback(params):
@@ -161,3 +190,6 @@ def cfg_denoisers_callback(params):
 script_callbacks.on_ui_settings(on_ui_settings)
 # script_callbacks.on_cfg_denoiser(cfg_denoisers_callback)
 onediff_do_hijack()
+
+
+script_callbacks.on_list_optimizers(add_nexfort_optimizer)
