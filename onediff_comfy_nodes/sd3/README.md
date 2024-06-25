@@ -11,7 +11,7 @@ git clone https://github.com/comfyanonymous/ComfyUI.git
 
 # install onediff & onediff_comfy_nodes
 git clone https://github.com/siliconflow/onediff.git 
-cd onediff && pip install -r onediff_comfy_nodes/sd3_demo/requirements.txt && pip install -e .
+cd onediff && pip install -r onediff_comfy_nodes/sd3/requirements.txt && pip install -e .
 ln -s $pwd/onediff/onediff_comfy_nodes  $COMFYUI_DIR/custom_nodes
 ```
 
