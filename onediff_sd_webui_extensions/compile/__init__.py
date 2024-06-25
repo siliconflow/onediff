@@ -1,7 +1,7 @@
-from .compile_ldm import SD21CompileCtx
-from .compile_utils import get_compiled_graph
-from .compile_vae import VaeCompileCtx
-from .onediff_compiled_graph import OneDiffCompiledGraph
+from .compile import get_compiled_graph
+from .sd2 import SD21CompileCtx
+from .utils import OneDiffCompiledGraph
+from .vae import VaeCompileCtx
 
 __all__ = [
     "get_compiled_graph",
