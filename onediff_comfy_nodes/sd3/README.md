@@ -74,15 +74,6 @@ https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_e
 ## Usage Example
 ### Run ComfyUI
 ```shell
-# run comfyui
-# For CUDA Graph
-# export NEXFORT_FX_CUDAGRAPHS=1 
-# For best performance
-export TORCHINDUCTOR_MAX_AUTOTUNE=1
-# Enable CUDNN benchmark
-export NEXFORT_FX_CONV_BENCHMARK=1
-# Faster float32 matmul
-export NEXFORT_FX_MATMUL_ALLOW_TF32=1
 # For graph cache to speedup compilation
 export TORCHINDUCTOR_FX_GRAPH_CACHE=1
 # For persistent cache dir
@@ -118,11 +109,13 @@ Here is a very basic example how to use it:
 
 
 
-- ✅ Multiple resolutions
-test with multiple resolutions and support shape switching in a single line of Python code
-```
-[print(f"Testing resolution: {h}x{w}") for h in [1024, 512, 768, 256] for w in [1024, 512, 768, 256]]
-```
+## Dynamic shape for SD3.
+
+**Q: How to use different resolutions in a production environment?**
+
+A: Warmup: Perform inference at different resolutions before deployment to ensure stability and performance; (utilize NVIDIA AUTO TUNE: Automatically optimize GPU settings when switching resolutions to enhance performance.)
+
+
 
 ## Quality
 
