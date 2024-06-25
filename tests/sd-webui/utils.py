@@ -45,7 +45,7 @@ sdxl_mapping = {
 os.makedirs(IMG2IMG_TARGET_FOLDER, exist_ok=True)
 os.makedirs(TXT2IMG_TARGET_FOLDER, exist_ok=True)
 
-def get_model_img(model_name) :
+def get_model_img(model_name : str ) -> str :
     img_path = str(Path(__file__).parent / "images" /"txt2img"/control_mapping_imgs.get(model_name))
     return encode_file_to_base64(img_path)
 
@@ -65,7 +65,7 @@ def get_base_args() -> Dict[str, Any]:
     }
 
 
-def get_model(module, mapping):
+def get_model(module : str, mapping :Dict[str, str]) -> str:
     return mapping.get(module, "Unknown Module")
 
 
