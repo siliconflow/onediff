@@ -107,7 +107,7 @@ Quantization of the model's layers can be selectively performed based on precisi
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision:cudagraphs:freezing:benchmark", "memory_format": "channels_last"}' \
     --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}' \
-    --quant-submodules-config-path /home/lixiang/onediff/fp8_e4m3_per_tensor.json \
+    --quant-submodules-config-path /path/to/fp8_e4m3_per_tensor.json \
     --saved-image sd3_fp8.png
 ```
 or
@@ -116,7 +116,7 @@ or
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision:cudagraphs:freezing:benchmark", "memory_format": "channels_last"}' \
     --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}' \
-    --quant-submodules-config-path /home/lixiang/onediff/fp8_e4m3.json \
+    --quant-submodules-config-path /path/to/fp8_e4m3.json \
     --saved-image sd3_fp8.png
 ```
 
