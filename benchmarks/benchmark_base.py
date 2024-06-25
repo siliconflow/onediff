@@ -1,12 +1,15 @@
-class BaseBenchmark:
-    def __init__(self):
+from abc import ABC, abstractmethod
+
+
+class BaseBenchmark(ABC):
+    @abstractmethod
+    def load_pipeline_from_diffusers(self, *args, **kwargs):
         pass
 
-    def load_pipeline_from_diffusers(self, *args, **kwargs):
-        raise NotImplementedError
-
+    @abstractmethod
     def compile_pipeline(self, *args, **kwargs):
-        raise NotImplementedError
+        pass
 
+    @abstractmethod
     def benchmark_model(self, *args, **kwargs):
-        raise NotImplementedError
+        pass

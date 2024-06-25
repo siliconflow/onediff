@@ -15,7 +15,7 @@ from diffusers.utils import load_image, export_to_video
 from benchmark_base import BaseBenchmark
 from utils.sd_utils import *
 
-INPUT_IMAGE = "/data/home/wangerlie/onediff/benchmarks/resources/rocket.png"
+INPUT_IMAGE = "/onediff/benchmarks/resources/rocket.png"
 
 
 class SVDBenchmark(BaseBenchmark):

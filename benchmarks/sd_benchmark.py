@@ -70,7 +70,11 @@ class StableDiffusionBenchmark(BaseBenchmark):
         self.device = get_device(device)
         from diffusers import AutoPipelineForText2Image as pipeline_cls
 
-        if self.input_image is None and "deepcache" in self.model_name:
+        if (
+            self.input_image is None
+            and self.deepcache
+            and "deepcache" in self.model_name
+        ):
             from onediffx.deep_cache import StableDiffusionXLPipeline as pipeline_cls
         self.pipeline_cls = pipeline_cls
         for key, value in kwargs.items():
