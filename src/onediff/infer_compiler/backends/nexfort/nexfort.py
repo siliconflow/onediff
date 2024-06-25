@@ -3,7 +3,7 @@ from typing import Callable
 import torch
 
 from ..registry import register_backend
-from .deployable_module import get_deployable_module
+from .deployable_module import get_deployable_module, NexfortDeployableModule
 
 
 @register_backend("nexfort")
@@ -19,6 +19,9 @@ def compile(torch_module: torch.nn.Module, *, options=None):
             return compile(torch_module, options=options)
 
         return fn
+
+    if isinstance(torch_module, NexfortDeployableModule):
+        return compile(torch_module._torch_module, options=options)
 
     if isinstance(options, str):
         import json
