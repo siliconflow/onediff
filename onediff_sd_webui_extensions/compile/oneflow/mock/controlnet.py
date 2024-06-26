@@ -30,6 +30,13 @@ def aligned_adding(base, x, require_channel_alignment):
         x = flow.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
     return base + x
 
+def cat(tensors, *args, **kwargs):
+    if len(tensors) == 2:
+        a, b = tensors
+        a = flow.nn.functional.interpolate_like(a, like=b, mode="nearest")
+        tensors = (a, b)
+    return flow.cat(tensors, *args, **kwargs)
+
 
 class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
     def forward(
@@ -86,7 +93,7 @@ class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
         # U-Net Decoder
         for i, module in enumerate(self.output_blocks):
             self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-            h = flow.cat(
+            h = cat(
                 [
                     h,
                     aligned_adding(
