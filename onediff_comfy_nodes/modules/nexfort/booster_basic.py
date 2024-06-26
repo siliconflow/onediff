@@ -16,7 +16,7 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
     # https://pytorch.org/docs/stable/_modules/torch.html#compile
     def __init__(
         self,
-        mode: str = "max-optimize:max-autotune:freezing:benchmark:cudagraphs",
+        mode: str = "max-optimize:max-autotune:low-precision",
         fullgraph=False,
         dynamic=None,
     ):
@@ -25,9 +25,9 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
             "mode": mode,
             "dynamic": dynamic,
             "fullgraph": fullgraph,
-        }  # "memory_format": "channels_last"
-
+        }
         self.compile_fn = partial(compile, backend="nexfort", options=options)
+        self.options = options
 
     @singledispatchmethod
     def execute(self, model, ckpt_name=None, **kwargs):
@@ -47,6 +47,11 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
     @execute.register(VAE)
     @torch.inference_mode()
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
+        model.first_stage_model = apply_memory_format(
+            model.first_stage_model, torch.channels_last
+        )
+        print(f"{type(model)} apply compiled config: {self.options}")
+        # https://huggingface.co/blog/sd3#performance-optimizations-for-sd3
         model.first_stage_model.decode = self.compile_fn(model.first_stage_model.decode)
         return model
 

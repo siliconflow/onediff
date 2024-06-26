@@ -45,12 +45,15 @@ class TorchCompileBoosterExecutor(BoosterExecutor):
 
     @execute.register(ModelPatcher)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
+        model.model.diffusion_model.to(memory_format=torch.channels_last)
         model.model.diffusion_model = self.compile_fn(model.model.diffusion_model)
         return model
 
     @execute.register(VAE)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
-        model.first_stage_model = self.compile_fn(model.first_stage_model)
+        # https://huggingface.co/blog/sd3#performance-optimizations-for-sd3
+        model.first_stage_model.to(memory_format=torch.channels_last)
+        model.first_stage_model.decode = self.compile_fn(model.first_stage_model.decode)
         return model
 
     @execute.register(ControlNet)

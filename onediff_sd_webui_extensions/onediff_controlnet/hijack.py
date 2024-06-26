@@ -1,321 +1,32 @@
-from functools import wraps
-
 import onediff_shared
-from onediff_utils import check_structure_change
-import oneflow as flow
 import torch
-import torch as th
-from compile import OneDiffCompiledGraph
-from compile.oneflow.mock.common import (
-    CrossAttentionOflow,
-    GroupNorm32Oflow,
-    timestep_embedding,
-)
-from ldm.modules.attention import BasicTransformerBlock, CrossAttention
-from ldm.modules.diffusionmodules.openaimodel import ResBlock, UNetModel
-from ldm.modules.diffusionmodules.util import GroupNorm32
-from modules import devices
+from compile import is_oneflow_backend
+from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from modules.sd_hijack_utils import CondFunc
-from onediff_utils import singleton_decorator
+from onediff_utils import check_structure_change, singleton_decorator
 
-from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.backends.oneflow.transform import proxy_class, register
-
-
-# https://github.com/Mikubill/sd-webui-controlnet/blob/8bbbd0e55ef6e5d71b09c2de2727b36e7bc825b0/scripts/hook.py#L238
-def torch_aligned_adding(base, x, require_channel_alignment):
-    if isinstance(x, float):
-        if x == 0.0:
-            return base
-        return base + x
-
-    if require_channel_alignment:
-        zeros = torch.zeros_like(base)
-        zeros[:, : x.shape[1], ...] = x
-        x = zeros
-
-    # resize to sample resolution
-    base_h, base_w = base.shape[-2:]
-    xh, xw = x.shape[-2:]
-
-    if xh > 1 or xw > 1:
-        if base_h != xh or base_w != xw:
-            # logger.info('[Warning] ControlNet finds unexpected mis-alignment in tensor shape.')
-            x = th.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
-
-    return base + x
-
-
-# Due to the tracing mechanism in OneFlow, it's crucial to ensure that
-# the same conditional branches are taken during the first run as in subsequent runs.
-# Therefore, certain "optimizations" have been modified.
-def oneflow_aligned_adding(base, x, require_channel_alignment):
-    if isinstance(x, float):
-        # remove `if x == 0.0: return base` here
-        return base + x
-
-    if require_channel_alignment:
-        zeros = flow.zeros_like(base)
-        zeros[:, : x.shape[1], ...] = x
-        x = zeros
-
-    # resize to sample resolution
-    base_h, base_w = base.shape[-2:]
-    xh, xw = x.shape[-2:]
-
-    if xh > 1 or xw > 1 and (base_h != xh or base_w != xw):
-        # logger.info('[Warning] ControlNet finds unexpected mis-alignment in tensor shape.')
-        x = flow.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
-    return base + x
-
-
-cond_cast_unet = getattr(devices, "cond_cast_unet", lambda x: x)
-
-
-class TorchOnediffControlNetModel(torch.nn.Module):
-    def __init__(self, unet):
-        super().__init__()
-        self.time_embed = unet.time_embed
-        self.input_blocks = unet.input_blocks
-        self.label_emb = getattr(unet, "label_emb", None)
-        self.middle_block = unet.middle_block
-        self.output_blocks = unet.output_blocks
-        self.out = unet.out
-        self.model_channels = unet.model_channels
-
-    def forward(
-        self,
-        x,
-        timesteps,
-        context,
-        y,
-        total_t2i_adapter_embedding,
-        total_controlnet_embedding,
-        is_sdxl,
-        require_inpaint_hijack,
-    ):
-        from ldm.modules.diffusionmodules.util import timestep_embedding
-
-        hs = []
-        with th.no_grad():
-            t_emb = cond_cast_unet(
-                timestep_embedding(timesteps, self.model_channels, repeat_only=False)
-            )
-            emb = self.time_embed(t_emb)
-
-            if is_sdxl:
-                assert y.shape[0] == x.shape[0]
-                emb = emb + self.label_emb(y)
-
-            h = x
-            for i, module in enumerate(self.input_blocks):
-                self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-                h = module(h, emb, context)
-
-                t2i_injection = [3, 5, 8] if is_sdxl else [2, 5, 8, 11]
-
-                if i in t2i_injection:
-                    h = torch_aligned_adding(
-                        h, total_t2i_adapter_embedding.pop(0), require_inpaint_hijack
-                    )
-
-                hs.append(h)
-
-            self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-            h = self.middle_block(h, emb, context)
-
-        # U-Net Middle Block
-        h = torch_aligned_adding(
-            h, total_controlnet_embedding.pop(), require_inpaint_hijack
-        )
-
-        if len(total_t2i_adapter_embedding) > 0 and is_sdxl:
-            h = torch_aligned_adding(
-                h, total_t2i_adapter_embedding.pop(0), require_inpaint_hijack
-            )
-
-        # U-Net Decoder
-        for i, module in enumerate(self.output_blocks):
-            self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-            h = th.cat(
-                [
-                    h,
-                    torch_aligned_adding(
-                        hs.pop(),
-                        total_controlnet_embedding.pop(),
-                        require_inpaint_hijack,
-                    ),
-                ],
-                dim=1,
-            )
-            h = module(h, emb, context)
-
-        # U-Net Output
-        h = h.type(x.dtype)
-        h = self.out(h)
-
-        return h
-
-
-class OneFlowOnediffControlNetModel(proxy_class(UNetModel)):
-    def forward(
-        self,
-        x,
-        timesteps,
-        context,
-        y,
-        total_t2i_adapter_embedding,
-        total_controlnet_embedding,
-        is_sdxl,
-        require_inpaint_hijack,
-    ):
-        x = x.half()
-        if y is not None:
-            y = y.half()
-        context = context.half()
-        hs = []
-        with flow.no_grad():
-            t_emb = cond_cast_unet(
-                timestep_embedding(timesteps, self.model_channels, repeat_only=False)
-            )
-            emb = self.time_embed(t_emb.half())
-
-            if is_sdxl:
-                assert y.shape[0] == x.shape[0]
-                emb = emb + self.label_emb(y)
-
-            h = x
-            for i, module in enumerate(self.input_blocks):
-                self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-                h = module(h, emb, context)
-
-                t2i_injection = [3, 5, 8] if is_sdxl else [2, 5, 8, 11]
-
-                if i in t2i_injection:
-                    h = oneflow_aligned_adding(
-                        h, total_t2i_adapter_embedding.pop(0), require_inpaint_hijack
-                    )
-
-                hs.append(h)
-
-            self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-            h = self.middle_block(h, emb, context)
-
-        # U-Net Middle Block
-        h = oneflow_aligned_adding(
-            h, total_controlnet_embedding.pop(), require_inpaint_hijack
-        )
-
-        if len(total_t2i_adapter_embedding) > 0 and is_sdxl:
-            h = oneflow_aligned_adding(
-                h, total_t2i_adapter_embedding.pop(0), require_inpaint_hijack
-            )
-
-        # U-Net Decoder
-        for i, module in enumerate(self.output_blocks):
-            self.current_h_shape = (h.shape[0], h.shape[1], h.shape[2], h.shape[3])
-            h = flow.cat(
-                [
-                    h,
-                    oneflow_aligned_adding(
-                        hs.pop(),
-                        total_controlnet_embedding.pop(),
-                        require_inpaint_hijack,
-                    ),
-                ],
-                dim=1,
-            )
-            h = h.half()
-            h = module(h, emb, context)
-
-        # U-Net Output
-        h = h.type(x.dtype)
-        h = self.out(h)
-
-        return h
-
-
-def onediff_controlnet_decorator(func):
-    @wraps(func)
-    def wrapper(self, p, *arg, **kwargs):
-        try:
-            onediff_shared.controlnet_enabled = check_if_controlnet_enabled(p)
-            if onediff_shared.controlnet_enabled:
-                hijack_controlnet_extension(p)
-            return func(self, p, *arg, **kwargs)
-        finally:
-            if onediff_shared.controlnet_enabled:
-                onediff_shared.previous_is_controlnet = True
-            else:
-                onediff_shared.controlnet_compiled = False
-                onediff_shared.previous_is_controlnet = False
-
-    return wrapper
-
-
-def compile_controlnet_ldm_unet(sd_model, unet_model, *, options=None):
-    from sgm.modules.attention import BasicTransformerBlock as BasicTransformerBlockSGM
-    from ldm.modules.attention import BasicTransformerBlock as BasicTransformerBlockLDM
-    from sgm.modules.diffusionmodules.openaimodel import ResBlock as ResBlockSGM
-    from ldm.modules.diffusionmodules.openaimodel import ResBlock as ResBlockLDM
-    for module in unet_model.modules():
-        if isinstance(module, (BasicTransformerBlockLDM, BasicTransformerBlockSGM)):
-            module.checkpoint = False
-        if isinstance(module, (ResBlockLDM, ResBlockSGM)):
-            module.use_checkpoint = False
-    # TODO: refine here
-    compiled_model = oneflow_compile(unet_model, options=options)
-    compiled_graph = OneDiffCompiledGraph(sd_model, compiled_model)
-    compiled_graph.eager_module = unet_model
-    compiled_graph.name += "_controlnet"
-    return compiled_graph
-
-
-torch2oflow_class_map = {
-    CrossAttention: CrossAttentionOflow,
-    GroupNorm32: GroupNorm32Oflow,
-    TorchOnediffControlNetModel: OneFlowOnediffControlNetModel,
-}
-register(package_names=["scripts.hook"], torch2oflow_class_map=torch2oflow_class_map)
-
-
-def check_if_controlnet_ext_loaded() -> bool:
-    from modules import extensions
-
-    return "sd-webui-controlnet" in extensions.loaded_extensions
+from .utils import get_controlnet_script
 
 
 def hijacked_main_entry(self, p):
     self._original_controlnet_main_entry(p)
+    from .compile import compile_controlnet_ldm_unet
+    from .model import OnediffControlNetModel
+
+    if not onediff_shared.onediff_enabled:
+        return
     sd_ldm = p.sd_model
     unet = sd_ldm.model.diffusion_model
 
     structure_changed = check_structure_change(
         onediff_shared.previous_unet_type, sd_ldm
     )
-    if onediff_shared.controlnet_compiled is False or structure_changed:
-        onediff_model = TorchOnediffControlNetModel(unet)
+    if not onediff_shared.controlnet_compiled or structure_changed:
+        onediff_model = OnediffControlNetModel(unet)
         onediff_shared.current_unet_graph = compile_controlnet_ldm_unet(
             sd_ldm, onediff_model
         )
         onediff_shared.controlnet_compiled = True
-    else:
-        pass
-
-
-def get_controlnet_script(p):
-    for script in p.scripts.scripts:
-        if script.__module__ == "controlnet.py":
-            return script
-    return None
-
-
-def check_if_controlnet_enabled(p):
-    controlnet_script_class = get_controlnet_script(p)
-    return (
-        controlnet_script_class is not None
-        and len(controlnet_script_class.get_enabled_units(p)) != 0
-    )
 
 
 # When OneDiff is initializing, the controlnet extension has not yet been loaded.
@@ -339,6 +50,18 @@ def hijack_controlnet_extension(p):
     controlnet_script.controlnet_main_entry = hijacked_main_entry.__get__(
         controlnet_script
     )
+
+
+def unhijack_controlnet_extension(p):
+    controlnet_script = get_controlnet_script(p)
+    if controlnet_script is None:
+        return
+
+    if hasattr(controlnet_script, "_original_controlnet_main_entry"):
+        controlnet_script.controlnet_main_entry = (
+            controlnet_script._original_controlnet_main_entry
+        )
+        delattr(controlnet_script, "_original_controlnet_main_entry")
 
 
 # We were intended to only hack the closure function `forward`
@@ -784,7 +507,10 @@ def hijacked_controlnet_hook(
             outer.attention_auto_machine = AutoMachine.Read
             outer.gn_auto_machine = AutoMachine.Read
 
-        # modified by OneDiff
+        # ------ modified by OneDiff below ------
+        x = x.half()
+        context = context.half()
+        y = y.half() if y is not None else y
         h = onediff_shared.current_unet_graph.graph_module(
             x,
             timesteps,
@@ -795,6 +521,7 @@ def hijacked_controlnet_hook(
             is_sdxl,
             require_inpaint_hijack,
         )
+        # ------ modified by OneDiff above ------
 
         # Post-processing for color fix
         for param in outer.control_params:
@@ -863,16 +590,13 @@ def hijacked_controlnet_hook(
     def forward_webui(*args, **kwargs):
         # ------ modified by OneDiff below ------
         forward_func = None
-        if (
-            "forward"
-            in onediff_shared.current_unet_graph.graph_module._torch_module.__dict__
-        ):
-            forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop(
-                "forward"
-            )
-            _original_forward_func = onediff_shared.current_unet_graph.graph_module._torch_module.__dict__.pop(
-                "_original_forward"
-            )
+        graph_module = onediff_shared.current_unet_graph.graph_module
+        if is_oneflow_backend():
+            if "forward" in graph_module._torch_module.__dict__:
+                forward_func = graph_module._torch_module.__dict__.pop("forward")
+                _original_forward_func = graph_module._torch_module.__dict__.pop(
+                    "_original_forward"
+                )
         # ------ modified by OneDiff above ------
 
         # webui will handle other compoments
@@ -888,13 +612,12 @@ def hijacked_controlnet_hook(
                 move_all_control_model_to_cpu()
 
             # ------ modified by OneDiff below ------
-            if forward_func is not None:
-                onediff_shared.current_unet_graph.graph_module._torch_module.forward = (
-                    forward_func
-                )
-                onediff_shared.current_unet_graph.graph_module._torch_module._original_forward = (
-                    _original_forward_func
-                )
+            if is_oneflow_backend():
+                if forward_func is not None:
+                    graph_module._torch_module.forward = forward_func
+                    graph_module._torch_module._original_forward = (
+                        _original_forward_func
+                    )
             # ------ modified by OneDiff above ------
 
     def hacked_basic_transformer_inner_forward(self, x, context=None):

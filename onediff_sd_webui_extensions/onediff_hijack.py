@@ -1,38 +1,9 @@
 from typing import Any, Mapping
 
-import oneflow
 import torch
-from compile.oneflow.mock import ldm, sgm
 from modules import sd_models
 from modules.sd_hijack_utils import CondFunc
 from onediff_shared import onediff_enabled
-
-
-# https://github.com/AUTOMATIC1111/stable-diffusion-webui/blob/1c0a0c4c26f78c32095ebc7f8af82f5c04fca8c0/modules/sd_hijack_unet.py#L8
-class OneFlowHijackForUnet:
-    """
-    This is oneflow, but with cat that resizes tensors to appropriate dimensions if they do not match;
-    this makes it possible to create pictures with dimensions that are multiples of 8 rather than 64
-    """
-
-    def __getattr__(self, item):
-        if item == "cat":
-            return self.cat
-        if hasattr(oneflow, item):
-            return getattr(oneflow, item)
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{item}'"
-        )
-
-    def cat(self, tensors, *args, **kwargs):
-        if len(tensors) == 2:
-            a, b = tensors
-            a = oneflow.nn.functional.interpolate_like(a, like=b, mode="nearest")
-            tensors = (a, b)
-        return oneflow.cat(tensors, *args, **kwargs)
-
-
-hijack_flow = OneFlowHijackForUnet()
 
 
 def unload_model_weights(sd_model=None, info=None):
@@ -66,8 +37,6 @@ def unhijack_function(module, name, new_name):
 
 
 def do_hijack():
-    ldm.flow = hijack_flow
-    sgm.flow = hijack_flow
     from modules import script_callbacks, sd_models
 
     script_callbacks.on_script_unloaded(undo_hijack)
@@ -86,8 +55,6 @@ def do_hijack():
 
 
 def undo_hijack():
-    ldm.flow = oneflow
-    sgm.flow = oneflow
     from modules import sd_models
 
     unhijack_function(

@@ -6,26 +6,33 @@ import modules.sd_models as sd_models
 import modules.shared as shared
 import onediff_controlnet
 import onediff_shared
-import oneflow as flow
-from compile import SD21CompileCtx, VaeCompileCtx, get_compiled_graph
+from compile import (
+    OneDiffBackend,
+    SD21CompileCtx,
+    VaeCompileCtx,
+    get_compiled_graph,
+    get_onediff_backend,
+)
 from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
-from modules.devices import torch_gc
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
+
+# from onediff.optimization.quant_optimizer import varify_can_use_quantization
 from onediff_utils import (
     check_structure_change,
     get_all_compiler_caches,
     hints_message,
     load_graph,
     onediff_enabled_decorator,
+    onediff_gc,
     refresh_all_compiler_caches,
     save_graph,
+    varify_can_use_quantization,
 )
 
-from onediff.optimization.quant_optimizer import varify_can_use_quantization
 from onediff.utils import logger, parse_boolean_from_env
 
 """oneflow_compiled UNetModel"""
@@ -113,11 +120,9 @@ class Script(scripts.Script):
         ):
             p.override_settings.pop("sd_model_checkpoint", None)
             sd_models.reload_model_weights()
-            torch_gc()
-            flow.cuda.empty_cache()
+            onediff_gc()
 
-        backend = backend or shared.opts.onediff_compiler_backend
-
+        backend = backend or get_onediff_backend()
         current_checkpoint_name = shared.sd_model.sd_checkpoint_info.name
         ckpt_changed = (
             shared.sd_model.sd_checkpoint_info.name
@@ -152,9 +157,9 @@ class Script(scripts.Script):
                 f"Model {current_checkpoint_name} has same sd type of graph type {onediff_shared.previous_unet_type}, skip compile"
             )
 
-        with UnetCompileCtx(
-            not onediff_shared.controlnet_enabled
-        ), VaeCompileCtx(), SD21CompileCtx(), HijackLoraActivate():
+        with UnetCompileCtx(not onediff_shared.controlnet_enabled), VaeCompileCtx(
+            backend=backend
+        ), SD21CompileCtx(), HijackLoraActivate():
             proc = process_images(p)
         save_graph(onediff_shared.current_unet_graph, saved_cache_name)
 
@@ -175,9 +180,9 @@ def on_ui_settings():
         "onediff_compiler_backend",
         shared.OptionInfo(
             "oneflow",
-            "Backend for onediff compiler",
+            "Backend for onediff compiler (if you switch backend, you need to restart webui service)",
             gr.Radio,
-            {"choices": ["oneflow", "nexfort"]},
+            {"choices": [OneDiffBackend.ONEFLOW, OneDiffBackend.NEXFORT]},
             section=section,
         ),
     )

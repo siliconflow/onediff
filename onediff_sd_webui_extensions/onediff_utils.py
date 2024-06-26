@@ -1,14 +1,21 @@
 import os
-from contextlib import contextmanager
 from functools import wraps
 from pathlib import Path
 from textwrap import dedent
 from zipfile import BadZipFile
 
+import networks
 import onediff_shared
-import oneflow as flow
-from modules.devices import torch_gc
+from importlib_metadata import version
+
+from onediff.utils.import_utils import is_oneflow_available
+
+if is_oneflow_available():
+    import oneflow as flow
+
+from compile import init_backend, is_oneflow_backend
 from modules import shared
+from modules.devices import torch_gc
 
 from onediff.infer_compiler import DeployableModule
 
@@ -115,15 +122,35 @@ def save_graph(compiled_unet: DeployableModule, saved_cache_name: str = ""):
 
 def onediff_enabled_decorator(func):
     @wraps(func)
-    def wrapper(self, p, *arg, **kwargs):
+    def wrapper(
+        self,
+        p,
+        quantization=False,
+        compiler_cache=None,
+        saved_cache_name="",
+        always_recompile=False,
+        backend=None,
+    ):
         onediff_shared.onediff_enabled = True
+        if networks.originals is not None:
+            networks.originals.undo()
+        init_backend(backend)
         try:
-            return func(self, p, *arg, **kwargs)
+            return func(
+                self,
+                p,
+                quantization=quantization,
+                compiler_cache=compiler_cache,
+                saved_cache_name=saved_cache_name,
+                always_recompile=always_recompile,
+                backend=backend,
+            )
         finally:
+            if networks.originals is not None:
+                networks.originals.__init__()
             onediff_shared.onediff_enabled = False
             onediff_shared.previous_unet_type.update(**get_model_type(shared.sd_model))
-            torch_gc()
-            flow.cuda.empty_cache()
+            onediff_gc()
 
     return wrapper
 
@@ -139,6 +166,7 @@ def singleton_decorator(func):
 
     return wrapper
 
+
 def get_model_type(model):
     return {
         "is_sdxl": model.is_sdxl,
@@ -146,3 +174,24 @@ def get_model_type(model):
         "is_sd1": model.is_sd1,
         "is_ssd": model.is_ssd,
     }
+
+
+def onediff_gc():
+    torch_gc()
+    if is_oneflow_backend():
+        flow.cuda.empty_cache()
+
+
+def varify_can_use_quantization():
+    try:
+        import oneflow
+
+        if version("oneflow") < "0.9.1":
+            return False
+    except ImportError as e:
+        return False
+    try:
+        import onediff_quant
+    except ImportError as e:
+        return False
+    return hasattr(oneflow._C, "dynamic_quantization")
