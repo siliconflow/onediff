@@ -15,7 +15,7 @@ assignees: strint
 
 #### OneDiff git commit id
 
-####  OneFlow version info
+####  OneFlow version info if you have installed oneflow
 Run `python -m oneflow --doctor` and paste it here.
 
 ### How To Reproduce
