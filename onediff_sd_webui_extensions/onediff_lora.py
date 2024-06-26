@@ -1,9 +1,7 @@
 import torch
+from compile.utils import is_oneflow_backend
 
 from onediff.infer_compiler import DeployableModule
-from onediff.infer_compiler.backends.oneflow.param_utils import (
-    update_graph_related_tensor,
-)
 
 
 class HijackLoraActivate:
@@ -52,8 +50,12 @@ def hijacked_activate(activate_func):
                 ):
                     continue
                 networks.network_apply_weights(sub_module)
-                if isinstance(sub_module, torch.nn.Conv2d):
+                if is_oneflow_backend() and isinstance(sub_module, torch.nn.Conv2d):
                     # TODO(WangYi): refine here
+                    from onediff.infer_compiler.backends.oneflow.param_utils import (
+                        update_graph_related_tensor,
+                    )
+
                     try:
                         update_graph_related_tensor(sub_module)
                     except:

@@ -1,27 +1,38 @@
+from compile import OneDiffBackend
 from modules.sd_hijack import apply_optimizations
 
 from onediff.infer_compiler import compile, oneflow_compile
 
-from .utils import OneDiffCompiledGraph, disable_unet_checkpointing
-from .quantization import quant_unet_oneflow
+from .utils import (
+    OneDiffCompiledGraph,
+    disable_unet_checkpointing,
+    is_nexfort_backend,
+    is_oneflow_backend,
+)
 
 
 def get_compiled_graph(
-    sd_model, *, backend, quantization=None, options=None
+    sd_model, unet_model=None, *, backend=None, quantization=None, options=None
 ) -> OneDiffCompiledGraph:
-    diffusion_model = sd_model.model.diffusion_model
+    diffusion_model = unet_model or sd_model.model.diffusion_model
     compiled_unet = onediff_compile(
         diffusion_model, backend=backend, quantization=quantization, options=options
     )
-    return OneDiffCompiledGraph(sd_model, compiled_unet, quantization)
+    return OneDiffCompiledGraph(sd_model, diffusion_model, compiled_unet, quantization)
 
 
-def onediff_compile(unet_model, *, quantization=False, backend="oneflow", options=None):
-    if backend == "oneflow":
+def onediff_compile(
+    unet_model,
+    *,
+    quantization: bool = False,
+    backend: OneDiffBackend = None,
+    options=None,
+):
+    if is_oneflow_backend(backend):
         return compile_unet_oneflow(
             unet_model, quantization=quantization, options=options
         )
-    elif backend == "nexfort":
+    elif is_nexfort_backend(backend):
         return compile_unet_nexfort(
             unet_model, quantization=quantization, options=options
         )
@@ -44,11 +55,14 @@ def compile_unet_oneflow(unet_model, *, quantization=False, options=None):
 
     compiled_unet_model = oneflow_compile(unet_model, options=options)
     if quantization:
+        from .quantization import quant_unet_oneflow
+
         compiled_unet_model = quant_unet_oneflow(compiled_unet_model)
     return compiled_unet_model
 
 
 def compile_unet_nexfort(unet_model, *, quantization=False, options=None):
+    # TODO: support nexfort quant
     if quantization:
         raise NotImplementedError(
             "Quantization for nexfort backend is not implemented yet."
