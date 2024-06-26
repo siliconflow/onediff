@@ -42,7 +42,10 @@ def parse_args():
         "--width", type=int, default=1024, help="Width of the generated image."
     )
     parser.add_argument(
-        "--guidance_scale", type=float, default=4.5, help="The scale factor for the guidance."
+        "--guidance_scale",
+        type=float,
+        default=4.5,
+        help="The scale factor for the guidance.",
     )
     parser.add_argument(
         "--num-inference-steps", type=int, default=28, help="Number of inference steps."
@@ -57,6 +60,12 @@ def parse_args():
         "--seed", type=int, default=2, help="Seed for random number generation."
     )
     parser.add_argument(
+        "--warmup-iterations",
+        type=int,
+        default=1,
+        help="Number of warm-up iterations before actual inference.",
+    )
+    parser.add_argument(
         "--run_multiple_resolutions",
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
         default=False,
@@ -67,6 +76,12 @@ def parse_args():
         default=False,
     )
     parser.add_argument("--quant-submodules-config-path", type=str, default=None)
+    parser.add_argument(
+        "--use_torch_compile",
+        type=lambda x: (str(x).lower() in ["true", "1", "yes"]),
+        default=False,
+        help="Whether to use torch.compile optimizations.",
+    )
     return parser.parse_args()
 
 
@@ -108,12 +123,17 @@ def generate_texts(min_length=50, max_length=302):
 
 
 class SD3Generator:
-    def __init__(self, model, compiler_config=None, quantize_config=None):
+    def __init__(
+        self, model, compiler_config=None, quantize_config=None, use_torch_compile=False
+    ):
         self.pipe = StableDiffusion3Pipeline.from_pretrained(
             model,
             torch_dtype=torch.float16,
         )
         self.pipe.to(device)
+
+        if use_torch_compile:
+            self.setup_torch_compile()
 
         if compiler_config:
             print("compile...")
@@ -123,7 +143,7 @@ class SD3Generator:
             print("quant...")
             self.pipe = self.quantize_pipe(self.pipe, quantize_config)
 
-    def warmup(self, gen_args, warmup_iterations=1):
+    def warmup(self, gen_args, warmup_iterations):
         warmup_args = gen_args.copy()
 
         warmup_args["generator"] = torch.Generator(device=device).manual_seed(0)
@@ -147,6 +167,23 @@ class SD3Generator:
         images[0].save(args.saved_image)
 
         return images[0], end_time - start_time
+
+    def setup_torch_compile(self):
+        torch.set_float32_matmul_precision("high")
+        torch._inductor.config.conv_1x1_as_mm = True
+        torch._inductor.config.coordinate_descent_tuning = True
+        torch._inductor.config.epilogue_fusion = False
+        torch._inductor.config.coordinate_descent_check_all_directions = True
+
+        self.pipe.transformer.to(memory_format=torch.channels_last)
+        self.pipe.vae.to(memory_format=torch.channels_last)
+
+        self.pipe.transformer = torch.compile(
+            self.pipe.transformer, mode="max-autotune", fullgraph=True
+        )
+        self.pipe.vae.decode = torch.compile(
+            self.pipe.vae.decode, mode="max-autotune", fullgraph=True
+        )
 
     def compile_pipe(self, pipe, compiler_config):
         options = compiler_config
@@ -174,7 +211,13 @@ def main():
     compiler_config = json.loads(args.compiler_config) if args.compiler_config else None
     quantize_config = json.loads(args.quantize_config) if args.quantize_config else None
 
-    sd3 = SD3Generator(args.model, compiler_config, quantize_config)
+    if not args.use_torch_compile:
+        sd3 = SD3Generator(args.model, compiler_config, quantize_config)
+    else:
+        assert (
+            args.compiler_config is None and args.quantize_config is None
+        ), "compiler_config and quantize_config must be None when use_torch_compile is enabled"
+        sd3 = SD3Generator(args.model, use_torch_compile=True)
 
     if args.run_multiple_prompts:
         # Note: diffusers will truncate the input prompt (limited to 77 tokens).
@@ -193,7 +236,7 @@ def main():
         "negative_prompt": args.negative_prompt,
     }
 
-    sd3.warmup(gen_args)
+    sd3.warmup(gen_args, args.warmup_iterations)
 
     for prompt in prompt_list:
         gen_args["prompt"] = prompt

@@ -39,7 +39,15 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --saved-image sd3.png
 ```
 
-### Run 1024*1024 with compile
+### Run 1024*1024 with torch compile
+```
+python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
+    --use_torch_compile 1 \
+    --warmup-iterations 3 \
+    --saved-image sd3_torch_cpmpile.png
+```
+
+### Run 1024*1024 with onediff (nexfort) compile
 
 ```
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
