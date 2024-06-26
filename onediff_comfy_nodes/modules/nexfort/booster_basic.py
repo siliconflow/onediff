@@ -18,7 +18,7 @@ class BasicNexFortBoosterExecutor(BoosterExecutor):
         self,
         mode: str = "max-optimize:max-autotune:low-precision",
         fullgraph=False,
-        dynamic=None,
+        dynamic=True,
     ):
         super().__init__()
         options = {
