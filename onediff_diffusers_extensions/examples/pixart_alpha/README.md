@@ -37,6 +37,9 @@ HF pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/pixart
 
 model_id_or_path_to_PixArt-XL-2-1024-MS is the model id or model path of pixart alpha, such as `PixArt-alpha/PixArt-XL-2-1024-MS` or `/data/hf_models/PixArt-XL-2-1024-MS/`
 
+> [!NOTE]
+Compared to PixArt-alpha, PixArt-sigma extends the token length of the text encoder and introduces a new attention module capable of compressing key and value tokens, yet it still maintains consistency in the model architecture. The nexfort backend of Onediff can support compilation acceleration for any version of PixArt.
+
 ### Go to the onediff folder
 ```
 cd onediff
@@ -44,6 +47,7 @@ cd onediff
 
 ### Run 1024*1024 without compile(the original pytorch HF diffusers pipeline)
 ```
+# To test sigma, specify the --model parameter as `PixArt-alpha/PixArt-Sigma-XL-2-1024-MS`.
 python3 ./benchmarks/text_to_image.py \
 --model PixArt-alpha/PixArt-XL-2-1024-MS \
 --scheduler none \
@@ -53,13 +57,6 @@ python3 ./benchmarks/text_to_image.py \
 --prompt "product photography, world of warcraft orc warrior, white background"
 ```
 
-python3 ./benchmarks/text_to_image.py \
---model PixArt-alpha/PixArt-XL-2-1024-MS \
---scheduler none \
---steps 20 \
---compiler none \
---output-image ./pixart_alpha.png \
---prompt "product photography, world of warcraft orc warrior, white background"
 
 ### Run 1024*1024 with compile
 ```
@@ -110,9 +107,9 @@ python3 ./benchmarks/text_to_image.py \
 
 #### nexfort compile config and warmup cost
 - compiler-config 
-  - default is `{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`, the compilation time is about 500 seconds
-  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time to about 60 seconds and just slightly reduce the performance
-  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}'` will help to make the best performance but the compilation time is about 700 seconds
+  - default is `{"mode": "max-optimize:max-autotune:freezing:cache-all", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`, the compilation time is about 500 seconds
+  - setting `--compiler-config '{"mode": "max-autotune:cache-all", "memory_format": "channels_last"}'` will reduce compilation time to about 60 seconds and just slightly reduce the performance
+  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs:cache-all", "memory_format": "channels_last"}'` will help to make the best performance but the compilation time is about 700 seconds
   - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 20 seconds, but will reduce the performance
 - fuse_qkv_projections: True
 

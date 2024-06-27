@@ -267,7 +267,7 @@ def main():
             options = json.loads(args.compiler_config)
         else:
             # config with string
-            options = '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}'
+            options = '{"mode": "max-optimize:max-autotune:freezing:cache-all", "memory_format": "channels_last"}'
         pipe = compile_pipe(
             pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
