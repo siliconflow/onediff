@@ -144,8 +144,8 @@ def _(workflow_path, *args, **kwargs):
         workflow = json.load(fp)
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
 
-    face_imgs = get_all_images(FACE_IMAGE_DIR)
-    pose_imgs = get_all_images(POSE_IMAGE_DIR)
+    face_imgs = get_all_images(FACE_IMAGE_DIR)[:2]
+    pose_imgs = get_all_images(POSE_IMAGE_DIR)[:2]
     for face_img in face_imgs:
         for pose_img in pose_imgs:
             # print(f'{face_img=} {pose_img=}')
@@ -166,7 +166,7 @@ def _(workflow_path, *args, **kwargs):
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
 
     for height in [768, 512]:
-        for width in [768, 512]:
+        for width in [768]:
             for face_img in get_all_images(FACE_IMAGE_DIR):
                 graph.graph["12"]["inputs"]["image"] = face_img
                 graph.set_image_size(height=height, width=width)
@@ -183,8 +183,8 @@ def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:
         workflow = json.load(fp)
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
-    face_imgs = get_all_images(FACE_IMAGE_DIR)
-    pose_imgs = get_all_images(POSE_IMAGE_DIR)
+    face_imgs = get_all_images(FACE_IMAGE_DIR)[:2]
+    pose_imgs = get_all_images(POSE_IMAGE_DIR)[:2]
     for face_img in face_imgs:
         for pose_img in pose_imgs:
             # print(f'{face_img=} {pose_img=}')

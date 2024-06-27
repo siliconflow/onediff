@@ -43,7 +43,6 @@ Updated on January 23, 2024. Device: RTX 3090
       - [Model Speedup](#model-speedup)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
     - [Compiler Cache](#compiler-cache)
-      - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
     - [Quantization](#quantization)
   - [Tutorials](#tutorials)
   - [Contact](#contact)
@@ -126,7 +125,8 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 
 ### Compiler Cache 
-#### Avoid compilation time for online serving
+**Avoid compilation time for online serving**
+
 ```shell
 # Set custom directory for saving graphs in ComfyUI with OneFlow backend
 export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"
@@ -151,43 +151,14 @@ If you possess a OneDiff Enterprise license key, you can access instructions on 
 
 
 ## Tutorials
+
 - [Accelerate SD3 with onediff](./docs/sd3/README.md)
-- todo
-- [ ] cubiq/PuLID_ComfyUI
-- [ ] cubiq/ComfyUI_IPAdapter_plus
-- [ ] Lora Speedup
-- [ ] ControlNet
-- [ ] SVD
-- [ ] DeepCache
-- [ ] Accelerating cubiq/ComfyUI_InstantID with OneDiff
-<!-- - [Accelerating cubiq/ComfyUI_IPAdapter_plus with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md) -->
-
-<!-- - [Lora Speedup](workflows/model-speedup-lora.png) -->
-- 
-<!-- - [ControlNet](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ControlNet) -->
-
-
-<!-- - [SVD](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/SVD) -->
-
-<!-- This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD. Furthermore, it is compatible with [SVD 1.1](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt-1-1). -->
-
-
-<!-- DeepCache is an innovative algorithm that substantially boosts the speed of diffusion models, achieving an approximate 2x improvement. When used in conjunction with OneDiff, it further accelerates the diffusion model to approximately 3x.
-
-Here are the example of applying DeepCache to SD and SVD models.
-
-[Module DeepCache SpeedUp on SD](workflows/deep-cache.png)
-
-[Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
-
-[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md)  -->
-
-
-<!-- ### InstantID 
-
-> doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
- -->
-
+- [cubiq/PuLID_ComfyUI](./docs/README.md)
+- [cubiq/ComfyUI_IPAdapter_plus](./docs/README.md)
+- [ControlNet](./docs/ControlNet/README.md)
+- TODO [Lora Speedup & ControlNet]
+- [SVD](./docs/SVD/README.md)
+- [DeepCache](./docs/lora_deepcache/README.md)
 
 ## Contact
 
