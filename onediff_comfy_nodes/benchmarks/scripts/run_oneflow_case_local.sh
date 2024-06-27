@@ -6,13 +6,6 @@ STANDARD_OUTPUT=/share_nfs/hf_models/comfyui_resources/standard_output
 WORKFLOW_BASIC=resources/workflows/baseline
 WORKFLOW_DIR=resources/workflows/oneflow
 
-# Run InstantID workflow
-python3 scripts/text_to_image.py \
-    --comfy-port $COMFY_PORT \
-    -w $WORKFLOW_DIR/ComfyUI_InstantID/instantid_posed_speedup.json \
-    --exp-name instantid_posed_speedup \
-    --output-images
-
 # Run PuLID_ComfyUI baseline workflow
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
@@ -45,3 +38,10 @@ python3 scripts/text_to_image.py \
     --ssim-threshold 0.8 \
     --output-images \
     --baseline-dir results/PuLID_IPAdapter_style_transfer_baseline
+
+# Run InstantID workflow
+python3 scripts/text_to_image.py \
+    --comfy-port $COMFY_PORT \
+    -w $WORKFLOW_DIR/ComfyUI_InstantID/instantid_posed_speedup.json \
+    --exp-name instantid_posed_speedup \
+    --output-images
