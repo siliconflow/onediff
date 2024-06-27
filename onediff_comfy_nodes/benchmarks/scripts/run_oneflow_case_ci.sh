@@ -28,3 +28,5 @@ python3 scripts/text_to_image.py \
     -w $WORKFLOW_DIR/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
     --baseline-dir $STANDARD_OUTPUT/test_ipa
 # --output-images \
+
+
