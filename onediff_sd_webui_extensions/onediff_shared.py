@@ -9,6 +9,7 @@ previous_unet_type = {
     "is_ssd": False,
 }
 onediff_enabled = False
+onediff_backend = None
 
 # controlnet
 controlnet_enabled = False
