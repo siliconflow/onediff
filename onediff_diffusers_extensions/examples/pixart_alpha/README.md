@@ -107,9 +107,9 @@ python3 ./benchmarks/text_to_image.py \
 
 #### nexfort compile config and warmup cost
 - compiler-config 
-  - default is `{"mode": "max-optimize:max-autotune:freezing:cache-all", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`, the compilation time is about 500 seconds
-  - setting `--compiler-config '{"mode": "max-autotune:cache-all", "memory_format": "channels_last"}'` will reduce compilation time to about 60 seconds and just slightly reduce the performance
-  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs:cache-all", "memory_format": "channels_last"}'` will help to make the best performance but the compilation time is about 700 seconds
+  - default is `{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`, the compilation time is about 500 seconds
+  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time to about 60 seconds and just slightly reduce the performance
+  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}'` will help to make the best performance but the compilation time is about 700 seconds
   - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 20 seconds, but will reduce the performance
 - fuse_qkv_projections: True
 
