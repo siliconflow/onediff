@@ -38,7 +38,7 @@ HF pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/pixart
 model_id_or_path_to_PixArt-XL-2-1024-MS is the model id or model path of pixart alpha, such as `PixArt-alpha/PixArt-XL-2-1024-MS` or `/data/hf_models/PixArt-XL-2-1024-MS/`
 
 > [!NOTE]
-Compared to PixArt-alpha, PixArt-sigma extends the token length of the text encoder and introduces a new attention module capable of compressing key and value tokens, yet it still maintains consistency in the model architecture. The nexfort backend of Onediff can support compilation acceleration for any version of PixArt.
+Compared to PixArt-alpha, PixArt-sigma extends the token length of the text encoder and introduces a new attention module capable of compressing key and value tokens, yet it still maintains consistency in the model architecture. The nexfort backend of onediff can support compilation acceleration for any version of PixArt.
 
 ### Go to the onediff folder
 ```
