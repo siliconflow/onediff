@@ -34,7 +34,6 @@ HF pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/pixart
 
 ## Run
 
-
 model_id_or_path_to_PixArt-XL-2-1024-MS is the model id or model path of pixart alpha, such as `PixArt-alpha/PixArt-XL-2-1024-MS` or `/data/hf_models/PixArt-XL-2-1024-MS/`
 
 > [!NOTE]
