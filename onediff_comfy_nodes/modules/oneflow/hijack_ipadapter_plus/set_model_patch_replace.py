@@ -6,10 +6,13 @@ from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
 
+
 def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
     apply_patch(org_fn, model, patch_kwargs, key, ipadapter_attention)
 
-def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None)->None:
+
+@torch.inference_mode()
+def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None) -> None:
     diff_model = model.model.diffusion_model
     cache_patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
     unet_extra_options_patch_executor = create_patch_executor(
@@ -49,8 +52,13 @@ def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None)->None:
         # patch for weight
         weight = split1dict["weight"]
         if isinstance(weight, (int, float)):
-            weight = torch.tensor([weight])
+            weight = torch.tensor(weight)
             split1dict["weight"] = weight.to(model_management.get_torch_device())
+
+        # https://github.com/cubiq/ComfyUI_IPAdapter_plus/blob/2ff4fc482029d408cfd5fa05522ca822b2c2e33c/IPAdapterPlus.py#L252-L253
+        if isinstance(weight, dict):
+            for k, v in weight.items():
+                weight[k] = torch.tensor(v).to(model_management.get_torch_device())
 
         return split1dict, split2dict
 

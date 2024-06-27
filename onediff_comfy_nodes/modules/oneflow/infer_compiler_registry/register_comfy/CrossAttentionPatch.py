@@ -9,6 +9,9 @@ import torch.nn.functional as F
 from comfy.ldm.modules.attention import attention_pytorch as optimized_attention
 
 def tensor_to_size(source, dest_size):
+    if source.dim() == 0:
+        print("x is a scalar (no dimensions)")
+        return source
     if isinstance(dest_size, torch.Tensor):
         dest_size = dest_size.shape[0]
     source_size = source.shape[0]
@@ -97,6 +100,14 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
         if t_idx not in weight:
             return 0
 
+        if weight_type == "style transfer precise":
+            if layers == 11 and t_idx == 3:
+                uncond = cond
+                cond = cond * 0
+            elif layers == 16 and (t_idx == 4 or t_idx == 5):
+                uncond = cond
+                cond = cond * 0
+
         weight = weight[t_idx]
 
         if cond_alt is not None and t_idx in cond_alt:
@@ -106,13 +117,12 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     if unfold_batch:
         # Check AnimateDiff context window
         if ad_params is not None and ad_params["sub_idxs"] is not None:
-            if isinstance(weight, torch.Tensor):
+            if isinstance(weight, torch.Tensor) and weight.dim() != 0:
                 weight = tensor_to_size(weight, ad_params["full_length"])
                 weight = torch.Tensor(weight[ad_params["sub_idxs"]])
                 # if torch.all(weight == 0):
                 #     return 0
                 weight = weight.repeat(len(cond_or_uncond), 1, 1) # repeat for cond and uncond
-
             # elif weight == 0:
             #     return 0
 
@@ -127,7 +137,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
                 cond = cond[ad_params["sub_idxs"]]
                 uncond = uncond[ad_params["sub_idxs"]]
         else:
-            if isinstance(weight, torch.Tensor):
+            if isinstance(weight, torch.Tensor) and weight.dim() != 0:
                 weight = tensor_to_size(weight, batch_prompt)
                 # if torch.all(weight == 0):
                 #     return 0
@@ -144,7 +154,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
         v_uncond = ipadapter.ip_layers.to_kvs[v_key](uncond)
     else:
         # TODO: should we always convert the weights to a tensor?
-        if isinstance(weight, torch.Tensor):
+        if isinstance(weight, torch.Tensor) and weight.dim() != 0:
             weight = tensor_to_size(weight, batch_prompt)
             # if torch.all(weight == 0):
             #     return 0
@@ -157,9 +167,13 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
         v_cond = ipadapter.ip_layers.to_kvs[v_key](cond).repeat(batch_prompt, 1, 1)
         v_uncond = ipadapter.ip_layers.to_kvs[v_key](uncond).repeat(batch_prompt, 1, 1)
 
-    ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
-    ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
-    
+    if len(cond_or_uncond) == 3: # TODO: conxl, I need to check this
+        ip_k = torch.cat([(k_cond, k_uncond, k_cond)[i] for i in cond_or_uncond], dim=0)
+        ip_v = torch.cat([(v_cond, v_uncond, v_cond)[i] for i in cond_or_uncond], dim=0)
+    else:
+        ip_k = torch.cat([(k_cond, k_uncond)[i] for i in cond_or_uncond], dim=0)
+        ip_v = torch.cat([(v_cond, v_uncond)[i] for i in cond_or_uncond], dim=0)
+
     if embeds_scaling == 'K+mean(V) w/ C penalty':
         scaling = float(ip_k.shape[2]) / 1280.0
         weight = weight * scaling
@@ -221,7 +235,6 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     #out = out + out_ip
 
     return out_ip.to(dtype=dtype)
-
 
 
 def is_crossAttention_patch(module) -> bool:
