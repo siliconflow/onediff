@@ -17,7 +17,6 @@ if [ "$CI" != "1" ]; then
     # Baseline for lora and lora_multiple
     python3 scripts/text_to_image.py \
         -w $WORKFLOW_BASIC/lora.json $WORKFLOW_BASIC/lora_multiple.json \
-        --output-dir $STANDARD_OUTPUT \
         --exp-name baseline-lora-lora_multiple \
         --output-images
 
@@ -25,7 +24,6 @@ if [ "$CI" != "1" ]; then
     python3 scripts/text_to_image.py \
         --comfy-port $COMFY_PORT \
         -w $WORKFLOW_BASIC/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
-        --output-dir $STANDARD_OUTPUT \
         --exp-name baseline-ipadapter_advanced \
         --output-images
 else
@@ -36,7 +34,6 @@ fi
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
     -w $WORKFLOW_DIR/lora_speedup.json $WORKFLOW_DIR/lora_multiple_speedup.json \
-    --output-dir $STANDARD_OUTPUT \
     --exp-name lora-lora_multiple-speedup \
     --baseline-dir $STANDARD_OUTPUT/baseline-lora-lora_multiple \
     --output-images
@@ -45,7 +42,6 @@ python3 scripts/text_to_image.py \
 python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
     -w $WORKFLOW_DIR/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
-    --output-dir $STANDARD_OUTPUT \
     --exp-name ipadapter_advanced-speedup \
     --baseline-dir $STANDARD_OUTPUT/baseline-ipadapter_advanced \
     --ssim-threshold 0.8 \
