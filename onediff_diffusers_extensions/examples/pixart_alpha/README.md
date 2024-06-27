@@ -56,7 +56,6 @@ python3 ./benchmarks/text_to_image.py \
 --prompt "product photography, world of warcraft orc warrior, white background"
 ```
 
-
 ### Run 1024*1024 with compile
 ```
 python3 ./benchmarks/text_to_image.py \
