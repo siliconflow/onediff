@@ -100,7 +100,7 @@ def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None) -> None:
         model.model_options["transformer_options"] = to
     else:
         attn2_m: Attn2Replace = to["patches_replace"]["attn2"][key]
-        attn2_m.add(attn2_m.callback[0], **torch2oflow(patch_kwargs))
+        attn2_m.add(torch2oflow(attention_func), **torch2oflow(patch_kwargs))
         unet_extra_options["attn2"][attn2_m.forward_patch_key].append(
             new_patch_kwargs
         )  # update last patch
@@ -108,7 +108,7 @@ def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None) -> None:
 
         if attn2_m.get_bind_model() is not None:
             bind_model: Attn2Replace = attn2_m.get_bind_model()
-            bind_model.add(bind_model.callback[0], **patch_kwargs)
+            bind_model.add(attention_func, **patch_kwargs)
 
     if not create_patch_executor(PatchType.QuantizedInputPatch).check_patch():
         create_patch_executor(PatchType.QuantizedInputPatch).set_patch()
