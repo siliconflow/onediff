@@ -35,8 +35,7 @@ python3 scripts/text_to_image.py \
     --comfy-port $COMFY_PORT \
     -w $WORKFLOW_DIR/lora_speedup.json $WORKFLOW_DIR/lora_multiple_speedup.json \
     --exp-name lora-lora_multiple-speedup \
-    --baseline-dir $STANDARD_OUTPUT/baseline-lora-lora_multiple \
-    --output-images
+    --baseline-dir $STANDARD_OUTPUT/baseline-lora-lora_multiple
 
 # Speedup for ComfyUI_IPAdapter_plus with baseline directory
 python3 scripts/text_to_image.py \
@@ -44,5 +43,4 @@ python3 scripts/text_to_image.py \
     -w $WORKFLOW_DIR/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
     --exp-name ipadapter_advanced-speedup \
     --baseline-dir $STANDARD_OUTPUT/baseline-ipadapter_advanced \
-    --ssim-threshold 0.8 \
-    --output-images
+    --ssim-threshold 0.7

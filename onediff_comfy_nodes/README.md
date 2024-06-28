@@ -124,6 +124,7 @@ First, install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI), 
 The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
 
+
 ### Compiler Cache 
 **Avoid compilation time for online serving**
 
@@ -144,19 +145,17 @@ export TORCHINDUCTOR_CACHE_DIR=~/.torchinductor_cache
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
-If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
-
-![](workflows/onediff_quant_base.png)
-
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./docs/ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
 
 ## Tutorials
 
 - [Accelerate SD3 with onediff](./docs/sd3/README.md)
-- [cubiq/PuLID_ComfyUI](./docs/README.md)
-- [cubiq/ComfyUI_IPAdapter_plus](./docs/README.md)
-- [ControlNet](./docs/ControlNet/README.md)
-- TODO [Lora Speedup & ControlNet]
+- [First Switch Lora](https://github.com/siliconflow/onediff/issues/968#issuecomment-2196027305)
+- [Accelerate cubiq/PuLID_ComfyUI](./docs/README.md)
+- [Accelerate cubiq/ComfyUI_IPAdapter_plus](./docs/README.md)
+- [Accelerate cubiq/ComfyUI_InstantID](./docs/README.md)
+- [Accelerate ControlNet](./docs/ControlNet/README.md)
 - [SVD](./docs/SVD/README.md)
 - [DeepCache](./docs/lora_deepcache/README.md)
 

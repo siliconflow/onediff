@@ -20,6 +20,7 @@ git reset --hard  145a5ef2746fbeb0aaf7165f28c83f851fda9a4c
 ```shell
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/ComfyUI_InstantID.git
+# Date:   Wed May 8 16:55:55 2024 +0200
 git reset --hard  d8c70a0cd8ce0d4d62e78653674320c9c3084ec1
 ```
 

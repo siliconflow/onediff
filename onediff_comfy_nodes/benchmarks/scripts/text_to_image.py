@@ -129,6 +129,7 @@ def run_workflow(
 
     with comfy_client_context(port=comfy_port) as client:
         logger.info(f"Testing workflows: {workflow}")
+
         for i, comfy_graph in enumerate(dispatch_generator(workflow)):
             start_time = time.time()
             images = client.get_images(comfy_graph.graph)
@@ -170,7 +171,9 @@ def run_workflow(
                                 "basic_image_path": baseline_image_path,
                             }
                         )
-                        assert ssim_value > ssim_threshold, f"SSIM value {ssim_value} is not greater than the threshold {ssim_threshold}"
+                        assert (
+                            ssim_value > ssim_threshold
+                        ), f"SSIM value {ssim_value} is not greater than the threshold {ssim_threshold}"
                         basic_time = baseline_result[str(i)]["e2e_time"]
                         result[i].update({"basic_e2e_time": basic_time})
                         percentage_improvement = (basic_time - e2e_time) / basic_time
