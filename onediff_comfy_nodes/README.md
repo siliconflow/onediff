@@ -113,13 +113,13 @@ First, install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI), 
 **Note** All the images in this section can be loaded directly into ComfyUI. You can load them in ComfyUI to get the full workflow.
 
 #### Model Speedup
-![](./benchmarks/resources/workflows/oneflow/model_speedup_basic.png)
+![](./docs/model_speedup_basic.png)
 
 #### Load Checkpoint - OneDiff
 
 "Load Checkpoint - OneDiff" is the optimized version of "LoadCheckpoint", designed to accelerate the inference speed without any awareness required. It maintains the same input and output as the original node.
 
-![](./benchmarks/resources/workflows/oneflow/model-speedup.png)
+![](./docs/model-speedup.png)
 
 The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
