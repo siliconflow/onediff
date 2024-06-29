@@ -68,11 +68,11 @@ Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
 Testing on 4090:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
+| Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
 | PyTorch iteration speed                          | 6.67 it/s                           |
-| OneDiff iteration speed                          | 12.24 it/s (+83.3%)                 |
+| OneDiff iteration speed                          | 11.51 it/s (+72.6%)                 |
 | PyTorch E2E time                                 | 4.90 s                              |
-| OneDiff E2E time                                 | 2.48 s (-49.4%)                     |
+| OneDiff E2E time                                 | 2.67 s (-45.5%)                     |
 | PyTorch Max Mem Used                             | 18.799 GiB                          |
 | OneDiff Max Mem Used                             | 17.902 GiB                          |
 | PyTorch Warmup with Run time                     | 4.99 s                              |
