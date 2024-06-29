@@ -48,12 +48,9 @@ def _(workflow_path, *args, **kwargs):
 
 
 SD3_WORKFLOWS = [
-    f"{WORKFLOW_DIR}/baseline/sd3_baseline.json",
-    f"{WORKFLOW_DIR}/nexfort/sd3_unet_speedup.json",
-    f"{WORKFLOW_DIR}/nexfort/sd3_unet_vae_speedup.json",
+    f"{WORKFLOW_DIR}/baseline/sd3_basic.json",
+    f"{WORKFLOW_DIR}/nexfort/sd3_basic.json",
 ]
-
-
 @register_generator(SD3_WORKFLOWS)
 def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:
