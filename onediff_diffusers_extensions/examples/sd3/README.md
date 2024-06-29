@@ -52,13 +52,13 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 Testing on H800-NVL-80GB with torch 2.3.0, with image size of 1024*1024, iterating 28 steps:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-25                          |
-| PyTorch iteration speed                          | 15.11 it/s                          |
-| OneDiff iteration speed                          | 25.14 it/s (+66.4%)                 |
-| PyTorch E2E time                                 | 2.03 s                              |
-| OneDiff E2E time                                 | 1.21 s (-40.1%)                     |
-| PyTorch Max Mem Used                             | 18.788 GiB                          |
-| OneDiff Max Mem Used                             | 17.926 GiB                          |
+| Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
+| PyTorch iteration speed                          | 15.56 it/s                          |
+| OneDiff iteration speed                          | 24.12 it/s (+55.0%)                 |
+| PyTorch E2E time                                 | 1.96 s                              |
+| OneDiff E2E time                                 | 1.31 s (-33.2%)                     |
+| PyTorch Max Mem Used                             | 18.784 GiB                          |
+| OneDiff Max Mem Used                             | 18.324 GiB                          |
 | PyTorch Warmup with Run time                     | 2.86 s                              |
 | OneDiff Warmup with Compilation time<sup>1</sup> | 889.25 s                            |
 | OneDiff Warmup with Cache time                   | 44.38 s                             |
@@ -69,11 +69,11 @@ Testing on H800-NVL-80GB with torch 2.3.0, with image size of 1024*1024, iterati
 Testing on 4090:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-24                          |
+| Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
 | PyTorch iteration speed                          | 6.67 it/s                           |
-| OneDiff iteration speed                          | 12.24 it/s (+83.3%)                 |
+| OneDiff iteration speed                          | 11.51 it/s (+72.6%)                 |
 | PyTorch E2E time                                 | 4.90 s                              |
-| OneDiff E2E time                                 | 2.48 s (-49.4%)                     |
+| OneDiff E2E time                                 | 2.67 s (-45.5%)                     |
 | PyTorch Max Mem Used                             | 18.799 GiB                          |
 | OneDiff Max Mem Used                             | 17.902 GiB                          |
 | PyTorch Warmup with Run time                     | 4.99 s                              |
@@ -110,7 +110,7 @@ The --arg `quant-submodules-config-path` is optional. If left `None`, it will qu
 ```
 # Applies dynamic symmetric per-tensor activation and per-tensor weight quantization to all linear layers. Both activations and weights are quantized to e4m3 format.
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
-    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision:cudagraphs:freezing:benchmark", "memory_format": "channels_last"}' \
+    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}' \
     --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}' \
     --quant-submodules-config-path /path/to/fp8_e4m3_per_tensor.json \
     --saved-image sd3_fp8.png
@@ -119,7 +119,7 @@ or
 ```
 # Applies dynamic symmetric per-token activation and per-channel weight quantization to all linear layers.
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
-    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision:cudagraphs:freezing:benchmark", "memory_format": "channels_last"}' \
+    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}' \
     --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}' \
     --quant-submodules-config-path /path/to/fp8_e4m3.json \
     --saved-image sd3_fp8.png
@@ -131,8 +131,8 @@ The performance of above quantization types on the H800-NVL-80GB is as follows:
 
 | quant_type                       | E2E Inference Time | Iteration speed    | Max Used CUDA Memory |
 |----------------------------------|--------------------|--------------------|----------------------|
-| fp8_e4m3_e4m3_dynamic_per_tensor | 1.15 s (-43.4%)    | 26.30 it/s (+74.1%)| 16.933 GiB           |
-| fp8_e4m3_e4m3_dynamic            | 1.09 s (-46.3%)    | 27.75 it/s (+83.7%)| 17.098 GiB           |
+| fp8_e4m3_e4m3_dynamic_per_tensor | 1.22 s (-37.8%)    | 25.26 it/s (+62.3%)| 16.933 GiB           |
+| fp8_e4m3_e4m3_dynamic            | 1.14 s (-41.8%)    | 27.12 it/s (+74.3%)| 17.098 GiB           |
 
 ## Quality
 When using nexfort as the backend for onediff compilation acceleration, the generated images are almost lossless.
