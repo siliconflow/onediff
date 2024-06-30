@@ -11,7 +11,11 @@ from diffusers import (
     StableDiffusionXLImg2ImgPipeline,
     StableDiffusionPipeline,
     StableDiffusionImg2ImgPipeline,
+    UNet2DConditionModel,
+    EulerDiscreteScheduler
 )
+from safetensors.torch import load_file
+from huggingface_hub import hf_hub_download
 
 from onediff.quantization import QuantPipeline
 
@@ -62,6 +66,9 @@ parser.add_argument(
 )
 parser.add_argument("--seed", type=int, default=111)
 parser.add_argument("--cache_dir", type=str, default=None)
+parser.add_argument("--use_lightning", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=False, help="Use the SDXL Lightning model if true")
+parser.add_argument("--lightning_ckpt", type=str, default="sdxl_lightning_4step_unet.safetensors",
+                    help="Checkpoint file name for the ByteDance SDXL-Lightning model")
 args = parser.parse_args()
 
 pipeline_cls = AutoPipelineForText2Image if args.input_image is None else AutoPipelineForImage2Image
@@ -87,6 +94,19 @@ if is_safetensors_model:
             use_safetensors=True,
         )
 
+if args.use_lightning:
+    repo = "ByteDance/SDXL-Lightning"
+    ckpt = args.lightning_ckpt
+    unet = UNet2DConditionModel.from_config(args.model, subfolder="unet").to("cuda", torch.float16)
+    unet.load_state_dict(load_file(hf_hub_download(repo, ckpt), device="cuda"))
+    pipe = QuantPipeline.from_pretrained(
+        pipeline_cls,
+        args.model,
+        unet=unet,
+        torch_dtype=torch.float16,
+        variant=args.variant,
+        use_safetensors=True,
+    )
 else:
     pipe = QuantPipeline.from_pretrained(
         pipeline_cls,
