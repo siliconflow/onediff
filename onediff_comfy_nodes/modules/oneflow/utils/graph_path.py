@@ -4,6 +4,7 @@ from pathlib import Path
 
 # ComfyUI
 from folder_paths import get_input_directory
+
 # onediff
 from onediff import __version__ as onediff_version
 from oneflow import __version__ as oneflow_version
@@ -19,10 +20,8 @@ def generate_graph_path(ckpt_name, model) -> Path:
     input_dir = os.getenv("COMFYUI_ONEDIFF_SAVE_GRAPH_DIR", default_dir)
 
     input_dir = Path(input_dir)
-    graph_dir = input_dir / "graphs" / ckpt_name
+    graph_dir = input_dir / "graphs"
 
-    key = generate_short_sha256(f"{oneflow_version}{onediff_version}")
-
-    file_name = f"{type(model).__name__}_{key}"
+    file_name = f"{type(model).__name__}"
 
     return graph_dir / file_name

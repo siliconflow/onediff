@@ -13,10 +13,12 @@ if is_oneflow_available() and not is_disable_oneflow_backend():
     from .modules.oneflow import BasicOneFlowBoosterExecutor
 
     BasicBoosterExecutor = BasicOneFlowBoosterExecutor
+    print("\033[1;31mUsing OneFlow backend\033[0m (Default)")
 elif is_nexfort_available():
     from .modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
 
     BasicBoosterExecutor = BasicNexFortBoosterExecutor
+    print("\033[1;32mUsing Nexfort backend\033[0m (Default)")
 else:
     raise RuntimeError(
         "Neither OneFlow nor Nexfort is available. Please ensure at least one of them is installed."
@@ -44,6 +46,7 @@ class SpeedupMixin:
         model,
         inplace: bool = False,
         custom_booster: Optional[BoosterScheduler] = None,
+        booster_settings: Optional[BoosterSettings] = None,
         *args,
         **kwargs
     ) -> Tuple:
@@ -60,7 +63,7 @@ class SpeedupMixin:
         Returns:
             Tuple: Tuple containing the optimized model.
         """
-        if not hasattr(self, "booster_settings"):
+        if booster_settings is None and not hasattr(self, "booster_settings"):
             self.booster_settings = BoosterSettings(tmp_cache_key=str(uuid.uuid4()))
 
         if custom_booster:
@@ -68,7 +71,9 @@ class SpeedupMixin:
             booster.inplace = inplace
         else:
             booster = BoosterScheduler(BasicBoosterExecutor(), inplace=inplace)
-        booster.settings = self.booster_settings
+        booster.settings = (
+            self.booster_settings if booster_settings is None else booster_settings
+        )
         return (booster(model, *args, **kwargs),)
 
 
@@ -92,6 +97,9 @@ class VaeSpeedup(SpeedupMixin):
         }
 
     RETURN_TYPES = ("VAE",)
+
+    def speedup(self, vae, inplace=False, custom_booster: BoosterScheduler = None):
+        return super().speedup(vae, inplace, custom_booster)
 
 
 class ControlnetSpeedup:
@@ -193,7 +201,7 @@ class OneDiffControlNetLoader(ControlNetLoader):
         return (controlnet,)
 
 
-class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
+class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple, SpeedupMixin):
     @classmethod
     def INPUT_TYPES(s):
         return {
@@ -207,40 +215,35 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple):
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_checkpoint"
 
-    @staticmethod
-    def _load_checkpoint(
-        ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None
-    ):
-        """Loads a checkpoint, applying speedup techniques."""
-
-        ckpt_path = folder_paths.get_full_path("checkpoints", ckpt_name)
-        out = comfy.sd.load_checkpoint_guess_config(
-            ckpt_path,
-            output_vae=True,
-            output_clip=True,
-            embedding_directory=folder_paths.get_folder_paths("embeddings"),
-        )
-
-        # Unpack outputs
-        modelpatcher, clip, vae = out[:3]
-
-        # Apply custom booster if provided, otherwise use a basic one
-        custom_booster = custom_booster or BoosterScheduler(BasicBoosterExecutor())
-        modelpatcher = custom_booster(modelpatcher, ckpt_name=ckpt_name)
-
-        # Apply VAE speedup if enabled
-        if vae_speedup == "enable":
-            vae = BoosterScheduler(BasicBoosterExecutor())(vae, ckpt_name=ckpt_name)
-
-        # Set weight inplace update
-        modelpatcher.weight_inplace_update = True
-
-        return modelpatcher, clip, vae
+    def __init__(self) -> None:
+        super().__init__()
+        self.unet_booster_settings = BoosterSettings(tmp_cache_key=str(uuid.uuid4()))
+        self.vae_booster_settings = BoosterSettings(tmp_cache_key=str(uuid.uuid4()))
 
     @torch.inference_mode()
     def onediff_load_checkpoint(
         self, ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None,
     ):
-        out = self._load_checkpoint(ckpt_name, vae_speedup, custom_booster)
-        # Return the loaded checkpoint (modelpatcher, clip, vae)
-        return out
+        modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
+        modelpatcher = self.speedup(
+            modelpatcher,
+            inplace=True,
+            custom_booster=custom_booster,
+            booster_settings=self.unet_booster_settings,
+        )[0]
+
+        if vae_speedup == "enable":
+            vae = self.speedup(
+                vae,
+                inplace=True,
+                custom_booster=custom_booster,
+                booster_settings=self.vae_booster_settings,
+            )[0]
+
+        # Set weight inplace update
+        modelpatcher.weight_inplace_update = True
+        return (
+            modelpatcher,
+            clip,
+            vae,
+        )

@@ -2,22 +2,64 @@ import torch
 import traceback
 from collections import OrderedDict
 from comfy.model_patcher import ModelPatcher
+from functools import singledispatch
 from comfy.sd import VAE
 from onediff.torch_utils.module_operations import get_sub_module
 from onediff.utils.import_utils import is_oneflow_available
-
-if is_oneflow_available():
-    from .oneflow.utils.booster_utils import is_using_oneflow_backend
+from .._config import is_disable_oneflow_backend
 
 
-def switch_to_cached_model(new_model: ModelPatcher, cache_model):
-    assert type(new_model.model) == type(cache_model)
+@singledispatch
+def switch_to_cached_model(new_model, cached_model):
+    raise NotImplementedError(type(new_model))
+
+
+@switch_to_cached_model.register
+def _(new_model: ModelPatcher, cached_model):
+    assert type(new_model.model) == type(
+        cached_model
+    ), f"Model type mismatch: expected {type(cached_model)}, got {type(new_model.model)}"
     for k, v in new_model.model.state_dict().items():
-        cached_v: torch.Tensor = get_sub_module(cache_model, k)
+        cached_v: torch.Tensor = get_sub_module(cached_model, k)
         assert v.dtype == cached_v.dtype
         cached_v.copy_(v)
-    new_model.model = cache_model
+    new_model.model = cached_model
     return new_model
+
+
+@switch_to_cached_model.register
+def _(new_model: VAE, cached_model):
+    assert type(new_model.first_stage_model) == type(cached_model)
+    for k, v in new_model.model.state_dict().items():
+        cached_v: torch.Tensor = get_sub_module(cached_model, k)
+        assert v.dtype == cached_v.dtype
+        cached_v.copy_(v)
+    new_model.first_stage_model = cached_model
+    return new_model
+
+
+@singledispatch
+def get_cached_model(model):
+    return None
+    # raise NotImplementedError(type(model))
+
+
+@get_cached_model.register
+def _(model: ModelPatcher):
+    if is_oneflow_available() and not is_disable_oneflow_backend():
+        from .oneflow.utils.booster_utils import is_using_oneflow_backend
+
+        if is_using_oneflow_backend(model):
+            return None
+
+    return model.model
+
+
+@get_cached_model.register
+def _(model: VAE):
+    # TODO(TEST) if support cache
+    return None
+    # return model.first_stage_model
 
 
 class BoosterCacheService:
@@ -27,9 +69,9 @@ class BoosterCacheService:
         if key is None:
             return
         # oneflow backends output image error
-        if is_oneflow_available() and is_using_oneflow_backend(model):
-            return
-        self._cache[key] = model.model
+        cached_model = get_cached_model(model)
+        if cached_model:
+            self._cache[key] = cached_model
 
     def get(self, key, default=None):
         return self._cache.get(key, default)

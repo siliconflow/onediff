@@ -11,6 +11,8 @@ from modules.sd_hijack_optimizations import SdOptimization
 from modules.sd_hijack_utils import CondFunc
 from onediff_utils import singleton_decorator
 
+from onediff.utils.import_utils import is_nexfort_available
+
 
 @singleton_decorator
 def init_nexfort_backend():
@@ -23,6 +25,21 @@ def init_nexfort_backend():
     CondFunc(
         "sgm.modules.diffusionmodules.openaimodel.UNetModel.forward",
         onediff_nexfort_unet_sgm_forward,
+        lambda orig_func, *args, **kwargs: onediff_shared.onediff_enabled,
+    )
+
+    def hijack_groupnorm32_forward(orig_func, self, x):
+        return super(type(self), self).forward(x)
+        # return self.forward(x)
+
+    CondFunc(
+        "ldm.modules.diffusionmodules.util.GroupNorm32.forward",
+        hijack_groupnorm32_forward,
+        lambda orig_func, *args, **kwargs: onediff_shared.onediff_enabled,
+    )
+    CondFunc(
+        "sgm.modules.diffusionmodules.util.GroupNorm32.forward",
+        hijack_groupnorm32_forward,
         lambda orig_func, *args, **kwargs: onediff_shared.onediff_enabled,
     )
 
@@ -132,12 +149,7 @@ class SdOptimizationNexfort(SdOptimization):
     priority = 10
 
     def is_available(self):
-        try:
-            import nexfort
-        except ImportError:
-            return False
-        finally:
-            return True
+        return is_nexfort_available()
 
     def apply(self):
         ldm.modules.attention.CrossAttention.forward = (
