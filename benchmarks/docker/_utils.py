@@ -88,7 +88,7 @@ FROM {base_image}
 
     dockerfile_oneflow = f"""
 #==== Install the OneFlow ====
-RUN pip install -f {oneflow_pip_index} oneflow
+RUN pip install --pre oneflow -f {oneflow_pip_index}
 """
 
     repos_cmds = []
