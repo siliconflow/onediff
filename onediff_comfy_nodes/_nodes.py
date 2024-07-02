@@ -1,7 +1,6 @@
 from typing import Optional, Tuple
 import folder_paths
 import torch
-import comfy
 import uuid
 from nodes import CheckpointLoaderSimple, ControlNetLoader
 from ._config import is_disable_oneflow_backend
@@ -81,8 +80,14 @@ class ModelSpeedup(SpeedupMixin):
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"model": ("MODEL",), "inplace": ([False, True],),},
-            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
+            "required": {"model": ("MODEL",),},
+            "optional": {
+                "custom_booster": ("CUSTOM_BOOSTER",),
+                "inplace": (
+                    "BOOLEAN",
+                    {"default": True, "label_on": "yes", "label_off": "no"},
+                ),
+            },
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -92,8 +97,14 @@ class VaeSpeedup(SpeedupMixin):
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"vae": ("VAE",), "inplace": ([False, True],),},
-            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
+            "required": {"vae": ("VAE",)},
+            "optional": {
+                "custom_booster": ("CUSTOM_BOOSTER",),
+                "inplace": (
+                    "BOOLEAN",
+                    {"default": True, "label_on": "yes", "label_off": "no"},
+                ),
+            },
         }
 
     RETURN_TYPES = ("VAE",)
@@ -102,45 +113,32 @@ class VaeSpeedup(SpeedupMixin):
         return super().speedup(vae, inplace, custom_booster)
 
 
-class ControlnetSpeedup:
+class ControlnetSpeedup(SpeedupMixin):
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {},
+            "required": {"control_net": ("CONTROL_NET",),},
             "optional": {
-                "control_net": ("CONTROL_NET",),
-                "cnet_stack": ("CONTROL_NET_STACK",),
+                "inplace": (
+                    "BOOLEAN",
+                    {"default": True, "label_on": "yes", "label_off": "no"},
+                ),
                 "custom_booster": ("CUSTOM_BOOSTER",),
             },
         }
 
-    RETURN_TYPES = (
-        "CONTROL_NET",
-        "CONTROL_NET_STACK",
-    )
+    RETURN_TYPES = ("CONTROL_NET",)
     FUNCTION = "speedup"
     CATEGORY = "OneDiff"
 
-    @torch.no_grad()
     def speedup(
-        self, control_net=None, cnet_stack=[], custom_booster: BoosterScheduler = None
+        self,
+        control_net=None,
+        inplace=True,
+        custom_booster: BoosterScheduler = None,
+        **kwargs
     ):
-        if custom_booster:
-            booster = custom_booster
-        else:
-            booster = BoosterScheduler(BasicBoosterExecutor(), inplace=True)
-
-        if control_net:
-            control_net = booster(control_net)
-
-        new_cnet_stack = []
-        for cnet in cnet_stack:
-            new_cnet = tuple([booster(cnet[0])] + list(cnet[1:]))
-            new_cnet_stack.append(new_cnet)
-        return (
-            control_net,
-            new_cnet_stack,
-        )
+        return super().speedup(control_net, inplace, custom_booster)
 
 
 class OneDiffApplyModelBooster:
@@ -191,7 +189,7 @@ class OneDiffControlNetLoader(ControlNetLoader):
     CATEGORY = "OneDiff/Loaders"
     FUNCTION = "onediff_load_controlnet"
 
-    @torch.no_grad()
+    @torch.inference_mode()
     def onediff_load_controlnet(self, control_net_name, custom_booster=None):
         controlnet = super().load_controlnet(control_net_name)[0]
         if custom_booster is None:

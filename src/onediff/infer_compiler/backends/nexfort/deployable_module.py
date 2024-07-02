@@ -11,7 +11,9 @@ class NexfortDeployableModule(DeployableModule):
         object.__setattr__(self, "_torch_module", torch_module)
         object.__setattr__(self, "_deployable_module_model", compiled_module)
         # https://github.com/pytorch/pytorch/blob/main/torch/_dynamo/eval_frame.py#L148
-        if isinstance(torch_module, nn.Module) and isinstance(compiled_module, torch._dynamo.eval_frame.OptimizedModule):
+        if isinstance(torch_module, nn.Module) and isinstance(
+            compiled_module, torch._dynamo.eval_frame.OptimizedModule
+        ):
             object.__setattr__(self, "_modules", compiled_module._orig_mod._modules)
             object.__setattr__(
                 self, "_parameters", compiled_module._orig_mod._parameters
@@ -19,7 +21,8 @@ class NexfortDeployableModule(DeployableModule):
             object.__setattr__(self, "_buffers", compiled_module._orig_mod._buffers)
 
     def forward(self, *args, **kwargs):
-        return self._deployable_module_model(*args, **kwargs)
+        with torch._dynamo.utils.disable_cache_limit():
+            return self._deployable_module_model(*args, **kwargs)
 
     def __getattr__(self, name):
         return getattr(self._deployable_module_model, name)
@@ -28,7 +31,11 @@ class NexfortDeployableModule(DeployableModule):
 def _create_deployable_function(
     compiled_model, torch_module: FunctionType = None
 ) -> FunctionType:
-    return compiled_model
+    def deploy_function(*args, **kwargs):
+        with torch._dynamo.utils.disable_cache_limit():
+            return compiled_model(*args, **kwargs)
+
+    return deploy_function
 
 
 def _create_mixed_deployable_module(

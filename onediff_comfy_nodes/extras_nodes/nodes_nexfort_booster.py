@@ -21,7 +21,7 @@ class OneDiffNexfortBooster:
         return {
             "required": {
                 "fullgraph": ([False, True],),
-                "dynamic": ([None, True, False],),
+                "dynamic": ([True, False],),
                 "mode": ([mode for mode in compiler_modes.keys()],),
                 "docs_link": (
                     "STRING",
