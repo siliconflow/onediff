@@ -18,6 +18,18 @@ def parse_args():
         help="Model path or identifier.",
     )
     parser.add_argument(
+        "--lora-model-id",
+        type=str,
+        default="ostris/watercolor_style_lora_sdxl",
+        help="LoRA model identifier for fine-tuning weights."
+    )
+    parser.add_argument(
+        "--lora-filename",
+        type=str,
+        default="watercolor_v1_sdxl.safetensors",
+        help="Filename for LoRA weights."
+    )
+    parser.add_argument(
         "--compiler-config", type=str, help="JSON string for compiler config."
     )
     parser.add_argument(
@@ -82,9 +94,7 @@ class SDGenerator:
 
         if args.use_lora:
             print("Use LoRA...")
-            LORA_MODEL_ID = "ostris/watercolor_style_lora_sdxl"
-            LORA_FILENAME = "watercolor_v1_sdxl.safetensors"
-            self.pipe.load_lora_weights(LORA_MODEL_ID, weight_name=LORA_FILENAME)
+            self.pipe.load_lora_weights(args.lora_model_id, weight_name=args.lora_filename)
             # self.pipe.fuse_lora()
 
         self.pipe.to(device)
