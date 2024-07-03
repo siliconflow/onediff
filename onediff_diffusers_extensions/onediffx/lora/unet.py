@@ -9,7 +9,7 @@ from diffusers.models.lora import (
     LoRACompatibleConv,
     LoRACompatibleLinear,
 )
-from .utils import fuse_lora, get_adapter_names, is_peft_available
+from .utils import _fuse_lora, get_adapter_names, is_peft_available, _load_lora_and_optionally_fuse
 from diffusers.utils import is_accelerate_available
 
 if is_peft_available():
@@ -29,24 +29,25 @@ def load_lora_into_unet(
     adapter_name=None,
     _pipeline=None,
     *,
+    fuse: bool = False,
     lora_scale: float = 1.0,
     offload_device="cpu",
     use_cache=False,
 ):
-    if adapter_name is None:
-        adapter_name = get_adapter_names(unet)
+    # if adapter_name is None:
+    #     adapter_name = get_adapter_names(unet)
 
-    if hasattr(unet, "adapter_names"):
-        if adapter_name in unet.adapter_names:
-            raise ValueError(
-                f"[OneDiffX load_lora_into_unet] The adapter name {adapter_name} already exists in UNet"
-            )
-        else:
-            unet.adapter_name.add(adapter_name)
-            unet.active_adapter_name[adapter_name] = 1.0
-    else:
-        unet.adapter_name = set([adapter_name])
-        unet.active_adapter_name = {adapter_name: 1.0}
+    # if hasattr(unet, "adapter_names"):
+    #     if adapter_name in unet.adapter_names:
+    #         raise ValueError(
+    #             f"[OneDiffX load_lora_into_unet] The adapter name {adapter_name} already exists in UNet"
+    #         )
+    #     else:
+    #         unet.adapter_name.add(adapter_name)
+    #         unet.active_adapter_name[adapter_name] = 1.0
+    # else:
+    #     unet.adapter_name = set([adapter_name])
+    #     unet.active_adapter_name = {adapter_name: 1.0}
 
     keys = list(state_dict.keys())
     cls = type(self)
@@ -92,6 +93,7 @@ def load_lora_into_unet(
         lora_scale=lora_scale,
         offload_device=offload_device,
         use_cache=use_cache,
+        fuse=fuse,
     )
 
 
@@ -149,6 +151,7 @@ def _load_attn_procs(
     _pipeline = kwargs.pop("_pipeline", None)
     network_alphas = kwargs.pop("network_alphas", None)
     adapter_name = kwargs.pop("adapter_name", None)
+    fuse = kwargs.pop("fuse", False)
     state_dict = pretrained_model_name_or_path_or_dict
 
     is_network_alphas_none = network_alphas is None
@@ -226,7 +229,7 @@ def _load_attn_procs(
                     torch.nn.Linear,
                 ),
             ):
-                fuse_lora(
+                _load_lora_and_optionally_fuse(
                     attn_processor,
                     value_dict,
                     lora_scale,
@@ -234,12 +237,13 @@ def _load_attn_procs(
                     rank,
                     offload_device=offload_device,
                     adapter_name=adapter_name,
+                    fuse=fuse,
                 )
             elif is_peft_available() and isinstance(
                 attn_processor,
                 (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
             ):
-                fuse_lora(
+                _load_lora_and_optionally_fuse(
                     attn_processor.base_layer,
                     value_dict,
                     lora_scale,
@@ -247,6 +251,7 @@ def _load_attn_procs(
                     rank,
                     offload_device=offload_device,
                     adapter_name=adapter_name,
+                    fuse=fuse,
                 )
             else:
                 raise ValueError(

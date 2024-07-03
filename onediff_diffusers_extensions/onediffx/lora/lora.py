@@ -1,4 +1,5 @@
 from pathlib import Path
+import warnings
 from typing import Optional, Union, Dict, Tuple, List
 from collections import OrderedDict, defaultdict
 from packaging import version
@@ -30,6 +31,10 @@ if is_peft_available():
     import peft
 is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.19.3")
 
+class OneDiffXWarning(Warning):
+    pass
+
+warnings.filterwarnings("always", category=OneDiffXWarning)
 
 USE_PEFT_BACKEND = False
 
@@ -43,6 +48,28 @@ def load_and_fuse_lora(
     offload_device="cuda",
     use_cache=False,
     **kwargs,
+):
+    return load_lora_and_optionally_fuse(
+        pipeline,
+        pretrained_model_name_or_path_or_dict,
+        adapter_name,
+        lora_scale=lora_scale,
+        offload_device=offload_device,
+        use_cache=use_cache,
+        fuse=True,
+        **kwargs,
+    )
+
+def load_lora_and_optionally_fuse(
+    pipeline: LoraLoaderMixin,
+    pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]],
+    adapter_name: Optional[str] = None,
+    *,
+    fuse,
+    lora_scale: Optional[float] = None,
+    offload_device="cuda",
+    use_cache=False,
+    **kwargs,
 ) -> None:
     if not is_onediffx_lora_available:
         raise RuntimeError(
@@ -50,8 +77,30 @@ def load_and_fuse_lora(
         )
 
     _init_adapters_info(pipeline)
+
+    if not fuse and lora_scale is not None:
+        warnings.warn("When fuse=False, the lora_scale will be ignored and set to 1.0 as default", category=OneDiffXWarning)
+        lora_scale = 1.0
+    
+    if fuse and len(pipeline._active_adapter_names) > 0:
+        warnings.warn(
+            "The current API is supported for operating with a single LoRA file. "
+            "You are trying to load and fuse more than one LoRA "
+            "which is not well-supported and may lead to accuracy issues.",
+            category=OneDiffXWarning,
+        )
+
+    if adapter_name is None:
+        adapter_name = create_adapter_names(pipeline)
+
+    if adapter_name in pipeline._adapter_names:
+        warnings.warn(f"adapter_name {adapter_name} already exists, will be ignored", category=OneDiffXWarning)
+        return
+
     pipeline._adapter_names.add(adapter_name)
-    pipeline._active_adapter_names[adapter_name] = 1.0
+
+    if fuse:
+        pipeline._active_adapter_names[adapter_name] = lora_scale
 
     self = pipeline
 
@@ -84,6 +133,7 @@ def load_and_fuse_lora(
         lora_scale=lora_scale,
         offload_device=offload_device,
         use_cache=use_cache,
+        fuse=fuse,
     )
 
     # load lora weights into text encoder
@@ -98,6 +148,7 @@ def load_and_fuse_lora(
             lora_scale=lora_scale,
             adapter_name=adapter_name,
             _pipeline=self,
+            fuse=fuse,
         )
 
     text_encoder_2_state_dict = {k: v for k, v in state_dict.items() if "text_encoder_2." in k}
@@ -111,6 +162,7 @@ def load_and_fuse_lora(
             lora_scale=lora_scale,
             adapter_name=adapter_name,
             _pipeline=self,
+            fuse=fuse,
         )
 
 
@@ -123,7 +175,7 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
         ):
             _unfuse_lora(m.base_layer)
 
-    pipeline._adapter_names.clear()
+    # pipeline._adapter_names.clear()
     pipeline._active_adapter_names.clear()
 
     pipeline.unet.apply(_unfuse_lora_apply)
@@ -135,9 +187,14 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
 
 def set_and_fuse_adapters(
     pipeline: LoraLoaderMixin,
-    adapter_names: Union[List[str], str],
+    adapter_names: Optional[Union[List[str], str]] = None,
     adapter_weights: Optional[List[float]] = None,
 ):
+    if not hasattr(pipeline, "_adapter_names"):
+        raise RuntimeError("Didn't find any LoRA, please load LoRA first")
+    if adapter_names is None:
+        adapter_names = pipeline.active_adapter_names
+
     if isinstance(adapter_names, str):
         adapter_names = [adapter_names]
 
@@ -146,8 +203,10 @@ def set_and_fuse_adapters(
     elif isinstance(adapter_weights, float):
         adapter_weights = [adapter_weights, ] * len(adapter_names)
 
-    _init_adapters_info(pipeline)
-    pipeline._adapter_names |= set(adapter_names)
+    # _init_adapters_info(pipeline)
+    adapter_names = [x for x in adapter_names if x in pipeline._adapter_names]
+    # pipeline._adapter_names |= set(adapter_names)
+    # pipeline._adapter_names |= set(adapter_names)
     pipeline._active_adapter_names = {k: v for k, v in zip(adapter_names, adapter_weights)}
 
     def set_adapters_apply(m):
@@ -243,3 +302,10 @@ def load_state_dict_cached(
 
 
 CachedLoRAs = LRUCacheDict(100)
+
+def create_adapter_names(pipe):
+    for i in range(0, 10000):
+        result = f"default_{i}"
+        if result not in pipe._adapter_names:
+            return result
+    raise RuntimeError("Too much LoRA loaded")

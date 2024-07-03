@@ -13,7 +13,7 @@ from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
-from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters, get_active_adapters, delete_adapters
+from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters, get_active_adapters, delete_adapters, load_lora_and_optionally_fuse
 
 HEIGHT = 1024
 WIDTH = 1024
@@ -115,10 +115,11 @@ def prepare_target_images_multi_lora(pipe, loras, multi_loras):
 
 def preload_multi_loras(pipe, loras):
     for name, lora in loras.items():
-        load_and_fuse_lora(
+        load_lora_and_optionally_fuse(
             pipe, lora.copy(), adapter_name=Path(name).stem,
         )
         unfuse_lora(pipe)
+    assert 0
 
 
 def test_lora_loading(pipe, get_loras):
@@ -172,6 +173,7 @@ def test_get_active_adapters(pipe, get_multi_loras):
     multi_loras = get_multi_loras()
     for names, _ in multi_loras.items():
         names = [str(Path(name).stem) for name in names]
+        assert 0
         set_and_fuse_adapters(pipe, names)
         active_adapters = get_active_adapters(pipe)
         print(f"current adapters: {active_adapters}, target adapters: {names}")
