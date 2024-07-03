@@ -116,10 +116,9 @@ def prepare_target_images_multi_lora(pipe, loras, multi_loras):
 def preload_multi_loras(pipe, loras):
     for name, lora in loras.items():
         load_lora_and_optionally_fuse(
-            pipe, lora.copy(), adapter_name=Path(name).stem,
+            pipe, lora.copy(), adapter_name=Path(name).stem, fuse=False,
         )
         unfuse_lora(pipe)
-    assert 0
 
 
 def test_lora_loading(pipe, get_loras):
@@ -169,20 +168,21 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
         assert ssim > 0.92, f"LoRA {names} ssim too low"
 
 
-def test_get_active_adapters(pipe, get_multi_loras):
+def test_get_active_adapters(pipe, get_multi_loras, get_loras):
     multi_loras = get_multi_loras()
+    preload_multi_loras(pipe, get_loras())
     for names, _ in multi_loras.items():
         names = [str(Path(name).stem) for name in names]
-        assert 0
         set_and_fuse_adapters(pipe, names)
         active_adapters = get_active_adapters(pipe)
         print(f"current adapters: {active_adapters}, target adapters: {names}")
         assert set(active_adapters) == set(names)
 
 
-def test_delete_adapters(pipe, get_multi_loras):
+def test_delete_adapters(pipe, get_multi_loras, get_loras):
     multi_loras = get_multi_loras()
     for names, _ in multi_loras.items():
+        preload_multi_loras(pipe, get_loras())
         names = [str(Path(name).stem) for name in names]
         names_to_delete = random.sample(names, k=random.randint(0, len(names)))
         set_and_fuse_adapters(pipe, names)

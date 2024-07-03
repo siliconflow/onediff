@@ -256,6 +256,9 @@ def _load_lora_and_optionally_fuse(
     if alpha is None:
         alpha = rank
 
+    if lora_scale is None:
+        lora_scale = 0
+
     self.scaling[adapter_name] = lora_scale * alpha / rank
     self.r[adapter_name] = rank
     self.lora_alpha[adapter_name] = alpha
@@ -348,6 +351,8 @@ def _fuse_lora_deprecated(
     self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
     self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
     self.adapter_names.add(adapter_name)
+    if lora_scale is None:
+        lora_scale = 0
 
     if fuse:
         self.active_adapter_names[adapter_name] = lora_scale
