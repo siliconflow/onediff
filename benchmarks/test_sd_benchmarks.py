@@ -40,7 +40,6 @@ if args.height is not None and args.width is not None:
     e2e_thresholds_list.append(args.e2e_threshold)
 else:
     size = [(1024, 1024), (720, 1280), (768, 768), (512, 512)]
-    # TODO set the end-to-end threshold for each size
     if args.model_name == "stable-diffusion-v1-5":
         e2e_thresholds_list.extend(SD15_THRESHOLD)
     elif args.model_name == "stable-diffusion-2-1":

@@ -477,9 +477,6 @@ jobs:
           ACR_ORG: ${{ env.ACR_ORG }}
           BENCHMARK_IMAGE: registry.cn-beijing.aliyuncs.com/oneflow/benchmark-community-default:v1_864
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
-      # - name: Run benchmark test for stable-diffusion-xl-base-1.0
-      #   run: |
-      #       docker exec -w /src/onediff/benchmarks ${{ env.CONTAINER_NAME }} python3 test_sd_benchmarks.py --model_dir /share_nfs/hf_models --model_name stable-diffusion-xl-base-1.0  
       - name: Run benchmark test for stable-diffusion-v1-5
         run: |
           docker exec -w /src/onediff/benchmarks ${{ env.CONTAINER_NAME }} python3 test_sd_benchmarks.py --model_dir /share_nfs/hf_models --model_name stable-diffusion-v1-5

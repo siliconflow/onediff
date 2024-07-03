@@ -116,12 +116,3 @@ class OneDiffBenchmark:
         else:
             with open(os.path.join(out_dir, "results.md"), "a", encoding="utf-8") as f:
                 f.write(info)
-
-
-if __name__ == "__main__":
-    x = OneDiffBenchmark(
-        model_dir="/data/home/wangerlie/onediff/benchmarks/models",
-        model_name="stabilityai/stable-diffusion-xl-base-1.0",
-    )
-    results = x.get_results()
-    print(results)
