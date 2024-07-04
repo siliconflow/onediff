@@ -277,6 +277,8 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 
 > Note: If fuse=False, this function is essentially equivalent to `load_lora_weights` in Diffusers, except that the LoRA loaded through this function will not participate in the inference computation. If fuse=True, this function is equivalent to first calling `load_lora_weights` and then calling `fuse_lora`.
 
+> Note: If you attempt to call this function with an adapter_name that already exists in pipeline, the LoRA will be ignored and not loaded.
+
 #### `onediffx.lora.load_and_fuse_lora`
 
 `onediffx.lora.load_and_fuse_lora(pipeline: LoraLoaderMixin, pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, *, lora_scale: float = 1.0, offload_device="cpu", offload_weight="lora", use_cache=False, **kwargs)`:
@@ -305,6 +307,8 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 > Note: This function is equivalent to calling `load_lora_and_optinally_fuse` with `fuse=True`, which is equivalent to first calling `load_lora_weights` and then calling `fuse_lora` in Diffusers.
 
 > Note: If you want to load **multiple** LoRAs before inference, repeatedly calling this function may lead to precision issues. Please refer to the note of function [load_lora_and_optionally_fuse](#onediffxloraload_lora_and_optionally_fuse) for more information.
+
+> Note: If you attempt to call this function with an adapter_name that already exists in pipeline, the LoRA will be ignored and not loaded.
 
 #### `onediffx.lora.unfuse_lora`
 
