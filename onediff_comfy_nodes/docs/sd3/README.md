@@ -74,6 +74,9 @@ https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_e
 ## Usage Example
 ### Run ComfyUI
 ```shell
+# https://github.com/huggingface/transformers/issues/5486
+export TOKENIZERS_PARALLELISM=false
+
 # For graph cache to speedup compilation
 export TORCHINDUCTOR_FX_GRAPH_CACHE=1
 # For persistent cache dir
@@ -83,8 +86,8 @@ cd $COMFYUI_DIR && python main.py --gpu-only --disable-cuda-malloc
 
 ### WorkFlow
 Here is a very basic example how to use it:
-[workflow_sd3_speedup.json](https://github.com/user-attachments/files/15907863/sd3_suppedup.json)
-![sd3_speedup_workflow](https://github.com/siliconflow/onediff/assets/109639975/c1e955ae-7cc5-4197-9635-7cc05d5fd7a6)
+[workflow_sd3_speedup.json](../../benchmarks/resources/workflows/nexfort/sd3_basic.json)
+![sd3_speedup_workflow](../../benchmarks/resources/workflows/nexfort/sd3_basic.png)
 
 
 ## Performance Comparison
@@ -98,12 +101,12 @@ Here is a very basic example how to use it:
 | ------------------------------------------------ | ------------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-06-19                            |
 | PyTorch E2E time                                 | 4.27 s                                |
-| OneDiff E2E time                                 | 3.17 s(-25.7%)                        |
+| OneDiff E2E time                                 | 2.87 s(-32%)                          |
 | PyTorch Max Mem Used                             | 18.445GiB                             |
 | OneDiff Max Mem Used                             | 19.199GiB                             |
 | PyTorch Warmup with Run time                     | 10s                                   |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 209s                                  |
-| OneDiff Warmup with Cache time                   | 45s                                   |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 423s                                  |
+| OneDiff Warmup with Cache time                   | 79s                                   |
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on  AMD EPYC 7543 32-Core Processor CPU. Note this is just for reference, and it varies a lot on different CPU.
 
