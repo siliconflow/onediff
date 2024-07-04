@@ -1,38 +1,40 @@
-from pathlib import Path
 import warnings
-from typing import Optional, Union, Dict, Tuple, List
-from collections import OrderedDict, defaultdict
-from packaging import version
+from collections import OrderedDict
+from pathlib import Path
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
-
-from onediff.utils import logger
+from packaging import version
 
 import diffusers
 from diffusers.loaders import LoraLoaderMixin
+from onediff.utils import logger
 
 if version.parse(diffusers.__version__) >= version.parse("0.21.0"):
     from diffusers.models.lora import PatchedLoraProjection
 else:
     from diffusers.loaders import PatchedLoraProjection
 
-
-from .utils import (
-    _unfuse_lora,
-    _set_adapter,
-    _delete_adapter,
-    _maybe_map_sgm_blocks_to_diffusers,
-    is_peft_available,
-)
 from .text_encoder import load_lora_into_text_encoder
 from .unet import load_lora_into_unet
+from .utils import (
+    _delete_adapter,
+    _maybe_map_sgm_blocks_to_diffusers,
+    _set_adapter,
+    _unfuse_lora,
+    is_peft_available,
+)
 
 if is_peft_available():
     import peft
-is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse("0.19.3")
+is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.parse(
+    "0.19.3"
+)
+
 
 class OneDiffXWarning(Warning):
     pass
+
 
 warnings.filterwarnings("always", category=OneDiffXWarning)
 
@@ -60,13 +62,14 @@ def load_and_fuse_lora(
         **kwargs,
     )
 
+
 def load_lora_and_optionally_fuse(
     pipeline: LoraLoaderMixin,
     pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]],
     adapter_name: Optional[str] = None,
     *,
     fuse,
-    lora_scale: Optional[float] = None,
+    lora_scale: Optional[float] = 1.0,
     offload_device="cuda",
     use_cache=False,
     **kwargs,
@@ -79,9 +82,12 @@ def load_lora_and_optionally_fuse(
     _init_adapters_info(pipeline)
 
     if not fuse and lora_scale is not None:
-        warnings.warn("When fuse=False, the lora_scale will be ignored and set to 1.0 as default", category=OneDiffXWarning)
+        warnings.warn(
+            "When fuse=False, the lora_scale will be ignored and set to 1.0 as default",
+            category=OneDiffXWarning,
+        )
         lora_scale = 1.0
-    
+
     if fuse and len(pipeline._active_adapter_names) > 0:
         warnings.warn(
             "The current API is supported for operating with a single LoRA file. "
@@ -94,7 +100,10 @@ def load_lora_and_optionally_fuse(
         adapter_name = create_adapter_names(pipeline)
 
     if adapter_name in pipeline._adapter_names:
-        warnings.warn(f"adapter_name {adapter_name} already exists, will be ignored", category=OneDiffXWarning)
+        warnings.warn(
+            f"adapter_name {adapter_name} already exists, will be ignored",
+            category=OneDiffXWarning,
+        )
         return
 
     pipeline._adapter_names.add(adapter_name)
@@ -106,15 +115,21 @@ def load_lora_and_optionally_fuse(
 
     if use_cache:
         state_dict, network_alphas = load_state_dict_cached(
-            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs,
+            pretrained_model_name_or_path_or_dict,
+            unet_config=self.unet.config,
+            **kwargs,
         )
     else:
         # for diffusers <= 0.20
         if hasattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers"):
             orig_func = getattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers")
-            LoraLoaderMixin._map_sgm_blocks_to_diffusers = _maybe_map_sgm_blocks_to_diffusers
+            LoraLoaderMixin._map_sgm_blocks_to_diffusers = (
+                _maybe_map_sgm_blocks_to_diffusers
+            )
         state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
-            pretrained_model_name_or_path_or_dict, unet_config=self.unet.config, **kwargs,
+            pretrained_model_name_or_path_or_dict,
+            unet_config=self.unet.config,
+            **kwargs,
         )
         if hasattr(LoraLoaderMixin, "_map_sgm_blocks_to_diffusers"):
             LoraLoaderMixin._map_sgm_blocks_to_diffusers = orig_func
@@ -137,7 +152,9 @@ def load_lora_and_optionally_fuse(
     )
 
     # load lora weights into text encoder
-    text_encoder_state_dict = {k: v for k, v in state_dict.items() if "text_encoder." in k}
+    text_encoder_state_dict = {
+        k: v for k, v in state_dict.items() if "text_encoder." in k
+    }
     if len(text_encoder_state_dict) > 0:
         load_lora_into_text_encoder(
             self,
@@ -151,7 +168,9 @@ def load_lora_and_optionally_fuse(
             fuse=fuse,
         )
 
-    text_encoder_2_state_dict = {k: v for k, v in state_dict.items() if "text_encoder_2." in k}
+    text_encoder_2_state_dict = {
+        k: v for k, v in state_dict.items() if "text_encoder_2." in k
+    }
     if len(text_encoder_2_state_dict) > 0 and hasattr(self, "text_encoder_2"):
         load_lora_into_text_encoder(
             self,
@@ -175,7 +194,6 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
         ):
             _unfuse_lora(m.base_layer)
 
-    # pipeline._adapter_names.clear()
     pipeline._active_adapter_names.clear()
 
     pipeline.unet.apply(_unfuse_lora_apply)
@@ -199,15 +217,14 @@ def set_and_fuse_adapters(
         adapter_names = [adapter_names]
 
     if adapter_weights is None:
-        adapter_weights = [1.0, ] * len(adapter_names)
-    elif isinstance(adapter_weights, float):
-        adapter_weights = [adapter_weights, ] * len(adapter_names)
+        adapter_weights = [1.0,] * len(adapter_names)
+    elif isinstance(adapter_weights, (int, float)):
+        adapter_weights = [adapter_weights,] * len(adapter_names)
 
-    # _init_adapters_info(pipeline)
     adapter_names = [x for x in adapter_names if x in pipeline._adapter_names]
-    # pipeline._adapter_names |= set(adapter_names)
-    # pipeline._adapter_names |= set(adapter_names)
-    pipeline._active_adapter_names = {k: v for k, v in zip(adapter_names, adapter_weights)}
+    pipeline._active_adapter_names = {
+        k: v for k, v in zip(adapter_names, adapter_weights)
+    }
 
     def set_adapters_apply(m):
         if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
@@ -292,7 +309,9 @@ def load_state_dict_cached(
 
     lora_name = str(lora) + (f"/{weight_name}" if weight_name else "")
     if lora_name in CachedLoRAs:
-        logger.debug(f"[OneDiffX Cached LoRA] get cached lora of name: {str(lora_name)}")
+        logger.debug(
+            f"[OneDiffX Cached LoRA] get cached lora of name: {str(lora_name)}"
+        )
         return CachedLoRAs[lora_name]
 
     state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(lora, **kwargs,)
@@ -302,6 +321,7 @@ def load_state_dict_cached(
 
 
 CachedLoRAs = LRUCacheDict(100)
+
 
 def create_adapter_names(pipe):
     for i in range(0, 10000):

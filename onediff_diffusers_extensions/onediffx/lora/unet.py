@@ -1,16 +1,17 @@
-from packaging import version
-from typing import Union, Dict
 from collections import defaultdict
+from typing import Dict, Union
 
 import torch
+
+from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
+from diffusers.utils import is_accelerate_available
 from onediff.infer_compiler import DeployableModule
 from onediff.utils import logger
-from diffusers.models.lora import (
-    LoRACompatibleConv,
-    LoRACompatibleLinear,
+
+from .utils import (
+    _load_lora_and_optionally_fuse,
+    is_peft_available,
 )
-from .utils import _fuse_lora, get_adapter_names, is_peft_available, _load_lora_and_optionally_fuse
-from diffusers.utils import is_accelerate_available
 
 if is_peft_available():
     import peft
@@ -34,21 +35,6 @@ def load_lora_into_unet(
     offload_device="cpu",
     use_cache=False,
 ):
-    # if adapter_name is None:
-    #     adapter_name = get_adapter_names(unet)
-
-    # if hasattr(unet, "adapter_names"):
-    #     if adapter_name in unet.adapter_names:
-    #         raise ValueError(
-    #             f"[OneDiffX load_lora_into_unet] The adapter name {adapter_name} already exists in UNet"
-    #         )
-    #     else:
-    #         unet.adapter_name.add(adapter_name)
-    #         unet.active_adapter_name[adapter_name] = 1.0
-    # else:
-    #     unet.adapter_name = set([adapter_name])
-    #     unet.active_adapter_name = {adapter_name: 1.0}
-
     keys = list(state_dict.keys())
     cls = type(self)
 

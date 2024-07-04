@@ -1,10 +1,9 @@
-import os
 import warnings
-from typing import Dict, Union, List, Optional
-from packaging import version
-from collections import OrderedDict
+from typing import Dict, List, Optional, Union
 
 import torch
+from packaging import version
+
 import diffusers
 
 if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
@@ -15,18 +14,16 @@ if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
 else:
     is_peft_available = lambda: False
 
-from onediff.infer_compiler.backends.oneflow.param_utils import update_graph_related_tensor
+from onediff.infer_compiler.backends.oneflow.param_utils import (
+    update_graph_related_tensor,
+)
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
     from diffusers.models.lora import PatchedLoraProjection
+
 from onediff.infer_compiler.backends.oneflow.dual_module import DualModule
-
-if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
-    from diffusers.loaders import PatchedLoraProjection
-else:
-    from diffusers.models.lora import PatchedLoraProjection
 
 
 _adapter_layer_names = ()
@@ -81,7 +78,9 @@ def get_delta_weight(
     weight: float,
 ):
     if weight == 0:
-        return torch.zeros_like(self.weight, dtype=self.weight.dtype, device=self.weight.device)
+        return torch.zeros_like(
+            self.weight, dtype=self.weight.dtype, device=self.weight.device
+        )
 
     if isinstance(self, (torch.nn.Linear, PatchedLoraProjection)):
         lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
@@ -133,13 +132,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
         w_down = self.lora_A[adapter].float().to(device)
         w_up = self.lora_B[adapter].float().to(device)
         if delta_weight is None:
-            delta_weight = get_delta_weight(
-                self, w_up, w_down, self.scaling[adapter]
-            )
+            delta_weight = get_delta_weight(self, w_up, w_down, self.scaling[adapter])
         else:
-            delta_weight += get_delta_weight(
-                self, w_up, w_down, self.scaling[adapter]
-            )
+            delta_weight += get_delta_weight(self, w_up, w_down, self.scaling[adapter])
 
     if delta_weight is not None:
         fused_weight = self.weight.data.float() + delta_weight
@@ -167,12 +162,18 @@ def _fuse_lora(
 ) -> None:
     # TODO: if lora_scale and adapter_names is same as current, do nothing
     if isinstance(lora_scale, list) and adapter_names is None:
-        raise ValueError("When adapter_names is not specified, lora_scale must be a float")
+        raise ValueError(
+            "When adapter_names is not specified, lora_scale must be a float"
+        )
 
     if not hasattr(self, "lora_A"):
         return
     adapter_names = adapter_names or self.active_adapter_names
-    lora_scale = lora_scale if isinstance(lora_scale, list) else [lora_scale] * len(adapter_names)
+    lora_scale = (
+        lora_scale
+        if isinstance(lora_scale, list)
+        else [lora_scale] * len(adapter_names)
+    )
 
     if len(lora_scale) != len(adapter_names):
         raise ValueError("The number of lora_scale and adapter_names must be equal")
@@ -181,16 +182,21 @@ def _fuse_lora(
 
     for scale, adapter in zip(lora_scale, adapter_names):
         if delta_weight_sum is None:
-            delta_weight_sum = get_delta_weight(self, self.lora_B[adapter], self.lora_A[adapter], scale)
+            delta_weight_sum = get_delta_weight(
+                self, self.lora_B[adapter], self.lora_A[adapter], scale
+            )
         else:
-            delta_weight_sum += get_delta_weight(self, self.lora_B[adapter], self.lora_A[adapter], lora_scale)
-    
+            delta_weight_sum += get_delta_weight(
+                self, self.lora_B[adapter], self.lora_A[adapter], lora_scale
+            )
+
     _unfuse_lora(self)
     if delta_weight_sum is not None:
         fused_weight = self.weight.data.float() + delta_weight_sum
-        self.weight.data.copy_(fused_weight.to(device=self.weight.device, dtype=self.weight.dtype))
+        self.weight.data.copy_(
+            fused_weight.to(device=self.weight.device, dtype=self.weight.dtype)
+        )
         update_graph_related_tensor(self)
-
 
 
 def _load_lora_and_optionally_fuse(
@@ -241,9 +247,8 @@ def _load_lora_and_optionally_fuse(
 
     if not hasattr(self, "adapter_names"):
         init_lora_infos(self)
-    
-    dtype, device = self.weight.data.dtype, self.weight.data.device
 
+    dtype, device = self.weight.data.dtype, self.weight.data.device
 
     down_key = prefix + ".down.weight"
     up_key = prefix + ".up.weight"
@@ -393,7 +398,7 @@ def _maybe_map_sgm_blocks_to_diffusers(
             new_key = delimiter.join(
                 key.split(delimiter)[: block_slice_pos - 1]
                 + [str(block_id), inner_block_key, inner_layers_in_block]
-                + key.split(delimiter)[block_slice_pos + 1 :]
+                + key.split(delimiter)[block_slice_pos + 1:]
             )
             new_state_dict[new_key] = state_dict.pop(key)
 
@@ -429,7 +434,7 @@ def _maybe_map_sgm_blocks_to_diffusers(
             new_key = delimiter.join(
                 key.split(delimiter)[: block_slice_pos - 1]
                 + [str(block_id), inner_block_key, inner_layers_in_block]
-                + key.split(delimiter)[block_slice_pos + 1 :]
+                + key.split(delimiter)[block_slice_pos + 1:]
             )
             new_state_dict[new_key] = state_dict.pop(key)
 
