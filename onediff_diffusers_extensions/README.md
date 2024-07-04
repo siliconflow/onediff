@@ -238,6 +238,45 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 
 ### API
 
+- [load_lora_and_optionally_fuse](#onediffxloraload_lora_and_optionally_fuse)
+- [load_and_fuse_lora](#onediffxloraload_and_fuse_lora)
+- [unfuse_lora](#onediffxloraunfuse_lora)
+- [set_and_fuse_adapters](#onediffxloraset_and_fuse_adapters)
+- [delete_adapters](#onediffxloradelete_adapters)
+- [update_graph_with_constant_folding_info](#onediffxloraupdate_graph_with_constant_folding_info)
+
+#### `onediffx.lora.load_lora_and_optionally_fuse`
+
+`onediffx.lora.load_lora_and_optionally_fuse(pipeline: LoraLoaderMixin, pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, *, fuse: bool, lora_scale: Optional[float] = None, offload_device="cuda", use_cache=False, **kwargs) -> None`:
+
+- pipeline (`LoraLoaderMixin`): The pipeline that will load and fuse LoRA weight.
+
+- pretrained_model_name_or_path_or_dict (`str` or `os.PathLike` or `dict`):  Can be either:
+
+    - A string, the *model id* (for example `google/ddpm-celebahq-256`) of a pretrained model hosted on the Hub.
+
+    - A path to a *directory* containing the model weights saved with [ModelMixin.save_pretrained()](https://huggingface.co/docs/diffusers/v0.25.1/en/api/models/overview#diffusers.ModelMixin.save_pretrained).
+
+    - A [torch state dict](https://pytorch.org/tutorials/beginner/saving_loading_models.html#what-is-a-state-dict).
+
+- adapter_name(`str`, *optional*): Adapter name to be used for referencing the loaded adapter model. If not specified, it will use `default_{i}` where i is the total number of adapters being loaded. **Not supported now**.
+
+- fuse(`bool`): Whether to fuse LoRA into the corresponding blocks. If set to False, the value of the lora_scale parameter will be ignored and set to its default value of 1.0.
+
+- lora_scale (`float`, defaults to 1.0): Controls how much to influence the outputs with the LoRA parameters.
+
+- offload_device (`str`, must be one of "cpu" and "cuda"): The device to offload the weight of LoRA or model
+
+- offload_weight (`str`, must be one of "lora" and "weight"): The weight type to offload. If set to "lora", the weight of LoRA will be offloaded to `offload_device`, and if set to "weight", the weight of Linear or Conv2d will be offloaded.
+
+- use_cache (`bool`, optional): Whether to save LoRA to cache. If set to True, loaded LoRA will be cached in memory.
+
+- kwargs(`dict`, *optional*) — See [lora_state_dict()](https://huggingface.co/docs/diffusers/v0.25.1/en/api/loaders/lora#diffusers.loaders.LoraLoaderMixin.lora_state_dict)
+
+> Note: If you want to load **multiple** LoRAs before inference, we recommend you to call [load_lora_and_optionally_fuse](#onediffxloraload_lora_and_optionally_fuse) with fuse=False and then call [set_and_fuse_adapters](#onediffxloraset_and_fuse_adapters) instead of [load_and_fuse_lora](#onediffxloraload_and_fuse_lora), because the latter may lead to issues with precision, refer to [this issue](https://github.com/siliconflow/onediff/issues/981) for a detailed understanding of the problem.
+
+> Note: If fuse=False, this function is essentially equivalent to `load_lora_weights` in Diffusers, except that the LoRA loaded through this function will not participate in the inference computation. If fuse=True, this function is equivalent to first calling `load_lora_weights` and then calling `fuse_lora`.
+
 #### `onediffx.lora.load_and_fuse_lora`
 
 `onediffx.lora.load_and_fuse_lora(pipeline: LoraLoaderMixin, pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]], adapter_name: Optional[str] = None, *, lora_scale: float = 1.0, offload_device="cpu", offload_weight="lora", use_cache=False, **kwargs)`:
@@ -262,6 +301,10 @@ OneDiff provides a more efficient implementation of loading LoRA, by invoking `l
 - use_cache (`bool`, optional): Whether to save LoRA to cache. If set to True, loaded LoRA will be cached in memory.
 
 - kwargs(`dict`, *optional*) — See [lora_state_dict()](https://huggingface.co/docs/diffusers/v0.25.1/en/api/loaders/lora#diffusers.loaders.LoraLoaderMixin.lora_state_dict)
+
+> Note: This function is equivalent to calling `load_lora_and_optinally_fuse` with `fuse=True`, which is equivalent to first calling `load_lora_weights` and then calling `fuse_lora` in Diffusers.
+
+> Note: If you want to load **multiple** LoRAs before inference, repeatedly calling this function may lead to precision issues. Please refer to the note of function [load_lora_and_optionally_fuse](#onediffxloraload_lora_and_optionally_fuse) for more information.
 
 #### `onediffx.lora.unfuse_lora`
 
