@@ -193,7 +193,7 @@ def main():
             f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
         )
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
-        print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
+        print(f"Max used CUDA memory : {cuda_mem_after_used:.3f} GiB")
 
     if args.run_multiple_resolutions:
         gen_args["prompt"] = args.prompt
