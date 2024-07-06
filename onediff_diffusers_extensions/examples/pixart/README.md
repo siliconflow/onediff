@@ -1,4 +1,4 @@
-# Run PixArt with nexfort backend(Beta Release)
+# Run PixArt with nexfort backend (Beta Release)
 
 
 1. [Environment Setup](#environment-setup)
@@ -27,8 +27,8 @@ https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/back
 
 HF model: 
 
- - PixArt-sigma: https://huggingface.co/PixArt-alpha/PixArt-Sigma-XL-2-1024-MS
  - PixArt-alpha: https://huggingface.co/PixArt-alpha/PixArt-XL-2-1024-MS
+ - PixArt-sigma: https://huggingface.co/PixArt-alpha/PixArt-Sigma-XL-2-1024-MS
 
 HF pipeline: https://huggingface.co/docs/diffusers/main/en/api/pipelines/pixart
 
@@ -44,7 +44,7 @@ Compared to PixArt-alpha, PixArt-sigma extends the token length of the text enco
 cd onediff
 ```
 
-### Run 1024*1024 without compile(the original pytorch HF diffusers pipeline)
+### Run 1024*1024 without compile (the original pytorch HF diffusers pipeline)
 ```
 # To test sigma, specify the --model parameter as `PixArt-alpha/PixArt-Sigma-XL-2-1024-MS`.
 python3 ./benchmarks/text_to_image.py \
@@ -56,7 +56,19 @@ python3 ./benchmarks/text_to_image.py \
 --prompt "product photography, world of warcraft orc warrior, white background"
 ```
 
-### Run 1024*1024 with compile
+### Run 1024*1024 with oneflow backend compile
+
+```
+python3 ./benchmarks/text_to_image.py \
+--model PixArt-alpha/PixArt-XL-2-1024-MS \
+--scheduler none \
+--steps 20 \
+--compiler oneflow \
+--output-image ./pixart_alpha_compile.png \
+--prompt "product photography, world of warcraft orc warrior, white background"
+```
+
+### Run 1024*1024 with nexfort backend compile
 ```
 python3 ./benchmarks/text_to_image.py \
 --model PixArt-alpha/PixArt-XL-2-1024-MS \
