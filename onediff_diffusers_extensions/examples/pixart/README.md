@@ -83,24 +83,40 @@ python3 ./benchmarks/text_to_image.py \
 
 ### Metric
 
+#### On 4090
+| Metric                                           |NVIDIA GeForce RTX 4090 (1024 * 1024)|
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-07-06                          |
+| PyTorch iteration speed                          | 7.591it/s                           |
+| OneDiff iteration speed                          | 14.308it/s(+88.5%)                  |
+| PyTorch E2E time                                 | 2.881s                              |
+| OneDiff E2E time                                 | 1.509s(-47.6%)                      |
+| PyTorch Max Mem Used                             | 14.447GiB                           |
+| OneDiff Max Mem Used                             | 13.571GiB                           |
+| PyTorch Warmup with Run time                     | 3.314s                              |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 244.500s                            |
+| OneDiff Warmup with Cache time                   | 80.866s                             |
+
+ <sup>1</sup> OneDiff warmup with compilation time is tested on AMD EPYC 7543 32-Core Processor. Note this is just for reference, and it varies a lot on different CPU.
+
 #### On A100
 | Metric                                           | NVIDIA A100-PCIE-40GB (1024 * 1024) |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-05-23                          |
 | PyTorch iteration speed                          | 8.623it/s                           |
-| OneDiff iteration speed                          | 10.743it/s(+24.6%)                 |
+| OneDiff iteration speed                          | 10.743it/s(+24.6%)                  |
 | PyTorch E2E time                                 | 2.568s                              |
 | OneDiff E2E time                                 | 1.992s(-22.4%)                      |
 | PyTorch Max Mem Used                             | 14.445GiB                           |
 | OneDiff Max Mem Used                             | 13.855GiB                           |
 | PyTorch Warmup with Run time                     | 4.100s                              |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 510.170s                            |
+| OneDiff Warmup with Compilation time<sup>2</sup> | 510.170s                            |
 | OneDiff Warmup with Cache time                   | 111.563s                            |
 
- <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz. Note this is just for reference, and it varies a lot on different CPU.
+ <sup>2</sup> Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz.
 
 #### On H800
-| Metric                                           |      NVIDIA H800 (1024 * 1024)      |
+| Metric                                           |  NVIDIA H800-NVL-80GB (1024 * 1024) |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-05-29                          |
 | PyTorch iteration speed                          | 21.067it/s                          |
@@ -110,20 +126,24 @@ python3 ./benchmarks/text_to_image.py \
 | PyTorch Max Mem Used                             | 14.468GiB                           |
 | OneDiff Max Mem Used                             | 13.970GiB                           |
 | PyTorch Warmup with Run time                     | 1.741s                              |
-| OneDiff Warmup with Compilation time<sup>2</sup> | 718.539s                            |
+| OneDiff Warmup with Compilation time<sup>3</sup> | 718.539s                            |
 | OneDiff Warmup with Cache time                   | 131.776s                            |
 
- <sup>2</sup> Intel(R) Xeon(R) Platinum 8468.
+ <sup>3</sup> Intel(R) Xeon(R) Platinum 8468.
 
-#### nexfort compile config and warmup cost
+#### The nexfort backend compile config and warmup cost
+
 - compiler-config 
-  - default is `{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`, the compilation time is about 500 seconds
-  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time to about 60 seconds and just slightly reduce the performance
-  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}'` will help to make the best performance but the compilation time is about 700 seconds
-  - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 20 seconds, but will reduce the performance
+  - default is `{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`. This mode supports dynamic shapes.
+  - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time and just slightly reduce the performance.
+  - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}'` will help achieve the best performance, but it increases the compilation time and affects stability.
+  - setting `--compiler-config '{"mode": "jit:disable-runtime-fusion", "memory_format": "channels_last"}'` will reduce compilation time to 20 seconds, but will reduce the performance.
 - fuse_qkv_projections: True
 
 ## Quantization
+
+> [!NOTE]
+Quantization is a feature for onediff enterprise.
 
 Onediff's nexfort backend works closely with Torchao to support model quantization. Quant can reduce the runtime memory requirement and increase the inference speed.
 
