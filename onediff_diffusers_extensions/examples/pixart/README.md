@@ -67,7 +67,7 @@ python3 ./benchmarks/text_to_image.py \
 --prompt "product photography, world of warcraft orc warrior, white background"
 ```
 
-## Performance comparation
+## Performance Comparison
 
 ### Metric
 
