@@ -28,3 +28,9 @@ python3 scripts/text_to_image.py \
     -w $WORKFLOW_DIR/ComfyUI_IPAdapter_plus/ipadapter_advanced.json \
     --baseline-dir $STANDARD_OUTPUT/test_ipa
 # --output-images \
+
+python3 scripts/text_to_image.py \
+    --comfy-port $COMFY_PORT \
+    -w $WORKFLOW_DIR/txt2img.json \
+    --ssim-threshold 0.7 \
+    --baseline-dir $STANDARD_OUTPUT/txt2img/imgs # --output-images
