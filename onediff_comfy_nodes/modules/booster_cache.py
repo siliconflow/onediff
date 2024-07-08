@@ -17,11 +17,11 @@ def _(new_model: ModelPatcher, cached_model):
     assert type(new_model.model) == type(
         cached_model
     ), f"Model type mismatch: expected {type(cached_model)}, got {type(new_model.model)}"
-    for k, v in new_model.model.state_dict().items():
-        cached_v: torch.Tensor = get_sub_module(cached_model, k)
-        assert v.dtype == cached_v.dtype
-        cached_v.copy_(v)
-    new_model.model = cached_model
+    cached_model.diffusion_model.load_state_dict(
+        new_model.model.diffusion_model.state_dict(), strict=True
+    )
+    new_model.model.diffusion_model = cached_model.diffusion_model
+    new_model.weight_inplace_update = True
     return new_model
 
 
