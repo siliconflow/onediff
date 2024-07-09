@@ -26,8 +26,6 @@ services:
       HF_HUB_OFFLINE: "1"
       ONEFLOW_MLIR_ENABLE_TIMING: "1"
       ONEFLOW_MLIR_PRINT_STATS: "1"
-      ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION: "0"
-      COMFYUI_ONEDIFF_SAVE_GRAPH_DIR: "/share_nfs/hf_models/comfyui_resources/input"
       CI: "1"
       SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
     volumes:

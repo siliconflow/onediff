@@ -1,0 +1,108 @@
+{
+  "3": {
+    "inputs": {
+      "seed": 87631619688518,
+      "steps": 20,
+      "cfg": 8,
+      "sampler_name": "euler_ancestral",
+      "scheduler": "normal",
+      "denoise": 1,
+      "model": [
+        "31",
+        0
+      ],
+      "positive": [
+        "6",
+        0
+      ],
+      "negative": [
+        "7",
+        0
+      ],
+      "latent_image": [
+        "5",
+        0
+      ]
+    },
+    "class_type": "KSampler",
+    "_meta": {
+      "title": "KSampler"
+    }
+  },
+  "5": {
+    "inputs": {
+      "width": 1024,
+      "height": 1024,
+      "batch_size": 1
+    },
+    "class_type": "EmptyLatentImage",
+    "_meta": {
+      "title": "Empty Latent Image"
+    }
+  },
+  "6": {
+    "inputs": {
+      "text": "(blue colour lighting:1.3),photorealistic,masterpiece:1.5, spot light, exquisite gentle eyes,().\\n,portrait,masterpiece,breast focus:1.2,(),multicolored hair:1.4,wavy hair,3D face,black hair,short hair:1.2, sidelocks,1girl:1.3,blue eyes,tareme:1.5,(cowboy shot:1.5),(light smile:1.3),(stand:1.3),\\nhead tilt:1.3,(Shoulderless sundress:1.2),\\n(flat chest:1.4),cute face,(A balanced body,Model Body Type),\\n(Dark Background:1.3)、\\nslender Body:1.3,shiny hair, shiny skin,niji",
+      "clip": [
+        "31",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "7": {
+    "inputs": {
+      "text": " Multiple people,bad body,long body,(fat:1.2),long neck,deformed,mutated,malformed limbs,missing limb,acnes,skin spots,skin blemishes,poorly drawn face",
+      "clip": [
+        "31",
+        1
+      ]
+    },
+    "class_type": "CLIPTextEncode",
+    "_meta": {
+      "title": "CLIP Text Encode (Prompt)"
+    }
+  },
+  "8": {
+    "inputs": {
+      "samples": [
+        "3",
+        0
+      ],
+      "vae": [
+        "31",
+        2
+      ]
+    },
+    "class_type": "VAEDecode",
+    "_meta": {
+      "title": "VAE Decode"
+    }
+  },
+  "9": {
+    "inputs": {
+      "filename_prefix": "ComfyUI",
+      "images": [
+        "8",
+        0
+      ]
+    },
+    "class_type": "SaveImage",
+    "_meta": {
+      "title": "Save Image"
+    }
+  },
+  "31": {
+    "inputs": {
+      "ckpt_name": "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
+      "vae_speedup": "disable"
+    },
+    "class_type": "OneDiffCheckpointLoaderSimple",
+    "_meta": {
+      "title": "Load Checkpoint - OneDiff"
+    }
+  }
+}
