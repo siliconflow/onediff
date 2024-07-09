@@ -106,7 +106,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
     if unfold_batch:
         # Check AnimateDiff context window
         if ad_params is not None and ad_params["sub_idxs"] is not None:
-            if isinstance(weight, torch.Tensor):
+            if isinstance(weight, torch.Tensor) and len(weight) > 1:
                 weight = tensor_to_size(weight, ad_params["full_length"])
                 weight = torch.Tensor(weight[ad_params["sub_idxs"]])
                 # if torch.all(weight == 0):
@@ -127,7 +127,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
                 cond = cond[ad_params["sub_idxs"]]
                 uncond = uncond[ad_params["sub_idxs"]]
         else:
-            if isinstance(weight, torch.Tensor):
+            if isinstance(weight, torch.Tensor) and len(weight) > 1:
                 weight = tensor_to_size(weight, batch_prompt)
                 # if torch.all(weight == 0):
                 #     return 0
@@ -144,7 +144,7 @@ def ipadapter_attention(out, q, k, v, extra_options, module_key='', ipadapter=No
         v_uncond = ipadapter.ip_layers.to_kvs[v_key](uncond)
     else:
         # TODO: should we always convert the weights to a tensor?
-        if isinstance(weight, torch.Tensor):
+        if isinstance(weight, torch.Tensor) and len(weight) > 1:
             weight = tensor_to_size(weight, batch_prompt)
             # if torch.all(weight == 0):
             #     return 0

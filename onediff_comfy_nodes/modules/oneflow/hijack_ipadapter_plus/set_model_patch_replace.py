@@ -49,7 +49,7 @@ def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None)->None:
         # patch for weight
         weight = split1dict["weight"]
         if isinstance(weight, (int, float)):
-            weight = torch.tensor([weight])
+            weight = torch.tensor(weight)
             split1dict["weight"] = weight.to(model_management.get_torch_device())
 
         return split1dict, split2dict
