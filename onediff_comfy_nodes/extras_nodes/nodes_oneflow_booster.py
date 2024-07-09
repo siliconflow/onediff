@@ -7,41 +7,33 @@ import torch
 from comfy import model_management
 from comfy.cli_args import args
 
-from onediff.infer_compiler.utils import is_community_version
+from onediff.utils.import_utils import is_onediff_quant_available
+from onediff.infer_compiler.backends.oneflow.utils.version_util import (
+    is_community_version,
+)
 
+
+from ..modules import BoosterScheduler
+from ..modules.oneflow import (
+    BasicOneFlowBoosterExecutor,
+    DeepcacheBoosterExecutor,
+    PatchBoosterExecutor,
+)
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-# from ..modules.oneflow.hijack_animatediff import animatediff_hijacker
-# from ..modules.oneflow.hijack_ipadapter_plus import ipadapter_plus_hijacker
-# from ..modules.oneflow.hijack_model_management import model_management_hijacker
-# from ..modules.oneflow.hijack_nodes import nodes_hijacker
-# from ..modules.oneflow.hijack_samplers import samplers_hijack
-# from ..modules.oneflow.hijack_comfyui_instantid import comfyui_instantid_hijacker
-# from ..modules.oneflow.hijack_model_patcher import model_patch_hijacker
-from ..modules.oneflow import BasicOneFlowBoosterExecutor
-from ..modules.oneflow import DeepcacheBoosterExecutor
-from ..modules.oneflow import PatchBoosterExecutor
 from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
 from ..modules import BoosterScheduler
-from ..utils.import_utils import is_onediff_quant_available
-
 
 if is_onediff_quant_available() and not is_community_version():
-    from ..modules.oneflow.booster_quantization import OnelineQuantizationBoosterExecutor  # type: ignore
+    from ..modules.oneflow.booster_quantization import (
+        OnelineQuantizationBoosterExecutor,
+    )  # type: ignore
 
-# model_management_hijacker.hijack()  # add flow.cuda.empty_cache()
-# nodes_hijacker.hijack()
-# samplers_hijack.hijack()
-# animatediff_hijacker.hijack()
-# ipadapter_plus_hijacker.hijack()
-# comfyui_instantid_hijacker.hijack()
-# model_patch_hijacker.hijack()
 
 import comfy_extras.nodes_video_model
 from nodes import CheckpointLoaderSimple
 
-
 # https://github.com/comfyanonymous/ComfyUI/commit/bb4940d837f0cfd338ff64776b084303be066c67#diff-fab3fbd81daf87571b12fb3e4d80fc7d6bbbcf0f3dafed1dbc55d81998d82539L54
-if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention: 
+if hasattr(args, "dont_upcast_attention") and not args.dont_upcast_attention:
     os.environ["ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_SCORE_ACCUMULATION_MAX_M"] = "0"
 
 
@@ -166,6 +158,7 @@ class ModuleDeepCacheSpeedup:
         start_step,
         end_step,
     ):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         booster = BoosterScheduler(
             DeepcacheBoosterExecutor(
                 cache_interval=cache_interval,
@@ -309,8 +302,6 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         self,
         ckpt_name,
         vae_speedup,
-        output_vae=True,
-        output_clip=True,
         static_mode="enable",
         cache_interval=3,
         cache_layer_id=0,
@@ -318,10 +309,9 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         start_step=0,
         end_step=1000,
     ):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         # CheckpointLoaderSimple.load_checkpoint
-        modelpatcher, clip, vae = self.load_checkpoint(
-            ckpt_name, output_vae, output_clip
-        )
+        modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
         booster = BoosterScheduler(
             DeepcacheBoosterExecutor(
                 cache_interval=cache_interval,
@@ -391,6 +381,7 @@ class SVDSpeedup:
         cache_name="svd",
         custom_booster: BoosterScheduler = None,
     ):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         if custom_booster:
             booster = custom_booster
             booster.inplace = inplace
@@ -420,6 +411,7 @@ class VaeGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, vae, graph):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         vae_model = vae.first_stage_model
         device = model_management.vae_offload_device()
         load_graph(vae_model, graph, device, subfolder="vae")
@@ -443,6 +435,7 @@ class VaeGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, images, vae, filename_prefix):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         vae_model = vae.first_stage_model
         vae_device = model_management.vae_offload_device()
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
@@ -468,6 +461,7 @@ class ModelGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, model, graph):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
 
         diffusion_model = model.model.diffusion_model
 
@@ -492,6 +486,7 @@ class ModelGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, samples, model, filename_prefix):
+        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
         diffusion_model = model.model.diffusion_model
         save_graph(diffusion_model, filename_prefix, "cuda", subfolder="unet")
         return {}
@@ -545,6 +540,7 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff"
 
         def load_unet_int8(self, model_path):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             from ..modules.oneflow.utils.onediff_quant_utils import (
                 replace_module_with_quantizable_module,
             )
@@ -583,6 +579,7 @@ if is_onediff_quant_available() and not is_community_version():
         OUTPUT_NODE = True
 
         def quantize_model(self, model, output_dir, conv, linear):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             from ..modules.oneflow.utils import quantize_and_save_model
 
             diffusion_model = model.model.diffusion_model
@@ -611,12 +608,10 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff/Loaders"
         FUNCTION = "onediff_load_checkpoint"
 
-        def onediff_load_checkpoint(
-            self, ckpt_name, vae_speedup, output_vae=True, output_clip=True
-        ):
-            modelpatcher, clip, vae = self.load_checkpoint(
-                ckpt_name, output_vae, output_clip
-            )
+
+        def onediff_load_checkpoint(self, ckpt_name, vae_speedup):
+            modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             booster = BoosterScheduler(
                 OnelineQuantizationBoosterExecutor(
                     conv_percentage=100,
@@ -664,19 +659,12 @@ if is_onediff_quant_available() and not is_community_version():
         FUNCTION = "onediff_load_checkpoint"
 
         def onediff_load_checkpoint(
-            self,
-            ckpt_name,
-            model_path,
-            compile,
-            vae_speedup,
-            output_vae=True,
-            output_clip=True,
+            self, ckpt_name, model_path, compile, vae_speedup,
         ):
             need_compile = compile == "enable"
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
 
-            modelpatcher, clip, vae = self.load_checkpoint(
-                ckpt_name, output_vae, output_clip
-            )
+            modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
             # TODO fix by op.compile
             from ..modules.oneflow.utils.onediff_load_utils import (
                 onediff_load_quant_checkpoint_advanced,
@@ -727,6 +715,7 @@ if is_onediff_quant_available() and not is_community_version():
             output_vae=True,
             output_clip=True,
         ):
+            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )
