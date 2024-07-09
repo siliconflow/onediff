@@ -6,6 +6,8 @@ import torch
 from diffusers import StableDiffusion3Pipeline
 from onediffx import compile_pipe, quantize_pipe
 
+torch._logging.set_logs(fusion=True)
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
