@@ -76,8 +76,8 @@ Testing on NVIDIA GeForce RTX 3090, with image size of 1024*1024, iterating 20 s
 | PyTorch Max Mem Used                             | 10.467 GiB         |
 | OneDiff Max Mem Used                             | 12.004 GiB         |
 | PyTorch Warmup with Run time                     |                    |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 308.535 s          |
-| OneDiff Warmup with Cache time                   |                    |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 474.361 s          |
+| OneDiff Warmup with Cache time                   | 306.835 s          |
 
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
@@ -86,16 +86,16 @@ Testing on NVIDIA GeForce RTX 3090, with image size of 1024*1024, iterating 20 s
 Testing on 4090:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
-| PyTorch iteration speed                          | 6.67 it/s                           |
-| OneDiff iteration speed                          | 11.51 it/s (+72.6%)                 |
-| PyTorch E2E time                                 | 4.90 s                              |
-| OneDiff E2E time                                 | 2.67 s (-45.5%)                     |
-| PyTorch Max Mem Used                             | 18.799 GiB                          |
-| OneDiff Max Mem Used                             | 17.902 GiB                          |
-| PyTorch Warmup with Run time                     | 4.99 s                              |
-| OneDiff Warmup with Compilation time<sup>2</sup> | 302.79 s                            |
-| OneDiff Warmup with Cache time                   | 51.96 s                             |
+| Data update date(yyyy-mm-dd)                     |                                     |
+| PyTorch iteration speed                          |                                     |
+| OneDiff iteration speed                          |                                     |
+| PyTorch E2E time                                 |                                     |
+| OneDiff E2E time                                 |                                     |
+| PyTorch Max Mem Used                             |                                     |
+| OneDiff Max Mem Used                             |                                     |
+| PyTorch Warmup with Run time                     |                                     |
+| OneDiff Warmup with Compilation time<sup>2</sup> |                                     |
+| OneDiff Warmup with Cache time                   |                                     |
 
  <sup>2</sup> AMD EPYC 7543 32-Core Processor -->
 

@@ -41,7 +41,6 @@ python3 benchmarks/text_to_image.py \
   --output-image ./stable-diffusion-2-1.png \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler none \
-  --seed 1 \
   --print-output
 ```
 
@@ -57,7 +56,6 @@ python3 benchmarks/text_to_image.py \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler nexfort \
   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false, "inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
-  --seed 1 \
   --print-output
 ```
 
@@ -74,8 +72,8 @@ Testing on NVIDIA GeForce RTX 3090, with image size of 786*768, iterating 20 ste
 | PyTorch Max Mem Used                             | 3.767 GiB                           |
 | OneDiff Max Mem Used                             | 3.558 GiB                           |
 | PyTorch Warmup with Run time                     |                                     |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 113.28 s                            |
-| OneDiff Warmup with Cache time                   |                                     |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 301.542 s                           |
+| OneDiff Warmup with Cache time                   | 113.035 s                           |
 
 Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 steps:
 | Metric                                           |                                     |
@@ -93,20 +91,22 @@ Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 ste
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
+<!-- TODO -->
+
 <!-- 
 Testing on 4090:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
-| PyTorch iteration speed                          | 6.67 it/s                           |
-| OneDiff iteration speed                          | 11.51 it/s (+72.6%)                 |
-| PyTorch E2E time                                 | 4.90 s                              |
-| OneDiff E2E time                                 | 2.67 s (-45.5%)                     |
-| PyTorch Max Mem Used                             | 18.799 GiB                          |
-| OneDiff Max Mem Used                             | 17.902 GiB                          |
-| PyTorch Warmup with Run time                     | 4.99 s                              |
-| OneDiff Warmup with Compilation time<sup>2</sup> | 302.79 s                            |
-| OneDiff Warmup with Cache time                   | 51.96 s                             |
+| Data update date(yyyy-mm-dd)                     |                                     |
+| PyTorch iteration speed                          |                                     |
+| OneDiff iteration speed                          |                                     |
+| PyTorch E2E time                                 |                                     |
+| OneDiff E2E time                                 |                                     |
+| PyTorch Max Mem Used                             |                                     |
+| OneDiff Max Mem Used                             |                                     |
+| PyTorch Warmup with Run time                     |                                     |
+| OneDiff Warmup with Compilation time<sup>2</sup> |                                     |
+| OneDiff Warmup with Cache time                   |                                     |
 
  <sup>2</sup> AMD EPYC 7543 32-Core Processor -->
 
