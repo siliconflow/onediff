@@ -86,8 +86,8 @@ Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 ste
 | PyTorch Max Mem Used                             | 3.025 GiB                           |
 | OneDiff Max Mem Used                             | 3.018 GiB                           |
 | PyTorch Warmup with Run time                     |                                     |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 121.42 s                            |
-| OneDiff Warmup with Cache time                   |                                     |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 222.18 s                            |
+| OneDiff Warmup with Cache time                   | 44.94 s                             |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
