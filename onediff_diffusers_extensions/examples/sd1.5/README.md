@@ -45,16 +45,16 @@ python3 benchmarks/text_to_image.py \
 
 ### Run with compilation
 
-```
+```shell
 python3 benchmarks/text_to_image.py \
-    --model /share_nfs/hf_models/stable-diffusion-v1-5 \
-    --height 512 --width 512 \
-    --scheduler none \
-    --steps 20 \
-    --output-image ./stable-diffusion-v1-5-compile.png \
-    --prompt "product photography, world of warcraft orc warrior, white background" \
-    --compiler nexfort \
-    --compiler-config '{"mode": "max-autotune:cudagraphs", "memory_format": "channels_last"}'
+   --model /share_nfs/hf_models/stable-diffusion-v1-5 \
+   --height 512 --width 512 \
+   --scheduler none \
+   --steps 20 \
+   --output-image ./stable-diffusion-v1-5-compile.png \
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler nexfort \
+   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}'
 ```
 
 ## Performance comparison
@@ -62,15 +62,15 @@ python3 benchmarks/text_to_image.py \
 Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 steps:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-07-05                          |
+| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
 | PyTorch iteration speed                          | 21.20 it/s                          |
-| OneDiff iteration speed                          | 40.38 it/s (+90.5%)                 |
+| OneDiff iteration speed                          | 48.00 it/s (+126.4%)                 |
 | PyTorch E2E time                                 | 1.07 s                              |
-| OneDiff E2E time                                 | 0.56 s (-47.7%)                     |
+| OneDiff E2E time                                 | 0.48 s (-55.1%)                     |
 | PyTorch Max Mem Used                             | 2.627 GiB                           |
-| OneDiff Max Mem Used                             | 2.541 GiB                           |
+| OneDiff Max Mem Used                             | 2.587 GiB                           |
 | PyTorch Warmup with Run time                     |                               |
-| OneDiff Warmup with Compilation time<sup>1</sup> |                            |
+| OneDiff Warmup with Compilation time<sup>1</sup> |                     41.120s       |
 | OneDiff Warmup with Cache time                   |                              |
 
 <!-- <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU. -->
@@ -99,8 +99,16 @@ Testing on 4090:
 
 Run:
 
-```
-# The best practice mode configuration for dynamic shape is `max-optimize:max-autotune:low-precision`.
+```shell
+python3 benchmarks/text_to_image.py \
+   --model /share_nfs/hf_models/stable-diffusion-v1-5 \
+   --height 512 --width 512 \
+   --scheduler none \
+   --steps 20 \
+   --output-image ./stable-diffusion-v1-5-compile.png \
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler nexfort \
+   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
 ```
 
 ## Quality
