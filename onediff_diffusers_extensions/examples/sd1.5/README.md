@@ -41,22 +41,24 @@ python3 benchmarks/text_to_image.py \
   --output-image ./stable-diffusion-v1-5.png \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler none \
-  --seed 1
+  --seed 1 \
+  --print-output
 ```
 
 ### Run with compilation
 
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-v1-5 \
-   --height 512 --width 512 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-v1-5-compile.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
-   --seed 1
+  --model /share_nfs/hf_models/stable-diffusion-v1-5 \
+  --height 512 --width 512 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-v1-5-compile.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler nexfort \
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
+  --seed 1 \
+  --print-output
 ```
 
 ## Performance comparison
@@ -103,14 +105,14 @@ Run:
 
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-v1-5 \
-   --height 512 --width 512 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-v1-5-compile.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
+  --model /share_nfs/hf_models/stable-diffusion-v1-5 \
+  --height 512 --width 512 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-v1-5-compile.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler nexfort \
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
 ```
 
 ## Quality

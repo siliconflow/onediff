@@ -34,27 +34,31 @@ HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/a
 ### Run without compilation (Baseline)
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-2-1 \
-   --height 768 --width 768 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-2-1.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler none
+  --model /share_nfs/hf_models/stable-diffusion-2-1 \
+  --height 768 --width 768 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-2-1.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler none \
+  --seed 1 \
+  --print-output
 ```
 
 ### Run with compilation
 
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-2-1 \
-   --height 768 --width 768 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-2-1-compile.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false, "inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}'
+  --model /share_nfs/hf_models/stable-diffusion-2-1 \
+  --height 768 --width 768 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-2-1-compile.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler nexfort \
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false, "inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
+  --seed 1 \
+  --print-output
 ```
 
 ## Performance comparison
@@ -113,14 +117,14 @@ Run:
 
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-2-1 \
-   --height 768 --width 768 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-2-1-compile.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
+  --model /share_nfs/hf_models/stable-diffusion-2-1 \
+  --height 768 --width 768 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-2-1-compile.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler nexfort \
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
 ```
 
 ## Quality

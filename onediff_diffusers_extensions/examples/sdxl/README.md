@@ -34,46 +34,50 @@ HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/a
 ### Run without compilation (Baseline)
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
-   --height 1024 --width 1024 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-xl.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler none --variant fp16
+  --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
+  --height 1024 --width 1024 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-xl.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler none \
+  --variant fp16 \
+  --seed 1 \
+  --print-output
 ```
 
 ### Run with compilation
 
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
-   --height 1024 --width 1024 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-xl-compile.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
-   --variant fp16 \
-   --seed 1
+  --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
+  --height 1024 --width 1024 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-xl-compile.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler nexfort \
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
+  --variant fp16 \
+  --seed 1 \
+  --print-output
 ```
 
 ## Performance comparison
 
 Testing on NVIDIA GeForce RTX 3090, with image size of 1024*1024, iterating 20 steps:
-| Metric                                           |                                     |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
-| PyTorch iteration speed                          | 4.08 it/s                           |
-| OneDiff iteration speed                          | 7.21 it/s (+76.7%)                  |
-| PyTorch E2E time                                 | 5.60 s                              |
-| OneDiff E2E time                                 | 3.41 s (-39.1%)                     |
-| PyTorch Max Mem Used                             | 10.467 GiB                          |
-| OneDiff Max Mem Used                             | 12.004 GiB                          |
-| PyTorch Warmup with Run time                     |                                     |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 308.535 s                           |
-| OneDiff Warmup with Cache time                   |                                     |
+| Metric                                           |                    |
+| ------------------------------------------------ | ------------------ |
+| Data update date(yyyy-mm-dd)                     | 2024-07-10         |
+| PyTorch iteration speed                          | 4.08 it/s          |
+| OneDiff iteration speed                          | 7.21 it/s (+76.7%) |
+| PyTorch E2E time                                 | 5.60 s             |
+| OneDiff E2E time                                 | 3.41 s (-39.1%)    |
+| PyTorch Max Mem Used                             | 10.467 GiB         |
+| OneDiff Max Mem Used                             | 12.004 GiB         |
+| PyTorch Warmup with Run time                     |                    |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 308.535 s          |
+| OneDiff Warmup with Cache time                   |                    |
 
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
@@ -102,14 +106,14 @@ Run:
 
 ```shell
 python3 benchmarks/text_to_image.py \
-   --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
-   --height 768 --width 768 \
-   --scheduler none \
-   --steps 20 \
-   --output-image ./stable-diffusion-xl-compile.png \
-   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
-   --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
+  --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
+  --height 1024 --width 1024 \
+  --scheduler none \
+  --steps 20 \
+  --output-image ./stable-diffusion-xl-compile.png \
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler nexfort \
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
 ```
 
 ## Quality
