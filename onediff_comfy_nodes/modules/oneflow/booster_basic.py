@@ -42,6 +42,7 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
             return model
 
         compiled_model = oneflow_compile(torch_model)
+
         model.model.diffusion_model = compiled_model
 
         graph_file = generate_graph_path(f"{type(model).__name__}", model=model.model)

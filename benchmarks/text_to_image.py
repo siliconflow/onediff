@@ -36,6 +36,7 @@ from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
 from onediffx import compile_pipe, quantize_pipe # quantize_pipe currently only supports the nexfort backend.
+from onediff.infer_compiler import oneflow_compile
 
 
 def parse_args():
@@ -244,7 +245,13 @@ def main():
         pass
     elif args.compiler == "oneflow":
         print("Oneflow backend is now active...")
-        pipe = compile_pipe(pipe)
+        # Note: The compile_pipe() based on the oneflow backend is incompatible with T5EncoderModel.
+        # pipe = compile_pipe(pipe)
+        if hasattr(pipe, "unet"):
+            pipe.unet = oneflow_compile(pipe.unet)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = oneflow_compile(pipe.transformer)
+        pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
     elif args.compiler == "nexfort":
         print("Nexfort backend is now active...")
         if args.quantize:
@@ -267,7 +274,7 @@ def main():
             options = json.loads(args.compiler_config)
         else:
             # config with string
-            options = '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}'
+            options = '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}'
         pipe = compile_pipe(
             pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
