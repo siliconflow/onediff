@@ -1,0 +1,131 @@
+# Run SD2 with nexfort backend (Beta Release)
+
+1. [Environment Setup](#environment-setup)
+   - [Set Up OneDiff](#set-up-onediff)
+   - [Set Up NexFort Backend](#set-up-nexfort-backend)
+   - [Set Up Diffusers Library](#set-up-diffusers)
+   - [Set Up SD2](#set-up-sd2)
+2. [Execution Instructions](#run)
+   - [Run Without Compilation (Baseline)](#run-without-compilation-baseline)
+   - [Run With Compilation](#run-with-compilation)
+3. [Performance Comparison](#performance-comparison)
+4. [Dynamic Shape for SD2](#dynamic-shape-for-sd2)
+5. [Quality](#quality)
+
+## Environment setup
+### Set up onediff
+https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
+
+### Set up nexfort backend
+https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort
+
+### Set up diffusers
+
+```
+pip3 install --upgrade diffusers[torch]
+```
+### Set up SD2
+Model version for diffusers: https://huggingface.co/stabilityai/stable-diffusion-2
+
+HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/stable_diffusion/stable_diffusion_2.md
+
+## Run
+
+### Run without compilation (Baseline)
+```shell
+python3 benchmarks/text_to_image.py \
+   --model /share_nfs/hf_models/stable-diffusion-2-1 \
+   --height 768 --width 768 \
+   --scheduler none \
+   --steps 20 \
+   --output-image ./stable-diffusion-2-1.png \
+   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+   --compiler none
+```
+
+### Run with compilation
+
+```shell
+python3 benchmarks/text_to_image.py \
+   --model /share_nfs/hf_models/stable-diffusion-2-1 \
+   --height 768 --width 768 \
+   --scheduler none \
+   --steps 20 \
+   --output-image ./stable-diffusion-2-1-compile.png \
+   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+   --compiler nexfort \
+   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false, "inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}'
+```
+
+## Performance comparison
+
+Testing on NVIDIA GeForce RTX 3090, with image size of 786*768, iterating 20 steps:
+| Metric                                           |                                     |
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
+| PyTorch iteration speed                          | 10.45 it/s                          |
+| OneDiff iteration speed                          | 15.93 it/s (+126.4%)                |
+| PyTorch E2E time                                 | 2.10 s                              |
+| OneDiff E2E time                                 | 1.35 s (-35.7%)                     |
+| PyTorch Max Mem Used                             | 3.767 GiB                           |
+| OneDiff Max Mem Used                             | 3.558 GiB                           |
+| PyTorch Warmup with Run time                     |                                     |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 113.28 s                            |
+| OneDiff Warmup with Cache time                   |                                     |
+
+Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 steps:
+| Metric                                           |                                     |
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
+| PyTorch iteration speed                          | 22.84 it/s                          |
+| OneDiff iteration speed                          | 44.84 it/s (+96.3%)                 |
+| PyTorch E2E time                                 | 0.97 s                              |
+| OneDiff E2E time                                 | 0.49 s (-49.5%)                     |
+| PyTorch Max Mem Used                             | 3.025 GiB                           |
+| OneDiff Max Mem Used                             | 3.018 GiB                           |
+| PyTorch Warmup with Run time                     |                                     |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 121.42 s                            |
+| OneDiff Warmup with Cache time                   |                                     |
+
+<!-- <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU. -->
+
+<!-- 
+Testing on 4090:
+| Metric                                           |                                     |
+| ------------------------------------------------ | ----------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
+| PyTorch iteration speed                          | 6.67 it/s                           |
+| OneDiff iteration speed                          | 11.51 it/s (+72.6%)                 |
+| PyTorch E2E time                                 | 4.90 s                              |
+| OneDiff E2E time                                 | 2.67 s (-45.5%)                     |
+| PyTorch Max Mem Used                             | 18.799 GiB                          |
+| OneDiff Max Mem Used                             | 17.902 GiB                          |
+| PyTorch Warmup with Run time                     | 4.99 s                              |
+| OneDiff Warmup with Compilation time<sup>2</sup> | 302.79 s                            |
+| OneDiff Warmup with Cache time                   | 51.96 s                             |
+
+ <sup>2</sup> AMD EPYC 7543 32-Core Processor -->
+
+
+## Dynamic shape for SD2
+
+Run:
+
+```shell
+python3 benchmarks/text_to_image.py \
+   --model /share_nfs/hf_models/stable-diffusion-2-1 \
+   --height 768 --width 768 \
+   --scheduler none \
+   --steps 20 \
+   --output-image ./stable-diffusion-2-1-compile.png \
+   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+   --compiler nexfort \
+   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
+```
+
+## Quality
+When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.
+
+<p align="center">
+<img src="../../../imgs/nexfort_sd2_demo.png">
+</p>
