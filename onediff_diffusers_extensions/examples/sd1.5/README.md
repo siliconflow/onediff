@@ -39,8 +39,9 @@ python3 benchmarks/text_to_image.py \
   --scheduler none \
   --steps 20 \
   --output-image ./stable-diffusion-v1-5.png \
-  --prompt "product photography, world of warcraft orc warrior, white background" \
-  --compiler none
+  --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
+  --compiler none \
+  --seed 1
 ```
 
 ### Run with compilation
@@ -52,28 +53,29 @@ python3 benchmarks/text_to_image.py \
    --scheduler none \
    --steps 20 \
    --output-image ./stable-diffusion-v1-5-compile.png \
-   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
    --compiler nexfort \
-   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}'
+   --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
+   --seed 1
 ```
 
 ## Performance comparison
 
 Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 steps:
-| Metric                                           |                                     |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
-| PyTorch iteration speed                          | 21.20 it/s                          |
-| OneDiff iteration speed                          | 48.00 it/s (+126.4%)                 |
-| PyTorch E2E time                                 | 1.07 s                              |
-| OneDiff E2E time                                 | 0.48 s (-55.1%)                     |
-| PyTorch Max Mem Used                             | 2.627 GiB                           |
-| OneDiff Max Mem Used                             | 2.587 GiB                           |
-| PyTorch Warmup with Run time                     |                               |
-| OneDiff Warmup with Compilation time<sup>1</sup> |                     41.120s       |
-| OneDiff Warmup with Cache time                   |                              |
+| Metric                                           |                      |
+| ------------------------------------------------ | ---------------------|
+| Data update date(yyyy-mm-dd)                     | 2024-07-10           |
+| PyTorch iteration speed                          | 21.20 it/s           |
+| OneDiff iteration speed                          | 48.00 it/s (+126.4%) |
+| PyTorch E2E time                                 | 1.07 s               |
+| OneDiff E2E time                                 | 0.48 s (-55.1%)      |
+| PyTorch Max Mem Used                             | 2.627 GiB            |
+| OneDiff Max Mem Used                             | 2.587 GiB            |
+| PyTorch Warmup with Run time                     |                      |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 41.120s              |
+| OneDiff Warmup with Cache time                   |                      |
 
-<!-- <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU. -->
+<sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
 <!-- 
 Testing on 4090:
@@ -106,7 +108,7 @@ python3 benchmarks/text_to_image.py \
    --scheduler none \
    --steps 20 \
    --output-image ./stable-diffusion-v1-5-compile.png \
-   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
    --compiler nexfort \
    --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
 ```

@@ -76,7 +76,7 @@ Testing on NVIDIA GeForce RTX 3090, with image size of 1024*1024, iterating 20 s
 | OneDiff Warmup with Cache time                   |                                     |
 
 
-<!-- <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU. -->
+<sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
 <!-- 
 Testing on 4090:
