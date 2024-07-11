@@ -65,39 +65,23 @@ python3 benchmarks/text_to_image.py \
 
 ## Performance comparison
 
-Testing on NVIDIA GeForce RTX 3090, with image size of 1024*1024, iterating 20 steps:
-| Metric                                           |                    |
-| ------------------------------------------------ | ------------------ |
-| Data update date(yyyy-mm-dd)                     | 2024-07-10         |
-| PyTorch iteration speed                          | 4.08 it/s          |
-| OneDiff iteration speed                          | 7.21 it/s (+76.7%) |
-| PyTorch E2E time                                 | 5.60 s             |
-| OneDiff E2E time                                 | 3.41 s (-39.1%)    |
-| PyTorch Max Mem Used                             | 10.467 GiB         |
-| OneDiff Max Mem Used                             | 12.004 GiB         |
-| PyTorch Warmup with Run time                     |                    |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 474.361 s          |
-| OneDiff Warmup with Cache time                   | 306.835 s          |
-
+Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 1024*1024, iterating 20 steps:
+| Metric                               | RTX 3090  1024*1024    | RTX 4090 1024*1024    |
+| ------------------------------------ | ---------------------- | --------------------- |
+| Data update date(yyyy-mm-dd)         | 2024-07-10             | 2024-07-10            |
+| PyTorch iteration speed              | 4.08 it/s              | 6.93 it/s             |
+| OneDiff iteration speed              | 7.21 it/s (+76.7%)     | 13.917 it/s (+100.9%) |
+| PyTorch E2E time                     | 5.60 s                 | 3.23 s                |
+| OneDiff E2E time                     | 3.41 s (-39.1%)        | 1.67 s (-48.3%)       |
+| PyTorch Max Mem Used                 | 10.467 GiB             | 10.467 GiB            |
+| OneDiff Max Mem Used                 | 12.004 GiB             | 12.021 GiB            |
+| PyTorch Warmup with Run time         |                        |                       |
+| OneDiff Warmup with Compilation time | 474.361 s <sup>1</sup> | 236.541 s <sup>2</sup>|
+| OneDiff Warmup with Cache time       | 306.835 s              | 104.565 s             |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
-<!-- 
-Testing on 4090:
-| Metric                                           |                                     |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     |                                     |
-| PyTorch iteration speed                          |                                     |
-| OneDiff iteration speed                          |                                     |
-| PyTorch E2E time                                 |                                     |
-| OneDiff E2E time                                 |                                     |
-| PyTorch Max Mem Used                             |                                     |
-| OneDiff Max Mem Used                             |                                     |
-| PyTorch Warmup with Run time                     |                                     |
-| OneDiff Warmup with Compilation time<sup>2</sup> |                                     |
-| OneDiff Warmup with Cache time                   |                                     |
-
- <sup>2</sup> AMD EPYC 7543 32-Core Processor -->
+<sup>2</sup> AMD EPYC 7543 32-Core Processor.
 
 
 ## Dynamic shape for SDXL
