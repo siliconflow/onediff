@@ -7,6 +7,8 @@
 https://github.com/siliconflow/onediff?tab=readme-ov-file#installation
 
 ### Set up compiler backend
+Support two backends: oneflow and nexfort.
+
 https://github.com/siliconflow/onediff?tab=readme-ov-file#install-a-compiler-backend
 
 
