@@ -55,39 +55,25 @@ python3 benchmarks/text_to_image.py \
   --output-image ./stable-diffusion-2-1-compile.png \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler nexfort \
-  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false, "inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
+  --compiler-config '{"mode": "cudagraphs:benchmark:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false, "inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
   --print-output
 ```
 
 ## Performance comparison
 
-Testing on NVIDIA GeForce RTX 3090, with image size of 786*768, iterating 20 steps:
-| Metric                                           |                                     |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
-| PyTorch iteration speed                          | 10.45 it/s                          |
-| OneDiff iteration speed                          | 15.93 it/s (+126.4%)                |
-| PyTorch E2E time                                 | 2.10 s                              |
-| OneDiff E2E time                                 | 1.35 s (-35.7%)                     |
-| PyTorch Max Mem Used                             | 3.767 GiB                           |
-| OneDiff Max Mem Used                             | 3.558 GiB                           |
-| PyTorch Warmup with Run time                     |                                     |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 301.542 s                           |
-| OneDiff Warmup with Cache time                   | 113.035 s                           |
-
-Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 steps:
-| Metric                                           |                                     |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-07-10                          |
-| PyTorch iteration speed                          | 22.84 it/s                          |
-| OneDiff iteration speed                          | 44.84 it/s (+96.3%)                 |
-| PyTorch E2E time                                 | 0.97 s                              |
-| OneDiff E2E time                                 | 0.49 s (-49.5%)                     |
-| PyTorch Max Mem Used                             | 3.025 GiB                           |
-| OneDiff Max Mem Used                             | 3.018 GiB                           |
-| PyTorch Warmup with Run time                     |                                     |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 222.18 s                            |
-| OneDiff Warmup with Cache time                   | 44.94 s                             |
+Testing on NVIDIA GeForce RTX 3090, with image size of 786\*768 and 512\*512, iterating 20 steps:
+| Metric                                           | RTX3090, 768*768     | RTX3090, 512*512    |
+| ------------------------------------------------ | -------------------- | ------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-07-10           | 2024-07-10          |
+| PyTorch iteration speed                          | 10.45 it/s           | 22.84 it/s          |
+| OneDiff iteration speed                          | 15.93 it/s (+126.4%) | 44.84 it/s (+96.3%) |
+| PyTorch E2E time                                 | 2.10 s               | 0.97 s              |
+| OneDiff E2E time                                 | 1.35 s (-35.7%)      | 0.49 s (-49.5%)     |
+| PyTorch Max Mem Used                             | 3.767 GiB            | 3.025 GiB           |
+| OneDiff Max Mem Used                             | 3.558 GiB            | 3.018 GiB           |
+| PyTorch Warmup with Run time                     |                      |                     |
+| OneDiff Warmup with Compilation time | 301.542 s<sup>1</sup>           | 222.18 s<sup>1</sup>           |
+| OneDiff Warmup with Cache time                   | 113.035 s            | 44.94 s             |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
@@ -124,7 +110,8 @@ python3 benchmarks/text_to_image.py \
   --output-image ./stable-diffusion-2-1-compile.png \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler nexfort \
-  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}' \
+  --run_multiple_resolutions 1
 ```
 
 ## Quality

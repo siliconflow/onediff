@@ -56,7 +56,7 @@ python3 benchmarks/text_to_image.py \
   --output-image ./stable-diffusion-v1-5-compile.png \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler nexfort \
-  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
+  --compiler-config '{"mode": "cudagraphs:benchmark:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}}' \
   --seed 1 \
   --print-output
 ```
@@ -114,7 +114,8 @@ python3 benchmarks/text_to_image.py \
   --output-image ./stable-diffusion-v1-5-compile.png \
   --prompt "beautiful scenery nature glass bottle landscape, , purple galaxy bottle," \
   --compiler nexfort \
-  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}'
+  --compiler-config '{"mode": "cudagraphs:max-autotune:low-precision:cache-all", "memory_format": "channels_last", "options": {"inductor.optimize_linear_epilogue": false, "overrides.conv_benchmark": true, "overrides.matmul_allow_tf32": true}, "dynamic": true}' \
+  --run_multiple_resolutions 1
 ```
 
 ## Quality
