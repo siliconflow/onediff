@@ -34,7 +34,7 @@ HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/a
 ### Run without compilation (Baseline)
 ```shell
 python3 benchmarks/text_to_image.py \
-  --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
+  --model stabilityai/stable-diffusion-xl-base-1.0 \
   --height 1024 --width 1024 \
   --scheduler none \
   --steps 20 \
@@ -50,7 +50,7 @@ python3 benchmarks/text_to_image.py \
 
 ```shell
 python3 benchmarks/text_to_image.py \
-  --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
+  --model stabilityai/stable-diffusion-xl-base-1.0 \
   --height 1024 --width 1024 \
   --scheduler none \
   --steps 20 \
@@ -106,7 +106,7 @@ Run:
 
 ```shell
 python3 benchmarks/text_to_image.py \
-  --model /share_nfs/hf_models/stable-diffusion-xl-base-1.0 \
+  --model stabilityai/stable-diffusion-xl-base-1.0 \
   --height 1024 --width 1024 \
   --scheduler none \
   --steps 20 \
