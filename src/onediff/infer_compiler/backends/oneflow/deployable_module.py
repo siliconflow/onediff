@@ -123,9 +123,9 @@ class OneflowDeployableModule(DeployableModule):
             )
         return self._deployable_module_dpl_graph
 
-    @input_output_processor
     @handle_deployable_exception
     @graph_file_management
+    @input_output_processor
     def apply_model(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
@@ -138,10 +138,10 @@ class OneflowDeployableModule(DeployableModule):
                 )
         return output
 
-    @quantize_and_deploy_wrapper
-    @input_output_processor
     @handle_deployable_exception
+    @quantize_and_deploy_wrapper
     @graph_file_management
+    @input_output_processor
     def forward(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
@@ -172,9 +172,9 @@ class OneflowDeployableModule(DeployableModule):
         return self
 
     # TODO(): Just for transformers VAE decoder
-    @input_output_processor
     @handle_deployable_exception
     @graph_file_management
+    @input_output_processor
     def decode(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
 
@@ -201,6 +201,7 @@ class OneflowDeployableModule(DeployableModule):
         )
         generate_constant_folding_info(self)
         update_graph_with_constant_folding_info(self)
+        self._load_graph_first_run = False
 
     def save_graph(self, file_path, *, process_state_dict=lambda x: x):
         self.get_graph().save_graph(file_path, process_state_dict=process_state_dict)
