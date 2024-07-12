@@ -34,7 +34,7 @@ HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/a
 ### Run without compilation (Baseline)
 ```shell
 python3 benchmarks/text_to_image.py \
-  --model stabilityai/stable-diffusion-2 \
+  --model stabilityai/stable-diffusion-2-1 \
   --height 768 --width 768 \
   --scheduler none \
   --steps 20 \
@@ -48,7 +48,7 @@ python3 benchmarks/text_to_image.py \
 
 ```shell
 python3 benchmarks/text_to_image.py \
-  --model stabilityai/stable-diffusion-2 \
+  --model stabilityai/stable-diffusion-2-1 \
   --height 768 --width 768 \
   --scheduler none \
   --steps 20 \
@@ -65,7 +65,7 @@ Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 786\*768 and 512\*
 
 | Metric                               | RTX3090, 768*768     | RTX3090, 512*512     | RTX4090, 768*768      | RTX4090, 512*512      |
 | ------------------------------------ | -------------------- | -------------------- | --------------------- | --------------------- |
-| Data update date(yyyy-mm-dd)         | 2024-07-10           | 2024-07-10           | 2024-07-10            | 2024-07-10            |
+| Data update date (yyyy-mm-dd)        | 2024-07-10           | 2024-07-10           | 2024-07-10            | 2024-07-10            |
 | PyTorch iteration speed              | 10.45 it/s           | 22.84 it/s           | 12.34 it/s            | 39.06 it/s            |
 | OneDiff iteration speed              | 15.93 it/s (+52.4%)  | 44.84 it/s (+96.3%)  | 31.63 it/s (+156.3%)  | 83.63 it/s (+114.1%)  |
 | PyTorch E2E time                     | 2.10 s               | 0.97 s               | 1.78s                 | 0.58 s                |
@@ -86,7 +86,7 @@ Run:
 
 ```shell
 python3 benchmarks/text_to_image.py \
-  --model stabilityai/stable-diffusion-2 \
+  --model stabilityai/stable-diffusion-2-1 \
   --height 768 --width 768 \
   --scheduler none \
   --steps 20 \

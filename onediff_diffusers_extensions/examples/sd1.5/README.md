@@ -63,10 +63,10 @@ python3 benchmarks/text_to_image.py \
 
 ## Performance comparison
 
-Testing on NVIDIA GeForce RTX 3090, with image size of 512*512, iterating 20 steps:
+Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 512*512, iterating 20 steps:
 | Metric                               | RTX3090, 512*512      | RTX4090, 512*512      |
 | ------------------------------------ | --------------------- | --------------------- |
-| Data update date(yyyy-mm-dd)         | 2024-07-10            | 2024-07-10            |
+| Data update date (yyyy-mm-dd)        | 2024-07-10            | 2024-07-10            |
 | PyTorch iteration speed              | 21.20 it/s            | 34.46 it/s            |
 | OneDiff iteration speed              | 48.00 it/s (+126.4%)  | 81.81 it/s (+137.4%)  |
 | PyTorch E2E time                     | 1.07 s                | 0.67 s                |
