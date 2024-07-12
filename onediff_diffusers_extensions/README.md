@@ -346,6 +346,8 @@ Check [text_to_image_sdxl_lora.py](./examples/text_to_image_sdxl_lora.py) for mo
 
 ### Example
 
+See [onediffx lora examples](../docs/onediffx_lora_examples.ipynb) for details.
+
 ```python
 import torch
 from diffusers import DiffusionPipeline

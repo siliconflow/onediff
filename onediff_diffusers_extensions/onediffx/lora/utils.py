@@ -104,7 +104,7 @@ def offload_tensor(tensor, device):
         return tensor.to(device)
 
 
-def _set_adapter(self, adapter_names, adapter_weights):
+def _set_adapter(self, adapter_names: List[str], adapter_weights: Optional[Union[float, List[float]]] = None):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise TypeError(
             f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}"
@@ -113,10 +113,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
         return
-    # import ipdb; ipdb.set_trace()
     if adapter_weights is None:
-        adapter_weights = 1.0
-    if isinstance(adapter_weights, float):
+        adapter_weights = [self.scaling[adapter] for adapter in adapter_names if adapter in self.scaling]
+    elif isinstance(adapter_weights, float):
         adapter_weights = [adapter_weights,] * len(adapter_names)
     _unfuse_lora(self)
 
@@ -142,7 +141,7 @@ def _set_adapter(self, adapter_names, adapter_weights):
         update_graph_related_tensor(self)
 
 
-def _delete_adapter(self, adapter_names):
+def _delete_adapter(self, adapter_names, safe_delete=True):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise TypeError(
             f"[OneDiffX _delete_adapter] Expect type Linear or Conv2d, got {type(self)}"
@@ -151,7 +150,10 @@ def _delete_adapter(self, adapter_names):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
         return
-    _unfuse_lora(self, adapter_names=adapter_names)
+    if safe_delete:
+        _set_adapter(self, list(set(self.adapter_names) - set(adapter_names)))
+    else:
+        _unfuse_lora(self, adapter_names=adapter_names)
     delete_lora_infos(self, adapter_names)
 
 
