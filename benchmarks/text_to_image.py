@@ -62,6 +62,7 @@ def parse_args():
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
+    parser.add_argument("--print-output", action="store_true")
     parser.add_argument("--throughput", action="store_true")
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
@@ -383,6 +384,14 @@ def main():
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
+
+    if args.print_output:
+        from onediff.utils.import_utils import is_nexfort_available
+        if is_nexfort_available():
+            from nexfort.utils.term_image import print_image
+
+            for image in output_images:
+                print_image(image, max_width=80)
 
     if args.output_image is not None:
         output_images[0].save(args.output_image)
