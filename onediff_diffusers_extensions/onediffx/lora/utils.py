@@ -104,7 +104,11 @@ def offload_tensor(tensor, device):
         return tensor.to(device)
 
 
-def _set_adapter(self, adapter_names: List[str], adapter_weights: Optional[Union[float, List[float]]] = None):
+def _set_adapter(
+    self,
+    adapter_names: List[str],
+    adapter_weights: Optional[Union[float, List[float]]] = None,
+):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise TypeError(
             f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}"
@@ -114,7 +118,11 @@ def _set_adapter(self, adapter_names: List[str], adapter_weights: Optional[Union
     if not hasattr(self, "adapter_names"):
         return
     if adapter_weights is None:
-        adapter_weights = [self.scaling[adapter] for adapter in adapter_names if adapter in self.scaling]
+        adapter_weights = [
+            self.scaling[adapter]
+            for adapter in adapter_names
+            if adapter in self.scaling
+        ]
     elif isinstance(adapter_weights, float):
         adapter_weights = [adapter_weights,] * len(adapter_names)
     _unfuse_lora(self)
@@ -155,50 +163,6 @@ def _delete_adapter(self, adapter_names, safe_delete=True):
     else:
         _unfuse_lora(self, adapter_names=adapter_names)
     delete_lora_infos(self, adapter_names)
-
-
-def _fuse_lora(
-    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
-    lora_scale: Optional[Union[List[float], float]] = 1.0,
-    adapter_names: Optional[Union[List[str], str]] = None,
-) -> None:
-    # TODO: if lora_scale and adapter_names is same as current, do nothing
-    if isinstance(lora_scale, list) and adapter_names is None:
-        raise ValueError(
-            "When adapter_names is not specified, lora_scale must be a float"
-        )
-
-    if not hasattr(self, "lora_A"):
-        return
-    adapter_names = adapter_names or self.active_adapter_names
-    lora_scale = (
-        lora_scale
-        if isinstance(lora_scale, list)
-        else [lora_scale] * len(adapter_names)
-    )
-
-    if len(lora_scale) != len(adapter_names):
-        raise ValueError("The number of lora_scale and adapter_names must be equal")
-
-    delta_weight_sum = None
-
-    for scale, adapter in zip(lora_scale, adapter_names):
-        if delta_weight_sum is None:
-            delta_weight_sum = get_delta_weight(
-                self, self.lora_B[adapter], self.lora_A[adapter], scale
-            )
-        else:
-            delta_weight_sum += get_delta_weight(
-                self, self.lora_B[adapter], self.lora_A[adapter], lora_scale
-            )
-
-    _unfuse_lora(self)
-    if delta_weight_sum is not None:
-        fused_weight = self.weight.data.float() + delta_weight_sum
-        self.weight.data.copy_(
-            fused_weight.to(device=self.weight.device, dtype=self.weight.dtype)
-        )
-        update_graph_related_tensor(self)
 
 
 def _load_lora_and_optionally_fuse(
@@ -400,7 +364,7 @@ def _maybe_map_sgm_blocks_to_diffusers(
             new_key = delimiter.join(
                 key.split(delimiter)[: block_slice_pos - 1]
                 + [str(block_id), inner_block_key, inner_layers_in_block]
-                + key.split(delimiter)[block_slice_pos + 1:]
+                + key.split(delimiter)[block_slice_pos + 1 :]
             )
             new_state_dict[new_key] = state_dict.pop(key)
 
@@ -436,7 +400,7 @@ def _maybe_map_sgm_blocks_to_diffusers(
             new_key = delimiter.join(
                 key.split(delimiter)[: block_slice_pos - 1]
                 + [str(block_id), inner_block_key, inner_layers_in_block]
-                + key.split(delimiter)[block_slice_pos + 1:]
+                + key.split(delimiter)[block_slice_pos + 1 :]
             )
             new_state_dict[new_key] = state_dict.pop(key)
 

@@ -12,15 +12,31 @@ from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
-from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters, get_active_adapters, delete_adapters, load_lora_and_optionally_fuse
+from onediffx.lora import (
+    load_and_fuse_lora,
+    unfuse_lora,
+    set_and_fuse_adapters,
+    get_active_adapters,
+    delete_adapters,
+    load_lora_and_optionally_fuse,
+)
 
 HEIGHT = 1024
 WIDTH = 1024
 NUM_STEPS = 30
 LORA_SCALE = 0.5
-LATENTS = torch.randn(1, 4, 128, 128, generator=torch.cuda.manual_seed(0), dtype=torch.float16, device="cuda")
+LATENTS = torch.randn(
+    1,
+    4,
+    128,
+    128,
+    generator=torch.cuda.manual_seed(0),
+    dtype=torch.float16,
+    device="cuda",
+)
 
 image_file_prefix = "/share_nfs/onediff_ci/diffusers/images/1.0"
+
 
 @pytest.fixture
 def prepare_loras() -> Dict[str, Dict[str, Tensor]]:
@@ -34,11 +50,14 @@ def prepare_loras() -> Dict[str, Dict[str, Tensor]]:
     loras = {Path(x).stem: safetensors.torch.load_file(x) for x in loras}
     return loras
 
+
 @pytest.fixture
 def get_loras(prepare_loras) -> Dict[str, Dict[str, Tensor]]:
     def _get_loras():
         return {name: lora_dict.copy() for name, lora_dict in prepare_loras.items()}
+
     return _get_loras
+
 
 @pytest.fixture
 def get_multi_loras(prepare_loras) -> Dict[str, Dict[str, Tensor]]:
@@ -51,6 +70,7 @@ def get_multi_loras(prepare_loras) -> Dict[str, Dict[str, Tensor]]:
             current_lora.append(lora_dict)
             multi_lora[tuple(current_name)] = current_lora
         return multi_lora
+
     return _get_multi_loras
 
 
@@ -66,10 +86,12 @@ def get_pipe(name: str = "sdxl"):
     ).to("cuda")
     return pipeline
 
+
 @pytest.fixture(scope="session")
 def pipe():
     pipeline = get_pipe()
     return pipeline
+
 
 def generate_image(pipe):
     image = pipe(
@@ -82,9 +104,11 @@ def generate_image(pipe):
     ).images[0]
     return image
 
+
 def prepare_target_images(pipe, loras):
     target_images_list = [
-        f"{image_file_prefix}/test_sdxl_lora_{name}_{HEIGHT}_{WIDTH}.png" for name in loras
+        f"{image_file_prefix}/test_sdxl_lora_{name}_{HEIGHT}_{WIDTH}.png"
+        for name in loras
     ]
     if all(Path(x).exists() for x in target_images_list):
         return
@@ -99,9 +123,11 @@ def prepare_target_images(pipe, loras):
         image.save(f"{image_file_prefix}/test_sdxl_lora_{name}_{HEIGHT}_{WIDTH}.png")
     torch.cuda.empty_cache()
 
+
 def prepare_target_images_multi_lora(pipe, loras, multi_loras):
     target_images_list = [
-        f"{image_file_prefix}/test_sdxl_multi_lora_{'_'.join(names)}_{HEIGHT}_{WIDTH}.png" for names in multi_loras
+        f"{image_file_prefix}/test_sdxl_multi_lora_{'_'.join(names)}_{HEIGHT}_{WIDTH}.png"
+        for names in multi_loras
     ]
     if all(Path(x).exists() for x in target_images_list):
         return
@@ -112,7 +138,7 @@ def prepare_target_images_multi_lora(pipe, loras, multi_loras):
 
     print("Didn't find target images, try to generate...")
     for names, loras in multi_loras.items():
-        pipe.set_adapters(names, [LORA_SCALE, ] * len(names))
+        pipe.set_adapters(names, [LORA_SCALE,] * len(names))
         image = generate_image(pipe)
         image_name = f"{image_file_prefix}/test_sdxl_multi_lora_{'_'.join(names)}_{HEIGHT}_{WIDTH}.png"
         image.save(image_name)
@@ -138,7 +164,9 @@ def test_lora_loading(pipe, get_loras):
         load_and_fuse_lora(pipe, lora.copy())
         images_fusion = generate_image(pipe)
         target_image = np.array(
-            Image.open(f"{image_file_prefix}/test_sdxl_lora_{name}_{HEIGHT}_{WIDTH}.png")
+            Image.open(
+                f"{image_file_prefix}/test_sdxl_lora_{name}_{HEIGHT}_{WIDTH}.png"
+            )
         )
         curr_image = np.array(images_fusion)
         ssim = structural_similarity(
@@ -158,12 +186,14 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
     preload_multi_loras(pipe, loras)
 
     for names, loras in multi_loras.items():
-        set_and_fuse_adapters(pipe, names, [LORA_SCALE, ] * len(names))
+        set_and_fuse_adapters(pipe, names, [LORA_SCALE,] * len(names))
 
         images_fusion = generate_image(pipe)
-        image_name = '_'.join(names)
+        image_name = "_".join(names)
         target_image = np.array(
-            Image.open(f"{image_file_prefix}/test_sdxl_multi_lora_{image_name}_{HEIGHT}_{WIDTH}.png")
+            Image.open(
+                f"{image_file_prefix}/test_sdxl_multi_lora_{image_name}_{HEIGHT}_{WIDTH}.png"
+            )
         )
         images_fusion.save(f"./test_sdxl_multi_lora_{image_name}_{HEIGHT}_{WIDTH}.png")
         curr_image = np.array(images_fusion)
@@ -192,7 +222,9 @@ def test_delete_adapters(pipe, get_multi_loras, get_loras):
         set_and_fuse_adapters(pipe, names)
         delete_adapters(pipe, names_to_delete)
         active_adapters = get_active_adapters(pipe)
-        print(f"current adapters: {active_adapters}, target adapters: {list(set(names) - set(names_to_delete))}")
+        print(
+            f"current adapters: {active_adapters}, target adapters: {list(set(names) - set(names_to_delete))}"
+        )
         assert set(active_adapters) == set(names) - set(names_to_delete)
 
 
@@ -208,9 +240,21 @@ def test_lora_numerical_stability():
 
     for _ in range(1000):
         for name, lora in loras.items():
-            load_lora_and_optionally_fuse(pipe, lora.copy(), adapter_name=name, fuse=False)
-        set_and_fuse_adapters(pipe, adapter_names=list(loras.keys()), adapter_weights=[0.2, 0.2])
+            load_lora_and_optionally_fuse(
+                pipe, lora.copy(), adapter_name=name, fuse=False
+            )
+        set_and_fuse_adapters(
+            pipe, adapter_names=list(loras.keys()), adapter_weights=[0.2, 0.2]
+        )
         for name in loras:
             delete_adapters(pipe, name, safe_delete=True)
 
-    assert torch.allclose(original_pipe.unet.get_parameter(param_name), pipe.unet.get_parameter(param_name), rtol=0, atol=1e-3)
+    assert torch.allclose(
+        original_pipe.unet.get_parameter(param_name),
+        pipe.unet.get_parameter(param_name),
+        rtol=0,
+        atol=1e-3,
+    )
+    print(
+        f"numerical stability: max diff is {(original_pipe.unet.get_parameter(param_name) - pipe.unet.get_parameter(param_name)).abs().max().item()}"
+    )
