@@ -36,6 +36,7 @@ OneDiff is the abbreviation of "**one** line of code to accelerate **diff**usion
 
 ## News
 The latest news:
+- :rocket: Acceleration for DiT: [SD3](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/sd3), [PixArt](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/pixart) and [Latte](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/latte)
 - :rocket:[OneDiff 1.0 is out! (Acceleration of SD & SVD with one line of code)](https://www.reddit.com/r/StableDiffusion/comments/1c5gy1e/onediff_10_is_out_acceleration_of_sd_svd_with_one/)
 - :rocket:[Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - :rocket:[Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
