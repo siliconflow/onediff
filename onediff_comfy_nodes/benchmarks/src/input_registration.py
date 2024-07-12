@@ -7,6 +7,19 @@ from core.service_client import ComfyGraph
 WORKFLOW_DIR = "resources/workflows"
 FACE_IMAGE_DIR = "/share_nfs/hf_models/comfyui_resources/input/faces"
 POSE_IMAGE_DIR = "/share_nfs/hf_models/comfyui_resources/input/poses"
+SDXL_MODELS = [
+    "Juggernaut-XL_v9_RunDiffusionPhoto_v2.safetensors",
+    "Pony_Realism.safetensors",
+    "sdxl/dreamshaperXL_v21TurboDPMSDE.safetensors",
+]
+SD1_5_MODELS = [
+    "sd15/020.realisticVisionV51_v51VAE.safetensors",
+    "sd15/majicmixRealistic_v7.safetensors",
+    "sd15/v1-5-pruned-emaonly.ckpt",
+    "sd15/helloyoung25d_V10f.safetensors",
+    "sd15/RealCartoonSpecialPruned.safetensors",
+]
+
 
 class InputParams(NamedTuple):
     graph: ComfyGraph
@@ -44,6 +57,23 @@ def _(workflow_path, *args, **kwargs):
         for width in [1024, 768, 512]:
             graph.set_image_size(height=height, width=width)
             yield InputParams(graph=graph)
+
+
+@register_generator(
+    [f"{WORKFLOW_DIR}/baseline/txt2img.json", f"{WORKFLOW_DIR}/oneflow/txt2img.json"]
+)
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
+        workflow = json.load(fp)
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
+    for sdxl_model in SDXL_MODELS:
+        graph.set_image_size(height=1024, width=1024)
+        graph.graph["31"]["inputs"]["ckpt_name"] = sdxl_model
+        yield InputParams(graph)
+    for sd1_5_model in SD1_5_MODELS:
+        graph.set_image_size(height=768, width=512)
+        graph.graph["31"]["inputs"]["ckpt_name"] = sd1_5_model
+        yield InputParams(graph)
 
 
 SD3_WORKFLOWS = [

@@ -15,7 +15,12 @@ from .transform.builtin_transform import torch2oflow
 from .dual_module import DualModule, get_mixed_dual_module
 from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .args_tree_util import input_output_processor
-from .param_utils import parse_device, check_device, generate_constant_folding_info
+from .param_utils import (
+    parse_device,
+    check_device,
+    generate_constant_folding_info,
+    update_graph_with_constant_folding_info,
+)
 from .graph_management_utils import graph_file_management
 from .online_quantization_utils import quantize_and_deploy_wrapper
 from ..env_var import OneflowCompileOptions
@@ -118,9 +123,9 @@ class OneflowDeployableModule(DeployableModule):
             )
         return self._deployable_module_dpl_graph
 
-    @input_output_processor
     @handle_deployable_exception
     @graph_file_management
+    @input_output_processor
     def apply_model(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
@@ -133,10 +138,10 @@ class OneflowDeployableModule(DeployableModule):
                 )
         return output
 
-    @quantize_and_deploy_wrapper
-    @input_output_processor
     @handle_deployable_exception
+    @quantize_and_deploy_wrapper
     @graph_file_management
+    @input_output_processor
     def forward(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
@@ -167,9 +172,9 @@ class OneflowDeployableModule(DeployableModule):
         return self
 
     # TODO(): Just for transformers VAE decoder
-    @input_output_processor
     @handle_deployable_exception
     @graph_file_management
+    @input_output_processor
     def decode(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
 
@@ -195,6 +200,8 @@ class OneflowDeployableModule(DeployableModule):
             file_path, device, run_warmup, state_dict=state_dict
         )
         generate_constant_folding_info(self)
+        update_graph_with_constant_folding_info(self)
+        self._load_graph_first_run = False
 
     def save_graph(self, file_path, *, process_state_dict=lambda x: x):
         self.get_graph().save_graph(file_path, process_state_dict=process_state_dict)
