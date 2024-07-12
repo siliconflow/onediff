@@ -69,7 +69,7 @@ def load_lora_and_optionally_fuse(
     adapter_name: Optional[str] = None,
     *,
     fuse,
-    lora_scale: Optional[float] = 1.0,
+    lora_scale: Optional[float] = None,
     offload_device="cuda",
     use_cache=False,
     **kwargs,
@@ -81,12 +81,13 @@ def load_lora_and_optionally_fuse(
 
     _init_adapters_info(pipeline)
 
-    if not fuse and lora_scale is not None:
+    if lora_scale is None:
+        lora_scale = 1.0
+    elif not fuse:
         warnings.warn(
             "When fuse=False, the lora_scale will be ignored and set to 1.0 as default",
             category=OneDiffXWarning,
         )
-        lora_scale = 1.0
 
     if fuse and len(pipeline._active_adapter_names) > 0:
         warnings.warn(
@@ -241,7 +242,7 @@ def set_and_fuse_adapters(
         pipeline.text_encoder_2.apply(set_adapters_apply)
 
 
-def delete_adapters(self, adapter_names: Union[List[str], str] = None):
+def delete_adapters(self, adapter_names: Union[List[str], str] = None, safe_delete=True):
     if adapter_names is None:
         adapter_names = list(self._adapter_names)
     elif isinstance(adapter_names, str):
@@ -253,11 +254,11 @@ def delete_adapters(self, adapter_names: Union[List[str], str] = None):
 
     def delete_adapters_apply(m):
         if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
-            _delete_adapter(m, adapter_names)
+            _delete_adapter(m, adapter_names, safe_delete=safe_delete)
         elif is_peft_available() and isinstance(
             m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
         ):
-            _delete_adapter(m.base_layer, adapter_names)
+            _delete_adapter(m.base_layer, adapter_names, safe_delete=safe_delete)
 
     self.unet.apply(delete_adapters_apply)
     if hasattr(self, "text_encoder"):
