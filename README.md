@@ -86,12 +86,12 @@ onediff is the abbreviation of "**one** line of code to accelerate **diff**usion
 Note that we haven't got a way to run SVD with TensorRT on Feb 29 2024.
 
 ### Quality Evaluation
-We also maintain a repository for benchmarking the quality of generation after acceleration using onediff:
-[OneDiffGenMetrics](https://github.com/siliconflow/OneDiffGenMetrics)
+We also maintain a repository for benchmarking the quality of generation after acceleration: [odeval](https://github.com/siliconflow/odeval)
 
 ### Community and Support
 - [Create an issue](https://github.com/siliconflow/onediff/issues)
 - Chat in Discord: [![](https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=plastic)](https://discord.gg/RKJTjZMcPQ)
+- [Community and Feedback](https://github.com/siliconflow/onediff/wiki)
 
 ### Installation
 #### 0. OS and GPU Compatibility
