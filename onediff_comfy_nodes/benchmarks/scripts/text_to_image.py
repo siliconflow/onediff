@@ -93,7 +93,9 @@ class WorkflowProcessor:
             baseline_image = Image.open(baseline_image_path)
             ssim_value = calculate_ssim(pil_image, baseline_image)
             self.logger.info(f"SSIM value with baseline: {ssim_value}")
-            assert ssim_value > self.ssim_threshold
+            assert (
+                ssim_value > self.ssim_threshold
+            ), f"SSIM value {ssim_value} is not greater than the threshold {self.ssim_threshold}"
 
 
 def run_workflow(
