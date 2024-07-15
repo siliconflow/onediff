@@ -3,14 +3,15 @@
 1. [Environment Setup](#environment-setup)
    - [Set Up OneDiff](#set-up-onediff)
    - [Set Up NexFort Backend](#set-up-nexfort-backend)
-   - [Set Up Diffusers Library](#set-up-diffusers-library)
+   - [Set Up Diffusers](#set-up-diffusers)
    - [Download SD3 Model for Diffusers](#download-sd3-model-for-diffusers)
 2. [Execution Instructions](#execution-instructions)
    - [Run Without Compilation (Baseline)](#run-without-compilation-baseline)
    - [Run With Compilation](#run-with-compilation)
 3. [Performance Comparison](#performance-comparison)
 4. [Dynamic Shape for SD3](#dynamic-shape-for-sd3)
-5. [Quality](#quality)
+5. [Quantization](#quantization)
+6. [Quality](#quality)
 
 ## Environment setup
 ### Set up onediff
@@ -25,12 +26,12 @@ https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/back
 # Ensure diffusers include the SD3 pipeline.
 pip3 install --upgrade diffusers[torch]
 ```
-### Set up SD3
+### Download SD3 model for diffusers
 Model version for diffusers: https://huggingface.co/stabilityai/stable-diffusion-3-medium-diffusers
 
 HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/stable_diffusion/stable_diffusion_3.md
 
-## Run
+## Execution instructions
 
 ### Run 1024*1024 without compile (the original pytorch HF diffusers baseline)
 ```
@@ -38,7 +39,7 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --saved-image sd3.png
 ```
 
-### Run 1024*1024 with compile
+### Run 1024*1024 with onediff (nexfort) compile
 
 ```
 python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
@@ -48,7 +49,7 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 
 ## Performance comparation
 
-Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
+Testing on H800-NVL-80GB with torch 2.3.0, with image size of 1024*1024, iterating 28 steps:
 | Metric                                           |                                     |
 | ------------------------------------------------ | ----------------------------------- |
 | Data update date(yyyy-mm-dd)                     | 2024-06-29                          |
@@ -95,9 +96,46 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
     --run_multiple_resolutions 1 \
     --saved-image sd3_compile.png
 ```
+## Quantization
+
+> [!NOTE]
+Quantization is a feature for onediff enterprise.
+
+### Run
+
+Quantization of the model's layers can be selectively performed based on precision. Download `fp8_e4m3.json` or `fp8_e4m3_per_tensor.json` from https://huggingface.co/siliconflow/stable-diffusion-3-onediff-nexfort-fp8.
+
+The --arg `quant-submodules-config-path` is optional. If left `None`, it will quantize all linear layers.
+
+```
+# Applies dynamic symmetric per-tensor activation and per-tensor weight quantization to all linear layers. Both activations and weights are quantized to e4m3 format.
+python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
+    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}' \
+    --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}' \
+    --quant-submodules-config-path /path/to/fp8_e4m3_per_tensor.json \
+    --saved-image sd3_fp8.png
+```
+or
+```
+# Applies dynamic symmetric per-token activation and per-channel weight quantization to all linear layers.
+python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
+    --compiler-config '{"mode": "quant:max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}' \
+    --quantize-config '{"quant_type": "fp8_e4m3_e4m3_dynamic"}' \
+    --quant-submodules-config-path /path/to/fp8_e4m3.json \
+    --saved-image sd3_fp8.png
+```
+
+### Metric
+
+The performance of above quantization types on the H800-NVL-80GB is as follows:
+
+| quant_type                       | E2E Inference Time | Iteration speed    | Max Used CUDA Memory |
+|----------------------------------|--------------------|--------------------|----------------------|
+| fp8_e4m3_e4m3_dynamic_per_tensor | 1.22 s (-37.8%)    | 25.26 it/s (+62.3%)| 16.933 GiB           |
+| fp8_e4m3_e4m3_dynamic            | 1.14 s (-41.8%)    | 27.12 it/s (+74.3%)| 17.098 GiB           |
 
 ## Quality
-When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.
+When using nexfort as the backend for onediff compilation acceleration, the generated images are almost lossless.
 
 <p align="center">
 <img src="../../../imgs/nexfort_sd3_demo.png">
