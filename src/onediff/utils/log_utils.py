@@ -37,38 +37,41 @@ class ConfigurableLogger:
         # Prevent messages from being propagated to the root logger
         logger.propagate = False
 
-        # Create a console formatter and add it to a console handler
-        console_formatter = ColorFormatter(
-            fmt="%(levelname)s [%(asctime)s] %(pathname)s:%(lineno)d - %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
-        )
-
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(console_formatter)
-        logger.addHandler(console_handler)
-
-        # Create a file formatter and add it to a file handler if log_dir is provided
-        if log_dir:
-            log_dir = Path(log_dir)
-            os.makedirs(log_dir, exist_ok=True)
-
-            file_prefix = "{}_".format(
-                time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
-            )
-
-            if file_name:
-                log_file_name = file_prefix + file_name
-            else:
-                log_file_name = file_prefix + name + ".log"
-
-            log_file = log_dir / log_file_name
-            file_formatter = logging.Formatter(
-                fmt="%(levelname)s [%(asctime)s] - %(message)s",
+        if logger.hasHandlers():
+            logger.warning("Logging handlers already exist for %s", name)
+        else:
+            # Create a console formatter and add it to a console handler
+            console_formatter = ColorFormatter(
+                fmt="%(levelname)s [%(asctime)s] %(pathname)s:%(lineno)d - %(message)s",
                 datefmt="%Y-%m-%d %H:%M:%S",
             )
-            file_handler = logging.FileHandler(log_file, encoding="utf-8")
-            file_handler.setFormatter(file_formatter)
-            logger.addHandler(file_handler)
+
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(console_formatter)
+            logger.addHandler(console_handler)
+
+            # Create a file formatter and add it to a file handler if log_dir is provided
+            if log_dir:
+                log_dir = Path(log_dir)
+                os.makedirs(log_dir, exist_ok=True)
+
+                file_prefix = "{}_".format(
+                    time.strftime("%Y-%m-%d_%H-%M-%S", time.localtime())
+                )
+
+                if file_name:
+                    log_file_name = file_prefix + file_name
+                else:
+                    log_file_name = file_prefix + name + ".log"
+
+                log_file = log_dir / log_file_name
+                file_formatter = logging.Formatter(
+                    fmt="%(levelname)s [%(asctime)s] - %(message)s",
+                    datefmt="%Y-%m-%d %H:%M:%S",
+                )
+                file_handler = logging.FileHandler(log_file, encoding="utf-8")
+                file_handler.setFormatter(file_formatter)
+                logger.addHandler(file_handler)
 
         self.logger = logger
 
