@@ -38,6 +38,9 @@ _PARTS = [
     "vae.decoder",
     "vae.encoder",
 ]
+_PARTS = [
+    "transformer",  # for Transformer-based DiffusionPipeline such as DiTPipeline and PixArtAlphaPipeline
+]
 
 
 def _filter_parts(ignores=()):
