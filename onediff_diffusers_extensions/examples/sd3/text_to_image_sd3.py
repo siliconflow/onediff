@@ -182,18 +182,22 @@ def main():
         "negative_prompt": args.negative_prompt,
     }
 
-    sd3.warmup(gen_args)
+    with torch.profiler.profile() as prof:
+        with torch.profiler.record_function("warmup compile"):
+            sd3.warmup(gen_args)
 
-    for prompt in prompt_list:
-        gen_args["prompt"] = prompt
-        print(f"Processing prompt of length {len(prompt)} characters.")
-        image, inference_time = sd3.generate(gen_args)
-        assert inference_time < 20, "Prompt inference took too long"
-        print(
-            f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
-        )
-        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
-        print(f"Max used CUDA memory : {cuda_mem_after_used:.3f} GiB")
+        with torch.profiler.record_function("sd3 compiled"):
+            for prompt in prompt_list:
+                gen_args["prompt"] = prompt
+                print(f"Processing prompt of length {len(prompt)} characters.")
+                image, inference_time = sd3.generate(gen_args)
+                assert inference_time < 20, "Prompt inference took too long"
+                print(
+                    f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
+                )
+                cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
+                print(f"Max used CUDA memory : {cuda_mem_after_used:.3f} GiB")
+    prof.export_chrome_trace("sd3_compile_cache.json")
 
     if args.run_multiple_resolutions:
         gen_args["prompt"] = args.prompt
