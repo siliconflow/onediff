@@ -93,7 +93,7 @@ Testing on A100(NVIDIA A100-PCIE-40GB):
 | OneDiff Max Mem Used                             | 17.89 GiB          |
 | PyTorch Warmup with Run time                     | 5.73 s             |
 | OneDiff Warmup with Compilation time<sup>3</sup> | 601.98 s           |
-| OneDiff Warmup with Cache time                   | 54 s               |
+| OneDiff Warmup with Cache time                   | 48 s               |
 |                                                  |                    |
 
  <sup>3</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz.
