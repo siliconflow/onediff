@@ -49,18 +49,18 @@ python3 onediff_diffusers_extensions/examples/sd3/text_to_image_sd3.py \
 ## Performance comparation
 
 Testing on H800-NVL-80GB, with image size of 1024*1024, iterating 28 steps:
-| Metric                                           |                     |
-| ------------------------------------------------ | ------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-29          |
-| PyTorch iteration speed                          | 15.56 it/s          |
-| OneDiff iteration speed                          | 24.12 it/s (+55.0%) |
-| PyTorch E2E time                                 | 1.96 s              |
-| OneDiff E2E time                                 | 1.31 s (-33.2%)     |
-| PyTorch Max Mem Used                             | 18.784 GiB          |
-| OneDiff Max Mem Used                             | 18.324 GiB          |
-| PyTorch Warmup with Run time                     | 2.86 s              |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 889.25 s            |
-| OneDiff Warmup with Cache time                   | 44.38 s             |
+| Metric                                           |                     | disable cuda spda |
+| ------------------------------------------------ | ------------------- | ----------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-29          | 2024-07-16        |
+| PyTorch iteration speed                          | 15.56 it/s          | 14.96 it/s        |
+| OneDiff iteration speed                          | 24.12 it/s (+55.0%) | 25.13 it/s        |
+| PyTorch E2E time                                 | 1.96 s              | 2.06 s            |
+| OneDiff E2E time                                 | 1.31 s (-33.2%)     | 1.22 s            |
+| PyTorch Max Mem Used                             | 18.784 GiB          | 18.761 GiB        |
+| OneDiff Max Mem Used                             | 18.324 GiB          | 17.878 GiB        |
+| PyTorch Warmup with Run time                     | 2.86 s              | 2.82 s            |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 889.25 s            | 712.5 s           |
+| OneDiff Warmup with Cache time                   | 44.38 s             | 37.4 s            |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468. Note this is just for reference, and it varies a lot on different CPU.
 
