@@ -66,6 +66,11 @@ def parse_args():
         default=1,
         help="Number of warm-up iterations before actual inference.",
     )
+    parser.add_argument(
+        "--run_multiple_resolutions",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=False,
+    )
     return parser.parse_args()
 
 
@@ -95,7 +100,8 @@ class KolorsGenerator:
                 self.pipe = self.quantize_pipe(self.pipe, quantize_config)
         elif compiler == "oneflow":
             print("oneflow backend compile...")
-            self.pipe.unet = self.oneflow_compile(self.pipe.unet)
+            # self.pipe.unet = self.oneflow_compile(self.pipe.unet)
+            self.pipe = compile_pipe(self.pipe, ignores=['text_encoder', 'vae'])
 
     def warmup(self, gen_args, warmup_iterations):
         warmup_args = gen_args.copy()
@@ -125,7 +131,7 @@ class KolorsGenerator:
     def compile_pipe(self, pipe, compiler_config):
         options = compiler_config
         pipe = compile_pipe(
-            pipe, backend="nexfort", options=options, fuse_qkv_projections=True
+            pipe, backend="nexfort", options=options, ignores=['text_encoder'], fuse_qkv_projections=True
         )
         return pipe
 
@@ -168,6 +174,22 @@ def main():
     )
     cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
+
+    if args.run_multiple_resolutions:
+        print("Test run with multiple resolutions...")
+        sizes = [1024, 768, 576, 512, 256]
+        for h in sizes:
+            for w in sizes:
+                gen_args["height"] = h
+                gen_args["width"] = w
+                print(f"Running at resolution: {h}x{w}")
+                start_time = time.time()
+                kolors.generate(gen_args)
+                end_time = time.time()
+                print(f"Inference time: {end_time - start_time:.2f} seconds")
+                assert (
+                    end_time - start_time
+                ) < 20, "Resolution switch test took too long"
 
 
 if __name__ == "__main__":

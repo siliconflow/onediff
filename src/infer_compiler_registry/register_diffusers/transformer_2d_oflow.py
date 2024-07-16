@@ -907,12 +907,22 @@ else:
     LoRACompatibleLinear = transformed_diffusers.models.lora.LoRACompatibleLinear
     ModelMixin = transformed_diffusers.models.modeling_utils.ModelMixin
     AdaLayerNormSingle = transformed_diffusers.models.normalization.AdaLayerNormSingle
-    Transformer2DModelOutput = (
-        transformed_diffusers.models.transformer_2d.Transformer2DModelOutput
-    )
-    proxy_Transformer2DModel = (
-        transformed_diffusers.models.transformer_2d.Transformer2DModel
-    )
+    diffusers_0260_v = version.parse("0.26.0")
+    diffusers_0280_v = version.parse("0.28.0")
+    if diffusers_version >= diffusers_0260_v:
+        Transformer2DModelOutput = (
+            transformed_diffusers.models.transformers.transformer_2d.Transformer2DModelOutput
+        )
+        proxy_Transformer2DModel = (
+            transformed_diffusers.models.transformers.transformer_2d.Transformer2DModel
+        )
+    else:
+        Transformer2DModelOutput = (
+            transformed_diffusers.models.transformer_2d.Transformer2DModelOutput
+        )
+        proxy_Transformer2DModel = (
+            transformed_diffusers.models.transformer_2d.Transformer2DModel
+        )  
 
     class Transformer2DModel(proxy_Transformer2DModel):
         def forward(
@@ -1061,6 +1071,12 @@ else:
                     )
 
             # 2. Blocks
+            if diffusers_version >= diffusers_0280_v:
+                self.caption_projection = None
+                if self.caption_channels is not None:
+                    self.caption_projection = PixArtAlphaTextProjection(
+                        in_features=self.caption_channels, hidden_size=self.inner_dim
+                    )
             if self.caption_projection is not None:
                 batch_size = hidden_states.shape[0]
                 encoder_hidden_states = self.caption_projection(encoder_hidden_states)

@@ -16,14 +16,14 @@ https://github.com/siliconflow/onediff?tab=readme-ov-file#install-a-compiler-bac
 
 ```
 # Ensure diffusers include the kolors pipeline.
-pip install git+https://github.com/asomoza/diffusers.git@add-kolors-support
+pip install git+https://github.com/huggingface/diffusers.git
 ```
 
 ### Set up kolors
 
 HF model: https://huggingface.co/Kwai-Kolors/Kolors-diffusers
 
-HF pipeline: https://github.com/huggingface/diffusers/blob/3d1c702912f62fd3489a2e61ecf67c10e4419abd/docs/source/en/api/pipelines/kolors.md
+HF pipeline: https://github.com/huggingface/diffusers/blob/main/docs/source/en/api/pipelines/kolors.md
 
 
 ## Run
@@ -61,6 +61,31 @@ Testing on an NVIDIA RTX 4090 GPU, using a resolution of 1024x1024 and 50 steps:
 | OneDiff (OneFlow) | 15.16 (+86.9%)         | 3.86 (-41.1%)               | 20.622                |
 | OneDiff (NexFort) | 14.68 (+81.0%)         | 3.71 (-43.4%)               | 21.623                |
 
+
+## Dynamic shape.
+
+Run:
+
+```
+# oneflow
+python3 onediff_diffusers_extensions/examples/kolors/text_to_image_kolors.py \
+--compiler oneflow \
+--run_multiple_resolutions 1 \
+--saved-image kolors_oneflow_compile.png
+```
+
+or
+
+```
+# nexfort
+python3 onediff_diffusers_extensions/examples/kolors/text_to_image_kolors.py \
+--height 512 \
+--width 768 \
+--compiler nexfort \
+--compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "dynamic": true}' \
+--run_multiple_resolutions 1 \
+--saved-image kolors_nexfort_compile.png
+```
 
 ## Quality
 
