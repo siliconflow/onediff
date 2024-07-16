@@ -4,8 +4,10 @@
 - [Installation Guide](#installation-guide)
 - [Extensions Usage](#extensions-usage)
     - [Fast Model Switching](#fast-model-switching)
+    - [Compiler cache saving and loading](#compiler-cache-saving-and-loading)
     - [LoRA](#lora)
 - [Quantization](#quantization)
+- [Use OneDiff by API](#use-onediff-by-api)
 - [Contact](#contact)
 
 ## Performance of Community Edition
@@ -38,21 +40,18 @@ ln -s "$(pwd)/onediff/onediff_sd_webui_extensions" "$(pwd)/stable-diffusion-webu
 cd stable-diffusion-webui
 
 # Install all of stable-diffusion-webui's dependencies.
-venv_dir=- bash webui.sh --port=8080
-
-# Exit webui server and upgrade some of the components that conflict with onediff.
-cd repositories/generative-models && git checkout 9d759324 && cd -
-pip install -U einops==0.7.0
+# If you install as root user, append `-f` to the end of the command line.
+venv_dir=- bash webui.sh
 ```
 
 ## Run stable-diffusion-webui service
 
 ```bash
 cd stable-diffusion-webui
-python webui.py --port 8080
+python webui.py --port 7860
 ```
 
-Accessing http://server:8080/ from a web browser.
+Accessing http://server:7860/ from a web browser.
 
 ## Extensions Usage
 

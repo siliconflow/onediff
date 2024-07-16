@@ -21,6 +21,7 @@ CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
 COMPILER = "oneflow"
 COMPILER_CONFIG = None
+QUANTIZE_CONFIG = None
 
 import os
 import importlib
@@ -34,7 +35,8 @@ import numpy as np
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-from onediffx import compile_pipe
+from onediffx import compile_pipe, quantize_pipe # quantize_pipe currently only supports the nexfort backend.
+from onediff.infer_compiler import oneflow_compile
 
 
 def parse_args():
@@ -60,6 +62,7 @@ def parse_args():
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
+    parser.add_argument("--print-output", action="store_true")
     parser.add_argument("--throughput", action="store_true")
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
@@ -73,7 +76,20 @@ def parse_args():
         type=str,
         default=COMPILER_CONFIG,
     )
+    parser.add_argument(
+        "--run_multiple_resolutions",
+        type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
+        default=False,
+    )
+    parser.add_argument("--quantize", action="store_true")
+    parser.add_argument(
+        "--quantize-config",
+        type=str,
+        default=QUANTIZE_CONFIG,
+    )
+    parser.add_argument("--quant-submodules-config-path", type=str, default=None)
     return parser.parse_args()
+
 
 args = parse_args()
 
@@ -100,19 +116,16 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=dtype,
+            controlnet,
+            torch_dtype=dtype,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
-        pipe = QuantPipeline.from_quantized(
-            pipeline_cls, model_name, **extra_kwargs
-        )
+        pipe = QuantPipeline.from_quantized(pipeline_cls, model_name, **extra_kwargs)
     else:
-        pipe = pipeline_cls.from_pretrained(
-            model_name, **extra_kwargs
-        )
+        pipe = pipeline_cls.from_pretrained(model_name, **extra_kwargs)
     if scheduler is not None and scheduler != "none":
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
@@ -167,11 +180,15 @@ def generate_data_and_fit_model(model, steps_range):
     data = {"steps": [], "inference_time": [], "throughput": []}
 
     for n_steps in steps_range:
-        inference_time, throughput = calculate_inference_time_and_throughput(height, width, n_steps, model)
+        inference_time, throughput = calculate_inference_time_and_throughput(
+            height, width, n_steps, model
+        )
         data["steps"].append(n_steps)
         data["inference_time"].append(inference_time)
         data["throughput"].append(throughput)
-        print(f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s")
+        print(
+            f"Steps: {n_steps}, Inference Time: {inference_time:.2f} seconds, Throughput: {throughput:.2f} steps/s"
+        )
 
     average_throughput = np.mean(data["throughput"])
     print(f"Average Throughput: {average_throughput:.2f} steps/s")
@@ -184,8 +201,8 @@ def generate_data_and_fit_model(model, steps_range):
 
 def plot_data_and_model(data, coefficients):
     plt.figure(figsize=(10, 5))
-    plt.scatter(data["steps"], data["inference_time"], color='blue')
-    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color='red')
+    plt.scatter(data["steps"], data["inference_time"], color="blue")
+    plt.plot(data["steps"], np.polyval(coefficients, data["steps"]), color="red")
     plt.title("Inference Time vs. Steps")
     plt.xlabel("Steps")
     plt.ylabel("Inference Time (seconds)")
@@ -193,7 +210,9 @@ def plot_data_and_model(data, coefficients):
     # plt.savefig("output.png")
     plt.show()
 
-    print(f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}")
+    print(
+        f"Model: Inference Time = {coefficients[0]:.2f} * Steps + {coefficients[1]:.2f}"
+    )
 
 
 def main():
@@ -226,15 +245,40 @@ def main():
     if args.compiler == "none":
         pass
     elif args.compiler == "oneflow":
-        pipe = compile_pipe(pipe)
+        print("Oneflow backend is now active...")
+        # Note: The compile_pipe() based on the oneflow backend is incompatible with T5EncoderModel.
+        # pipe = compile_pipe(pipe)
+        if hasattr(pipe, "unet"):
+            pipe.unet = oneflow_compile(pipe.unet)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = oneflow_compile(pipe.transformer)
+        pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
     elif args.compiler == "nexfort":
+        print("Nexfort backend is now active...")
+        if args.quantize:
+            if args.quantize_config is not None:
+                quantize_config = json.loads(args.quantize_config)
+            else:
+                quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic"}'
+            if args.quant_submodules_config_path:
+                # download: https://huggingface.co/siliconflow/PixArt-alpha-onediff-nexfort-fp8/blob/main/fp8_e4m3.json
+                pipe = quantize_pipe(
+                    pipe,
+                    quant_submodules_config_path=args.quant_submodules_config_path,
+                    ignores=[],
+                    **quantize_config,
+                )
+            else:
+                pipe = quantize_pipe(pipe, ignores=[], **quantize_config)
         if args.compiler_config is not None:
             # config with dict
             options = json.loads(args.compiler_config)
         else:
             # config with string
-            options = '{"mode": "max-optimize:max-autotune:freezing:benchmark:cudagraphs", "memory_format": "channels_last"}'
-        pipe = compile_pipe(pipe, backend="nexfort", options=options, fuse_qkv_projections=True)
+            options = '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}'
+        pipe = compile_pipe(
+            pipe, backend="nexfort", options=options, fuse_qkv_projections=True
+        )
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
         if hasattr(pipe, "unet"):
@@ -275,9 +319,11 @@ def main():
             height=height,
             width=width,
             num_images_per_prompt=args.batch,
-            generator=None
-            if args.seed is None
-            else torch.Generator(device="cuda").manual_seed(args.seed),
+            generator=(
+                None
+                if args.seed is None
+                else torch.Generator(device="cuda").manual_seed(args.seed)
+            ),
             **(
                 dict()
                 if args.extra_call_kwargs is None
@@ -335,17 +381,38 @@ def main():
 
         cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
     else:
-        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024 ** 3)
+        cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
+
+    if args.print_output:
+        from onediff.utils.import_utils import is_nexfort_available
+        if is_nexfort_available():
+            from nexfort.utils.term_image import print_image
+
+            for image in output_images:
+                print_image(image, max_width=80)
 
     if args.output_image is not None:
         output_images[0].save(args.output_image)
     else:
         print("Please set `--output-image` to save the output image")
 
+    if args.run_multiple_resolutions:
+        print("Test run with multiple resolutions...")
+        sizes = [1024, 512, 768, 256]
+        for h in sizes:
+            for w in sizes:
+                kwarg_inputs["height"] = h
+                kwarg_inputs["width"] = w
+                print(f"Running at resolution: {h}x{w}")
+                start_time = time.time()
+                image = pipe(**kwarg_inputs).images
+                end_time = time.time()
+                print(f"Inference time: {end_time - start_time:.2f} seconds")
+
     if args.throughput:
-        steps_range = range(1, 100, 1) 
+        steps_range = range(1, 100, 1)
         data, coefficients = generate_data_and_fit_model(pipe, steps_range)
         plot_data_and_model(data, coefficients)
 

@@ -5,8 +5,16 @@ import torch
 from comfy.controlnet import ControlLora, ControlNet
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
+from onediff.infer_compiler.backends.nexfort.deployable_module import (
+    get_deployable_module,
+)
 
 from ..booster_interface import BoosterExecutor
+
+
+def compile(model: callable, *args, **kwargs):
+    compiled_model = torch.compile(model, *args, **kwargs)
+    return get_deployable_module(model, compiled_model)
 
 
 class TorchCompileBoosterExecutor(BoosterExecutor):
@@ -29,7 +37,7 @@ class TorchCompileBoosterExecutor(BoosterExecutor):
             "mode": mode,
             "disable": disable,
         }
-        self.compile_fn = partial(torch.compile, **self.compile_kwargs)
+        self.compile_fn = partial(compile, **self.compile_kwargs)
 
     @singledispatchmethod
     def execute(self, model, ckpt_name=None, **kwargs):
@@ -37,12 +45,15 @@ class TorchCompileBoosterExecutor(BoosterExecutor):
 
     @execute.register(ModelPatcher)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
+        model.model.diffusion_model.to(memory_format=torch.channels_last)
         model.model.diffusion_model = self.compile_fn(model.model.diffusion_model)
         return model
 
     @execute.register(VAE)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
-        model.first_stage_model = self.compile_fn(model.first_stage_model)
+        # https://huggingface.co/blog/sd3#performance-optimizations-for-sd3
+        model.first_stage_model.to(memory_format=torch.channels_last)
+        model.first_stage_model.decode = self.compile_fn(model.first_stage_model.decode)
         return model
 
     @execute.register(ControlNet)

@@ -7,7 +7,9 @@ from comfy.controlnet import ControlLora, ControlNet
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import (
+    OneflowDeployableModule as DeployableModule,
+)
 
 from ..booster_interface import BoosterExecutor
 from .onediff_controlnet import OneDiffControlLora
@@ -40,14 +42,13 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
             return model
 
         compiled_model = oneflow_compile(torch_model)
+
         model.model.diffusion_model = compiled_model
-        if ckpt_name:
-            graph_file = generate_graph_path(
-                f"{ckpt_name}_{type(model.model).__name__}", torch_model
-            )
-            set_compiled_options(compiled_model, graph_file)
 
+        graph_file = generate_graph_path(f"{type(model).__name__}", model=model.model)
+        set_compiled_options(compiled_model, graph_file)
 
+        model.weight_inplace_update = True
         return model
 
     @execute.register(ControlNet)
@@ -65,9 +66,9 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
 
         compiled_model = oneflow_compile(torch_model)
         model.control_model = compiled_model
-        if ckpt_name:
-            graph_file = generate_graph_path(ckpt_name, torch_model)
-            set_compiled_options(compiled_model, graph_file)
+
+        graph_file = generate_graph_path(ckpt_name, torch_model)
+        set_compiled_options(compiled_model, graph_file)
         return model
 
     @execute.register(VAE)
@@ -89,22 +90,20 @@ class BasicOneFlowBoosterExecutor(BoosterExecutor):
 
         compiled_model = oneflow_compile(torch_model)
         model.first_stage_model = compiled_model
-        if ckpt_name:
-            graph_file = generate_graph_path(ckpt_name, torch_model)
-            set_compiled_options(compiled_model, graph_file)
+
+        graph_file = generate_graph_path(ckpt_name, torch_model)
+        set_compiled_options(compiled_model, graph_file)
         return model
 
     @execute.register(ControlLora)
     def _(self, model, ckpt_name: Optional[str] = None, **kwargs):
         def gen_compile_options(model):
-            if ckpt_name:
-                graph_file = generate_graph_path(ckpt_name, model)
-                return {
-                    "graph_file": graph_file,
-                    "graph_file_device": model_management.get_torch_device(),
-                }
-            else:
-                return {}
+
+            graph_file = generate_graph_path(ckpt_name, model)
+            return {
+                "graph_file": graph_file,
+                "graph_file_device": model_management.get_torch_device(),
+            }
 
         controlnet = OneDiffControlLora.from_controllora(
             model, gen_compile_options=gen_compile_options

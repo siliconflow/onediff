@@ -6,8 +6,10 @@ from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
 from ..patch_management import PatchType, create_patch_executor
 
-
 def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
+    apply_patch(org_fn, model, patch_kwargs, key, ipadapter_attention)
+
+def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None)->None:
     diff_model = model.model.diffusion_model
     cache_patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
     unet_extra_options_patch_executor = create_patch_executor(
@@ -37,7 +39,9 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
         split1dict = {}
         split2dict = {}
         for k, v in patch_kwargs.items():
-            if k in ["cond", "uncond", "mask", "weight"]:
+            if k in ["cond", "cond_alt", "uncond", "mask", "weight"] or isinstance(
+                v, torch.Tensor
+            ):
                 split1dict[k] = v
             else:
                 split2dict[k] = v
@@ -70,7 +74,7 @@ def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
 
     if key not in to["patches_replace"]["attn2"]:
         if key not in cache_dict:
-            attn2_m_pt = Attn2Replace(ipadapter_attention, **patch_kwargs)
+            attn2_m_pt = Attn2Replace(attention_func, **patch_kwargs)
             attn2_m_of = torch2oflow(attn2_m_pt, bypass_check=True)
 
             cache_dict[key] = attn2_m_of

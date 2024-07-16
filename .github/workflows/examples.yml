@@ -275,13 +275,14 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
       - name: Print pip package versions
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip list
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
-          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --gpu-only --disable-cuda-malloc --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
@@ -297,13 +298,15 @@ jobs:
               false
             }
           }
-
-          run_comfy_test "workflows/sdxl-unet-speedup-graph-saver.json" 200
-          run_comfy_test "workflows/sdxl-control-lora-speedup.json" 200
-          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/ipadapter_advanced.json" 200
-          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache.json" 600
-          run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
+          # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache.json" 600
+          # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
           # run_comfy_test "workflows/text-to-video-speedup.json" 5000
+          docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
+          docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/run_all_tests.sh || {
+              echo "Test fails! print the ComfyUI logs..."
+              docker exec onediff-test cat /app/ComfyUI/onediff_comfyui.log
+              false
+            }
 
       - name: Show ComfyUI Log
         if: matrix.test-suite == 'comfy'
@@ -313,6 +316,7 @@ jobs:
         if: matrix.test-suite == 'diffusers_examples'
         run: |
           docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantize_custom_model.py
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
@@ -322,13 +326,13 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_deep_cache_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --width 512 --height 512 --run_multiple_resolutions true --saved_image deepcache_sdxl.png
       - if: matrix.test-suite == 'diffusers_examples'
+        run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_model_inference.py
+      - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-v1-5
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/image_to_image.py --model_id=/share_nfs/hf_models/stable-diffusion-2-1
       - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile_vae False --height 512 --width 512
-      - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compile_unet False --height 512 --width 512 --run_multiple_resolutions True
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_sdxl.py --base /share_nfs/hf_models/stable-diffusion-xl-base-1.0 --compiler oneflow --height 512 --width 512 --run_multiple_resolutions True
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/save_and_load_pipeline.sh
       - if: matrix.test-suite == 'diffusers_examples'
@@ -354,6 +358,7 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install pytorch-lightning gradio==3.41.2 diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
 
       - name: Prepare environment for WebUI
         if: matrix.test-suite == 'webui'

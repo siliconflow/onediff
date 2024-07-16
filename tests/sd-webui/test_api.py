@@ -1,5 +1,7 @@
+import os
 import numpy as np
 import pytest
+from pathlib import Path
 from PIL import Image
 from utils import (
     IMG2IMG_API_ENDPOINT,
@@ -16,7 +18,17 @@ from utils import (
     get_target_image_filename,
     is_txt2img,
     post_request_and_check,
+    dump_image,
+    get_threshold,
 )
+
+
+@pytest.fixture(scope="session", autouse=True)
+def change_model():
+    option_payload = {
+        "sd_model_checkpoint": "checkpoints/AWPainting_v1.2.safetensors",
+    }
+    post_request_and_check(f"{WEBUI_SERVER_URL}/{OPTIONS_API_ENDPOINT}", option_payload)
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -54,7 +66,9 @@ def test_image_ssim(base_url, data):
     target_image_path = get_target_image_filename(data)
     target_image = np.array(Image.open(target_image_path))
     ssim_value = cal_ssim(generated_image, target_image)
-    assert ssim_value > 0.985
+    if ssim_value < get_threshold(data):
+        dump_image(target_image, generated_image, Path(target_image_path).name)
+    assert ssim_value > get_threshold(data)
 
 
 def test_onediff_save_graph(url_txt2img):
@@ -79,3 +93,16 @@ def test_onediff_load_graph(url_txt2img):
     }
     data = {**get_base_args(), **script_args}
     post_request_and_check(url_txt2img, data)
+
+
+@pytest.mark.skip
+def test_onediff_refiner(url_txt2img):
+    extra_args = {
+        "sd_model_checkpoint": "sd_xl_base_1.0.safetensors",
+        "refiner_checkpoint" :"sd_xl_refiner_1.0.safetensors [7440042bbd]",
+        "refiner_switch_at" : 0.8,
+    }
+    data = {**get_base_args(), **extra_args}
+    # loop 3 times for checking model switching between base and refiner
+    for _ in range(3):
+        post_request_and_check(url_txt2img, data)
