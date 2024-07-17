@@ -39,7 +39,6 @@ from PIL import Image, ImageDraw
 
 import torch
 from onediffx import compile_pipe
-from diffusers.utils import load_image, export_to_video
 from diffusers.schedulers import DDIMScheduler
 from diffusers.models import AutoencoderKL, AutoencoderKLTemporalDecoder
 from transformers import T5EncoderModel, T5Tokenizer
@@ -267,7 +266,7 @@ def main():
                 args.output_video, videos[0], fps=8, quality=9
             )  # highest quality is 10, lowest is 0
         except:
-            print("Error when saving {}".format(prompt))
+            print("Error when saving {}".format(args.prompt))
     else:
         print("Please set `--output-video` to save the output video")
 
