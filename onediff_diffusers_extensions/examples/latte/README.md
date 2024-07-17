@@ -40,7 +40,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 --model maxin-cn/Latte-1 \
 --steps 50 \
 --compiler none \
-----output-video ./latte.mp4 \
+--output-video ./latte.mp4 \
 --prompt "An epic tornado attacking above aglowing city at night."
 ```
 
@@ -50,7 +50,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 --model maxin-cn/Latte-1 \
 --steps 50 \
 --compiler nexfort \
-----output-video ./latte_compile.mp4 \
+--output-video ./latte_compile.mp4 \
 --prompt "An epic tornado attacking above aglowing city at night."
 ```
 
@@ -60,17 +60,17 @@ python3 ./benchmarks/text_to_video_latte.py \
 
 #### On A100
 | Metric                                           | NVIDIA A100-PCIE-40GB (512 * 512) |
-| ------------------------------------------------ | ----------------------------------- |
-| Data update date(yyyy-mm-dd)                     | 2024-06-19                          |
-| PyTorch iteration speed                          | 1.60it/s                            |
-| OneDiff iteration speed                          | 2.27it/s(+41.9%)                    |
-| PyTorch E2E time                                 | 32.618s                             |
-| OneDiff E2E time                                 | 22.601s(-30.7%)                     |
-| PyTorch Max Mem Used                             | 28.208GiB                           |
-| OneDiff Max Mem Used                             | 24.753GiB                           |
-| PyTorch Warmup with Run time                     | 33.291s                             |
-| OneDiff Warmup with Compilation time<sup>1</sup> | 572.877s                            |
-| OneDiff Warmup with Cache time                   | 148.068s                            |
+| ------------------------------------------------ | --------------------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-06-19                        |
+| PyTorch iteration speed                          | 1.60 it/s                         |
+| OneDiff iteration speed                          | 2.27 it/s(+41.9%)                 |
+| PyTorch E2E time                                 | 32.618 s                          |
+| OneDiff E2E time                                 | 22.601 s(-30.7%)                  |
+| PyTorch Max Mem Used                             | 19.9 GiB                          |
+| OneDiff Max Mem Used                             | 19.9 GiB                        |
+| PyTorch Warmup with Run time                     | 33.291 s                          |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 572.877 s                         |
+| OneDiff Warmup with Cache time                   | 148.068 s                         |
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz. Note this is just for reference, and it varies a lot on different CPU.
 
