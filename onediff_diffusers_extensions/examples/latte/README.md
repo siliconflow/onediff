@@ -67,7 +67,7 @@ python3 ./benchmarks/text_to_video_latte.py \
 | PyTorch E2E time                                 | 32.618 s                          |
 | OneDiff E2E time                                 | 22.601 s(-30.7%)                  |
 | PyTorch Max Mem Used                             | 19.9 GiB                          |
-| OneDiff Max Mem Used                             | 19.9 GiB                        |
+| OneDiff Max Mem Used                             | 19.9 GiB                          |
 | PyTorch Warmup with Run time                     | 33.291 s                          |
 | OneDiff Warmup with Compilation time<sup>1</sup> | 572.877 s                         |
 | OneDiff Warmup with Cache time                   | 148.068 s                         |
