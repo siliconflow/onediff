@@ -1,11 +1,11 @@
 import argparse
 import json
+import os
 from pathlib import Path
 
 import torch
-from onediffx.compilers.diffusion_pipeline_compiler import (
-    convert_pipe_to_memory_format,
-)
+from onediffx import compile_pipe, load_pipe, save_pipe
+
 from diffusers import AutoPipelineForText2Image
 from diffusers.utils import load_image
 
@@ -30,10 +30,12 @@ parser.add_argument("--scale", type=float, default=0.5)
 parser.add_argument(
     "--input_image",
     type=str,
-    default="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/ip_adapter_bear_1.png",
+    default="https://huggingface.co/datasets/huggingface/documentation-images/resolve/main/diffusers/ip_adapter_diner.png",
 )
 parser.add_argument(
-    "--prompt", type=str, default="a cat",
+    "--prompt",
+    default="a polar bear sitting in a chair drinking a milkshake",
+    help="Prompt",
 )
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)
@@ -50,11 +52,12 @@ parser.add_argument(
     default=True,
 )
 parser.add_argument(
-    "--compile-ipa",
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=True,
+    "--compiler", type=str, default="oneflow", choices=["nexfort", "oneflow"]
 )
 parser.add_argument("--compile-options", type=str, default=nexfort_options)
+parser.add_argument(
+    "--cache-dir", default="./onediff_cache", help="Cache directory"
+)
 args = parser.parse_args()
 
 # load an image
@@ -71,30 +74,20 @@ pipe.set_ip_adapter_scale(args.scale)
 pipe.to("cuda")
 
 
-compile_options = args.compile_options
-if isinstance(compile_options, str):
-    compile_options = json.loads(compile_options)
+if args.compiler == "nexfort":
+    compile_options = args.compile_options
+    if isinstance(compile_options, str):
+        compile_options = json.loads(compile_options)
+    os.environ.setdefault("TORCHINDUCTOR_CACHE_DIR", "./.torchinductor")
+else:
+    compile_options = None
 
-
-memory_format = getattr(
-    torch, compile_options["memory_format"], torch.channels_last
-)
-pipe = convert_pipe_to_memory_format(pipe, memory_format=memory_format)
-compile_options.pop("memory_format", None)
+cache_path = os.path.join(args.cache_dir, type(pipe).__name__)
 
 if args.compile:
-    from onediff.infer_compiler import compile
-
-    pipe.unet = compile(pipe.unet, backend="nexfort", options=compile_options)
-    pipe.vae.decoder = compile(
-        pipe.vae.decoder, backend="nexfort", options=compile_options
-    )
-if args.compile_ipa:
-    from onediff.infer_compiler import compile
-
-    pipe.image_encoder = compile(
-        pipe.image_encoder, backend="nexfort", options=compile_options
-    )
+    pipe = compile_pipe(pipe, backend=args.compiler, options=compile_options)
+    if args.compiler == "oneflow" and os.path.exists(cache_path):
+        load_pipe(pipe, cache_path)
 
 
 # generate image
@@ -119,6 +112,13 @@ for i in range(args.run):
         num_inference_steps=args.n_steps,
         generator=torch.manual_seed(args.seed),
     ).images[0]
-    image_path = f"{Path(args.saved_image).stem}_{i}" + Path(args.saved_image).suffix
+    image_path = (
+        f"{Path(args.saved_image).stem}_{i}" + Path(args.saved_image).suffix
+    )
     print(f"save output image to {image_path}")
     image.save(image_path)
+
+if args.compiler == "oneflow":
+    if not os.path.exists(cache_path):
+        os.makedirs(cache_path)
+    save_pipe(pipe, cache_path)
