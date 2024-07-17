@@ -1,5 +1,6 @@
 import argparse
 import json
+from pathlib import Path
 
 import torch
 from onediffx.compilers.diffusion_pipeline_compiler import (
@@ -118,6 +119,6 @@ for i in range(args.run):
         num_inference_steps=args.n_steps,
         generator=torch.manual_seed(args.seed),
     ).images[0]
-    image_path = f"onediff_{args.saved_image}_{i}.png" 
+    image_path = f"{Path(args.saved_image).stem}_{i}" + Path(args.saved_image).suffix
     print(f"save output image to {image_path}")
     image.save(image_path)
