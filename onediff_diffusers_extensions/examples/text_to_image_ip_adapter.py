@@ -104,7 +104,6 @@ for i in range(args.warmup):
         height=args.height,
         width=args.width,
         ip_adapter_image=image,
-        negative_prompt="deformed, ugly, wrong proportion, low res, bad anatomy, worst quality, low quality",
         num_inference_steps=args.n_steps,
         generator=torch.manual_seed(args.seed),
     ).images
@@ -116,7 +115,6 @@ for i in range(args.run):
         height=args.height,
         width=args.width,
         ip_adapter_image=image,
-        negative_prompt="deformed, ugly, wrong proportion, low res, bad anatomy, worst quality, low quality",
         num_inference_steps=args.n_steps,
         generator=torch.manual_seed(args.seed),
     ).images[0]
