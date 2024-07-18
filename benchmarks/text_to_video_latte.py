@@ -270,6 +270,7 @@ def main():
             )  # highest quality is 10, lowest is 0
         except:
             print("Error when saving {}".format(args.prompt))
+
     else:
         print("Please set `--output-video` to save the output video")
 
