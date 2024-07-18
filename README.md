@@ -180,7 +180,6 @@ python3 -m pip install --pre onediff
 - From source
 ```
 git clone https://github.com/siliconflow/onediff.git
-
 ```
 ```
 cd onediff && python3 -m pip install -e .
