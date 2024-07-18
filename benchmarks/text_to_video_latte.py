@@ -225,50 +225,55 @@ def main():
         )
         return kwarg_inputs
 
-    if args.warmups > 0:
-        print("=======================================")
-        print("Begin warmup")
-        begin = time.time()
-        for _ in range(args.warmups):
-            pipe(**get_kwarg_inputs()).video
-        end = time.time()
-        print("End warmup")
-        print(f"Warmup time: {end - begin:.3f}s")
+    with torch.profiler.profile() as prof:
+        with torch.profiler.record_function("latte warmup"):
+            if args.warmups > 0:
+                print("=======================================")
+                print("Begin warmup")
+                begin = time.time()
+                for _ in range(args.warmups):
+                    pipe(**get_kwarg_inputs()).video
+                end = time.time()
+                print("End warmup")
+                print(f"Warmup time: {end - begin:.3f}s")
+
+                print("=======================================")
+
+        kwarg_inputs = get_kwarg_inputs()
+        iter_profiler = IterationProfiler()
+        if "callback_on_step_end" in inspect.signature(pipe).parameters:
+            kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
+        elif "callback" in inspect.signature(pipe).parameters:
+            kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
+        with torch.profiler.record_function("latte run"):
+            torch.manual_seed(args.seed)
+            begin = time.time()
+            videos = pipe(**kwarg_inputs).video
+            end = time.time()
 
         print("=======================================")
+        print(f"Inference time: {end - begin:.3f}s")
+        iter_per_sec = iter_profiler.get_iter_per_sec()
+        if iter_per_sec is not None:
+            print(f"Iterations per second: {iter_per_sec:.3f}")
+        cuda_mem_max_used = torch.cuda.max_memory_allocated() / (1024**3)
+        cuda_mem_max_reserved = torch.cuda.max_memory_reserved() / (1024**3)
+        print(f"Max used CUDA memory : {cuda_mem_max_used:.3f}GiB")
+        print(f"Max reserved CUDA memory : {cuda_mem_max_reserved:.3f}GiB")
+        print("=======================================")
 
-    kwarg_inputs = get_kwarg_inputs()
-    iter_profiler = IterationProfiler()
-    if "callback_on_step_end" in inspect.signature(pipe).parameters:
-        kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
-    elif "callback" in inspect.signature(pipe).parameters:
-        kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
-    torch.manual_seed(args.seed)
-    begin = time.time()
-    videos = pipe(**kwarg_inputs).video
-    end = time.time()
-
-    print("=======================================")
-    print(f"Inference time: {end - begin:.3f}s")
-    iter_per_sec = iter_profiler.get_iter_per_sec()
-    if iter_per_sec is not None:
-        print(f"Iterations per second: {iter_per_sec:.3f}")
-    cuda_mem_max_used = torch.cuda.max_memory_allocated() / (1024**3)
-    cuda_mem_max_reserved = torch.cuda.max_memory_reserved() / (1024**3)
-    print(f"Max used CUDA memory : {cuda_mem_max_used:.3f}GiB")
-    print(f"Max reserved CUDA memory : {cuda_mem_max_reserved:.3f}GiB")
-    print("=======================================")
-
-    if args.output_video is not None:
-        # export_to_video(output_frames[0], args.output_video, fps=args.fps)
-        try:
-            imageio.mimwrite(
-                args.output_video, videos[0], fps=8, quality=9
-            )  # highest quality is 10, lowest is 0
-        except:
-            print("Error when saving {}".format(args.prompt))
-    else:
-        print("Please set `--output-video` to save the output video")
+        with torch.profiler.record_function("latte export"):
+            if args.output_video is not None:
+                # export_to_video(output_frames[0], args.output_video, fps=args.fps)
+                try:
+                    imageio.mimwrite(
+                        args.output_video, videos[0], fps=8, quality=9
+                    )  # highest quality is 10, lowest is 0
+                except:
+                    print("Error when saving {}".format(args.prompt))
+            else:
+                print("Please set `--output-video` to save the output video")
+    prof.export_chrome_trace("latte_with_cache_prof.json")
 
 
 if __name__ == "__main__":
