@@ -20,7 +20,7 @@ VersatileAttention_PT_CLS = (
 
 
 class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
-    def get_cameractrl_effect(self, hidden_states: torch.Tensor) :
+    def get_cameractrl_effect(self, hidden_states: torch.Tensor):
         # if no raw camera_Ctrl, return None
         if self.raw_cameractrl_effect is None:
             return 1.0
@@ -41,7 +41,9 @@ class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
             self.temp_cameractrl_effect = None
         # otherwise, calculate temp_cameractrl
         self.prev_cameractrl_hidden_states_batch = batch
-        mask = prepare_mask_batch(self.raw_scale_mask, shape=(self.full_length, 1, height, width))
+        mask = prepare_mask_batch(
+            self.raw_scale_mask, shape=(self.full_length, 1, height, width)
+        )
         mask = repeat_to_batch_size(mask, self.full_length)
         # if mask not the same amount length as full length, make it match
         if self.full_length != mask.shape[0]:
@@ -50,7 +52,7 @@ class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
         batch, channel, height, width = mask.shape
         # first, perform same operations as on hidden_states,
         # turning (b, c, h, w) -> (b, h*w, c)
-        mask = mask.permute(0, 2, 3, 1).reshape(batch, height*width, channel)
+        mask = mask.permute(0, 2, 3, 1).reshape(batch, height * width, channel)
         # then, make it the same shape as attention's k, (h*w, b, c)
         mask = mask.permute(1, 0, 2)
         # make masks match the expected length of h*w
@@ -60,14 +62,22 @@ class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
         # cache mask and set to proper device
         self.temp_cameractrl_effect = mask
         # move temp_cameractrl to proper dtype + device
-        self.temp_cameractrl_effect = self.temp_cameractrl_effect.to(dtype=hidden_states.dtype, device=hidden_states.device)
+        self.temp_cameractrl_effect = self.temp_cameractrl_effect.to(
+            dtype=hidden_states.dtype, device=hidden_states.device
+        )
         # return subset of masks, if needed
         if self.sub_idxs is not None:
             return self.temp_cameractrl_effect[:, self.sub_idxs, :]
         return self.temp_cameractrl_effect
 
-
-    def forward(self, hidden_states, encoder_hidden_states=None, attention_mask=None, view_options=None, mm_kwargs: dict[str]=None):
+    def forward(
+        self,
+        hidden_states,
+        encoder_hidden_states=None,
+        attention_mask=None,
+        view_options=None,
+        mm_kwargs: dict[str] = None,
+    ):
         batch, channel, height, width = hidden_states.shape
         residual = hidden_states
         cameractrl_effect = self.get_cameractrl_effect(hidden_states)
@@ -92,7 +102,7 @@ class TemporalTransformer3DModel_OF(TemporalTransformer3DModel_OF_CLS):
                 scale_mask=scale_mask,
                 cameractrl_effect=cameractrl_effect,
                 view_options=view_options,
-                mm_kwargs=mm_kwargs
+                mm_kwargs=mm_kwargs,
             )
 
         # output
@@ -118,8 +128,8 @@ class VersatileAttention_OF(VersatileAttention_OF_CLS):
         attention_mask=None,
         video_length=None,
         scale_mask=None,
-        cameractrl_effect= 1.0,
-        mm_kwargs: dict[str]={},
+        cameractrl_effect=1.0,
+        mm_kwargs: dict[str] = {},
     ):
         if self.attention_mode != "Temporal":
             raise NotImplementedError
@@ -142,9 +152,16 @@ class VersatileAttention_OF(VersatileAttention_OF_CLS):
             if encoder_hidden_states is not None
             else encoder_hidden_states
         )
-        if self.camera_feature_enabled and self.qkv_merge is not None and mm_kwargs is not None and "camera_feature" in mm_kwargs:
+        if (
+            self.camera_feature_enabled
+            and self.qkv_merge is not None
+            and mm_kwargs is not None
+            and "camera_feature" in mm_kwargs
+        ):
             camera_feature: torch.Tensor = mm_kwargs["camera_feature"]
-            hidden_states = (self.qkv_merge(hidden_states + camera_feature) + hidden_states) * cameractrl_effect + hidden_states * (1. - cameractrl_effect)
+            hidden_states = (
+                self.qkv_merge(hidden_states + camera_feature) + hidden_states
+            ) * cameractrl_effect + hidden_states * (1.0 - cameractrl_effect)
 
         # hidden_states = super().forward(
         #     hidden_states,
@@ -184,7 +201,7 @@ register(
 
 # @torch2oflow.register(TemporalTransformer3DModel_PT_CLS)
 # def _(mod, verbose=False):
-#     of_mod = torch2oflow.dispatch(torch_pt.nn.Module)(mod, verbose) 
+#     of_mod = torch2oflow.dispatch(torch_pt.nn.Module)(mod, verbose)
 #     of_mod.video_length = torch.tensor(mod.video_length)
 #     return of_mod
 

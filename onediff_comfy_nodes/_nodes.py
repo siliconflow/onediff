@@ -1,13 +1,17 @@
+import uuid
 from typing import Optional, Tuple
+
+import comfy
 import folder_paths
 import torch
-import comfy
-import uuid
 from nodes import CheckpointLoaderSimple, ControlNetLoader
+from onediff.utils.import_utils import (  # type: ignore
+    is_nexfort_available,
+    is_oneflow_available,
+)
+
 from ._config import is_disable_oneflow_backend
-from .modules import BoosterScheduler, BoosterExecutor, BoosterSettings
-from onediff.utils.import_utils import is_nexfort_available  # type: ignore
-from onediff.utils.import_utils import is_oneflow_available
+from .modules import BoosterExecutor, BoosterScheduler, BoosterSettings
 
 if is_oneflow_available() and not is_disable_oneflow_backend():
     from .modules.oneflow import BasicOneFlowBoosterExecutor
@@ -81,8 +85,13 @@ class ModelSpeedup(SpeedupMixin):
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"model": ("MODEL",), "inplace": ([False, True],),},
-            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
+            "required": {
+                "model": ("MODEL",),
+                "inplace": ([False, True],),
+            },
+            "optional": {
+                "custom_booster": ("CUSTOM_BOOSTER",),
+            },
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -92,8 +101,13 @@ class VaeSpeedup(SpeedupMixin):
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"vae": ("VAE",), "inplace": ([False, True],),},
-            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
+            "required": {
+                "vae": ("VAE",),
+                "inplace": ([False, True],),
+            },
+            "optional": {
+                "custom_booster": ("CUSTOM_BOOSTER",),
+            },
         }
 
     RETURN_TYPES = ("VAE",)
@@ -185,7 +199,13 @@ class OneDiffControlNetLoader(ControlNetLoader):
     @classmethod
     def INPUT_TYPES(s):
         ret = super().INPUT_TYPES()
-        ret.update({"optional": {"custom_booster": ("CUSTOM_BOOSTER",),}})
+        ret.update(
+            {
+                "optional": {
+                    "custom_booster": ("CUSTOM_BOOSTER",),
+                }
+            }
+        )
         return ret
 
     CATEGORY = "OneDiff/Loaders"
@@ -209,7 +229,9 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple, SpeedupMixin):
                 "ckpt_name": (folder_paths.get_filename_list("checkpoints"),),
                 "vae_speedup": (["disable", "enable"],),
             },
-            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
+            "optional": {
+                "custom_booster": ("CUSTOM_BOOSTER",),
+            },
         }
 
     CATEGORY = "OneDiff/Loaders"
@@ -222,7 +244,10 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple, SpeedupMixin):
 
     @torch.inference_mode()
     def onediff_load_checkpoint(
-        self, ckpt_name, vae_speedup="disable", custom_booster: BoosterScheduler = None,
+        self,
+        ckpt_name,
+        vae_speedup="disable",
+        custom_booster: BoosterScheduler = None,
     ):
         modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
         modelpatcher = self.speedup(

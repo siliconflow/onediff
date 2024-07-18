@@ -1,16 +1,16 @@
 ## Accelerate SD3 by using onediff
-huggingface: https://huggingface.co/stabilityai/stable-diffusion-3-medium 
+huggingface: https://huggingface.co/stabilityai/stable-diffusion-3-medium
 
 ## Environment setup
 ### Set UP requirements
 ```shell
-# python 3.10 
+# python 3.10
 COMFYUI_DIR=$pwd/ComfyUI
 # install ComfyUI
 git clone https://github.com/comfyanonymous/ComfyUI.git
 
 # install onediff & onediff_comfy_nodes
-git clone https://github.com/siliconflow/onediff.git 
+git clone https://github.com/siliconflow/onediff.git
 cd onediff && pip install -r onediff_comfy_nodes/sd3/requirements.txt && pip install -e .
 ln -s $pwd/onediff/onediff_comfy_nodes  $COMFYUI_DIR/custom_nodes
 ```
@@ -41,7 +41,7 @@ with torch.inference_mode():
         options={"mode": "max-autotune:cudagraphs", "dynamic": True, "fullgraph": True},
     )
     print(compiled_mod(torch.randn(10, 100, device="cuda").half()).shape)
-    
+
 print("Successfully installed～")
 ```
 
@@ -55,11 +55,11 @@ print("Successfully installed～")
 ```shell
 export ACCESS_TOKEN="User Access Tokens"
 wget --header="Authorization: Bearer $ACCESS_TOKEN" \
-https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/sd3_medium.safetensors -O models/checkpoints/sd3_medium.safetensors 
+https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/sd3_medium.safetensors -O models/checkpoints/sd3_medium.safetensors
 
 wget --header="Authorization: Bearer $ACCESS_TOKEN" \
 https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_encoders/clip_g.safetensors -O models/clip/clip_g.safetensors
-    
+
 wget --header="Authorization: Bearer $ACCESS_TOKEN" \
 https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_encoders/clip_l.safetensors -O models/clip/clip_l.safetensors
 
@@ -89,8 +89,8 @@ Here is a very basic example how to use it:
 
 ## Performance Comparison
 
-- Testing on NVIDIA GeForce RTX 4090, with image size of 1024*1024, iterating 28 steps. 
-- OneDiff[Nexfort] Compile mode: 
+- Testing on NVIDIA GeForce RTX 4090, with image size of 1024*1024, iterating 28 steps.
+- OneDiff[Nexfort] Compile mode:
 `max-optimize:max-autotune:low-precision`
 
 

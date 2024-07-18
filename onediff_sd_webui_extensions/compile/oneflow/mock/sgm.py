@@ -1,9 +1,9 @@
 import oneflow as flow
+
+from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 from sgm.modules.attention import CrossAttention, SpatialTransformer
 from sgm.modules.diffusionmodules.openaimodel import UNetModel
 from sgm.modules.diffusionmodules.util import GroupNorm32
-
-from onediff.infer_compiler.backends.oneflow.transform import proxy_class
 
 from .common import CrossAttentionOflow, GroupNorm32Oflow, timestep_embedding
 

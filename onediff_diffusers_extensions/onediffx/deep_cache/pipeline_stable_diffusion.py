@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib.metadata
 from typing import Any, Callable, Dict, List, Optional, Union
 
 from packaging import version
-import importlib.metadata
 
 diffusers_0202_v = version.parse("0.20.2")
 diffusers_0214_v = version.parse("0.21.4")
@@ -26,37 +26,37 @@ diffusers_0263_v = version.parse("0.26.3")
 diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
-import torch
 import numpy as np
+import torch
 from transformers import CLIPImageProcessor, CLIPTextModel, CLIPTokenizer
 
 if diffusers_version >= diffusers_0240_v:
-    from transformers import CLIPVisionModelWithProjection
     from diffusers.image_processor import PipelineImageInput
-    from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import retrieve_timesteps
+    from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
+        retrieve_timesteps,
+    )
+    from transformers import CLIPVisionModelWithProjection
 
+from diffusers import StableDiffusionPipeline as DiffusersStableDiffusionPipeline
 from diffusers.configuration_utils import FrozenDict
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.models import AutoencoderKL
-from diffusers.schedulers import KarrasDiffusionSchedulers
-from diffusers.utils import (
-    deprecate,
-    logging,
-)
 
 from diffusers.pipelines.stable_diffusion import StableDiffusionPipelineOutput
+from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import (
+    rescale_noise_cfg,
+)
 from diffusers.pipelines.stable_diffusion.safety_checker import (
     StableDiffusionSafetyChecker,
 )
+from diffusers.schedulers import KarrasDiffusionSchedulers
+from diffusers.utils import deprecate, logging
 
-from diffusers import StableDiffusionPipeline as DiffusersStableDiffusionPipeline
-from diffusers.pipelines.stable_diffusion.pipeline_stable_diffusion import rescale_noise_cfg
-
-from .models.unet_2d_condition import UNet2DConditionModel
 from .models.fast_unet_2d_condition import FastUNet2DConditionModel
 
-
 from .models.pipeline_utils import enable_deep_cache_pipeline
+
+from .models.unet_2d_condition import UNet2DConditionModel
 
 
 enable_deep_cache_pipeline()
@@ -70,7 +70,7 @@ def sample_from_quad(total_numbers, n_samples, pow=1.2):
         x_values = np.linspace(0, total_numbers ** (1 / pow), n_samples + 1)
 
         # Raise these values to the power of 1.5 to get a non-linear distribution
-        indices = np.unique(np.int32(x_values ** pow))[:-1]
+        indices = np.unique(np.int32(x_values**pow))[:-1]
         if len(indices) == n_samples:
             break
         pow -= 0.02
@@ -87,7 +87,7 @@ def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
         x_values = np.linspace(
             (-center) ** (1 / pow), (total_numbers - center) ** (1 / pow), n_samples + 1
         )
-        indices = [0] + [x + center for x in np.unique(np.int32(x_values ** pow))[1:-1]]
+        indices = [0] + [x + center for x in np.unique(np.int32(x_values**pow))[1:-1]]
         if len(indices) == n_samples:
             break
         pow -= 0.02
@@ -97,7 +97,9 @@ def sample_from_quad_center(total_numbers, n_samples, center, pow=1.2):
         )
     return indices, pow
 
+
 if diffusers_version <= diffusers_0214_v:
+
     class StableDiffusionPipeline(DiffusersStableDiffusionPipeline):
         _optional_components = ["safety_checker", "feature_extractor"]
         if diffusers_version > diffusers_0202_v:
@@ -115,7 +117,10 @@ if diffusers_version <= diffusers_0214_v:
             feature_extractor: CLIPImageProcessor,
             requires_safety_checker: bool = True,
         ):
-            if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
+            if (
+                hasattr(scheduler.config, "steps_offset")
+                and scheduler.config.steps_offset != 1
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} is outdated. `steps_offset`"
                     f" should be set to 1 instead of {scheduler.config.steps_offset}. Please make sure "
@@ -124,12 +129,17 @@ if diffusers_version <= diffusers_0214_v:
                     " it would be very nice if you could open a Pull request for the `scheduler/scheduler_config.json`"
                     " file"
                 )
-                deprecate("steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(scheduler.config)
                 new_config["steps_offset"] = 1
                 scheduler._internal_dict = FrozenDict(new_config)
 
-            if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is True:
+            if (
+                hasattr(scheduler.config, "clip_sample")
+                and scheduler.config.clip_sample is True
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} has not set the configuration `clip_sample`."
                     " `clip_sample` should be set to False in the configuration file. Please make sure to update the"
@@ -137,7 +147,12 @@ if diffusers_version <= diffusers_0214_v:
                     " future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it would be very"
                     " nice if you could open a Pull request for the `scheduler/scheduler_config.json` file"
                 )
-                deprecate("clip_sample not set", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "clip_sample not set",
+                    "1.0.0",
+                    deprecation_message,
+                    standard_warn=False,
+                )
                 new_config = dict(scheduler.config)
                 new_config["clip_sample"] = False
                 scheduler._internal_dict = FrozenDict(new_config)
@@ -158,10 +173,16 @@ if diffusers_version <= diffusers_0214_v:
                     " checker. If you do not want to use the safety checker, you can pass `'safety_checker=None'` instead."
                 )
 
-            is_unet_version_less_0_9_0 = hasattr(unet.config, "_diffusers_version") and version.parse(
+            is_unet_version_less_0_9_0 = hasattr(
+                unet.config, "_diffusers_version"
+            ) and version.parse(
                 version.parse(unet.config._diffusers_version).base_version
-            ) < version.parse("0.9.0.dev0")
-            is_unet_sample_size_less_64 = hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            ) < version.parse(
+                "0.9.0.dev0"
+            )
+            is_unet_sample_size_less_64 = (
+                hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            )
             if is_unet_version_less_0_9_0 and is_unet_sample_size_less_64:
                 deprecation_message = (
                     "The configuration file of the unet has set the default `sample_size` to smaller than"
@@ -174,7 +195,9 @@ if diffusers_version <= diffusers_0214_v:
                     " checkpoint from the Hugging Face Hub, it would be very nice if you could open a Pull request for"
                     " the `unet/config.json` file"
                 )
-                deprecate("sample_size<64", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "sample_size<64", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(unet.config)
                 new_config["sample_size"] = 64
                 unet._internal_dict = FrozenDict(new_config)
@@ -189,10 +212,12 @@ if diffusers_version <= diffusers_0214_v:
                 feature_extractor=feature_extractor,
             )
             self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
-            self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
+            self.image_processor = VaeImageProcessor(
+                vae_scale_factor=self.vae_scale_factor
+            )
             self.register_to_config(requires_safety_checker=requires_safety_checker)
             self.fast_unet = FastUNet2DConditionModel(self.unet)
-        
+
         @torch.no_grad()
         def __call__(
             self,
@@ -227,7 +252,13 @@ if diffusers_version <= diffusers_0214_v:
 
             # 1. Check inputs. Raise error if not correct
             self.check_inputs(
-                prompt, height, width, callback_steps, negative_prompt, prompt_embeds, negative_prompt_embeds
+                prompt,
+                height,
+                width,
+                callback_steps,
+                negative_prompt,
+                prompt_embeds,
+                negative_prompt_embeds,
             )
 
             # 2. Define call parameters
@@ -246,7 +277,9 @@ if diffusers_version <= diffusers_0214_v:
 
             # 3. Encode input prompt
             text_encoder_lora_scale = (
-                cross_attention_kwargs.get("scale", None) if cross_attention_kwargs is not None else None
+                cross_attention_kwargs.get("scale", None)
+                if cross_attention_kwargs is not None
+                else None
             )
             if diffusers_version > diffusers_0202_v:
                 prompt_embeds, negative_prompt_embeds = self.encode_prompt(
@@ -297,7 +330,9 @@ if diffusers_version <= diffusers_0214_v:
             extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
             # 7. Denoising loop
-            num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+            num_warmup_steps = (
+                len(timesteps) - num_inference_steps * self.scheduler.order
+            )
 
             prv_features = None
             latents_list = [latents]
@@ -318,12 +353,18 @@ if diffusers_version <= diffusers_0214_v:
                     # interval_seq, pow = sample_from_quad(num_inference_steps, num_inference_steps//cache_interval, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
 
             interval_seq = sorted(interval_seq)
-            
+
             with self.progress_bar(total=num_inference_steps) as progress_bar:
                 for i, t in enumerate(timesteps):
                     # expand the latents if we are doing classifier free guidance
-                    latent_model_input = torch.cat([latents] * 2) if do_classifier_free_guidance else latents
-                    latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                    latent_model_input = (
+                        torch.cat([latents] * 2)
+                        if do_classifier_free_guidance
+                        else latents
+                    )
+                    latent_model_input = self.scheduler.scale_model_input(
+                        latent_model_input, t
+                    )
 
                     if i in interval_seq or cache_interval == 1:
                         prv_features = None
@@ -351,27 +392,42 @@ if diffusers_version <= diffusers_0214_v:
                             cache_block_id=cache_block_id,
                             return_dict=False,
                         )
-                    
+
                     # perform guidance
                     if do_classifier_free_guidance:
                         noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                        noise_pred = noise_pred_uncond + guidance_scale * (noise_pred_text - noise_pred_uncond)
+                        noise_pred = noise_pred_uncond + guidance_scale * (
+                            noise_pred_text - noise_pred_uncond
+                        )
 
                     if do_classifier_free_guidance and guidance_rescale > 0.0:
                         # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                        noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=guidance_rescale)
+                        noise_pred = rescale_noise_cfg(
+                            noise_pred,
+                            noise_pred_text,
+                            guidance_rescale=guidance_rescale,
+                        )
 
                     # compute the previous noisy sample x_t -> x_t-1
-                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
+                    latents = self.scheduler.step(
+                        noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                    )[0]
 
                     # call the callback, if provided
-                    if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                    if i == len(timesteps) - 1 or (
+                        (i + 1) > num_warmup_steps
+                        and (i + 1) % self.scheduler.order == 0
+                    ):
                         progress_bar.update()
                         if callback is not None and i % callback_steps == 0:
                             callback(i, t, latents)
             if not output_type == "latent":
-                image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
-                image, has_nsfw_concept = self.run_safety_checker(image, device, prompt_embeds.dtype)
+                image = self.vae.decode(
+                    latents / self.vae.config.scaling_factor, return_dict=False
+                )[0]
+                image, has_nsfw_concept = self.run_safety_checker(
+                    image, device, prompt_embeds.dtype
+                )
             else:
                 image = latents
                 has_nsfw_concept = None
@@ -381,22 +437,30 @@ if diffusers_version <= diffusers_0214_v:
             else:
                 do_denormalize = [not has_nsfw for has_nsfw in has_nsfw_concept]
 
-            image = self.image_processor.postprocess(image, output_type=output_type, do_denormalize=do_denormalize)
+            image = self.image_processor.postprocess(
+                image, output_type=output_type, do_denormalize=do_denormalize
+            )
 
             if diffusers_version > diffusers_0202_v:
                 # Offload all models
                 self.maybe_free_model_hooks()
             else:
                 # Offload last model to CPU
-                if hasattr(self, "final_offload_hook") and self.final_offload_hook is not None:
+                if (
+                    hasattr(self, "final_offload_hook")
+                    and self.final_offload_hook is not None
+                ):
                     self.final_offload_hook.offload()
 
             if not return_dict:
                 return (image, has_nsfw_concept)
 
-            return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+            return StableDiffusionPipelineOutput(
+                images=image, nsfw_content_detected=has_nsfw_concept
+            )
 
 elif diffusers_version <= diffusers_0231_v:
+
     class StableDiffusionPipeline(DiffusersStableDiffusionPipeline):
         _optional_components = ["safety_checker", "feature_extractor"]
         model_cpu_offload_seq = "text_encoder->unet->vae"
@@ -414,7 +478,10 @@ elif diffusers_version <= diffusers_0231_v:
             feature_extractor: CLIPImageProcessor,
             requires_safety_checker: bool = True,
         ):
-            if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
+            if (
+                hasattr(scheduler.config, "steps_offset")
+                and scheduler.config.steps_offset != 1
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} is outdated. `steps_offset`"
                     f" should be set to 1 instead of {scheduler.config.steps_offset}. Please make sure "
@@ -423,12 +490,17 @@ elif diffusers_version <= diffusers_0231_v:
                     " it would be very nice if you could open a Pull request for the `scheduler/scheduler_config.json`"
                     " file"
                 )
-                deprecate("steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(scheduler.config)
                 new_config["steps_offset"] = 1
                 scheduler._internal_dict = FrozenDict(new_config)
 
-            if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is True:
+            if (
+                hasattr(scheduler.config, "clip_sample")
+                and scheduler.config.clip_sample is True
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} has not set the configuration `clip_sample`."
                     " `clip_sample` should be set to False in the configuration file. Please make sure to update the"
@@ -436,7 +508,12 @@ elif diffusers_version <= diffusers_0231_v:
                     " future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it would be very"
                     " nice if you could open a Pull request for the `scheduler/scheduler_config.json` file"
                 )
-                deprecate("clip_sample not set", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "clip_sample not set",
+                    "1.0.0",
+                    deprecation_message,
+                    standard_warn=False,
+                )
                 new_config = dict(scheduler.config)
                 new_config["clip_sample"] = False
                 scheduler._internal_dict = FrozenDict(new_config)
@@ -457,10 +534,16 @@ elif diffusers_version <= diffusers_0231_v:
                     " checker. If you do not want to use the safety checker, you can pass `'safety_checker=None'` instead."
                 )
 
-            is_unet_version_less_0_9_0 = hasattr(unet.config, "_diffusers_version") and version.parse(
+            is_unet_version_less_0_9_0 = hasattr(
+                unet.config, "_diffusers_version"
+            ) and version.parse(
                 version.parse(unet.config._diffusers_version).base_version
-            ) < version.parse("0.9.0.dev0")
-            is_unet_sample_size_less_64 = hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            ) < version.parse(
+                "0.9.0.dev0"
+            )
+            is_unet_sample_size_less_64 = (
+                hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            )
             if is_unet_version_less_0_9_0 and is_unet_sample_size_less_64:
                 deprecation_message = (
                     "The configuration file of the unet has set the default `sample_size` to smaller than"
@@ -473,7 +556,9 @@ elif diffusers_version <= diffusers_0231_v:
                     " checkpoint from the Hugging Face Hub, it would be very nice if you could open a Pull request for"
                     " the `unet/config.json` file"
                 )
-                deprecate("sample_size<64", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "sample_size<64", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(unet.config)
                 new_config["sample_size"] = 64
                 unet._internal_dict = FrozenDict(new_config)
@@ -488,14 +573,16 @@ elif diffusers_version <= diffusers_0231_v:
                 feature_extractor=feature_extractor,
             )
             self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
-            self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
+            self.image_processor = VaeImageProcessor(
+                vae_scale_factor=self.vae_scale_factor
+            )
             self.register_to_config(requires_safety_checker=requires_safety_checker)
             self.fast_unet = FastUNet2DConditionModel(self.unet)
-        
+
         @torch.no_grad()
         def __call__(
             self,
-             prompt: Union[str, List[str]] = None,
+            prompt: Union[str, List[str]] = None,
             height: Optional[int] = None,
             width: Optional[int] = None,
             num_inference_steps: int = 50,
@@ -571,7 +658,9 @@ elif diffusers_version <= diffusers_0231_v:
 
             # 3. Encode input prompt
             lora_scale = (
-                self.cross_attention_kwargs.get("scale", None) if self.cross_attention_kwargs is not None else None
+                self.cross_attention_kwargs.get("scale", None)
+                if self.cross_attention_kwargs is not None
+                else None
             )
 
             prompt_embeds, negative_prompt_embeds = self.encode_prompt(
@@ -615,13 +704,18 @@ elif diffusers_version <= diffusers_0231_v:
                 # 6.5 Optionally get Guidance Scale Embedding
                 timestep_cond = None
                 if self.unet.config.time_cond_proj_dim is not None:
-                    guidance_scale_tensor = torch.tensor(self.guidance_scale - 1).repeat(batch_size * num_images_per_prompt)
+                    guidance_scale_tensor = torch.tensor(
+                        self.guidance_scale - 1
+                    ).repeat(batch_size * num_images_per_prompt)
                     timestep_cond = self.get_guidance_scale_embedding(
-                        guidance_scale_tensor, embedding_dim=self.unet.config.time_cond_proj_dim
+                        guidance_scale_tensor,
+                        embedding_dim=self.unet.config.time_cond_proj_dim,
                     ).to(device=device, dtype=latents.dtype)
 
             # 7. Denoising loop
-            num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+            num_warmup_steps = (
+                len(timesteps) - num_inference_steps * self.scheduler.order
+            )
             self._num_timesteps = len(timesteps)
 
             prv_features = None
@@ -643,12 +737,18 @@ elif diffusers_version <= diffusers_0231_v:
                     # interval_seq, pow = sample_from_quad(num_inference_steps, num_inference_steps//cache_interval, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
 
             interval_seq = sorted(interval_seq)
-            
+
             with self.progress_bar(total=num_inference_steps) as progress_bar:
                 for i, t in enumerate(timesteps):
                     # expand the latents if we are doing classifier free guidance
-                    latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
-                    latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                    latent_model_input = (
+                        torch.cat([latents] * 2)
+                        if self.do_classifier_free_guidance
+                        else latents
+                    )
+                    latent_model_input = self.scheduler.scale_model_input(
+                        latent_model_input, t
+                    )
 
                     if i in interval_seq or cache_interval == 1:
                         prv_features = None
@@ -702,43 +802,66 @@ elif diffusers_version <= diffusers_0231_v:
                                 cache_block_id=cache_block_id,
                                 return_dict=False,
                             )
-                    
+
                     # perform guidance
                     if self.do_classifier_free_guidance:
                         noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                        noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
+                        noise_pred = noise_pred_uncond + self.guidance_scale * (
+                            noise_pred_text - noise_pred_uncond
+                        )
 
                     if self.do_classifier_free_guidance and self.guidance_rescale > 0.0:
                         # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                        noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=self.guidance_rescale)
+                        noise_pred = rescale_noise_cfg(
+                            noise_pred,
+                            noise_pred_text,
+                            guidance_rescale=self.guidance_rescale,
+                        )
 
                     # compute the previous noisy sample x_t -> x_t-1
-                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
+                    latents = self.scheduler.step(
+                        noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                    )[0]
 
                     if callback_on_step_end is not None:
                         callback_kwargs = {}
                         for k in callback_on_step_end_tensor_inputs:
                             callback_kwargs[k] = locals()[k]
-                        callback_outputs = callback_on_step_end(self, i, t, callback_kwargs)
+                        callback_outputs = callback_on_step_end(
+                            self, i, t, callback_kwargs
+                        )
 
                         latents = callback_outputs.pop("latents", latents)
-                        prompt_embeds = callback_outputs.pop("prompt_embeds", prompt_embeds)
-                        negative_prompt_embeds = callback_outputs.pop("negative_prompt_embeds", negative_prompt_embeds)
+                        prompt_embeds = callback_outputs.pop(
+                            "prompt_embeds", prompt_embeds
+                        )
+                        negative_prompt_embeds = callback_outputs.pop(
+                            "negative_prompt_embeds", negative_prompt_embeds
+                        )
 
                     # call the callback, if provided
-                    if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                    if i == len(timesteps) - 1 or (
+                        (i + 1) > num_warmup_steps
+                        and (i + 1) % self.scheduler.order == 0
+                    ):
                         progress_bar.update()
                         if callback is not None and i % callback_steps == 0:
                             step_idx = i // getattr(self.scheduler, "order", 1)
                             callback(step_idx, t, latents)
             if not output_type == "latent":
                 if diffusers_version > diffusers_0223_v:
-                    image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False, generator=generator)[
-                        0
-                    ]
+                    image = self.vae.decode(
+                        latents / self.vae.config.scaling_factor,
+                        return_dict=False,
+                        generator=generator,
+                    )[0]
                 else:
-                    image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
-                image, has_nsfw_concept = self.run_safety_checker(image, device, prompt_embeds.dtype)
+                    image = self.vae.decode(
+                        latents / self.vae.config.scaling_factor, return_dict=False
+                    )[0]
+                image, has_nsfw_concept = self.run_safety_checker(
+                    image, device, prompt_embeds.dtype
+                )
             else:
                 image = latents
                 has_nsfw_concept = None
@@ -748,22 +871,30 @@ elif diffusers_version <= diffusers_0231_v:
             else:
                 do_denormalize = [not has_nsfw for has_nsfw in has_nsfw_concept]
 
-            image = self.image_processor.postprocess(image, output_type=output_type, do_denormalize=do_denormalize)
+            image = self.image_processor.postprocess(
+                image, output_type=output_type, do_denormalize=do_denormalize
+            )
 
             if diffusers_version > diffusers_0202_v:
                 # Offload all models
                 self.maybe_free_model_hooks()
             else:
                 # Offload last model to CPU
-                if hasattr(self, "final_offload_hook") and self.final_offload_hook is not None:
+                if (
+                    hasattr(self, "final_offload_hook")
+                    and self.final_offload_hook is not None
+                ):
                     self.final_offload_hook.offload()
 
             if not return_dict:
                 return (image, has_nsfw_concept)
 
-            return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+            return StableDiffusionPipelineOutput(
+                images=image, nsfw_content_detected=has_nsfw_concept
+            )
 
 elif diffusers_version < diffusers_0270_v:
+
     class StableDiffusionPipeline(DiffusersStableDiffusionPipeline):
         if diffusers_version > diffusers_0240_v:
             model_cpu_offload_seq = "text_encoder->image_encoder->unet->vae"
@@ -785,7 +916,10 @@ elif diffusers_version < diffusers_0270_v:
             image_encoder: CLIPVisionModelWithProjection = None,
             requires_safety_checker: bool = True,
         ):
-            if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
+            if (
+                hasattr(scheduler.config, "steps_offset")
+                and scheduler.config.steps_offset != 1
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} is outdated. `steps_offset`"
                     f" should be set to 1 instead of {scheduler.config.steps_offset}. Please make sure "
@@ -794,12 +928,17 @@ elif diffusers_version < diffusers_0270_v:
                     " it would be very nice if you could open a Pull request for the `scheduler/scheduler_config.json`"
                     " file"
                 )
-                deprecate("steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(scheduler.config)
                 new_config["steps_offset"] = 1
                 scheduler._internal_dict = FrozenDict(new_config)
 
-            if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is True:
+            if (
+                hasattr(scheduler.config, "clip_sample")
+                and scheduler.config.clip_sample is True
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} has not set the configuration `clip_sample`."
                     " `clip_sample` should be set to False in the configuration file. Please make sure to update the"
@@ -807,7 +946,12 @@ elif diffusers_version < diffusers_0270_v:
                     " future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it would be very"
                     " nice if you could open a Pull request for the `scheduler/scheduler_config.json` file"
                 )
-                deprecate("clip_sample not set", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "clip_sample not set",
+                    "1.0.0",
+                    deprecation_message,
+                    standard_warn=False,
+                )
                 new_config = dict(scheduler.config)
                 new_config["clip_sample"] = False
                 scheduler._internal_dict = FrozenDict(new_config)
@@ -828,10 +972,16 @@ elif diffusers_version < diffusers_0270_v:
                     " checker. If you do not want to use the safety checker, you can pass `'safety_checker=None'` instead."
                 )
 
-            is_unet_version_less_0_9_0 = hasattr(unet.config, "_diffusers_version") and version.parse(
+            is_unet_version_less_0_9_0 = hasattr(
+                unet.config, "_diffusers_version"
+            ) and version.parse(
                 version.parse(unet.config._diffusers_version).base_version
-            ) < version.parse("0.9.0.dev0")
-            is_unet_sample_size_less_64 = hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            ) < version.parse(
+                "0.9.0.dev0"
+            )
+            is_unet_sample_size_less_64 = (
+                hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            )
             if is_unet_version_less_0_9_0 and is_unet_sample_size_less_64:
                 deprecation_message = (
                     "The configuration file of the unet has set the default `sample_size` to smaller than"
@@ -844,7 +994,9 @@ elif diffusers_version < diffusers_0270_v:
                     " checkpoint from the Hugging Face Hub, it would be very nice if you could open a Pull request for"
                     " the `unet/config.json` file"
                 )
-                deprecate("sample_size<64", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "sample_size<64", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(unet.config)
                 new_config["sample_size"] = 64
                 unet._internal_dict = FrozenDict(new_config)
@@ -860,14 +1012,16 @@ elif diffusers_version < diffusers_0270_v:
                 image_encoder=image_encoder,
             )
             self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
-            self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
+            self.image_processor = VaeImageProcessor(
+                vae_scale_factor=self.vae_scale_factor
+            )
             self.register_to_config(requires_safety_checker=requires_safety_checker)
             self.fast_unet = FastUNet2DConditionModel(self.unet)
-        
+
         @torch.no_grad()
         def __call__(
             self,
-             prompt: Union[str, List[str]] = None,
+            prompt: Union[str, List[str]] = None,
             height: Optional[int] = None,
             width: Optional[int] = None,
             num_inference_steps: int = 50,
@@ -947,7 +1101,9 @@ elif diffusers_version < diffusers_0270_v:
 
             # 3. Encode input prompt
             lora_scale = (
-                self.cross_attention_kwargs.get("scale", None) if self.cross_attention_kwargs is not None else None
+                self.cross_attention_kwargs.get("scale", None)
+                if self.cross_attention_kwargs is not None
+                else None
             )
 
             prompt_embeds, negative_prompt_embeds = self.encode_prompt(
@@ -974,17 +1130,28 @@ elif diffusers_version < diffusers_0270_v:
                     )
                 else:
                     if diffusers_version > diffusers_0240_v:
-                        output_hidden_state = False if isinstance(self.unet.encoder_hid_proj, ImageProjection) else True
+                        output_hidden_state = (
+                            False
+                            if isinstance(self.unet.encoder_hid_proj, ImageProjection)
+                            else True
+                        )
                         image_embeds, negative_image_embeds = self.encode_image(
-                            ip_adapter_image, device, num_images_per_prompt, output_hidden_state
+                            ip_adapter_image,
+                            device,
+                            num_images_per_prompt,
+                            output_hidden_state,
                         )
                     else:
-                        image_embeds, negative_image_embeds = self.encode_image(ip_adapter_image, device, num_images_per_prompt)
+                        image_embeds, negative_image_embeds = self.encode_image(
+                            ip_adapter_image, device, num_images_per_prompt
+                        )
                     if self.do_classifier_free_guidance:
                         image_embeds = torch.cat([negative_image_embeds, image_embeds])
 
             # 4. Prepare timesteps
-            timesteps, num_inference_steps = retrieve_timesteps(self.scheduler, num_inference_steps, device, timesteps)
+            timesteps, num_inference_steps = retrieve_timesteps(
+                self.scheduler, num_inference_steps, device, timesteps
+            )
 
             # 5. Prepare latent variables
             num_channels_latents = self.unet.config.in_channels
@@ -1002,20 +1169,26 @@ elif diffusers_version < diffusers_0270_v:
             # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
             extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-
             # 6.1 Add image embeds for IP-Adapter
-            added_cond_kwargs = {"image_embeds": image_embeds} if ip_adapter_image is not None else None
+            added_cond_kwargs = (
+                {"image_embeds": image_embeds} if ip_adapter_image is not None else None
+            )
 
             # 6.2 Optionally get Guidance Scale Embedding
             timestep_cond = None
             if self.unet.config.time_cond_proj_dim is not None:
-                guidance_scale_tensor = torch.tensor(self.guidance_scale - 1).repeat(batch_size * num_images_per_prompt)
+                guidance_scale_tensor = torch.tensor(self.guidance_scale - 1).repeat(
+                    batch_size * num_images_per_prompt
+                )
                 timestep_cond = self.get_guidance_scale_embedding(
-                    guidance_scale_tensor, embedding_dim=self.unet.config.time_cond_proj_dim
+                    guidance_scale_tensor,
+                    embedding_dim=self.unet.config.time_cond_proj_dim,
                 ).to(device=device, dtype=latents.dtype)
 
             # 7. Denoising loop
-            num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+            num_warmup_steps = (
+                len(timesteps) - num_inference_steps * self.scheduler.order
+            )
             self._num_timesteps = len(timesteps)
 
             prv_features = None
@@ -1037,15 +1210,21 @@ elif diffusers_version < diffusers_0270_v:
                     # interval_seq, pow = sample_from_quad(num_inference_steps, num_inference_steps//cache_interval, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
 
             interval_seq = sorted(interval_seq)
-            
+
             with self.progress_bar(total=num_inference_steps) as progress_bar:
                 for i, t in enumerate(timesteps):
                     if diffusers_version > diffusers_0240_v:
                         if self.interrupt:
                             continue
                     # expand the latents if we are doing classifier free guidance
-                    latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
-                    latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                    latent_model_input = (
+                        torch.cat([latents] * 2)
+                        if self.do_classifier_free_guidance
+                        else latents
+                    )
+                    latent_model_input = self.scheduler.scale_model_input(
+                        latent_model_input, t
+                    )
 
                     if i in interval_seq or cache_interval == 1:
                         prv_features = None
@@ -1103,43 +1282,66 @@ elif diffusers_version < diffusers_0270_v:
                                 cache_block_id=cache_block_id,
                                 return_dict=False,
                             )
-                    
+
                     # perform guidance
                     if self.do_classifier_free_guidance:
                         noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                        noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
+                        noise_pred = noise_pred_uncond + self.guidance_scale * (
+                            noise_pred_text - noise_pred_uncond
+                        )
 
                     if self.do_classifier_free_guidance and self.guidance_rescale > 0.0:
                         # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                        noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=self.guidance_rescale)
+                        noise_pred = rescale_noise_cfg(
+                            noise_pred,
+                            noise_pred_text,
+                            guidance_rescale=self.guidance_rescale,
+                        )
 
                     # compute the previous noisy sample x_t -> x_t-1
-                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
+                    latents = self.scheduler.step(
+                        noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                    )[0]
 
                     if callback_on_step_end is not None:
                         callback_kwargs = {}
                         for k in callback_on_step_end_tensor_inputs:
                             callback_kwargs[k] = locals()[k]
-                        callback_outputs = callback_on_step_end(self, i, t, callback_kwargs)
+                        callback_outputs = callback_on_step_end(
+                            self, i, t, callback_kwargs
+                        )
 
                         latents = callback_outputs.pop("latents", latents)
-                        prompt_embeds = callback_outputs.pop("prompt_embeds", prompt_embeds)
-                        negative_prompt_embeds = callback_outputs.pop("negative_prompt_embeds", negative_prompt_embeds)
+                        prompt_embeds = callback_outputs.pop(
+                            "prompt_embeds", prompt_embeds
+                        )
+                        negative_prompt_embeds = callback_outputs.pop(
+                            "negative_prompt_embeds", negative_prompt_embeds
+                        )
 
                     # call the callback, if provided
-                    if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                    if i == len(timesteps) - 1 or (
+                        (i + 1) > num_warmup_steps
+                        and (i + 1) % self.scheduler.order == 0
+                    ):
                         progress_bar.update()
                         if callback is not None and i % callback_steps == 0:
                             step_idx = i // getattr(self.scheduler, "order", 1)
                             callback(step_idx, t, latents)
             if not output_type == "latent":
                 if diffusers_version > diffusers_0223_v:
-                    image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False, generator=generator)[
-                        0
-                    ]
+                    image = self.vae.decode(
+                        latents / self.vae.config.scaling_factor,
+                        return_dict=False,
+                        generator=generator,
+                    )[0]
                 else:
-                    image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False)[0]
-                image, has_nsfw_concept = self.run_safety_checker(image, device, prompt_embeds.dtype)
+                    image = self.vae.decode(
+                        latents / self.vae.config.scaling_factor, return_dict=False
+                    )[0]
+                image, has_nsfw_concept = self.run_safety_checker(
+                    image, device, prompt_embeds.dtype
+                )
             else:
                 image = latents
                 has_nsfw_concept = None
@@ -1149,20 +1351,28 @@ elif diffusers_version < diffusers_0270_v:
             else:
                 do_denormalize = [not has_nsfw for has_nsfw in has_nsfw_concept]
 
-            image = self.image_processor.postprocess(image, output_type=output_type, do_denormalize=do_denormalize)
+            image = self.image_processor.postprocess(
+                image, output_type=output_type, do_denormalize=do_denormalize
+            )
 
             if diffusers_version > diffusers_0202_v:
                 # Offload all models
                 self.maybe_free_model_hooks()
             else:
                 # Offload last model to CPU
-                if hasattr(self, "final_offload_hook") and self.final_offload_hook is not None:
+                if (
+                    hasattr(self, "final_offload_hook")
+                    and self.final_offload_hook is not None
+                ):
                     self.final_offload_hook.offload()
 
             if not return_dict:
                 return (image, has_nsfw_concept)
 
-            return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+            return StableDiffusionPipelineOutput(
+                images=image, nsfw_content_detected=has_nsfw_concept
+            )
+
 else:
 
     class StableDiffusionPipeline(DiffusersStableDiffusionPipeline):
@@ -1183,7 +1393,10 @@ else:
             image_encoder: CLIPVisionModelWithProjection = None,
             requires_safety_checker: bool = True,
         ):
-            if hasattr(scheduler.config, "steps_offset") and scheduler.config.steps_offset != 1:
+            if (
+                hasattr(scheduler.config, "steps_offset")
+                and scheduler.config.steps_offset != 1
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} is outdated. `steps_offset`"
                     f" should be set to 1 instead of {scheduler.config.steps_offset}. Please make sure "
@@ -1192,12 +1405,17 @@ else:
                     " it would be very nice if you could open a Pull request for the `scheduler/scheduler_config.json`"
                     " file"
                 )
-                deprecate("steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "steps_offset!=1", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(scheduler.config)
                 new_config["steps_offset"] = 1
                 scheduler._internal_dict = FrozenDict(new_config)
 
-            if hasattr(scheduler.config, "clip_sample") and scheduler.config.clip_sample is True:
+            if (
+                hasattr(scheduler.config, "clip_sample")
+                and scheduler.config.clip_sample is True
+            ):
                 deprecation_message = (
                     f"The configuration file of this scheduler: {scheduler} has not set the configuration `clip_sample`."
                     " `clip_sample` should be set to False in the configuration file. Please make sure to update the"
@@ -1205,7 +1423,12 @@ else:
                     " future versions. If you have downloaded this checkpoint from the Hugging Face Hub, it would be very"
                     " nice if you could open a Pull request for the `scheduler/scheduler_config.json` file"
                 )
-                deprecate("clip_sample not set", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "clip_sample not set",
+                    "1.0.0",
+                    deprecation_message,
+                    standard_warn=False,
+                )
                 new_config = dict(scheduler.config)
                 new_config["clip_sample"] = False
                 scheduler._internal_dict = FrozenDict(new_config)
@@ -1226,10 +1449,16 @@ else:
                     " checker. If you do not want to use the safety checker, you can pass `'safety_checker=None'` instead."
                 )
 
-            is_unet_version_less_0_9_0 = hasattr(unet.config, "_diffusers_version") and version.parse(
+            is_unet_version_less_0_9_0 = hasattr(
+                unet.config, "_diffusers_version"
+            ) and version.parse(
                 version.parse(unet.config._diffusers_version).base_version
-            ) < version.parse("0.9.0.dev0")
-            is_unet_sample_size_less_64 = hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            ) < version.parse(
+                "0.9.0.dev0"
+            )
+            is_unet_sample_size_less_64 = (
+                hasattr(unet.config, "sample_size") and unet.config.sample_size < 64
+            )
             if is_unet_version_less_0_9_0 and is_unet_sample_size_less_64:
                 deprecation_message = (
                     "The configuration file of the unet has set the default `sample_size` to smaller than"
@@ -1242,7 +1471,9 @@ else:
                     " checkpoint from the Hugging Face Hub, it would be very nice if you could open a Pull request for"
                     " the `unet/config.json` file"
                 )
-                deprecate("sample_size<64", "1.0.0", deprecation_message, standard_warn=False)
+                deprecate(
+                    "sample_size<64", "1.0.0", deprecation_message, standard_warn=False
+                )
                 new_config = dict(unet.config)
                 new_config["sample_size"] = 64
                 unet._internal_dict = FrozenDict(new_config)
@@ -1258,14 +1489,16 @@ else:
                 image_encoder=image_encoder,
             )
             self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
-            self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
+            self.image_processor = VaeImageProcessor(
+                vae_scale_factor=self.vae_scale_factor
+            )
             self.register_to_config(requires_safety_checker=requires_safety_checker)
             self.fast_unet = FastUNet2DConditionModel(self.unet)
 
         @torch.no_grad()
         def __call__(
             self,
-             prompt: Union[str, List[str]] = None,
+            prompt: Union[str, List[str]] = None,
             height: Optional[int] = None,
             width: Optional[int] = None,
             num_inference_steps: int = 50,
@@ -1347,7 +1580,9 @@ else:
 
             # 3. Encode input prompt
             lora_scale = (
-                self.cross_attention_kwargs.get("scale", None) if self.cross_attention_kwargs is not None else None
+                self.cross_attention_kwargs.get("scale", None)
+                if self.cross_attention_kwargs is not None
+                else None
             )
 
             prompt_embeds, negative_prompt_embeds = self.encode_prompt(
@@ -1377,7 +1612,9 @@ else:
                 )
 
             # 4. Prepare timesteps
-            timesteps, num_inference_steps = retrieve_timesteps(self.scheduler, num_inference_steps, device, timesteps)
+            timesteps, num_inference_steps = retrieve_timesteps(
+                self.scheduler, num_inference_steps, device, timesteps
+            )
 
             # 5. Prepare latent variables
             num_channels_latents = self.unet.config.in_channels
@@ -1395,7 +1632,6 @@ else:
             # 6. Prepare extra step kwargs. TODO: Logic should ideally just be moved out of the pipeline
             extra_step_kwargs = self.prepare_extra_step_kwargs(generator, eta)
 
-
             # 6.1 Add image embeds for IP-Adapter
             added_cond_kwargs = (
                 {"image_embeds": image_embeds}
@@ -1406,13 +1642,18 @@ else:
             # 6.2 Optionally get Guidance Scale Embedding
             timestep_cond = None
             if self.unet.config.time_cond_proj_dim is not None:
-                guidance_scale_tensor = torch.tensor(self.guidance_scale - 1).repeat(batch_size * num_images_per_prompt)
+                guidance_scale_tensor = torch.tensor(self.guidance_scale - 1).repeat(
+                    batch_size * num_images_per_prompt
+                )
                 timestep_cond = self.get_guidance_scale_embedding(
-                    guidance_scale_tensor, embedding_dim=self.unet.config.time_cond_proj_dim
+                    guidance_scale_tensor,
+                    embedding_dim=self.unet.config.time_cond_proj_dim,
                 ).to(device=device, dtype=latents.dtype)
 
             # 7. Denoising loop
-            num_warmup_steps = len(timesteps) - num_inference_steps * self.scheduler.order
+            num_warmup_steps = (
+                len(timesteps) - num_inference_steps * self.scheduler.order
+            )
             self._num_timesteps = len(timesteps)
 
             prv_features = None
@@ -1434,14 +1675,20 @@ else:
                     # interval_seq, pow = sample_from_quad(num_inference_steps, num_inference_steps//cache_interval, pow=pow)#[0, 3, 6, 9, 12, 16, 22, 28, 35, 43,]
 
             interval_seq = sorted(interval_seq)
-            
+
             with self.progress_bar(total=num_inference_steps) as progress_bar:
                 for i, t in enumerate(timesteps):
                     if self.interrupt:
                         continue
                     # expand the latents if we are doing classifier free guidance
-                    latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
-                    latent_model_input = self.scheduler.scale_model_input(latent_model_input, t)
+                    latent_model_input = (
+                        torch.cat([latents] * 2)
+                        if self.do_classifier_free_guidance
+                        else latents
+                    )
+                    latent_model_input = self.scheduler.scale_model_input(
+                        latent_model_input, t
+                    )
 
                     if i in interval_seq or cache_interval == 1:
                         prv_features = None
@@ -1473,40 +1720,61 @@ else:
                             cache_block_id=cache_block_id,
                             return_dict=False,
                         )
-                    
+
                     # perform guidance
                     if self.do_classifier_free_guidance:
                         noise_pred_uncond, noise_pred_text = noise_pred.chunk(2)
-                        noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_text - noise_pred_uncond)
+                        noise_pred = noise_pred_uncond + self.guidance_scale * (
+                            noise_pred_text - noise_pred_uncond
+                        )
 
                     if self.do_classifier_free_guidance and self.guidance_rescale > 0.0:
                         # Based on 3.4. in https://arxiv.org/pdf/2305.08891.pdf
-                        noise_pred = rescale_noise_cfg(noise_pred, noise_pred_text, guidance_rescale=self.guidance_rescale)
+                        noise_pred = rescale_noise_cfg(
+                            noise_pred,
+                            noise_pred_text,
+                            guidance_rescale=self.guidance_rescale,
+                        )
 
                     # compute the previous noisy sample x_t -> x_t-1
-                    latents = self.scheduler.step(noise_pred, t, latents, **extra_step_kwargs, return_dict=False)[0]
+                    latents = self.scheduler.step(
+                        noise_pred, t, latents, **extra_step_kwargs, return_dict=False
+                    )[0]
 
                     if callback_on_step_end is not None:
                         callback_kwargs = {}
                         for k in callback_on_step_end_tensor_inputs:
                             callback_kwargs[k] = locals()[k]
-                        callback_outputs = callback_on_step_end(self, i, t, callback_kwargs)
+                        callback_outputs = callback_on_step_end(
+                            self, i, t, callback_kwargs
+                        )
 
                         latents = callback_outputs.pop("latents", latents)
-                        prompt_embeds = callback_outputs.pop("prompt_embeds", prompt_embeds)
-                        negative_prompt_embeds = callback_outputs.pop("negative_prompt_embeds", negative_prompt_embeds)
+                        prompt_embeds = callback_outputs.pop(
+                            "prompt_embeds", prompt_embeds
+                        )
+                        negative_prompt_embeds = callback_outputs.pop(
+                            "negative_prompt_embeds", negative_prompt_embeds
+                        )
 
                     # call the callback, if provided
-                    if i == len(timesteps) - 1 or ((i + 1) > num_warmup_steps and (i + 1) % self.scheduler.order == 0):
+                    if i == len(timesteps) - 1 or (
+                        (i + 1) > num_warmup_steps
+                        and (i + 1) % self.scheduler.order == 0
+                    ):
                         progress_bar.update()
                         if callback is not None and i % callback_steps == 0:
                             step_idx = i // getattr(self.scheduler, "order", 1)
                             callback(step_idx, t, latents)
             if not output_type == "latent":
-                image = self.vae.decode(latents / self.vae.config.scaling_factor, return_dict=False, generator=generator)[
-                    0
-                ]
-                image, has_nsfw_concept = self.run_safety_checker(image, device, prompt_embeds.dtype)
+                image = self.vae.decode(
+                    latents / self.vae.config.scaling_factor,
+                    return_dict=False,
+                    generator=generator,
+                )[0]
+                image, has_nsfw_concept = self.run_safety_checker(
+                    image, device, prompt_embeds.dtype
+                )
             else:
                 image = latents
                 has_nsfw_concept = None
@@ -1516,7 +1784,9 @@ else:
             else:
                 do_denormalize = [not has_nsfw for has_nsfw in has_nsfw_concept]
 
-            image = self.image_processor.postprocess(image, output_type=output_type, do_denormalize=do_denormalize)
+            image = self.image_processor.postprocess(
+                image, output_type=output_type, do_denormalize=do_denormalize
+            )
 
             # Offload all models
             self.maybe_free_model_hooks()
@@ -1524,4 +1794,6 @@ else:
             if not return_dict:
                 return (image, has_nsfw_concept)
 
-            return StableDiffusionPipelineOutput(images=image, nsfw_content_detected=has_nsfw_concept)
+            return StableDiffusionPipelineOutput(
+                images=image, nsfw_content_detected=has_nsfw_concept
+            )

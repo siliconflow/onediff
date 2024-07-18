@@ -11,18 +11,18 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import functools
+import importlib.metadata
+from collections import OrderedDict
+from typing import Any, Dict, Optional, Tuple, Union
+
 import oneflow as torch
 import oneflow.nn.functional as F
 from oneflow import nn
 
-import functools
-from typing import Any, Optional, Tuple, Union, Dict
-from collections import OrderedDict
+from packaging import version
 
 from .attention_processor_oflow import AttentionProcessor
-
-from packaging import version
-import importlib.metadata
 
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
@@ -290,7 +290,8 @@ if diffusers_version >= diffusers_0240_v:
                     )
                 else:
                     hidden_states = block(
-                        hidden_states, encoder_hidden_states=encoder_hidden_states,
+                        hidden_states,
+                        encoder_hidden_states=encoder_hidden_states,
                     )
 
                 hidden_states_mix = hidden_states

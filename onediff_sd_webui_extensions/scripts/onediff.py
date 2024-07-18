@@ -1,3 +1,6 @@
+r"""oneflow_compiled UNetModel"""
+
+
 from pathlib import Path
 
 import gradio as gr
@@ -7,16 +10,18 @@ import modules.shared as shared
 import onediff_controlnet
 import onediff_shared
 from compile import (
+    get_compiled_graph,
+    get_onediff_backend,
     OneDiffBackend,
     SD21CompileCtx,
     VaeCompileCtx,
-    get_compiled_graph,
-    get_onediff_backend,
 )
 from compile.nexfort.utils import add_nexfort_optimizer
 from modules import script_callbacks
 from modules.processing import process_images
 from modules.ui_common import create_refresh_button
+
+from onediff.utils import logger, parse_boolean_from_env
 from onediff_hijack import do_hijack as onediff_do_hijack
 from onediff_lora import HijackLoraActivate
 
@@ -32,10 +37,6 @@ from onediff_utils import (
     save_graph,
     varify_can_use_quantization,
 )
-
-from onediff.utils import logger, parse_boolean_from_env
-
-"""oneflow_compiled UNetModel"""
 
 
 class UnetCompileCtx(object):
@@ -149,7 +150,9 @@ class Script(scripts.Script):
         if need_recompile:
             if not onediff_shared.controlnet_enabled:
                 onediff_shared.current_unet_graph = get_compiled_graph(
-                    shared.sd_model, quantization=quantization, backend=backend,
+                    shared.sd_model,
+                    quantization=quantization,
+                    backend=backend,
                 )
                 load_graph(onediff_shared.current_unet_graph, compiler_cache)
         else:

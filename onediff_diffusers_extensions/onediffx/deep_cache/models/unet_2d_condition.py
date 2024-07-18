@@ -11,28 +11,33 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+import importlib.metadata
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Tuple, Union
 
-from packaging import version
-import importlib.metadata
 from oneflow.nn.graph.proxy import ProxyModule
+
+from packaging import version
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_0260_v = version.parse("0.26.0")
 diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
-import torch
 import diffusers
-
-from diffusers.utils import BaseOutput, logging
+import torch
 from diffusers.models.modeling_utils import ModelMixin
 
+from diffusers.utils import BaseOutput, logging
+
 if diffusers_version >= diffusers_0260_v:
-    from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel as DiffusersUNet2DConditionModel 
+    from diffusers.models.unets.unet_2d_condition import (
+        UNet2DConditionModel as DiffusersUNet2DConditionModel,
+    )
 else:
-    from diffusers.models.unet_2d_condition import UNet2DConditionModel as DiffusersUNet2DConditionModel
+    from diffusers.models.unet_2d_condition import (
+        UNet2DConditionModel as DiffusersUNet2DConditionModel,
+    )
 
 try:
     USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
@@ -108,7 +113,7 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        default_overall_up_factor = 2 ** self.num_upsamplers
+        default_overall_up_factor = 2**self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         # forward_upsample_size = False
@@ -261,15 +266,17 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
                 hint = added_cond_kwargs.get("hint")
                 aug_emb, hint = self.add_embedding(image_embs, hint)
                 sample = torch.cat([sample, hint], dim=1)
-        
+
         else:
             aug_emb = self.get_aug_embed(
-                emb=emb, encoder_hidden_states=encoder_hidden_states, added_cond_kwargs=added_cond_kwargs
+                emb=emb,
+                encoder_hidden_states=encoder_hidden_states,
+                added_cond_kwargs=added_cond_kwargs,
             )
             if self.config.addition_embed_type == "image_hint":
                 aug_emb, hint = aug_emb
                 sample = torch.cat([sample, hint], dim=1)
-        
+
         emb = emb + aug_emb if aug_emb is not None else emb
 
         if self.time_embed_act is not None:
@@ -323,7 +330,8 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
                 )
         else:
             encoder_hidden_states = self.process_encoder_hidden_states(
-                encoder_hidden_states=encoder_hidden_states, added_cond_kwargs=added_cond_kwargs
+                encoder_hidden_states=encoder_hidden_states,
+                added_cond_kwargs=added_cond_kwargs,
             )
 
         # 2. pre-process
@@ -400,7 +408,10 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
                     **additional_residuals,
                 )
             else:
-                if diffusers_version < diffusers_0210_v or diffusers_version >= diffusers_0270_v:
+                if (
+                    diffusers_version < diffusers_0210_v
+                    or diffusers_version >= diffusers_0270_v
+                ):
                     sample, res_samples = downsample_block(
                         hidden_states=sample, temb=emb
                     )
@@ -505,7 +516,10 @@ class UNet2DConditionModel(DiffusersUNet2DConditionModel):
                     encoder_attention_mask=encoder_attention_mask,
                 )
             else:
-                if diffusers_version < diffusers_0210_v or diffusers_version >= diffusers_0270_v:
+                if (
+                    diffusers_version < diffusers_0210_v
+                    or diffusers_version >= diffusers_0270_v
+                ):
                     sample, current_record_f = upsample_block(
                         hidden_states=sample,
                         temb=emb,

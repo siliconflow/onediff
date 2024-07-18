@@ -1,15 +1,18 @@
 import torch
-from register_comfy.CrossAttentionPatch import Attn2Replace, ipadapter_attention
 
 from comfy import model_management
 from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
+from register_comfy.CrossAttentionPatch import Attn2Replace, ipadapter_attention
+
+from ..patch_management import create_patch_executor, PatchType
 from ..utils.booster_utils import clear_deployable_module_cache_and_unbind
-from ..patch_management import PatchType, create_patch_executor
+
 
 def set_model_patch_replace_v2(org_fn, model, patch_kwargs, key):
     apply_patch(org_fn, model, patch_kwargs, key, ipadapter_attention)
 
-def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None)->None:
+
+def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None) -> None:
     diff_model = model.model.diffusion_model
     cache_patch_executor = create_patch_executor(PatchType.CachedCrossAttentionPatch)
     unet_extra_options_patch_executor = create_patch_executor(

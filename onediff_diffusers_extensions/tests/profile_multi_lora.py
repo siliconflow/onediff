@@ -2,17 +2,20 @@ import time
 from pathlib import Path
 
 import pandas as pd
-import torch
 import safetensors.torch
+import torch
 from diffusers import DiffusionPipeline
 from diffusers.utils.constants import USE_PEFT_BACKEND
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.torch_utils import TensorInplaceAssign
-from onediffx.lora import load_and_fuse_lora, unfuse_lora, set_and_fuse_adapters
+from onediffx.lora import load_and_fuse_lora, set_and_fuse_adapters, unfuse_lora
 
 if not USE_PEFT_BACKEND:
-    raise RuntimeError("The profile if for PEFT APIs, please make sure you have installed peft>=0.6.0 and transformers >= 4.34.0")
+    raise RuntimeError(
+        "The profile if for PEFT APIs, please make sure you have installed peft>=0.6.0 and transformers >= 4.34.0"
+    )
+
 
 class TimerContextManager:
     def __init__(self, msg, lora):
@@ -52,7 +55,13 @@ generator = torch.manual_seed(0)
 
 # for OneDiffX APIs
 for i, (name, lora) in enumerate(loras.items()):
-    load_and_fuse_lora(pipe, lora.copy(), adapter_name=Path(name).stem, lora_scale=1.0, offload_device="cuda")
+    load_and_fuse_lora(
+        pipe,
+        lora.copy(),
+        adapter_name=Path(name).stem,
+        lora_scale=1.0,
+        offload_device="cuda",
+    )
     unfuse_lora(pipe)
 
 multi_loras = []
@@ -96,9 +105,7 @@ lora_names = [
 data = {
     "LoRA names": lora_names,
     "PEFT set_adapter": [f"{x:.2f} s" for x in peft_set_adapter_time],
-    "OneDiffX set_adapter": [
-        f"{x:.2f} s" for x in set_adapter_time
-    ],
+    "OneDiffX set_adapter": [f"{x:.2f} s" for x in set_adapter_time],
 }
 df = pd.DataFrame(data)
 print(df)

@@ -30,19 +30,19 @@ ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 CACHE_INTERVAL = 3
 CACHE_BRANCH = 0
 
-import os
+import argparse
 import importlib
 import inspect
-import argparse
-import time
 import json
+import os
 import random
-from PIL import Image, ImageDraw
+import time
 
 import oneflow as flow
 import torch
-from onediffx import compile_pipe, OneflowCompileOptions 
-from diffusers.utils import load_image, export_to_video
+from diffusers.utils import export_to_video, load_image
+from onediffx import compile_pipe, OneflowCompileOptions
+from PIL import Image, ImageDraw
 
 
 def parse_args():
@@ -84,10 +84,14 @@ def parse_args():
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
     )
     parser.add_argument(
-        "--alter-height", type=int, default=ALTER_HEIGHT,
+        "--alter-height",
+        type=int,
+        default=ALTER_HEIGHT,
     )
     parser.add_argument(
-        "--alter-width", type=int, default=ALTER_WIDTH,
+        "--alter-width",
+        type=int,
+        default=ALTER_WIDTH,
     )
     return parser.parse_args()
 
@@ -110,7 +114,8 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16,
+            controlnet,
+            torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
@@ -218,7 +223,12 @@ def main():
                 control_image = Image.new("RGB", (width, height))
                 draw = ImageDraw.Draw(control_image)
                 draw.ellipse(
-                    (width // 4, height // 4, width // 4 * 3, height // 4 * 3,),
+                    (
+                        width // 4,
+                        height // 4,
+                        width // 4 * 3,
+                        height // 4 * 3,
+                    ),
                     fill=(255, 255, 255),
                 )
                 del draw

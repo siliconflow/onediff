@@ -1,29 +1,29 @@
 import types
-import torch
 from functools import wraps
 
 import oneflow as flow
+import torch
 
 from onediff.utils import logger
 from onediff.utils.chache_utils import LRUCache
 
 from ..deployable_module import DeployableModule
-
-from .transform.manager import transform_mgr
-from .transform.builtin_transform import torch2oflow
+from ..env_var import OneflowCompileOptions
+from .args_tree_util import input_output_processor
 
 from .dual_module import DualModule, get_mixed_dual_module
+from .graph_management_utils import graph_file_management
 from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
-from .args_tree_util import input_output_processor
+from .online_quantization_utils import quantize_and_deploy_wrapper
 from .param_utils import (
-    parse_device,
     check_device,
     generate_constant_folding_info,
+    parse_device,
     update_graph_with_constant_folding_info,
 )
-from .graph_management_utils import graph_file_management
-from .online_quantization_utils import quantize_and_deploy_wrapper
-from ..env_var import OneflowCompileOptions
+from .transform.builtin_transform import torch2oflow
+
+from .transform.manager import transform_mgr
 
 
 @torch2oflow.register
@@ -60,7 +60,11 @@ def get_oneflow_graph(model, size=9, dynamic_graph=True):
 
 class OneflowDeployableModule(DeployableModule):
     def __init__(
-        self, torch_module, oneflow_module, dynamic=True, options=None,
+        self,
+        torch_module,
+        oneflow_module,
+        dynamic=True,
+        options=None,
     ):
         torch.nn.Module.__init__(self)
         object.__setattr__(
@@ -210,7 +214,7 @@ class OneflowDeployableModule(DeployableModule):
         return self._deployable_module_model.extra_repr()
 
     def set_graph_file(self, file_path: str) -> None:
-        """ Sets the path of the graph file.
+        """Sets the path of the graph file.
 
         If the new file path is different from the old one, clears old graph data.
 

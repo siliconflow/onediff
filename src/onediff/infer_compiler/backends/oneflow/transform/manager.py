@@ -1,10 +1,11 @@
 import importlib
+import logging
 import os
 import types
 import warnings
-import logging
-from typing import Dict, List, Union
 from pathlib import Path
+from typing import Dict, List, Union
+
 from onediff.utils import logger
 from ..import_tools.importer import LazyMocker
 

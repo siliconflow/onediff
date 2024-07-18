@@ -35,16 +35,16 @@ Add the 📷OneDiff Speed Up node as shown in the following diagram:：
   - baseline: 2.77it/s
   - onediff: 5.18it/s
   - (5.18 - 2.77) / 2.77 = 0.87 (87% faster)
-  
+
 - e2e:
   - baseline: 20.18 s
   - onediff: 11.88 s
   -  (20.18 - 11.88) / 20.18 = 0.41 (41% faster)
- 
+
 ## Environment
 
 Tested on:(March 1st, 2023)
-- NVIDIA A100-PCIE-40GB 
+- NVIDIA A100-PCIE-40GB
 - Torch.__version__='2.1.2+cu121'
 - Python = 3.10.13
 - ComfyUI (Thu Feb 29 13:09:43 2024) commit: cb7c3a2921cfc0805be0229b4634e1143d60e6fe

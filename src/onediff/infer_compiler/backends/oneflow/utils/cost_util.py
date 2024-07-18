@@ -1,7 +1,9 @@
-from functools import wraps
-import oneflow as flow
-import time
 import inspect
+import time
+from functools import wraps
+
+import oneflow as flow
+
 from onediff.utils import logger
 
 __all__ = ["cost_cnt", "cost_time"]

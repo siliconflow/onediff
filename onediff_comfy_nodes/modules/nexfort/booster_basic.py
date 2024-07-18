@@ -1,15 +1,17 @@
-import torch
 from functools import partial, singledispatchmethod
 from typing import Optional
+
+import torch
 
 from comfy.controlnet import ControlLora, ControlNet
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
+from nexfort.utils.memory_format import apply_memory_format
 
 from onediff.infer_compiler import compile
-from nexfort.utils.memory_format import apply_memory_format
-from .onediff_controlnet import OneDiffControlLora
+
 from ..booster_interface import BoosterExecutor
+from .onediff_controlnet import OneDiffControlLora
 
 
 class BasicNexFortBoosterExecutor(BoosterExecutor):

@@ -4,6 +4,7 @@ import oneflow.nn as nn
 import oneflow.nn.functional as F
 from einops import rearrange
 
+
 class AlphaBlender(nn.Module):
     strategies = ["learned", "fixed", "learned_with_images"]
 
@@ -35,7 +36,9 @@ class AlphaBlender(nn.Module):
                 alpha = torch.where(
                     image_only_indicator.bool(),
                     torch.ones(1, 1, device=image_only_indicator.device),
-                    torch.sigmoid(self.mix_factor.to(image_only_indicator.device)).unsqueeze(-1),
+                    torch.sigmoid(
+                        self.mix_factor.to(image_only_indicator.device)
+                    ).unsqueeze(-1),
                 )
             # alpha = rearrange(alpha, self.rearrange_pattern)
             # Rewrite for onediff SVD dynamic shape, only VideoResBlock, rearrange_pattern="b t -> b 1 t 1 1",
@@ -52,7 +55,10 @@ class AlphaBlender(nn.Module):
         return alpha
 
     def forward(
-        self, x_spatial, x_temporal, image_only_indicator=None,
+        self,
+        x_spatial,
+        x_temporal,
+        image_only_indicator=None,
     ) -> torch.Tensor:
         alpha = self.get_alpha(image_only_indicator, x_spatial.device)
         x = (

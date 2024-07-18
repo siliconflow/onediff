@@ -20,8 +20,8 @@ def online_quantize_model(
     """
 
     from onediff_quant.quantization import (
-        OnlineQuantModule,
         create_quantization_calculator,
+        OnlineQuantModule,
     )
 
     if getattr(quant_config, "quantization_calculator", None):

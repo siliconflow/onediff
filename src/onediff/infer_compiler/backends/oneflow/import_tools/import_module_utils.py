@@ -1,9 +1,9 @@
-from pathlib import Path
-from typing import Union
-from types import ModuleType
+import importlib
 import os
 import sys
-import importlib
+from pathlib import Path
+from types import ModuleType
+from typing import Union
 
 
 def import_module_from_path(module_path: Union[str, Path]) -> ModuleType:
