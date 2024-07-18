@@ -28,21 +28,22 @@ ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 COMPILER_CONFIG = None
 
 
-import os
+import argparse
 import importlib
 import inspect
-import argparse
-import time
 import json
+import os
 import random
-from PIL import Image, ImageDraw
+import time
+
+import imageio
 
 import torch
-from onediffx import compile_pipe
-from diffusers.schedulers import DDIMScheduler
 from diffusers.models import AutoencoderKL, AutoencoderKLTemporalDecoder
+from diffusers.schedulers import DDIMScheduler
+from onediffx import compile_pipe
+from PIL import Image, ImageDraw
 from transformers import T5EncoderModel, T5Tokenizer
-import imageio
 
 
 def parse_args():
@@ -87,7 +88,9 @@ def parse_args():
         choices=["none", "nexfort", "compile"],
     )
     parser.add_argument(
-        "--compiler-config", type=str, default=COMPILER_CONFIG,
+        "--compiler-config",
+        type=str,
+        default=COMPILER_CONFIG,
     )
     parser.add_argument(
         "--attention-fp16-score-accum-max-m",
@@ -137,7 +140,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     from models.latte_t2v import LatteT2V
-    from sample.pipeline_latte  import LattePipeline
+    from sample.pipeline_latte import LattePipeline
 
     transformer_model = LatteT2V.from_pretrained(
         model_path, subfolder="transformer", video_length=args.video_length

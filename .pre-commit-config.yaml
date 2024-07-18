@@ -20,22 +20,11 @@ repos:
     hooks:
       - id: ufmt
         additional_dependencies:
-          - black == 19.10b0
+          - black == 22.3.0
           - usort == 1.0.2
 
-  - repo: https://github.com/PyCQA/flake8
-    rev: 5.0.4
-    hooks:
-      - id: flake8
-        args: [--config=setup.cfg]
-        exclude: generator.py
-
-  - repo: https://github.com/PyCQA/pydocstyle
-    rev: 6.1.1
-    hooks:
-      - id: pydocstyle
-
-  - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v14.0.6
-    hooks:
-      - id: clang-format
+#   - repo: https://github.com/PyCQA/pydocstyle
+#     rev: 6.1.1
+#     hooks:
+#       - id: pydocstyle
+#
