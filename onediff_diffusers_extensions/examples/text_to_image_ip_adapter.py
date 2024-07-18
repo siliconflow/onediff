@@ -26,7 +26,7 @@ parser.add_argument(
 parser.add_argument("--ipadapter", type=str, default="h94/IP-Adapter")
 parser.add_argument("--subfolder", type=str, default="models")
 parser.add_argument("--weight_name", type=str, default="ip-adapter_sd15.bin")
-parser.add_argument("--scale", type=float, default=0.5)
+parser.add_argument("--scale", type=float, nargs="+", default=0.5)
 parser.add_argument(
     "--input_image",
     type=str,
@@ -70,7 +70,11 @@ pipe = AutoPipelineForText2Image.from_pretrained(
 pipe.load_ip_adapter(
     args.ipadapter, subfolder=args.subfolder, weight_name=args.weight_name
 )
-pipe.set_ip_adapter_scale(args.scale)
+
+# Set ipadapter scale as a tensor instead of a float
+# If scale is a float, it cannot be modified after the graph is traced
+ipadapter_scale = torch.tensor(0.5, dtype=torch.float, device="cuda")
+pipe.set_ip_adapter_scale(ipadapter_scale)
 pipe.to("cuda")
 
 
@@ -87,7 +91,9 @@ cache_path = os.path.join(args.cache_dir, type(pipe).__name__)
 if args.compile:
     pipe = compile_pipe(pipe, backend=args.compiler, options=compile_options)
     if args.compiler == "oneflow" and os.path.exists(cache_path):
-        load_pipe(pipe, cache_path)
+        pass
+        # TODO(WangYi): load pipe has bug here
+        # load_pipe(pipe, cache_path)
 
 
 # generate image
@@ -103,17 +109,20 @@ for i in range(args.warmup):
     ).images
 
 print("Run")
-for i in range(args.run):
+scales = args.scale if isinstance(args.scale, list) else [args.scale]
+for scale in scales:
+    # Use ipadapter_scale.copy_ instead of pipeline.set_ip_adapter_scale to modify scale
+    ipadapter_scale.copy_(torch.tensor(scale, dtype=torch.float, device="cuda"))
     image = pipe(
         prompt=args.prompt,
         height=args.height,
         width=args.width,
         ip_adapter_image=image,
         num_inference_steps=args.n_steps,
-        generator=torch.manual_seed(args.seed),
+        generator=torch.Generator(device="cuda").manual_seed(args.seed),
     ).images[0]
     image_path = (
-        f"{Path(args.saved_image).stem}_{i}" + Path(args.saved_image).suffix
+        f"{Path(args.saved_image).stem}_{scale}" + Path(args.saved_image).suffix
     )
     print(f"save output image to {image_path}")
     image.save(image_path)
