@@ -50,8 +50,6 @@ def parse_args():
     parser.add_argument("--model", type=str, default=MODEL)
     parser.add_argument("--ckpt", type=str, default=CKPT)
     parser.add_argument("--prompt", type=str, default=PROMPT)
-    parser.add_argument("--save_graph", action="store_true")
-    parser.add_argument("--load_graph", action="store_true")
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     # parser.add_argument("--sample-method", type=str, default=SAMPLE_METHOD)
@@ -94,6 +92,7 @@ def parse_args():
         type=int,
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
     )
+    parser.add_argument("--profile", action="store_true")
     return parser.parse_args()
 
 
@@ -122,6 +121,15 @@ class IterationProfiler:
             self.num_iterations += 1
         return callback_kwargs
 
+from contextlib import contextmanager
+
+@contextmanager
+def conditional_context(enabled, context_manager):
+    if enabled:
+        with context_manager as cm:
+            yield cm
+    else:
+        return None
 
 def main():
     args = parse_args()
@@ -225,8 +233,8 @@ def main():
         )
         return kwarg_inputs
 
-    with torch.profiler.profile() as prof:
-        with torch.profiler.record_function("latte warmup"):
+    with conditional_context(args.profile, torch.profiler.profile()) as prof:
+        with conditional_context(args.profile, torch.profiler.record_function("latte warmup")):
             if args.warmups > 0:
                 print("=======================================")
                 print("Begin warmup")
@@ -262,7 +270,7 @@ def main():
         print(f"Max reserved CUDA memory : {cuda_mem_max_reserved:.3f}GiB")
         print("=======================================")
 
-        with torch.profiler.record_function("latte export"):
+        with conditional_context(args.profile, torch.profiler.record_function("latte export")):
             if args.output_video is not None:
                 # export_to_video(output_frames[0], args.output_video, fps=args.fps)
                 try:
@@ -273,7 +281,8 @@ def main():
                     print("Error when saving {}".format(args.prompt))
             else:
                 print("Please set `--output-video` to save the output video")
-    prof.export_chrome_trace("latte_with_cache_prof.json")
+    if prof:
+        prof.export_chrome_trace("latte_with_cache_prof.json")
 
 
 if __name__ == "__main__":
