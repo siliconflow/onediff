@@ -20,8 +20,10 @@ def tensor_to_size(source, dest_size):
         source = source[:dest_size]
     return source
 
+
 def get_weight_subidxs(weight,ad_params,sub_idxs):
     return weight[ad_params[sub_idxs]]
+
 
 class Attn2Replace:
 
