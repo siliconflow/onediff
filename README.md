@@ -60,7 +60,7 @@ For example:
     + [onediff Enterprise Edition](#onediff-enterprise-edition)
 <!-- tocstop -->
 
-## Documentation 
+## Documentation
 onediff is the abbreviation of "**one** line of code to accelerate **diff**usion models".
 
 ### Use with HF diffusers and ComfyUI
@@ -180,7 +180,20 @@ python3 -m pip install --pre onediff
 - From source
 ```
 git clone https://github.com/siliconflow/onediff.git
+
+```
+```
+cd onediff && python3 -m pip install -e .
+```
+Or install for development:
+```
+# install for dev
 cd onediff && python3 -m pip install -e '.[dev]'
+
+# code formatting and linting
+pip3 install pre-commit
+pre-commit install
+pre-commit run --all-files
 ```
 
 > **_NOTE:_** If you intend to utilize plugins for ComfyUI/StableDiffusion-WebUI, we highly recommend installing OneDiff from the source rather than PyPI. This is necessary as you'll need to manually copy (or create a soft link) for the relevant code into the extension folder of these UIs/Libs.
