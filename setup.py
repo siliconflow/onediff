@@ -43,4 +43,11 @@ setup(
     ],
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
+    extras_require={
+        # optional dependencies, required by some features
+        # dev dependencies. Install them by `pip3 install 'onediff[dev]'`
+        "dev": [
+            "pre-commit",
+        ],
+    },
 )
