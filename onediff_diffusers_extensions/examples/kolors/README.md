@@ -61,6 +61,13 @@ Testing on an NVIDIA RTX 4090 GPU, using a resolution of 1024x1024 and 50 steps:
 | OneDiff (OneFlow) | 15.16 (+86.9%)         | 3.86 (-41.1%)               | 20.622                |
 | OneDiff (NexFort) | 14.68 (+81.0%)         | 3.71 (-43.4%)               | 21.623                |
 
+Testing on NVIDIA A100-PCIE-40GB:
+
+| Framework | Iteration Speed (it/s) | E2E Time (seconds) | Max Memory Used (GiB) |
+|-----------|------------------------|--------------------|-----------------------|
+| PyTorch   | 8.36                   | 6.34               | 20.622                |
+| OneDiff (OneFlow) | 11.54 (+38.0%)         | 4.69 (-26.0%)               | 20.627                |
+| OneDiff (NexFort) | 10.53 (+26.0%)         | 5.02 (-20.8%)               | 21.622                |
 
 ## Dynamic shape.
 
