@@ -887,7 +887,7 @@ elif diffusers_version < diffusers_02499_v:
             return Transformer2DModelOutput(sample=output)
 
 
-elif diffusers_version < diffusers_0270_v:
+else:
     transformed_diffusers = transform_mgr.transform_package("diffusers")
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -1196,7 +1196,3 @@ elif diffusers_version < diffusers_0270_v:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
-
-else:
-    # diffusers/models/transformers/transformer_2d.py
-    Transformer2DModel = transformed_diffusers.models.transformer_2d.Transformer2DModel
