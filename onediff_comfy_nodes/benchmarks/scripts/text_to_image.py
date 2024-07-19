@@ -98,15 +98,9 @@ class WorkflowProcessor:
             image_path = save_image(image_data, self.output_dir, f"image_{index}.png")
             self.logger.info(f"Saved image to: {image_path}")
 
-
-        if self.baseline_dir:
-            baseline_image_path = os.path.join(self.baseline_dir, f"image_{index}.png")
-            baseline_image = Image.open(baseline_image_path)
-            ssim_value = calculate_ssim(pil_image, baseline_image)
-            self.logger.info(f"SSIM value with baseline: {ssim_value}")
-            assert (
-                ssim_value > self.ssim_threshold
-            ), f"SSIM value {ssim_value} is not greater than the threshold {self.ssim_threshold}"
+        return ImageInfo(
+            height=pil_image.height, width=pil_image.width, image_path=image_path
+        )
 
 
 def run_workflow(
@@ -127,11 +121,12 @@ def run_workflow(
 
     result = {}
     result_file_name = "results.json"
-    baseline_result = {}
+    baseline_result = None
     if baseline_dir:
         result_file_path = os.path.join(baseline_dir, result_file_name)
-        with open(result_file_path, "r") as fp:
-            baseline_result = json.load(fp)
+        if os.path.exists(result_file_path):
+            with open(result_file_path, "r") as fp:
+                baseline_result = json.load(fp)
 
     with comfy_client_context(port=comfy_port) as client:
         logger.info(f"Testing workflows: {workflow}")
@@ -166,7 +161,7 @@ def run_workflow(
 
                     if baseline_dir:
                         baseline_image_path = os.path.join(
-                            baseline_dir, "imgs", f"image_{i}.png"
+                            baseline_dir, f"image_{i}.png"
                         )
                         baseline_image = Image.open(baseline_image_path)
                         pil_image = Image.open(BytesIO(image_data))
@@ -177,15 +172,20 @@ def run_workflow(
                                 "basic_image_path": baseline_image_path,
                             }
                         )
+                        logger.info(f'SSIM: {ssim_value=}')
                         assert (
                             ssim_value > ssim_threshold
                         ), f"SSIM value {ssim_value} is not greater than the threshold {ssim_threshold}"
-                        basic_time = baseline_result[str(i)]["e2e_time"]
-                        result[i].update({"basic_e2e_time": basic_time})
-                        percentage_improvement = (basic_time - e2e_time) / basic_time
-                        result[i].update(
-                            {"percentage_improvement": percentage_improvement}
-                        )
+
+                        if baseline_result:
+                            basic_time = baseline_result[str(i)]["e2e_time"]
+                            result[i].update({"basic_e2e_time": basic_time})
+                            percentage_improvement = (
+                                basic_time - e2e_time
+                            ) / basic_time
+                            result[i].update(
+                                {"percentage_improvement": percentage_improvement}
+                            )
 
         # Save results to a JSON file
         result_file = os.path.join(result_dir, result_file_name)

@@ -151,7 +151,7 @@ If you possess a OneDiff Enterprise license key, you can access instructions on 
 ## Tutorials
 
 - [Accelerate SD3 with onediff](./docs/sd3/README.md)
-- [First Switch Lora](https://github.com/siliconflow/onediff/issues/968#issuecomment-2196027305)
+- [First Switch Lora](./docs/lora.md)
 - [Accelerate cubiq/PuLID_ComfyUI](./docs/README.md)
 - [Accelerate cubiq/ComfyUI_IPAdapter_plus](./docs/README.md)
 - [Accelerate cubiq/ComfyUI_InstantID](./docs/README.md)

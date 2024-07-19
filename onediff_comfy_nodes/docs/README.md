@@ -3,8 +3,8 @@
 ```shell
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/ComfyUI_IPAdapter_plus.git
-# Date:   Sun Jun 23 18:22:48 2024 +0200
-git reset --hard  2ff4fc482029d408cfd5fa05522ca822b2c2e33c
+# Date:   Thu Jul 18 15:12:49 2024 +0200
+git reset --hard  78ac59c61c8caf33e3419d2c8f70838b2da0fb04
 ```
 #### cubiq/PuLID_ComfyUI
 
@@ -12,7 +12,7 @@ git reset --hard  2ff4fc482029d408cfd5fa05522ca822b2c2e33c
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/PuLID_ComfyUI.git
 # Date:   Sun May 26 19:23:51 2024 +0200
-git reset --hard  145a5ef2746fbeb0aaf7165f28c83f851fda9a4c
+git reset --hard  80d157ace9e4d2db8c963e770ed99d492d0f4569
 ```
 
 #### Install cubiq/ComfyUI_InstantID
@@ -20,8 +20,8 @@ git reset --hard  145a5ef2746fbeb0aaf7165f28c83f851fda9a4c
 ```shell
 cd ComfyUI/custom_nodes
 git clone https://github.com/cubiq/ComfyUI_InstantID.git
-# Date:   Wed May 8 16:55:55 2024 +0200
-git reset --hard  d8c70a0cd8ce0d4d62e78653674320c9c3084ec1
+# Date:   Thu Jul 11 19:26:22 2024 +0200
+git reset --hard  6d95aa6758e58dab550725e59dcefbd426c160c7
 ```
 
 #### Install ComfyUI-AnimateDiff-Evolved
@@ -29,5 +29,5 @@ git reset --hard  d8c70a0cd8ce0d4d62e78653674320c9c3084ec1
 ```shell
 cd ComfyUI/custom_nodes
 git clone https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved.git
-git reset --hard  f9e0343f4c4606ee6365a9af4a7e16118f1c45e1
+git reset --hard  1b660e535381a4b4e4028aad38b7ae21c81b861c
 ```
