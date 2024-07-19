@@ -131,7 +131,7 @@ class KolorsGenerator:
     def compile_pipe(self, pipe, compiler_config):
         options = compiler_config
         pipe = compile_pipe(
-            pipe, backend="nexfort", options=options, ignores=['text_encoder'], fuse_qkv_projections=True
+            pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
         return pipe
 
