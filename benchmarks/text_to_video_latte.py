@@ -38,9 +38,7 @@ import random
 from PIL import Image, ImageDraw
 
 import torch
-import oneflow as flow
-from onediffx import compile_pipe, OneflowCompileOptions
-from diffusers.utils import load_image, export_to_video
+from onediffx import compile_pipe
 from diffusers.schedulers import DDIMScheduler
 from diffusers.models import AutoencoderKL, AutoencoderKLTemporalDecoder
 from transformers import T5EncoderModel, T5Tokenizer
@@ -250,14 +248,16 @@ def main():
     videos = pipe(**kwarg_inputs).video
     end = time.time()
 
+    print("=======================================")
     print(f"Inference time: {end - begin:.3f}s")
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
-    cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed()
-    host_mem_after_used = flow._oneflow_internal.GetCPUMemoryUsed()
-    print(f"CUDA Mem after: {cuda_mem_after_used / 1024:.3f}GiB")
-    print(f"Host Mem after: {host_mem_after_used / 1024:.3f}GiB")
+    cuda_mem_max_used = torch.cuda.max_memory_allocated() / (1024**3)
+    cuda_mem_max_reserved = torch.cuda.max_memory_reserved() / (1024**3)
+    print(f"Max used CUDA memory : {cuda_mem_max_used:.3f}GiB")
+    print(f"Max reserved CUDA memory : {cuda_mem_max_reserved:.3f}GiB")
+    print("=======================================")
 
     if args.output_video is not None:
         # export_to_video(output_frames[0], args.output_video, fps=args.fps)
@@ -266,7 +266,7 @@ def main():
                 args.output_video, videos[0], fps=8, quality=9
             )  # highest quality is 10, lowest is 0
         except:
-            print("Error when saving {}".format(prompt))
+            print("Error when saving {}".format(args.prompt))
     else:
         print("Please set `--output-video` to save the output video")
 
