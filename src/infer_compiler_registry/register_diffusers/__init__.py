@@ -72,9 +72,8 @@ if diffusers_version >= version.parse("0.24.00"):
         UNetSpatioTemporalConditionModel as UNetSpatioTemporalConditionModelOflow,
     )
 
-from .attention_processor_oflow import Attention as AttentionOflow 
+from .attention_processor_oflow import Attention as AttentionOflow
 from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
-from .attention_processor_oflow import is_ip_adapter_available
 from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
 from .unet_2d_condition_oflow import UNet2DConditionModel as UNet2DConditionModelOflow
 from .unet_2d_blocks_oflow import AttnUpBlock2D as AttnUpBlock2DOflow
@@ -104,14 +103,6 @@ else:
         LoRAAttnProcessor2_0: LoRAAttnProcessorOflow,
     }
 
-if is_ip_adapter_available():
-    from diffusers.models.attention_processor import IPAdapterAttnProcessor, IPAdapterAttnProcessor2_0
-    from .attention_processor_oflow import IPAdapterAttnProcessor as IPAdapterAttnProcessorOflow
-    from .attention_processor_oflow import IPAdapterAttnProcessor2_0 as IPAdapterLoRAAttnProcessor2_0Oflow
-    torch2oflow_class_map.update({IPAdapterAttnProcessor: IPAdapterAttnProcessorOflow})
-    torch2oflow_class_map.update(
-        {IPAdapterAttnProcessor2_0: IPAdapterLoRAAttnProcessor2_0Oflow}
-    )
 
 torch2oflow_class_map.update({Transformer2DModel: Transformer2DModelOflow})
 torch2oflow_class_map.update({UNet2DConditionModel: UNet2DConditionModelOflow})
