@@ -129,7 +129,7 @@ def conditional_context(enabled, context_manager):
         with context_manager as cm:
             yield cm
     else:
-        return None
+        yield None
 
 def main():
     args = parse_args()
