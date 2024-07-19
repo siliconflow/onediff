@@ -37,9 +37,14 @@ parser.add_argument(
     default="a polar bear sitting in a chair drinking a milkshake",
     help="Prompt",
 )
+parser.add_argument(
+    "--negative-prompt",
+    default="deformed, ugly, wrong proportion, low res, bad anatomy, worst quality, low quality",
+    help="Negative prompt",
+)
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)
-parser.add_argument("--n_steps", type=int, default=30)
+parser.add_argument("--n_steps", type=int, default=100)
 parser.add_argument(
     "--saved_image", type=str, required=False, default="ip-adapter-out.png"
 )
@@ -61,11 +66,11 @@ parser.add_argument(
 args = parser.parse_args()
 
 # load an image
-image = load_image(args.input_image)
+ip_adapter_image = load_image(args.input_image)
 
 # load stable diffusion and ip-adapter
 pipe = AutoPipelineForText2Image.from_pretrained(
-    args.base, torch_dtype=torch.float16
+    args.base, torch_dtype=torch.float16, variant="fp16",
 )
 pipe.load_ip_adapter(
     args.ipadapter, subfolder=args.subfolder, weight_name=args.weight_name
@@ -73,7 +78,7 @@ pipe.load_ip_adapter(
 
 # Set ipadapter scale as a tensor instead of a float
 # If scale is a float, it cannot be modified after the graph is traced
-ipadapter_scale = torch.tensor(0.5, dtype=torch.float, device="cuda")
+ipadapter_scale = torch.tensor(0.6, dtype=torch.float, device="cuda")
 pipe.set_ip_adapter_scale(ipadapter_scale)
 pipe.to("cuda")
 
@@ -91,9 +96,9 @@ cache_path = os.path.join(args.cache_dir, type(pipe).__name__)
 if args.compile:
     pipe = compile_pipe(pipe, backend=args.compiler, options=compile_options)
     if args.compiler == "oneflow" and os.path.exists(cache_path):
-        pass
-        # TODO(WangYi): load pipe has bug here
+        # TODO(WangYi): load pipe has bug here, which makes scale unchangeable
         # load_pipe(pipe, cache_path)
+        pass
 
 
 # generate image
@@ -103,9 +108,8 @@ for i in range(args.warmup):
         prompt=args.prompt,
         height=args.height,
         width=args.width,
-        ip_adapter_image=image,
+        ip_adapter_image=ip_adapter_image,
         num_inference_steps=args.n_steps,
-        generator=torch.manual_seed(args.seed),
     ).images
 
 print("Run")
@@ -113,13 +117,15 @@ scales = args.scale if isinstance(args.scale, list) else [args.scale]
 for scale in scales:
     # Use ipadapter_scale.copy_ instead of pipeline.set_ip_adapter_scale to modify scale
     ipadapter_scale.copy_(torch.tensor(scale, dtype=torch.float, device="cuda"))
+    pipe.set_ip_adapter_scale(ipadapter_scale)
     image = pipe(
         prompt=args.prompt,
+        ip_adapter_image=ip_adapter_image,
+        negative_prompt=args.negative_prompt,
         height=args.height,
         width=args.width,
-        ip_adapter_image=image,
         num_inference_steps=args.n_steps,
-        generator=torch.Generator(device="cuda").manual_seed(args.seed),
+        generator = torch.Generator(device="cpu").manual_seed(0),
     ).images[0]
     image_path = (
         f"{Path(args.saved_image).stem}_{scale}" + Path(args.saved_image).suffix
