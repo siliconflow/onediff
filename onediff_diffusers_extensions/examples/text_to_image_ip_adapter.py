@@ -61,7 +61,10 @@ parser.add_argument(
 )
 parser.add_argument("--compile-options", type=str, default=nexfort_options)
 parser.add_argument(
-    "--cache-dir", default="./onediff_cache", help="Cache directory"
+    "--cache-dir", default="./onediff_cache", help="cache directory"
+)
+parser.add_argument(
+    "--multi-resolution", action="store_true"
 )
 args = parser.parse_args()
 
@@ -97,7 +100,7 @@ if args.compile:
     pipe = compile_pipe(pipe, backend=args.compiler, options=compile_options)
     if args.compiler == "oneflow" and os.path.exists(cache_path):
         # TODO(WangYi): load pipe has bug here, which makes scale unchangeable
-        # load_pipe(pipe, cache_path)
+        load_pipe(pipe, cache_path)
         pass
 
 
@@ -133,7 +136,22 @@ for scale in scales:
     print(f"save output image to {image_path}")
     image.save(image_path)
 
+if args.multi_resolution:
+    from itertools import product
+    sizes = [1024, 512, 768, 256]
+    for h, w in product(sizes, sizes):
+        image = pipe(
+            prompt=args.prompt,
+            ip_adapter_image=ip_adapter_image,
+            negative_prompt=args.negative_prompt,
+            height=h,
+            width=w,
+            num_inference_steps=args.n_steps,
+            generator = torch.Generator(device="cpu").manual_seed(0),
+        ).images[0]
+        print(f"Running at resolution: {h}x{w}")
+
+
 if args.compiler == "oneflow":
     if not os.path.exists(cache_path):
         os.makedirs(cache_path)
-    save_pipe(pipe, cache_path)
