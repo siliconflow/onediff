@@ -21,6 +21,7 @@ SD1_5_MODELS = [
 ]
 
 
+
 class InputParams(NamedTuple):
     graph: ComfyGraph
 
@@ -77,12 +78,9 @@ def _(workflow_path, *args, **kwargs):
 
 
 SD3_WORKFLOWS = [
-    f"{WORKFLOW_DIR}/baseline/sd3_baseline.json",
-    f"{WORKFLOW_DIR}/nexfort/sd3_unet_speedup.json",
-    f"{WORKFLOW_DIR}/nexfort/sd3_unet_vae_speedup.json",
+    f"{WORKFLOW_DIR}/baseline/sd3_basic.json",
+    f"{WORKFLOW_DIR}/nexfort/sd3_basic.json",
 ]
-
-
 @register_generator(SD3_WORKFLOWS)
 def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:
@@ -173,11 +171,50 @@ def _(workflow_path, *args, **kwargs):
         workflow = json.load(fp)
     graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
 
-    face_imgs = get_all_images(FACE_IMAGE_DIR)
-    pose_imgs = get_all_images(POSE_IMAGE_DIR)
+    face_imgs = get_all_images(FACE_IMAGE_DIR)[:2]
+    pose_imgs = get_all_images(POSE_IMAGE_DIR)[:2]
     for face_img in face_imgs:
         for pose_img in pose_imgs:
             # print(f'{face_img=} {pose_img=}')
             graph.graph["13"]["inputs"]["image"] = face_img
             graph.graph["67"]["inputs"]["image"] = pose_img
+            yield InputParams(graph=graph)
+
+
+@register_generator(
+    [
+        f"{WORKFLOW_DIR}/baseline/PuLID_ComfyUI/PuLID_4-Step_lightning.json",
+        f"{WORKFLOW_DIR}/oneflow/PuLID_ComfyUI/PuLID_4-Step_lightning.json",
+    ]
+)
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
+        workflow = json.load(fp)
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
+
+    for height in [768, 512]:
+        for width in [768]:
+            for face_img in get_all_images(FACE_IMAGE_DIR):
+                graph.graph["12"]["inputs"]["image"] = face_img
+                graph.set_image_size(height=height, width=width)
+                yield InputParams(graph=graph)
+
+
+@register_generator(
+    [
+        f"{WORKFLOW_DIR}/baseline/PuLID_ComfyUI/PuLID_IPAdapter_style_transfer.json",
+        f"{WORKFLOW_DIR}/oneflow/PuLID_ComfyUI/PuLID_IPAdapter_style_transfer.json",
+    ]
+)
+def _(workflow_path, *args, **kwargs):
+    with open(workflow_path, "r") as fp:
+        workflow = json.load(fp)
+    graph = ComfyGraph(graph=workflow, sampler_nodes=["3"])
+    face_imgs = get_all_images(FACE_IMAGE_DIR)[:2]
+    pose_imgs = get_all_images(POSE_IMAGE_DIR)[:2]
+    for face_img in face_imgs:
+        for pose_img in pose_imgs:
+            # print(f'{face_img=} {pose_img=}')
+            graph.graph["12"]["inputs"]["image"] = face_img
+            graph.graph["48"]["inputs"]["image"] = pose_img
             yield InputParams(graph=graph)

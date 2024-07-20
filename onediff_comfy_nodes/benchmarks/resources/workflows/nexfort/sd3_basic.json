@@ -1,0 +1,231 @@
+{
+    "6": {
+      "inputs": {
+        "text": "A beautiful painting of flowing colors and styles forming the words “SD3 SPEEDUP!”, the background is speckled with drops and splashes of paint.\n",
+        "clip": [
+          "11",
+          0
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "CLIP Text Encode (Prompt)"
+      }
+    },
+    "11": {
+      "inputs": {
+        "clip_name1": "clip_g.safetensors",
+        "clip_name2": "clip_l.safetensors",
+        "clip_name3": "t5xxl_fp8_e4m3fn.safetensors"
+      },
+      "class_type": "TripleCLIPLoader",
+      "_meta": {
+        "title": "TripleCLIPLoader"
+      }
+    },
+    "67": {
+      "inputs": {
+        "conditioning": [
+          "71",
+          0
+        ]
+      },
+      "class_type": "ConditioningZeroOut",
+      "_meta": {
+        "title": "ConditioningZeroOut"
+      }
+    },
+    "68": {
+      "inputs": {
+        "start": 0.1,
+        "end": 1,
+        "conditioning": [
+          "67",
+          0
+        ]
+      },
+      "class_type": "ConditioningSetTimestepRange",
+      "_meta": {
+        "title": "ConditioningSetTimestepRange"
+      }
+    },
+    "69": {
+      "inputs": {
+        "conditioning_1": [
+          "68",
+          0
+        ],
+        "conditioning_2": [
+          "70",
+          0
+        ]
+      },
+      "class_type": "ConditioningCombine",
+      "_meta": {
+        "title": "Conditioning (Combine)"
+      }
+    },
+    "70": {
+      "inputs": {
+        "start": 0,
+        "end": 0.1,
+        "conditioning": [
+          "71",
+          0
+        ]
+      },
+      "class_type": "ConditioningSetTimestepRange",
+      "_meta": {
+        "title": "ConditioningSetTimestepRange"
+      }
+    },
+    "71": {
+      "inputs": {
+        "text": "bad quality, poor quality, doll, disfigured, jpg, toy, bad anatomy, missing limbs, missing fingers, 3d, cgi",
+        "clip": [
+          "11",
+          0
+        ]
+      },
+      "class_type": "CLIPTextEncode",
+      "_meta": {
+        "title": "CLIP Text Encode (Negative Prompt)"
+      }
+    },
+    "135": {
+      "inputs": {
+        "width": 1024,
+        "height": 1024,
+        "batch_size": 1
+      },
+      "class_type": "EmptySD3LatentImage",
+      "_meta": {
+        "title": "EmptySD3LatentImage"
+      }
+    },
+    "233": {
+      "inputs": {
+        "images": [
+          "282",
+          0
+        ]
+      },
+      "class_type": "PreviewImage",
+      "_meta": {
+        "title": "Preview Image"
+      }
+    },
+    "252": {
+      "inputs": {
+        "ckpt_name": "sd3_medium.safetensors"
+      },
+      "class_type": "CheckpointLoaderSimple",
+      "_meta": {
+        "title": "Load Checkpoint"
+      }
+    },
+    "271": {
+      "inputs": {
+        "seed": 1,
+        "steps": 28,
+        "cfg": 4.5,
+        "sampler_name": "dpmpp_2m",
+        "scheduler": "sgm_uniform",
+        "denoise": 1,
+        "model": [
+          "285",
+          0
+        ],
+        "positive": [
+          "6",
+          0
+        ],
+        "negative": [
+          "69",
+          0
+        ],
+        "latent_image": [
+          "135",
+          0
+        ]
+      },
+      "class_type": "KSampler",
+      "_meta": {
+        "title": "KSampler"
+      }
+    },
+    "282": {
+      "inputs": {
+        "samples": [
+          "271",
+          0
+        ],
+        "vae": [
+          "292",
+          0
+        ]
+      },
+      "class_type": "VAEDecode",
+      "_meta": {
+        "title": "VAE Decode"
+      }
+    },
+    "285": {
+      "inputs": {
+        "inplace": true,
+        "model": [
+          "252",
+          0
+        ],
+        "custom_booster": [
+          "288",
+          0
+        ]
+      },
+      "class_type": "ModelSpeedup",
+      "_meta": {
+        "title": "Model Speedup"
+      }
+    },
+    "288": {
+      "inputs": {
+        "torchcompile_booster": [
+          "289",
+          0
+        ]
+      },
+      "class_type": "OneDiffModelBooster",
+      "_meta": {
+        "title": "Apply Model Booster - OneDiff"
+      }
+    },
+    "289": {
+      "inputs": {
+        "fullgraph": false,
+        "dynamic": true,
+        "mode": "max-optimize:max-autotune:low-precision",
+        "docs_link": "[Note]: \nInstall-nexfort \nhttps://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/backends/nexfort#install-nexfort"
+      },
+      "class_type": "OneDiffNexfortBooster",
+      "_meta": {
+        "title": "Nexfort Booster - OneDiff"
+      }
+    },
+    "292": {
+      "inputs": {
+        "inplace": true,
+        "vae": [
+          "252",
+          2
+        ],
+        "custom_booster": [
+          "288",
+          0
+        ]
+      },
+      "class_type": "VaeSpeedup",
+      "_meta": {
+        "title": "VAE Speedup"
+      }
+    }
+  }
