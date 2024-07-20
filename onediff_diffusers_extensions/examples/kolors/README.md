@@ -69,6 +69,14 @@ Testing on NVIDIA A100-PCIE-40GB:
 | OneDiff (OneFlow) | 11.54 (+38.0%)         | 4.69 (-26.0%)               | 20.627                |
 | OneDiff (NexFort) | 10.53 (+26.0%)         | 5.02 (-20.8%)               | 21.622                |
 
+Testing on NVIDIA A100-SXM4-80GB:
+
+| Framework | Iteration Speed (it/s) | E2E Time (seconds) | Max Memory Used (GiB) |
+|-----------|------------------------|--------------------|-----------------------|
+| PyTorch   | 9.88                   | 5.38               | 20.622                |
+| OneDiff (OneFlow) | 13.70 (+38.7%)         | 3.96 (-26.4%)               | 20.627                |
+| OneDiff (NexFort) | 13.20 (+33.6%)         | 4.04 (-24.9%)               | 21.622                |
+
 ## Dynamic shape.
 
 Run:
