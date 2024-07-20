@@ -19,7 +19,7 @@ wget https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt/resolv
 </details>
 
 
-![](../text-to-video-speedup.png)
+![](./text-to-video-speedup.png)
 
 
 ## Environment
