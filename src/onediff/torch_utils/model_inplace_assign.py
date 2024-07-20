@@ -1,9 +1,7 @@
 import warnings
+from typing import Union, List
 from collections import defaultdict
-from typing import List, Union
-
 import torch
-
 from onediff.infer_compiler import DeployableModule
 
 _nested_counter = defaultdict(lambda: 0)

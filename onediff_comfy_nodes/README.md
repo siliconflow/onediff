@@ -6,13 +6,13 @@
 
 ---
 
-Performance of Community Edition
+Performance of Community Edition 
 
 Updated on January 23, 2024. Device: RTX 3090
 
 
 <div align="center">
-
+  
   **SDXL End2End Time** , Image Size 1024x1024 , Batch Size 1 , steps 20
 
   <a href="https://github.com/siliconflow/onediff/tree/main" target="_blank">
@@ -101,7 +101,7 @@ Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) f
 2. Install onediff_comfy_nodes for ComfyUI
     ```bash
     git clone https://github.com/siliconflow/onediff.git
-    cd onediff
+    cd onediff 
     cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
     ```
 
@@ -131,16 +131,16 @@ If you possess a OneDiff Enterprise license key, you can access instructions on 
 
 ![](workflows/onediff_quant_base.png)
 
-### Compiler Cache
+### Compiler Cache 
 #### Avoid compilation time for online serving
 The `"Load Checkpoint - OneDiff"` node automatically caches compiled results locally in the default directory `ComfyUI/input/graphs`. To save graphs in a custom directory, utilize `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
 
-## OneDiff Community Examples
+## OneDiff Community Examples 
 
 ### IPAdapter
 > doc link: [Accelerating cubiq/ComfyUI_IPAdapter_plus with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md)
 
-### LoRA
+### LoRA                  
 
 This example demonstrates how to utilize LoRAs. You have the flexibility to modify the LoRA models or adjust their strength without the need for recompilation.
 
@@ -151,7 +151,7 @@ This example demonstrates how to utilize LoRAs. You have the flexibility to modi
 > doc link: [ControlNet](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ControlNet)
 
 
-While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more.
+While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more. 
 
 [ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
 
@@ -172,10 +172,10 @@ Here are the example of applying DeepCache to SD and SVD models.
 
 [Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
 
-[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md)
+[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
 
 
-### InstantID
+### InstantID 
 
 > doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
 

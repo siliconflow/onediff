@@ -1,12 +1,12 @@
-import argparse
 import os
+import argparse
 import time
 
 import torch
-from diffusers import StableDiffusionXLPipeline
-from huggingface_hub import hf_hub_download
-from onediffx import compile_pipe, load_pipe, save_pipe
 from safetensors.torch import load_file
+from diffusers import StableDiffusionXLPipeline
+from onediffx import compile_pipe, save_pipe, load_pipe
+from huggingface_hub import hf_hub_download
 
 try:
     USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
@@ -37,9 +37,7 @@ parser.add_argument(
 )
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
-    "--compile",
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=True,
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True,
 )
 
 
@@ -95,9 +93,7 @@ if pipe.vae.dtype == torch.float16 and pipe.vae.config.force_upcast:
 
 # Compile the pipeline
 if args.compile:
-    pipe = compile_pipe(
-        pipe,
-    )
+    pipe = compile_pipe(pipe,)
     if args.load_graph:
         print("Loading graphs...")
         load_pipe(pipe, args.load_graph_dir)

@@ -1,8 +1,8 @@
-from comfy.model_base import BaseModel
-from comfy.model_patcher import ModelPatcher
 from onediff.infer_compiler.backends.nexfort.deployable_module import (
     NexfortDeployableModule as DeployableModule,
 )
+from comfy.model_patcher import ModelPatcher
+from comfy.model_base import BaseModel
 
 
 def clear_deployable_module_cache_and_unbind(*args, **kwargs):

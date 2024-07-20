@@ -2,8 +2,8 @@
 Torch run example: python examples/text_to_image_deep_cache_sdxl.py --compile 0
 Compile to oneflow graph example: python examples/text_to_image_deep_cache_sdxl.py
 """
-import argparse
 import os
+import argparse
 
 import torch
 
@@ -27,9 +27,7 @@ parser.add_argument("--saved_image", type=str, required=False, default="sdxl-out
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
-    "--compile",
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=True,
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True,
 )
 parser.add_argument(
     "--run_multiple_resolutions",
@@ -43,10 +41,7 @@ OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
 base = StableDiffusionXLPipeline.from_pretrained(
-    args.base,
-    torch_dtype=torch.float16,
-    variant=args.variant,
-    use_safetensors=True,
+    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
 )
 base.to("cuda")
 

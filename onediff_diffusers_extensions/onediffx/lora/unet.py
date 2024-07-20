@@ -1,14 +1,16 @@
+from packaging import version
+from typing import Union, Dict
 from collections import defaultdict
-from typing import Dict, Union
 
 import torch
-from diffusers.models.lora import LoRACompatibleConv, LoRACompatibleLinear
-from diffusers.utils import is_accelerate_available
 from onediff.infer_compiler import DeployableModule
 from onediff.utils import logger
-from packaging import version
-
+from diffusers.models.lora import (
+    LoRACompatibleConv,
+    LoRACompatibleLinear,
+)
 from .utils import fuse_lora, get_adapter_names, is_peft_available
+from diffusers.utils import is_accelerate_available
 
 if is_peft_available():
     import peft

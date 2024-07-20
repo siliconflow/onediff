@@ -1,11 +1,10 @@
-import importlib.metadata
-from typing import Any, Dict, List, Optional, Tuple, Union
-
 import torch
 import torch.nn as nn
-from oneflow.nn.graph.proxy import ProxyModule
+from typing import Union, Optional, Dict, Any, Tuple, List
 
 from packaging import version
+import importlib.metadata
+from oneflow.nn.graph.proxy import ProxyModule
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_0270_v = version.parse("0.27.0")
@@ -13,7 +12,8 @@ diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 from diffusers.utils import BaseOutput, logging
 
-from .unet_2d_condition import UNet2DConditionModel, UNet2DConditionOutput
+from .unet_2d_condition import UNet2DConditionModel
+from .unet_2d_condition import UNet2DConditionOutput
 
 try:
     USE_PEFT_BACKEND = diffusers.utils.USE_PEFT_BACKEND
@@ -81,7 +81,7 @@ class FastUNet2DConditionModel(nn.Module):
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        default_overall_up_factor = 2**self.unet_module.num_upsamplers
+        default_overall_up_factor = 2 ** self.unet_module.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         # forward_upsample_size = False
@@ -238,9 +238,7 @@ class FastUNet2DConditionModel(nn.Module):
                 sample = torch.cat([sample, hint], dim=1)
         else:
             aug_emb = self.unet_module.get_aug_embed(
-                emb=emb,
-                encoder_hidden_states=encoder_hidden_states,
-                added_cond_kwargs=added_cond_kwargs,
+                emb=emb, encoder_hidden_states=encoder_hidden_states, added_cond_kwargs=added_cond_kwargs
             )
             if self.unet_module.config.addition_embed_type == "image_hint":
                 aug_emb, hint = aug_emb
@@ -301,8 +299,7 @@ class FastUNet2DConditionModel(nn.Module):
                 )
         else:
             encoder_hidden_states = self.unet_module.process_encoder_hidden_states(
-                encoder_hidden_states=encoder_hidden_states,
-                added_cond_kwargs=added_cond_kwargs,
+                encoder_hidden_states=encoder_hidden_states, added_cond_kwargs=added_cond_kwargs
             )
         # 2. pre-process
         sample = self.unet_module.conv_in(sample)
@@ -381,25 +378,18 @@ class FastUNet2DConditionModel(nn.Module):
                     **additional_residuals,
                 )
             else:
-                if (
-                    diffusers_version < diffusers_0210_v
-                    or diffusers_version >= diffusers_0270_v
-                ):
+                if diffusers_version < diffusers_0210_v or diffusers_version >= diffusers_0270_v:
                     sample, res_samples = downsample_block(
                         hidden_states=sample,
                         temb=emb,
-                        exist_block_number=cache_block_id
-                        if i == cache_layer_id
-                        else None,
+                        exist_block_number=cache_block_id if i == cache_layer_id else None,
                     )
                 else:
                     sample, res_samples = downsample_block(
                         hidden_states=sample,
                         temb=emb,
                         scale=lora_scale,
-                        exist_block_number=cache_block_id
-                        if i == cache_layer_id
-                        else None,
+                        exist_block_number=cache_block_id if i == cache_layer_id else None,
                     )
                 if is_adapter and len(down_intrablock_additional_residuals) > 0:
                     sample += down_intrablock_additional_residuals.pop(0)
@@ -420,7 +410,7 @@ class FastUNet2DConditionModel(nn.Module):
                 )
 
             down_block_res_samples = new_down_block_res_samples
-
+        
         # No Middle
         # Up
         # print("down_block_res_samples:", [res_sample.shape for res_sample in down_block_res_samples])
@@ -480,10 +470,7 @@ class FastUNet2DConditionModel(nn.Module):
                     else None,
                 )
             else:
-                if (
-                    diffusers_version < diffusers_0210_v
-                    or diffusers_version >= diffusers_0270_v
-                ):
+                if diffusers_version < diffusers_0210_v or diffusers_version >= diffusers_0270_v:
                     sample, _ = upsample_block(
                         hidden_states=sample,
                         temb=emb,

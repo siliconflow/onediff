@@ -1,7 +1,6 @@
 import json
 import os
 from typing import NamedTuple
-
 from core.registry import create_generator_registry
 from core.service_client import ComfyGraph
 

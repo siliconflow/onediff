@@ -1,8 +1,8 @@
-import argparse
-import importlib.metadata
 import os
 
+import argparse
 from packaging import version
+import importlib.metadata
 
 
 def parse_args():
@@ -51,7 +51,7 @@ def parse_args():
     return args
 
 
-from diffusers import AutoPipelineForText2Image, LCMScheduler
+from diffusers import LCMScheduler, AutoPipelineForText2Image
 
 args = parse_args()
 

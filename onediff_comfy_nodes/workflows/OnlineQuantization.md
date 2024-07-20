@@ -21,7 +21,7 @@ Notes:
 ## Performance Comparison
 
 ### [SDXL](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0)
-Updated on Mon 08 Apr 2024
+Updated on Mon 08 Apr 2024 
 
 ![quant_sdxl](https://github.com/siliconflow/onediff/assets/109639975/b8f8da75-944b-4553-aea3-69c19886af37)
 

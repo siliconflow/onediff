@@ -2,18 +2,17 @@
 This example shows how to reuse the compiled components of a pipeline to create new pipelines.
 
 Usage:
-    $ python reuse_compiled_pipeline_components.py --model_id <model_id>
+    $ python reuse_compiled_pipeline_components.py --model_id <model_id> 
 """
-import argparse
-from io import BytesIO
-
 import PIL
+import argparse
 import requests
 import torch
+from io import BytesIO
 from diffusers import (
+    StableDiffusionPipeline,
     StableDiffusionImg2ImgPipeline,
     StableDiffusionInpaintPipeline,
-    StableDiffusionPipeline,
 )
 from onediffx import compile_pipe
 
@@ -21,9 +20,7 @@ from onediffx import compile_pipe
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--model_id",
-        type=str,
-        default="runwayml/stable-diffusion-v1-5",
+        "--model_id", type=str, default="runwayml/stable-diffusion-v1-5",
     )
     return parser.parse_args()
 

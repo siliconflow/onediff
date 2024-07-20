@@ -2,8 +2,8 @@
 Torch run example: python examples/text_to_image_deep_cache_sd.py --compile 0
 Compile to oneflow graph example: python examples/text_to_image_deep_cache_sd.py
 """
-import argparse
 import os
+import argparse
 
 import torch
 
@@ -27,9 +27,7 @@ parser.add_argument("--saved_image", type=str, required=False, default="sd-out.p
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
-    "--compile",
-    type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
-    default=True,
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True,
 )
 parser.add_argument(
     "--use_multiple_resolutions",
@@ -62,10 +60,7 @@ if args.compile:
 
 # Define multiple resolutions for warmup
 resolutions = (
-    [
-        (512, 512),
-        (256, 256),
-    ]
+    [(512, 512), (256, 256),]
     if args.use_multiple_resolutions
     else [(args.height, args.width)]
 )

@@ -1,18 +1,16 @@
+from inspect import ismodule, signature
+from types import ModuleType
+from copy import deepcopy
+from contextlib import contextmanager
+from typing import List, Dict
 import importlib
 import inspect
 import os
-from contextlib import contextmanager
-from copy import deepcopy
-from inspect import ismodule, signature
-from types import ModuleType
-from typing import Dict, List
-
 import torch
 from oneflow.mock_torch import enable
 from oneflow.mock_torch.mock_importer import _importer
-
-from onediff.utils import logger
 from .import_module_utils import import_module_from_path
+from onediff.utils import logger
 from .patch_for_compiler import *
 
 __all__ = ["DynamicMockModule"]
@@ -118,10 +116,7 @@ def _update_module(full_names, main_pkg_enable_context):
 
 class DynamicMockModule(ModuleType):
     def __init__(
-        self,
-        pkg_name: str,
-        obj_entity: ModuleType,
-        main_pkg_enable: callable,
+        self, pkg_name: str, obj_entity: ModuleType, main_pkg_enable: callable,
     ):
         self._pkg_name = pkg_name
         self._obj_entity = obj_entity  # ModuleType or _LazyModule

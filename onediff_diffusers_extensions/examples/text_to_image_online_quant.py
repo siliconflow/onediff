@@ -2,7 +2,7 @@
 
 ## Performance Comparison
 
-Updated on Mon 08 Apr 2024
+Updated on Mon 08 Apr 2024 
 
 Timings for 30 steps at 1024x1024
 | Accelerator             | Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
@@ -58,24 +58,18 @@ Notes:
 2. The log *.pt file is cached. Quantization result information can be found in `cache_dir`/quantization_stats.json.
 
 """
-import argparse
+import argparse 
 import time
-
-import torch
+import torch 
 from diffusers import AutoPipelineForText2Image
-from onediff_quant.quantization import QuantizationConfig
 from onediffx import compile_pipe
-
+from onediff_quant.quantization import QuantizationConfig
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model_id", default="runwayml/stable-diffusion-v1-5")
-    parser.add_argument(
-        "--prompt", default="a photo of an astronaut riding a horse on mars"
-    )
-    parser.add_argument(
-        "--output_file", default="astronaut_rides_horse_onediff_quant.png"
-    )
+    parser.add_argument("--prompt", default="a photo of an astronaut riding a horse on mars")
+    parser.add_argument("--output_file", default="astronaut_rides_horse_onediff_quant.png")
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--backend", default="onediff", choices=["onediff", "torch"])
     parser.add_argument("--quantize", action="store_true")
@@ -89,45 +83,31 @@ def parse_args():
     parser.add_argument("--linear_compute_density_threshold", type=int, default=300)
     return parser.parse_args()
 
-
 def load_model(model_id):
-    pipe = AutoPipelineForText2Image.from_pretrained(
-        model_id, torch_dtype=torch.float16, variant="fp16"
-    )
+    pipe = AutoPipelineForText2Image.from_pretrained(model_id, torch_dtype=torch.float16, variant="fp16")
     pipe.to(f"cuda")
     return pipe
-
 
 def compile_and_quantize_model(pipe, cache_dir, quantize, quant_params):
     pipe = compile_pipe(pipe)
     if quantize:
-        config = QuantizationConfig.from_settings(
-            **quant_params, cache_dir=cache_dir, plot_calibrate_info=True
-        )
+        config = QuantizationConfig.from_settings(**quant_params, cache_dir=cache_dir, plot_calibrate_info=True)
         pipe.unet.apply_online_quant(quant_config=config)
     return pipe
-
 
 def save_image(image, output_file):
     image.save(output_file)
     print(f"Image saved to: {output_file}")
 
-
 def main():
     args = parse_args()
     pipe = load_model(args.model_id)
-    if args.backend == "onediff":
-        compile_and_quantize_model(
-            pipe,
-            args.cache_dir,
-            args.quantize,
-            {
-                "conv_mae_threshold": args.conv_mae_threshold,
-                "linear_mae_threshold": args.linear_mae_threshold,
-                "conv_compute_density_threshold": args.conv_compute_density_threshold,
-                "linear_compute_density_threshold": args.linear_compute_density_threshold,
-            },
-        )
+    if args.backend == "onediff": 
+        compile_and_quantize_model(pipe, args.cache_dir, args.quantize, 
+                                {"conv_mae_threshold": args.conv_mae_threshold,
+                                    "linear_mae_threshold": args.linear_mae_threshold,
+                                    "conv_compute_density_threshold": args.conv_compute_density_threshold,
+                                    "linear_compute_density_threshold": args.linear_compute_density_threshold})
     torch.manual_seed(args.seed)
     # Warm-up
     pipe(prompt=args.prompt, num_inference_steps=1)
@@ -136,17 +116,11 @@ def main():
     for _ in range(5):
         start_time = time.time()
         torch.manual_seed(args.seed)
-        image = pipe(
-            prompt=args.prompt,
-            height=args.height,
-            width=args.width,
-            num_inference_steps=args.num_inference_steps,
-        ).images[0]
+        image = pipe(prompt=args.prompt, height=args.height, width=args.width, num_inference_steps=args.num_inference_steps).images[0]
         end_time = time.time()
         print(f"Inference time: {end_time - start_time:.2f} seconds")
-
+    
     save_image(image, args.output_file)
-
 
 if __name__ == "__main__":
     main()

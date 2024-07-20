@@ -23,24 +23,20 @@ COMPILER = "oneflow"
 COMPILER_CONFIG = None
 QUANTIZE_CONFIG = None
 
-import argparse
+import os
 import importlib
 import inspect
-import json
-import os
+import argparse
 import time
-
+import json
+import torch
 import matplotlib.pyplot as plt
 import numpy as np
-import torch
-from diffusers.utils import load_image
-from onediff.infer_compiler import oneflow_compile
-
-from onediffx import (  # quantize_pipe currently only supports the nexfort backend.
-    compile_pipe,
-    quantize_pipe,
-)
 from PIL import Image, ImageDraw
+from diffusers.utils import load_image
+
+from onediffx import compile_pipe, quantize_pipe # quantize_pipe currently only supports the nexfort backend.
+from onediff.infer_compiler import oneflow_compile
 
 
 def parse_args():
@@ -391,7 +387,6 @@ def main():
 
     if args.print_output:
         from onediff.utils.import_utils import is_nexfort_available
-
         if is_nexfort_available():
             from nexfort.utils.term_image import print_image
 

@@ -1,8 +1,7 @@
 import os
 import sys
-
-import folder_paths
 import torch
+import folder_paths
 
 __all__ = [
     "is_default_using_oneflow_backend",

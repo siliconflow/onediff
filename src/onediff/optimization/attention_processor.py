@@ -1,5 +1,4 @@
 import os
-
 import oneflow as flow
 import oneflow.nn as nn
 import oneflow.nn.functional as F
@@ -85,7 +84,10 @@ class FusedSelfAttnProcessor:
             hidden_states = flow.bmm(attention_probs, value)
             hidden_states = attn.batch_to_head_dim(hidden_states)
         else:
-            from onediff.utils import parse_boolean_from_env, set_boolean_env_var
+            from onediff.utils import (
+                parse_boolean_from_env,
+                set_boolean_env_var,
+            )
 
             if attn.upcast_attention and parse_boolean_from_env(
                 "ONEFLOW_ATTENTION_ALLOW_HALF_PRECISION_ACCUMULATION", True

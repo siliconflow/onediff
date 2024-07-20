@@ -1,7 +1,4 @@
-from ..modules.torch_compile.booster_basic import (  # type: ignore
-    TorchCompileBoosterExecutor,
-)
-
+from ..modules.torch_compile.booster_basic import TorchCompileBoosterExecutor # type: ignore
 
 class OneDiffTorchCompileBooster:
     @classmethod

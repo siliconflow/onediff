@@ -1,6 +1,6 @@
-from ..hijack_ipadapter_plus.set_model_patch_replace import set_model_patch_replace_v2
 from ..utils.booster_utils import is_using_oneflow_backend
 from ._config import comfyui_instantid_hijacker, comfyui_instantid_pt
+from ..hijack_ipadapter_plus.set_model_patch_replace import set_model_patch_replace_v2
 
 set_model_patch_replace_fn_pt = comfyui_instantid_pt.InstantID._set_model_patch_replace
 

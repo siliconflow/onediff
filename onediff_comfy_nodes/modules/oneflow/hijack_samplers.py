@@ -7,7 +7,7 @@ import torch
 from comfy.samplers import calc_cond_batch, can_concat_cond, cond_cat, get_area_and_mult
 
 from ..sd_hijack_utils import Hijacker
-from .patch_management import create_patch_executor, PatchType
+from .patch_management import PatchType, create_patch_executor
 from .utils.booster_utils import is_using_oneflow_backend
 
 
@@ -149,7 +149,5 @@ def cond_func(orig_func, model, *args, **kwargs):
 
 samplers_hijack = Hijacker()
 samplers_hijack.register(
-    orig_func=calc_cond_batch,
-    sub_func=calc_cond_batch_of,
-    cond_func=cond_func,
+    orig_func=calc_cond_batch, sub_func=calc_cond_batch_of, cond_func=cond_func,
 )

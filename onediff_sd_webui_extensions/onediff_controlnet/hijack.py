@@ -473,7 +473,7 @@ def hijacked_controlnet_hook(
                 # sdxl's attention hacking is highly unstable.
                 # We have no other methods but to reduce the style_fidelity a bit.
                 # By default, 0.5 ** 3.0 = 0.125
-                outer.current_style_fidelity = outer.current_style_fidelity**3.0
+                outer.current_style_fidelity = outer.current_style_fidelity ** 3.0
 
             if param.cfg_injection:
                 outer.current_style_fidelity = 1.0

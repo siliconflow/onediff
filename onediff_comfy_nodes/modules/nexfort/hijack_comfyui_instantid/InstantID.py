@@ -1,6 +1,6 @@
 from ..booster_utils import is_using_nexfort_backend
+from ._config import comfyui_instantid_hijacker,comfyui_instantid
 from ..hijack_ipadapter_plus.set_model_patch_replace import set_model_patch_replace
-from ._config import comfyui_instantid, comfyui_instantid_hijacker
 
 set_model_patch_replace_fn_pt = comfyui_instantid.InstantID._set_model_patch_replace
 

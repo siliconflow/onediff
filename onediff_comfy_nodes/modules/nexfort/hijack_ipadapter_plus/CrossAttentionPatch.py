@@ -1,6 +1,5 @@
-import math
-
 import torch
+import math
 import torch.nn.functional as F
 from comfy.ldm.modules.attention import optimized_attention
 

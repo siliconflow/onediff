@@ -1,8 +1,8 @@
 import argparse
+from packaging import version
 import importlib.metadata
 
 from diffusers import DiffusionPipeline
-from packaging import version
 
 
 def check_diffusers_version():

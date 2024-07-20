@@ -42,19 +42,19 @@ PRIOR_CONTROL_IMAGE = None
 DECODER_CONTROL_IMAGE = None
 OUTPUT_IMAGE = None
 
-import argparse
+import os
 import importlib
 import inspect
-import json
-import os
+import argparse
 import time
+import json
 from contextlib import nullcontext
+import torch
+from PIL import Image, ImageDraw
+from diffusers.utils import load_image
 
 import oneflow as flow
-import torch
-from diffusers.utils import load_image
 from onediffx import compile_pipe
-from PIL import Image, ImageDraw
 
 
 def parse_args():
@@ -131,10 +131,7 @@ def load_pipe(
     if controlnet is not None:
         from diffusers import ControlNetModel
 
-        controlnet = ControlNetModel.from_pretrained(
-            controlnet,
-            torch_dtype=dtype,
-        )
+        controlnet = ControlNetModel.from_pretrained(controlnet, torch_dtype=dtype,)
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline

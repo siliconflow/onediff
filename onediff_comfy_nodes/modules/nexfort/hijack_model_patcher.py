@@ -1,8 +1,8 @@
 from comfy.model_patcher import ModelPatcher
 
 from ..sd_hijack_utils import Hijacker
+from .patch_management import PatchType, create_patch_executor
 from .booster_utils import is_using_nexfort_backend
-from .patch_management import create_patch_executor, PatchType
 
 
 def clone_nexfort(org_fn, self, *args, **kwargs):

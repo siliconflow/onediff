@@ -25,10 +25,7 @@ def parse_args():
         required=True,
     )
     parser.add_argument(
-        "--output",
-        type=str,
-        default="",
-        help="The output png filename.",
+        "--output", type=str, default="", help="The output png filename.",
     )
     parser.add_argument(
         "--key",

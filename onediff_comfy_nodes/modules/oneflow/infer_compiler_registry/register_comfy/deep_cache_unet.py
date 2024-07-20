@@ -1,8 +1,6 @@
 import torch
 from comfy.ldm.modules.diffusionmodules.openaimodel import (
-    apply_control,
-    forward_timestep_embed,
-)
+    apply_control, forward_timestep_embed)
 from comfy.ldm.modules.diffusionmodules.util import timestep_embedding
 from torch.nn import Module
 
@@ -43,7 +41,7 @@ class DeepCacheUNet(Module):
         num_video_frames = c_dict.get(
             "num_video_frames", self.unet_module.default_num_video_frames
         )
-
+        
         default_image_only_indicator = getattr(
             self.unet_module, "default_image_only_indicator", None
         )

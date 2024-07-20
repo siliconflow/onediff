@@ -1,23 +1,18 @@
 from pathlib import Path
 
 import comfy
-from comfy.ldm.modules.attention import attention_pytorch
 from comfy.ldm.modules.diffusionmodules.model import AttnBlock
-
+from comfy.ldm.modules.attention import attention_pytorch 
 from .attention import attention_pytorch_oneflow
 
 
 from nodes import *  # must imported before import comfy
 from onediff.infer_compiler.backends.oneflow.transform import register
-from onediff.infer_compiler.backends.oneflow.utils.version_util import (
-    is_community_version,
-)
+from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
 
-from .attention import (
-    CrossAttention as CrossAttention1f,
-    SpatialTransformer as SpatialTransformer1f,
-    SpatialVideoTransformer as SpatialVideoTransformer1f,
-)
+from .attention import CrossAttention as CrossAttention1f
+from .attention import SpatialTransformer as SpatialTransformer1f
+from .attention import SpatialVideoTransformer as SpatialVideoTransformer1f
 from .deep_cache_unet import DeepCacheUNet, FastDeepCacheUNet
 from .linear import Linear as Linear1f
 from .util import AlphaBlender as AlphaBlender1f
@@ -41,11 +36,9 @@ torch2of_class_map = {
     AttnBlock: AttnBlock1f,
 }
 
-from .openaimodel import (
-    UNetModel as UNetModel1f,
-    Upsample as Upsample1f,
-    VideoResBlock as VideoResBlock1f,
-)
+from .openaimodel import UNetModel as UNetModel1f
+from .openaimodel import Upsample as Upsample1f
+from .openaimodel import VideoResBlock as VideoResBlock1f
 
 torch2of_class_map.update(
     {

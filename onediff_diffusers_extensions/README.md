@@ -23,7 +23,7 @@ OneDiffX is a OneDiff Extension for HF diffusers. It provides some acceleration 
 
 ## Install and setup
 
-1. Follow the steps [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-from-source) to install onediff.
+1. Follow the steps [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-from-source) to install onediff. 
 
 2. Install onediffx by following these steps
 
@@ -145,13 +145,13 @@ prompt = "A photo of a cat. Focus light and create sharp, defined edges."
 # Warmup
 for i in range(1):
     deepcache_output = pipe(
-        prompt,
+        prompt, 
         cache_interval=3, cache_layer_id=0, cache_block_id=0,
         output_type='pil'
     ).images[0]
 
 deepcache_output = pipe(
-    prompt,
+    prompt, 
     cache_interval=3, cache_layer_id=0, cache_block_id=0,
     output_type='pil'
 ).images[0]
@@ -179,13 +179,13 @@ prompt = "a photo of an astronaut on a moon"
 # Warmup
 for i in range(1):
     deepcache_output = pipe(
-        prompt,
+        prompt, 
         cache_interval=3, cache_layer_id=0, cache_block_id=0,
         output_type='pil'
     ).images[0]
 
 deepcache_output = pipe(
-    prompt,
+    prompt, 
     cache_interval=3, cache_layer_id=0, cache_block_id=0,
     output_type='pil'
 ).images[0]
@@ -217,13 +217,13 @@ input_image = input_image.resize((1024, 576))
 # Warmup
 for i in range(1):
     deepcache_output = pipe(
-        input_image,
+        input_image, 
         decode_chunk_size=5,
         cache_interval=3, cache_branch=0,
     ).frames[0]
 
 deepcache_output = pipe(
-    input_image,
+    input_image, 
     decode_chunk_size=5,
     cache_interval=3, cache_branch=0,
 ).frames[0]

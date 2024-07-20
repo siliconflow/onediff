@@ -1,14 +1,13 @@
 """A module for registering custom torch2oflow functions and classes."""
-import importlib.util
 import inspect
-import sys
+import importlib.util
 from pathlib import Path
+import sys
 from typing import Callable, Dict, List, Optional, Union
-
-from onediff.utils import logger
 from ..import_tools import import_module_from_path
-from .builtin_transform import torch2oflow
 from .manager import transform_mgr
+from .builtin_transform import torch2oflow
+from onediff.utils import logger
 
 __all__ = ["register"]
 

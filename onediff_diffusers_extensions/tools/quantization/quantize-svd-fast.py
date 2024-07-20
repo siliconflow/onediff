@@ -1,12 +1,11 @@
 import argparse
 import time
-
 import torch
+from PIL import Image
 
 from diffusers import StableVideoDiffusionPipeline
 from diffusers.utils import load_image
 from onediff.quantization import QuantPipeline
-from PIL import Image
 
 
 parser = argparse.ArgumentParser()
