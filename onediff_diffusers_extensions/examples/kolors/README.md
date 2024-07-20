@@ -104,6 +104,6 @@ python3 onediff_diffusers_extensions/examples/kolors/text_to_image_kolors.py \
 
 ## Quality
 
-<p align="center">
-<img src="../../../imgs/kolors_demo.png">
-</p>
+The quality report for accelerating the kolors model with onediff is located at:
+https://github.com/siliconflow/odeval/tree/main/models/kolors
+
