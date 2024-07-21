@@ -2,7 +2,8 @@ import copy
 
 import comfy
 import torch
-from register_comfy import DeepCacheUNet, FastDeepCacheUNet
+
+from ..infer_compiler_registry.register_comfy import DeepCacheUNet, FastDeepCacheUNet
 
 
 def state_dict_hook(module, state_dict, prefix, local_metadata):
