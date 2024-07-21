@@ -3,8 +3,8 @@ example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 -
 """
 import argparse
 
-import oneflow as flow
 import torch
+import oneflow as flow
 from diffusers import StableDiffusionPipeline
 
 from onediff.infer_compiler import oneflow_compile
