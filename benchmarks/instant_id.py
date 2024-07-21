@@ -26,20 +26,21 @@ CACHE_INTERVAL = 3
 CACHE_LAYER_ID = 0
 CACHE_BLOCK_ID = 0
 
-import sys
-import os
+import argparse
 import importlib
 import inspect
-import argparse
-import time
 import json
-import torch
-from PIL import Image, ImageDraw
-import numpy as np
+import os
+import sys
+import time
+
 import cv2
-from huggingface_hub import snapshot_download
+import numpy as np
+import torch
 from diffusers.utils import load_image
+from huggingface_hub import snapshot_download
 from insightface.app import FaceAnalysis
+from PIL import Image, ImageDraw
 
 import oneflow as flow  # usort: skip
 from onediffx import compile_pipe
@@ -97,7 +98,8 @@ def load_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16,
+            controlnet,
+            torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
@@ -183,13 +185,14 @@ def main():
     if args.repo is None:
         custom_pipeline = args.custom_pipeline
         from diffusers import DiffusionPipeline
+
         pipeline_cls = DiffusionPipeline
     else:
         sys.path.insert(0, args.repo)
 
         from pipeline_stable_diffusion_xl_instantid import (
-            StableDiffusionXLInstantIDPipeline as pipeline_cls,
             draw_kps,
+            StableDiffusionXLInstantIDPipeline as pipeline_cls,
         )
 
     if os.path.exists(args.controlnet):

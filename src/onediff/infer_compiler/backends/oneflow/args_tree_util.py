@@ -1,6 +1,7 @@
 import torch
 import oneflow as flow  # usort: skip
 from oneflow.framework.args_tree import ArgsTree
+
 from onediff.utils import logger
 
 from .utils.hash_utils import generate_input_structure_key

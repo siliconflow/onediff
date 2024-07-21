@@ -1,8 +1,8 @@
 # Compile and save to oneflow graph example: python examples/text_to_image_sdxl_mp_load.py --save
 # Compile and load to new device example: python examples/text_to_image_sdxl_mp_load.py --load
 
-import os
 import argparse
+import os
 
 import torch
 import oneflow as flow  # usort: skip

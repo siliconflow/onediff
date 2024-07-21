@@ -14,32 +14,28 @@ WIDTH = 1024
 OUTPUT_IMAGE = None
 EXTRA_CALL_KWARGS = None
 
-import os
+import argparse
 import importlib
 import inspect
-import argparse
-import time
 import json
+import os
+import time
+
 import torch
-from PIL import Image, ImageDraw
 from diffusers.utils import load_image
+from PIL import Image, ImageDraw
 
 import oneflow as flow  # usort: skip
-from onediffx import compile_pipe
-
 from huggingface_hub import hf_hub_download
+from onediffx import compile_pipe
 from safetensors.torch import load_file
 
 
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default=MODEL)
-    parser.add_argument(
-        "--repo", type=str, default=REPO
-    )
-    parser.add_argument(
-        "--cpkt", type=str, default=CPKT
-    )
+    parser.add_argument("--repo", type=str, default=REPO)
+    parser.add_argument("--cpkt", type=str, default=CPKT)
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     parser.add_argument("--controlnet", type=str, default=CONTROLNET)
@@ -70,8 +66,7 @@ def load_and_compile_pipe(
     custom_pipeline=None,
     controlnet=None,
 ):
-    from diffusers import StableDiffusionXLPipeline
-    from diffusers import EulerDiscreteScheduler
+    from diffusers import EulerDiscreteScheduler, StableDiffusionXLPipeline
 
     extra_kwargs = {}
     if custom_pipeline is not None:
@@ -82,11 +77,13 @@ def load_and_compile_pipe(
         from diffusers import ControlNetModel
 
         controlnet = ControlNetModel.from_pretrained(
-            controlnet, torch_dtype=torch.float16,
+            controlnet,
+            torch_dtype=torch.float16,
         )
         extra_kwargs["controlnet"] = controlnet
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
+
         raise TypeError("Quantizatble SDXL-LIGHT is not supported!")
         # pipe = QuantPipeline.from_quantized(
         #     pipeline_cls, model_name, torch_dtype=torch.float16, **extra_kwargs
@@ -99,9 +96,7 @@ def load_and_compile_pipe(
 
         if is_lora_cpkt:
             pipe = StableDiffusionXLPipeline.from_pretrained(
-                model_name,
-                torch_dtype=torch.float16,
-                **extra_kwargs
+                model_name, torch_dtype=torch.float16, **extra_kwargs
             ).to("cuda")
             if os.path.isfile(os.path.join(repo_name, cpkt_name)):
                 pipe.load_lora_weights(os.path.join(repo_name, cpkt_name))
@@ -110,22 +105,26 @@ def load_and_compile_pipe(
             pipe.fuse_lora()
         else:
             from diffusers import UNet2DConditionModel
-            unet = UNet2DConditionModel.from_config(model_name, subfolder="unet").to("cuda", torch.float16)
+
+            unet = UNet2DConditionModel.from_config(model_name, subfolder="unet").to(
+                "cuda", torch.float16
+            )
             if os.path.isfile(os.path.join(repo_name, cpkt_name)):
-                unet.load_state_dict(load_file(os.path.join(repo_name, cpkt_name), device="cuda"))
+                unet.load_state_dict(
+                    load_file(os.path.join(repo_name, cpkt_name), device="cuda")
+                )
             else:
                 from huggingface_hub import hf_hub_download
-                unet.load_state_dict(load_file(hf_hub_download(repo_name, cpkt_name), device="cuda")) 
+
+                unet.load_state_dict(
+                    load_file(hf_hub_download(repo_name, cpkt_name), device="cuda")
+                )
             pipe = StableDiffusionXLPipeline.from_pretrained(
-                model_name,
-                unet=unet,
-                torch_dtype=torch.float16,
-                **extra_kwargs
+                model_name, unet=unet, torch_dtype=torch.float16, **extra_kwargs
             ).to("cuda")
 
     pipe.scheduler = EulerDiscreteScheduler.from_config(
-        pipe.scheduler.config,
-        timestep_spacing="trailing"
+        pipe.scheduler.config, timestep_spacing="trailing"
     )
     pipe.safety_checker = None
     pipe.to(torch.device("cuda"))
@@ -191,8 +190,6 @@ def main():
     width = args.width or pipe.unet.config.sample_size * pipe.vae_scale_factor
 
     n_steps = int(args.cpkt[len("sdxl_lightning_") : len("sdxl_lightning_") + 1])
-
-    
 
     def get_kwarg_inputs():
         kwarg_inputs = dict(

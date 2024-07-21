@@ -1,14 +1,14 @@
 # Compile and save to oneflow graph example: python examples/text_to_image_sdxl_save_load.py --save
 # Compile and load to oneflow graph example: python examples/text_to_image_sdxl_save_load.py --load
 
-import os
 import argparse
+import os
 
 import torch
 import oneflow as flow  # usort: skip
 
-from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 from diffusers import DiffusionPipeline
+from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

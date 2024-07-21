@@ -11,7 +11,7 @@ python3 scripts/text_to_image.py \
     -w $WORKFLOW_BASIC/sd3_basic.json \
     --output-dir results \
     --exp-name sd3_basic_baseline \
-    --output-images 
+    --output-images
 
 # Run the SD3 nexfort workflow
 python3 scripts/text_to_image.py \

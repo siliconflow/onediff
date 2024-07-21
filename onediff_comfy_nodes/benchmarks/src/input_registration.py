@@ -1,6 +1,7 @@
 import json
 import os
 from typing import NamedTuple
+
 from core.registry import create_generator_registry
 from core.service_client import ComfyGraph
 
@@ -19,7 +20,6 @@ SD1_5_MODELS = [
     "sd15/helloyoung25d_V10f.safetensors",
     "sd15/RealCartoonSpecialPruned.safetensors",
 ]
-
 
 
 class InputParams(NamedTuple):
@@ -81,6 +81,8 @@ SD3_WORKFLOWS = [
     f"{WORKFLOW_DIR}/baseline/sd3_basic.json",
     f"{WORKFLOW_DIR}/nexfort/sd3_basic.json",
 ]
+
+
 @register_generator(SD3_WORKFLOWS)
 def _(workflow_path, *args, **kwargs):
     with open(workflow_path, "r") as fp:

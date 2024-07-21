@@ -4,11 +4,13 @@ import unittest
 
 import oneflow as flow  # usort: skip
 import torch
-from torch import nn
 
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import register
-from onediff.infer_compiler.backends.oneflow.utils.version_util import is_community_version
+from onediff.infer_compiler.backends.oneflow.utils.version_util import (
+    is_community_version,
+)
+from torch import nn
 
 is_community = is_community_version()
 onediff_quant_spec = importlib.util.find_spec("onediff_quant")
@@ -17,10 +19,10 @@ if is_community or onediff_quant_spec is None:
     exit(0)
 
 from onediff_quant.quantization import (
+    create_quantization_calculator,
     OfflineQuantModule,
     OnlineQuantModule,
     QuantizationConfig,
-    create_quantization_calculator,
 )
 
 

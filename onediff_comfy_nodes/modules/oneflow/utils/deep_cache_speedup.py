@@ -4,8 +4,9 @@ from comfy.model_base import SVD_img2vid
 from onediff.infer_compiler import oneflow_compile
 from register_comfy import DeepCacheUNet, FastDeepCacheUNet
 
-from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
 from .booster_utils import set_environment_for_svd_img2vid
+
+from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher
 
 
 def deep_cache_speedup(
@@ -49,12 +50,12 @@ def deep_cache_speedup(
     current_step = -1
     cache_h = None
 
-
     _first_run = True
+
     def apply_model(model_function, kwargs):
         if isinstance(model_patcher.model, SVD_img2vid):
             set_environment_for_svd_img2vid(model_patcher)
-        nonlocal current_t, current_step, cache_h , _first_run
+        nonlocal current_t, current_step, cache_h, _first_run
 
         if _first_run:
             if hasattr(model_patcher.deep_cache_unet, "quantize"):
@@ -63,7 +64,6 @@ def deep_cache_speedup(
             if hasattr(model_patcher.fast_deep_cache_unet, "quantize"):
                 model_patcher.fast_deep_cache_unet.quantize()
             _first_run = False
-
 
         xa = kwargs["input"]
         t = kwargs["timestep"]
@@ -125,7 +125,13 @@ def deep_cache_speedup(
         if is_slow_step:
             cache_h = None
             model_output, cache_h = model_patcher.deep_cache_unet(
-                x, timesteps, context, y, control, transformer_options, **extra_conds,
+                x,
+                timesteps,
+                context,
+                y,
+                control,
+                transformer_options,
+                **extra_conds,
             )
         else:
             model_output, cache_h = model_patcher.fast_deep_cache_unet(

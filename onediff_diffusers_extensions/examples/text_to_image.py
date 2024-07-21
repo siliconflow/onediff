@@ -2,12 +2,13 @@
 example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 --model_id xx
 """
 import argparse
+
 import torch
 import oneflow as flow  # usort: skip
 
+from diffusers import StableDiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
-from diffusers import StableDiffusionPipeline
 
 
 def parse_args():
@@ -16,7 +17,9 @@ def parse_args():
         "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
     )
     parser.add_argument(
-        "--model_id", type=str, default="runwayml/stable-diffusion-v1-5",
+        "--model_id",
+        type=str,
+        default="runwayml/stable-diffusion-v1-5",
     )
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)

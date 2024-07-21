@@ -1,7 +1,8 @@
 from functools import wraps
 import oneflow as flow  # usort: skip
-import time
 import inspect
+import time
+
 from onediff.utils import logger
 
 __all__ = ["cost_cnt", "cost_time"]

@@ -118,9 +118,13 @@ def cond_func(orig_func, self, model, *args, **kwargs):
 
 
 animatediff_hijacker.register(
-    FunctionInjectionHolder.inject_functions, inject_functions, cond_func,
+    FunctionInjectionHolder.inject_functions,
+    inject_functions,
+    cond_func,
 )
 
 animatediff_hijacker.register(
-    FunctionInjectionHolder.restore_functions, restore_functions, cond_func,
+    FunctionInjectionHolder.restore_functions,
+    restore_functions,
+    cond_func,
 )

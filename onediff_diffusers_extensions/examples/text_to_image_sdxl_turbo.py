@@ -2,15 +2,15 @@
 Torch run example: python examples/text_to_image_sdxl_turbo.py
 Compile to oneflow graph example: python examples/text_to_image_sdxl_turbo.py --compile
 """
+import argparse
 import os
 import time
-import argparse
 
 import torch
 import oneflow as flow  # usort: skip
 
-from onediff.infer_compiler import oneflow_compile
 from diffusers import AutoPipelineForText2Image
+from onediff.infer_compiler import oneflow_compile
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--base", type=str, default="stabilityai/sdxl-turbo")
@@ -36,7 +36,10 @@ OUTPUT_TYPE = "pil"
 
 # SDXL turbo base: AutoPipelineForText2Image
 base = AutoPipelineForText2Image.from_pretrained(
-    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
+    args.base,
+    torch_dtype=torch.float16,
+    variant=args.variant,
+    use_safetensors=True,
 )
 base.to("cuda")
 

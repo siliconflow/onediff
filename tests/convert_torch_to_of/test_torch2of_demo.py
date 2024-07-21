@@ -7,6 +7,7 @@ Uasge:
 import torch
 import oneflow as flow  # usort: skip
 import unittest
+
 import numpy as np
 from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
@@ -39,7 +40,7 @@ class OneFlowModel(flow.nn.Module):
 
     def apply_model(self, x):
         return self.forward(x)
-    
+
 
 class TestTorch2ofDemo(unittest.TestCase):
     def judge_tensor_func(self, y_pt, y_of):
@@ -48,7 +49,7 @@ class TestTorch2ofDemo(unittest.TestCase):
         y_pt = y_pt.cpu().detach().numpy()
         y_of = y_of.cpu().detach().numpy()
         assert np.allclose(y_pt, y_of, atol=1e-3, rtol=1e-3)
-        
+
     def test_torch2of_demo(self):
         # Register PyTorch model to OneDiff
         cls_key = transform_mgr.get_transformed_entity_name(PyTorchModel)

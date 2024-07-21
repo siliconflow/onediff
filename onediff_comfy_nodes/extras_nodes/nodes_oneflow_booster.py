@@ -6,12 +6,11 @@ import folder_paths
 import torch
 from comfy import model_management
 from comfy.cli_args import args
-
-from onediff.utils.import_utils import is_onediff_quant_available
 from onediff.infer_compiler.backends.oneflow.utils.version_util import (
     is_community_version,
 )
 
+from onediff.utils.import_utils import is_onediff_quant_available
 
 from ..modules import BoosterScheduler
 from ..modules.oneflow import (
@@ -20,8 +19,7 @@ from ..modules.oneflow import (
     PatchBoosterExecutor,
 )
 from ..modules.oneflow.config import ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
-from ..modules.oneflow.utils import OUTPUT_FOLDER, load_graph, save_graph
-from ..modules import BoosterScheduler
+from ..modules.oneflow.utils import load_graph, OUTPUT_FOLDER, save_graph
 
 if is_onediff_quant_available() and not is_community_version():
     from ..modules.oneflow.booster_quantization import (
@@ -138,7 +136,12 @@ class ModuleDeepCacheSpeedup:
                 ),
                 "end_step": (
                     "INT",
-                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
+                    {
+                        "default": 1000,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 0.1,
+                    },
                 ),
             },
         }
@@ -158,7 +161,9 @@ class ModuleDeepCacheSpeedup:
         start_step,
         end_step,
     ):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
         booster = BoosterScheduler(
             DeepcacheBoosterExecutor(
                 cache_interval=cache_interval,
@@ -289,7 +294,12 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
                 ),
                 "end_step": (
                     "INT",
-                    {"default": 1000, "min": 0, "max": 1000, "step": 0.1,},
+                    {
+                        "default": 1000,
+                        "min": 0,
+                        "max": 1000,
+                        "step": 0.1,
+                    },
                 ),
             }
         }
@@ -309,7 +319,9 @@ class OneDiffDeepCacheCheckpointLoaderSimple(CheckpointLoaderSimple):
         start_step=0,
         end_step=1000,
     ):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
         # CheckpointLoaderSimple.load_checkpoint
         modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
         booster = BoosterScheduler(
@@ -337,7 +349,10 @@ class BatchSizePatcher:
     @classmethod
     def INPUT_TYPES(s):
         return {
-            "required": {"model": ("MODEL",), "latent_image": ("LATENT",),},
+            "required": {
+                "model": ("MODEL",),
+                "latent_image": ("LATENT",),
+            },
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -366,7 +381,9 @@ class SVDSpeedup:
                     },
                 ),
             },
-            "optional": {"custom_booster": ("CUSTOM_BOOSTER",),},
+            "optional": {
+                "custom_booster": ("CUSTOM_BOOSTER",),
+            },
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -381,7 +398,9 @@ class SVDSpeedup:
         cache_name="svd",
         custom_booster: BoosterScheduler = None,
     ):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
         if custom_booster:
             booster = custom_booster
             booster.inplace = inplace
@@ -403,7 +422,10 @@ class VaeGraphLoader:
             if os.path.isfile(os.path.join(vae_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {"vae": ("VAE",), "graph": (sorted(graph_files),),},
+            "required": {
+                "vae": ("VAE",),
+                "graph": (sorted(graph_files),),
+            },
         }
 
     RETURN_TYPES = ("VAE",)
@@ -411,7 +433,9 @@ class VaeGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, vae, graph):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
         vae_model = vae.first_stage_model
         device = model_management.vae_offload_device()
         load_graph(vae_model, graph, device, subfolder="vae")
@@ -435,7 +459,9 @@ class VaeGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, images, vae, filename_prefix):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
         vae_model = vae.first_stage_model
         vae_device = model_management.vae_offload_device()
         save_graph(vae_model, filename_prefix, vae_device, subfolder="vae")
@@ -453,7 +479,10 @@ class ModelGraphLoader:
             if os.path.isfile(os.path.join(unet_folder, f)) and f.endswith(".graph")
         ]
         return {
-            "required": {"model": ("MODEL",), "graph": (sorted(graph_files),),},
+            "required": {
+                "model": ("MODEL",),
+                "graph": (sorted(graph_files),),
+            },
         }
 
     RETURN_TYPES = ("MODEL",)
@@ -461,7 +490,9 @@ class ModelGraphLoader:
     CATEGORY = "OneDiff"
 
     def load_graph(self, model, graph):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
 
         diffusion_model = model.model.diffusion_model
 
@@ -486,7 +517,9 @@ class ModelGraphSaver:
     OUTPUT_NODE = True
 
     def save_graph(self, samples, model, filename_prefix):
-        print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+        print(
+            f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+        )
         diffusion_model = model.model.diffusion_model
         save_graph(diffusion_model, filename_prefix, "cuda", subfolder="unet")
         return {}
@@ -532,7 +565,11 @@ if is_onediff_quant_available() and not is_community_version():
                         if "calibrate_info.txt" in files:
                             paths.append(os.path.relpath(root, start=search_path))
 
-            return {"required": {"model_path": (paths,),}}
+            return {
+                "required": {
+                    "model_path": (paths,),
+                }
+            }
 
         RETURN_TYPES = ("MODEL",)
         FUNCTION = "load_unet_int8"
@@ -540,7 +577,9 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff"
 
         def load_unet_int8(self, model_path):
-            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+            print(
+                f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+            )
             from ..modules.oneflow.utils.onediff_quant_utils import (
                 replace_module_with_quantizable_module,
             )
@@ -579,7 +618,9 @@ if is_onediff_quant_available() and not is_community_version():
         OUTPUT_NODE = True
 
         def quantize_model(self, model, output_dir, conv, linear):
-            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+            print(
+                f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+            )
             from ..modules.oneflow.utils import quantize_and_save_model
 
             diffusion_model = model.model.diffusion_model
@@ -608,10 +649,11 @@ if is_onediff_quant_available() and not is_community_version():
         CATEGORY = "OneDiff/Loaders"
         FUNCTION = "onediff_load_checkpoint"
 
-
         def onediff_load_checkpoint(self, ckpt_name, vae_speedup):
             modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
-            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+            print(
+                f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+            )
             booster = BoosterScheduler(
                 OnelineQuantizationBoosterExecutor(
                     conv_percentage=100,
@@ -659,10 +701,16 @@ if is_onediff_quant_available() and not is_community_version():
         FUNCTION = "onediff_load_checkpoint"
 
         def onediff_load_checkpoint(
-            self, ckpt_name, model_path, compile, vae_speedup,
+            self,
+            ckpt_name,
+            model_path,
+            compile,
+            vae_speedup,
         ):
             need_compile = compile == "enable"
-            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+            print(
+                f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+            )
 
             modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
             # TODO fix by op.compile
@@ -715,7 +763,9 @@ if is_onediff_quant_available() and not is_community_version():
             output_vae=True,
             output_clip=True,
         ):
-            print(f'Warning: {type(self).__name__} will be deleted. Please use it with caution.')
+            print(
+                f"Warning: {type(self).__name__} will be deleted. Please use it with caution."
+            )
             modelpatcher, clip, vae = self.load_checkpoint(
                 ckpt_name, output_vae, output_clip
             )

@@ -28,7 +28,7 @@ Only supported on the Linux platform.
 Test(Updated on March 1st, 2023)
 - Python 3.10.13
 - NVIDIA A800-SXM4-80GB
-- ComfyUI Thu Feb 29 commit: cb7c3a2921cfc0805be0229b4634e1143d60e6fe 
+- ComfyUI Thu Feb 29 commit: cb7c3a2921cfc0805be0229b4634e1143d60e6fe
 
 ## Contact
 

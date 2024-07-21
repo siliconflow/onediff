@@ -127,8 +127,7 @@ def _can_use_flash_attn(attn):
 
 
 def _rewrite_attention(attn):
-    from onediff_quant.models import (DynamicQuantLinearModule,
-                                      StaticQuantLinearModule)
+    from onediff_quant.models import DynamicQuantLinearModule, StaticQuantLinearModule
 
     dim_head = attn.to_q.out_features // attn.heads
     has_bias = attn.to_q.bias is not None
@@ -185,7 +184,7 @@ def _rewrite_attention(attn):
         old_env = os.getenv("ONEFLOW_FUSE_QUANT_TO_MATMUL")
         os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = "0"
         attn.to_qkv = cls(attn.to_qkv, attn.to_q.nbits, calibrate, attn.to_q.name)
-        attn.scale = dim_head ** -0.5
+        attn.scale = dim_head**-0.5
 
         os.environ["ONEFLOW_FUSE_QUANT_TO_MATMUL"] = old_env
 
