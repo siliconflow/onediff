@@ -29,7 +29,7 @@ def _(new_model: ModelPatcher, cached_model):
 @switch_to_cached_model.register
 def _(new_model: VAE, cached_model):
     assert type(new_model.first_stage_model) == type(cached_model)
-    for k, v in new_model.model.state_dict().items():
+    for k, v in new_model.first_stage_model.state_dict().items():
         cached_v: torch.Tensor = get_sub_module(cached_model, k)
         assert v.dtype == cached_v.dtype
         cached_v.copy_(v)
@@ -50,9 +50,14 @@ def _(model: ModelPatcher):
 
 @get_cached_model.register
 def _(model: VAE):
+    if is_oneflow_available() and not is_disable_oneflow_backend():
+        from .oneflow.utils.booster_utils import is_using_oneflow_backend
+
+        if is_using_oneflow_backend(model):
+            return None
+
     # TODO(TEST) if support cache
-    return None
-    # return model.first_stage_model
+    return model.first_stage_model
 
 
 class BoosterCacheService:
