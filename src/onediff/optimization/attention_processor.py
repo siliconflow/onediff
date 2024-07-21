@@ -1,5 +1,5 @@
 import os
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import oneflow.nn as nn
 import oneflow.nn.functional as F
 

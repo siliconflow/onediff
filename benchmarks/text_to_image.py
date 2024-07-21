@@ -377,7 +377,7 @@ def main():
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
     if args.compiler == "oneflow":
-        import oneflow as flow
+        import oneflow as flow  # usort: skip
 
         cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
     else:

@@ -1,5 +1,5 @@
 import comfy
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import torch
 from comfy.controlnet import ControlLora, ControlLoraOps, ControlNet
 from onediff.infer_compiler import oneflow_compile

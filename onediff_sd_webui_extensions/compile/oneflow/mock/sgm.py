@@ -1,4 +1,4 @@
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from sgm.modules.attention import CrossAttention, SpatialTransformer
 from sgm.modules.diffusionmodules.openaimodel import UNetModel
 from sgm.modules.diffusionmodules.util import GroupNorm32

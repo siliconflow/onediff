@@ -5,7 +5,7 @@ import os
 import argparse
 
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 from diffusers import DiffusionPipeline

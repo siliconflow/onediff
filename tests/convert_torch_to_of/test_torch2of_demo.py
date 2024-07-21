@@ -5,7 +5,7 @@ Uasge:
     python -m pytest test_torch2of_demo.py
 """
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import unittest
 import numpy as np
 from onediff.infer_compiler import oneflow_compile

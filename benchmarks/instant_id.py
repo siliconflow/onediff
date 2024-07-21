@@ -41,7 +41,7 @@ from huggingface_hub import snapshot_download
 from diffusers.utils import load_image
 from insightface.app import FaceAnalysis
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from onediffx import compile_pipe
 
 

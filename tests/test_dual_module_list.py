@@ -3,7 +3,7 @@ from onediff.infer_compiler import oneflow_compile
 from onediff.infer_compiler.backends.oneflow.transform import register
 import torch
 import torch.nn as nn
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 
 class MyModule(nn.Module):

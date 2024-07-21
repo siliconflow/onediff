@@ -43,7 +43,7 @@ def test_flash_attention(
         return result.cpu().detach().numpy()
 
     def oneflow_flash_attention() -> np.ndarray:
-        import oneflow as flow
+        import oneflow as flow  # usort: skip
 
         q = flow.tensor(query, dtype=flow.float16).to("cuda")
         k = flow.tensor(key, dtype=flow.float16).to("cuda")

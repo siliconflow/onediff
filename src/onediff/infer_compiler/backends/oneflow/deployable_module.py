@@ -2,7 +2,7 @@ import types
 import torch
 from functools import wraps
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 from onediff.utils import logger
 from onediff.utils.chache_utils import LRUCache

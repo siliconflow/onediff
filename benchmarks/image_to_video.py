@@ -39,7 +39,7 @@ import json
 import random
 from PIL import Image, ImageDraw
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import torch
 from onediffx import compile_pipe, OneflowCompileOptions 
 from diffusers.utils import load_image, export_to_video

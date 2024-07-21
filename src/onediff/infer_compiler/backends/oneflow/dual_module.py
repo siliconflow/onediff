@@ -4,7 +4,7 @@ from typing import Any
 from itertools import chain
 
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from oneflow.utils.tensor import to_torch
 
 from onediff.utils import logger

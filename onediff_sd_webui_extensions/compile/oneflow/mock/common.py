@@ -1,7 +1,7 @@
 import math
 from inspect import isfunction
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from oneflow import nn
 
 

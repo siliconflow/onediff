@@ -8,7 +8,7 @@ import tempfile
 from PIL import Image
 
 import numpy as np
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import oneflow as torch
 
 from onediff import (

@@ -1,4 +1,4 @@
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 from onediff.utils import logger
 from .transform.manager import transform_mgr

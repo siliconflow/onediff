@@ -53,7 +53,7 @@ import torch
 from PIL import Image, ImageDraw
 from diffusers.utils import load_image
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from onediffx import compile_pipe
 
 

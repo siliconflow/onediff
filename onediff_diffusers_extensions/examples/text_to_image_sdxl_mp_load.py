@@ -5,7 +5,7 @@ import os
 import argparse
 
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

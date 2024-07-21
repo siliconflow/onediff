@@ -2,7 +2,7 @@ import importlib
 import os
 import unittest
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import torch
 from torch import nn
 

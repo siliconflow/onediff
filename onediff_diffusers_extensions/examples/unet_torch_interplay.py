@@ -10,7 +10,7 @@ import random
 import click
 
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 from tqdm import tqdm
 from dataclasses import dataclass, fields

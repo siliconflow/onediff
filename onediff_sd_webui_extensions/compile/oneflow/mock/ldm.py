@@ -1,4 +1,4 @@
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from ldm.modules.attention import CrossAttention, SpatialTransformer
 from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from ldm.modules.diffusionmodules.util import GroupNorm32

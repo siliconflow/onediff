@@ -2,7 +2,7 @@ import importlib
 import os
 from typing import Dict
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from pathlib import Path
 from functools import wraps
 from oneflow.framework.args_tree import ArgsTree

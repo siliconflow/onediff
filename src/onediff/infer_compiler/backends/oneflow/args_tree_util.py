@@ -1,5 +1,5 @@
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from oneflow.framework.args_tree import ArgsTree
 from onediff.utils import logger
 

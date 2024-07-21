@@ -1,5 +1,5 @@
 from functools import wraps
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import time
 import inspect
 from onediff.utils import logger

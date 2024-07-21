@@ -9,7 +9,7 @@ from collections import OrderedDict
 from collections.abc import Iterable
 from typing import Union, Any
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 from .manager import transform_mgr
 from onediff.utils import logger

@@ -7,7 +7,7 @@ import time
 import argparse
 
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
 
 from onediff.infer_compiler import oneflow_compile
 from diffusers import AutoPipelineForText2Image

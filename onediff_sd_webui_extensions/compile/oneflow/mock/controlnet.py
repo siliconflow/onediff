@@ -1,4 +1,4 @@
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from compile.oneflow.mock.common import timestep_embedding
 from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from modules import devices
