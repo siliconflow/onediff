@@ -33,9 +33,9 @@ class OneFlowSpeedUpModelPatcher(comfy.model_patcher.ModelPatcher):
         graph_device=None,
     ):
         from onediff.infer_compiler import (
-            OneflowCompileOptions,
-            oneflow_compile,
             DeployableModule,
+            oneflow_compile,
+            OneflowCompileOptions,
         )
 
         self.weight_inplace_update = weight_inplace_update
@@ -506,9 +506,9 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
         gen_compile_options=None,
     ):
         from onediff.infer_compiler import (
-            OneflowCompileOptions,
-            oneflow_compile,
             DeployableModule,
+            oneflow_compile,
+            OneflowCompileOptions,
         )
 
         self.weight_inplace_update = weight_inplace_update
@@ -525,16 +525,20 @@ class OneFlowDeepCacheSpeedUpModelPatcher(OneFlowSpeedUpModelPatcher):
             self.model.diffusion_model, cache_layer_id, cache_block_id
         )
         if use_graph:
-            gen_compile_options = gen_compile_options or (lambda x: OneflowCompileOptions())
+            gen_compile_options = gen_compile_options or (
+                lambda x: OneflowCompileOptions()
+            )
             compile_options = gen_compile_options(self.deep_cache_unet)
             compile_options.use_graph = use_graph
             self.deep_cache_unet = oneflow_compile(
-                self.deep_cache_unet, options=compile_options,
+                self.deep_cache_unet,
+                options=compile_options,
             )
             compile_options = gen_compile_options(self.fast_deep_cache_unet)
             compile_options.use_graph = use_graph
             self.fast_deep_cache_unet = oneflow_compile(
-                self.fast_deep_cache_unet, options=compile_options,
+                self.fast_deep_cache_unet,
+                options=compile_options,
             )
             self.model._register_state_dict_hook(state_dict_hook)
 

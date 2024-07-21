@@ -5,10 +5,12 @@ from comfy import model_management
 from comfy.model_base import BaseModel, SVD_img2vid
 from comfy.model_patcher import ModelPatcher
 
-from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import (
+    OneflowDeployableModule as DeployableModule,
+)
 from onediff.utils import set_boolean_env_var
 
-from ..patch_management import PatchType, create_patch_executor
+from ..patch_management import create_patch_executor, PatchType
 
 
 def set_compiled_options(module: DeployableModule, graph_file="unet"):
@@ -101,9 +103,7 @@ def clear_deployable_module_cache_and_unbind(
         create_patch_executor(PatchType.CachedCrossAttentionPatch).clear_patch(
             diff_model
         )
-        create_patch_executor(PatchType.UNetExtraInputOptions).clear_patch(
-            diff_model
-        )
+        create_patch_executor(PatchType.UNetExtraInputOptions).clear_patch(diff_model)
     elif isinstance(module, DeployableModule):
         diff_model = module
         diff_model._clear_old_graph()

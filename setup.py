@@ -17,7 +17,7 @@ setup(
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
     license="Apache-2.0",
-    license_files=('LICENSE',),
+    license_files=("LICENSE",),
     author_email="contact@siliconflow.com",
     package_dir={"": "src"},
     packages=find_packages("src"),

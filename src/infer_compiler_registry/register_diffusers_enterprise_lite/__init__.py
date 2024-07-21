@@ -1,7 +1,7 @@
-from onediff.infer_compiler.backends.oneflow.transform import register
+import diffusers_enterprise_lite
 
 import oneflow as flow
-import diffusers_enterprise_lite
+from onediff.infer_compiler.backends.oneflow.transform import register
 
 torch2oflow_class_map = {
     diffusers_enterprise_lite.ProxyFakeModule: diffusers_enterprise_lite.OneFlowFakeHPCModule,

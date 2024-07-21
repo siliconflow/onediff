@@ -25,7 +25,7 @@ https://github.com/siliconflow/onediff/tree/main/src/onediff/infer_compiler/back
 ### Set up PixArt
 
 
-HF model: 
+HF model:
 
  - PixArt-alpha: https://huggingface.co/PixArt-alpha/PixArt-XL-2-1024-MS
  - PixArt-sigma: https://huggingface.co/PixArt-alpha/PixArt-Sigma-XL-2-1024-MS
@@ -133,7 +133,7 @@ python3 ./benchmarks/text_to_image.py \
 
 #### The nexfort backend compile config and warmup cost
 
-- compiler-config 
+- compiler-config
   - default is `{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}` in `/benchmarks/text_to_image.py`. This mode supports dynamic shapes.
   - setting `--compiler-config '{"mode": "max-autotune", "memory_format": "channels_last"}'` will reduce compilation time and just slightly reduce the performance.
   - setting `--compiler-config '{"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision:cudagraphs", "memory_format": "channels_last"}'` will help achieve the best performance, but it increases the compilation time and affects stability.

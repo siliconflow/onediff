@@ -1,8 +1,9 @@
 import re
 import types
-import torch
+from typing import Any, Dict, List, Union
+
 import oneflow as flow
-from typing import List, Dict, Any, Union
+import torch
 
 from onediff.utils import logger
 

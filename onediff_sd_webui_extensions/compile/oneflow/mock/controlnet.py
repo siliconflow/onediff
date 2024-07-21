@@ -30,6 +30,7 @@ def aligned_adding(base, x, require_channel_alignment):
         x = flow.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
     return base + x
 
+
 def cat(tensors, *args, **kwargs):
     if len(tensors) == 2:
         a, b = tensors

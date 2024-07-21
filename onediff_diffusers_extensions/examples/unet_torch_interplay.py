@@ -3,18 +3,19 @@ Testing inference speed
 save graph compiled example: python3 examples/unet_torch_interplay.py --save --model_id xx
 load graph compiled example: python3 examples/unet_torch_interplay.py --load
 """
-import os
 import importlib.metadata
-from packaging import version
+import os
 import random
-import click
+from dataclasses import dataclass, fields
 
-import torch
+import click
 import oneflow as flow
 
-from tqdm import tqdm
-from dataclasses import dataclass, fields
+import torch
 from onediff.infer_compiler import oneflow_compile
+from packaging import version
+
+from tqdm import tqdm
 
 
 @dataclass

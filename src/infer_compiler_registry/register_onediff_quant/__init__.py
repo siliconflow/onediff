@@ -1,7 +1,7 @@
-from onediff.infer_compiler.backends.oneflow.transform import register
+import onediff_quant
 
 import oneflow as flow
-import onediff_quant
+from onediff.infer_compiler.backends.oneflow.transform import register
 
 torch2oflow_class_map = {
     onediff_quant.FakeQuantModule: onediff_quant.OneFlowFakeQuantModule,
