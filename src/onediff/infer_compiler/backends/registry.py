@@ -9,7 +9,8 @@ _BACKENDS: Dict[str, Any] = dict()
 
 
 def register_backend(
-    name: Optional[str] = None, tags: Sequence[str] = (),
+    name: Optional[str] = None,
+    tags: Sequence[str] = (),
 ):
     def wrapper(compiler_fn: Optional[Any] = None):
         if compiler_fn is None:

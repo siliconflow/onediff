@@ -1,5 +1,6 @@
 """OneDiff ComfyUI Speedup Module"""
 from onediff.utils.import_utils import is_nexfort_available, is_oneflow_available
+
 from ._config import is_disable_oneflow_backend
 from ._nodes import (
     ControlnetSpeedup,
@@ -51,7 +52,9 @@ def lazy_load_extra_nodes():
         update_node_mappings(nodes_nexfort_booster)
 
     from .extras_nodes import nodes_prompt_styler
+
     update_node_mappings(nodes_prompt_styler)
+
 
 # Lazy load all extra nodes when needed
 lazy_load_extra_nodes()

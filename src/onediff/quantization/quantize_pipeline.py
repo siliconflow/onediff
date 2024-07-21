@@ -1,9 +1,10 @@
 import os
-from typing import Any, List, Optional, Union
 from functools import partial
+from typing import Any, List, Optional, Union
 
 from onediff_quant import quantize_pipeline, save_quantized
-from .quantize_utils import setup_onediff_quant, load_calibration_and_quantize_pipeline
+
+from .quantize_utils import load_calibration_and_quantize_pipeline, setup_onediff_quant
 
 
 class QuantPipeline:
@@ -16,7 +17,7 @@ class QuantPipeline:
         **kwargs
     ):
         """load a quantized model.
-    
+
         - Example:
           ```python
           from diffusers import AutoPipelineForText2Image
@@ -49,7 +50,7 @@ class QuantPipeline:
         **kwargs
     ):
         """load a floating model that to be quantized as int8.
-        
+
         - Example:
           ```python
           from diffusers import AutoPipelineForText2Image

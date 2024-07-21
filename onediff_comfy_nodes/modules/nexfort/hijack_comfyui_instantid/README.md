@@ -14,7 +14,7 @@ git clone https://github.com/comfyanonymous/ComfyUI
 git reset --hard 2d4164271634476627aae31fbec251ca748a0ae0
 ```
 When you have completed these steps, follow the [instructions](https://github.com/comfyanonymous/ComfyUI) to install ComfyUI
-  
+
 #### Install ComfyUI_InstantID
 
 ```
@@ -26,12 +26,12 @@ When you have completed these steps,follow the [instructions](https://github.com
 
 ### Quick Start
 
-> Recommend running the official example of ComfyUI_InstantID now, and then trying OneDiff acceleration. 
+> Recommend running the official example of ComfyUI_InstantID now, and then trying OneDiff acceleration.
 > You can Load these images in ComfyUI to get the full workflow.
 
 Experiment (GeForce RTX 3090) Workflow for OneDiff Acceleration in ComfyUI_InstantID:
 
-1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node. 
+1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node.
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 ![workflow (20)](https://github.com/siliconflow/onediff/assets/117806079/492a83a8-1a5b-4fb3-9e53-6d53e881a3f8)

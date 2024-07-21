@@ -1,8 +1,8 @@
 import importlib
-import traceback
-from inspect import ismodule
 import os
 import platform
+import traceback
+from inspect import ismodule
 from types import ModuleType
 
 system = platform.system()

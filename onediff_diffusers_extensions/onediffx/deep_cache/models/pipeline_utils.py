@@ -1,8 +1,8 @@
+import importlib
+import importlib.metadata
 import os
 
 from packaging import version
-import importlib
-import importlib.metadata
 
 diffusers_0220_v = version.parse("0.22.0")
 diffusers_0240_v = version.parse("0.24.0")
@@ -28,9 +28,9 @@ if diffusers_version < diffusers_0220_v:
                 library_name = "onediffx.deep_cache.models.unet_2d_condition"
 
             if class_name == "UNetSpatioTemporalConditionModel":
-                assert diffusers_version >= diffusers_0240_v, (
-                    "SVD not support in diffusers-" + str(diffusers_version)
-                )
+                assert (
+                    diffusers_version >= diffusers_0240_v
+                ), "SVD not support in diffusers-" + str(diffusers_version)
                 library_name = (
                     "onediffx.deep_cache.models.unet_spatio_temporal_condition"
                 )
@@ -44,7 +44,6 @@ if diffusers_version < diffusers_0220_v:
             }
 
         return class_obj, class_candidates
-
 
 else:
 
@@ -79,9 +78,9 @@ else:
                 library_name = "onediffx.deep_cache.models.unet_2d_condition"
 
             if class_name == "UNetSpatioTemporalConditionModel":
-                assert diffusers_version >= diffusers_0240_v, (
-                    "SVD not support in diffusers-" + str(diffusers_version)
-                )
+                assert (
+                    diffusers_version >= diffusers_0240_v
+                ), "SVD not support in diffusers-" + str(diffusers_version)
                 library_name = (
                     "onediffx.deep_cache.models.unet_spatio_temporal_condition"
                 )
@@ -104,12 +103,17 @@ ORIGIN_3D_GET_DOWN_BLOCK = None
 ORIGIN_3D_GET_UP_BLOCK = None
 
 if diffusers_version >= diffusers_0260_v:
-    from diffusers.models.unets import unet_2d_condition as diffusers_unet_2d_condition
-    from diffusers.models.unets import unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition
+    from diffusers.models.unets import (
+        unet_2d_condition as diffusers_unet_2d_condition,
+        unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition,
+    )
 else:
     from diffusers.models import unet_2d_condition as diffusers_unet_2d_condition
+
     if diffusers_version >= diffusers_0240_v:
-        from diffusers.models import unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition
+        from diffusers.models import (
+            unet_spatio_temporal_condition as diffusers_unet_spatio_temporal_condition,
+        )
 
 
 def enable_deep_cache_pipeline():
@@ -124,7 +128,7 @@ def enable_deep_cache_pipeline():
         if diffusers_version >= diffusers_0240_v:
             assert ORIGIN_3D_GET_DOWN_BLOCK is None
             assert ORIGIN_3D_GET_UP_BLOCK is None
-        
+
         if diffusers_version < diffusers_0270_v:
             ORIGIN_DIFFUDION_GET_CLC_OBJ_CANDIDATES = (
                 diffusers.pipelines.pipeline_utils.get_class_obj_and_candidates
@@ -156,9 +160,7 @@ def enable_deep_cache_pipeline():
             ORIGIN_3D_GET_DOWN_BLOCK = (
                 diffusers_unet_spatio_temporal_condition.get_down_block
             )
-            diffusers_unet_spatio_temporal_condition.get_down_block = (
-                get_3d_down_block
-            )
+            diffusers_unet_spatio_temporal_condition.get_down_block = get_3d_down_block
 
             from .unet_3d_blocks import get_up_block as get_3d_up_block
 
@@ -192,7 +194,9 @@ def disable_deep_cache_pipeline():
     diffusers_unet_2d_condition.get_down_block = ORIGIN_2D_GET_DOWN_BLOCK
     diffusers_unet_2d_condition.get_up_block = ORIGIN_2D_GET_UP_BLOCK
     if diffusers_version >= diffusers_0240_v:
-        diffusers_unet_spatio_temporal_condition.get_down_block = ORIGIN_3D_GET_DOWN_BLOCK
+        diffusers_unet_spatio_temporal_condition.get_down_block = (
+            ORIGIN_3D_GET_DOWN_BLOCK
+        )
         diffusers_unet_spatio_temporal_condition.get_up_block = ORIGIN_3D_GET_UP_BLOCK
 
 

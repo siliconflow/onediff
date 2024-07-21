@@ -5,18 +5,19 @@ Compile with nexfort: python examples/text_to_image_sdxl.py --compiler nexfort
 Test dynamic shape: Add --run_multiple_resolutions 1 and --run_rare_resolutions 1
 """
 
-import os
-import json
-import time
 import argparse
+import json
+import os
+import time
 
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
+
+from diffusers import StableDiffusionXLPipeline
 
 # from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from onediffx import compile_pipe
-from diffusers import StableDiffusionXLPipeline
 
 parser = argparse.ArgumentParser()
 parser.add_argument(

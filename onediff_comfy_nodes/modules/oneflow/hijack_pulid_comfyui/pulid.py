@@ -1,13 +1,14 @@
-import torch
 import comfy
-import torchvision.transforms as T
 import comfy.utils
+import torch
+import torchvision.transforms as T
 from facexlib.parsing import init_parsing_model
 from facexlib.utils.face_restoration_helper import FaceRestoreHelper
-from ..utils.booster_utils import is_using_oneflow_backend
-from ._config import pulid_comfyui_pt, pulid_comfyui_hijacker
-from ..hijack_ipadapter_plus.set_model_patch_replace import apply_patch
 from register_comfy.CrossAttentionPatch import pulid_attention
+
+from ..hijack_ipadapter_plus.set_model_patch_replace import apply_patch
+from ..utils.booster_utils import is_using_oneflow_backend
+from ._config import pulid_comfyui_hijacker, pulid_comfyui_pt
 
 pulid_pkg = pulid_comfyui_pt.pulid
 PulidModel = pulid_pkg.PulidModel

@@ -1,6 +1,6 @@
-from typing import Union
-from types import FunctionType
 import inspect
+from types import FunctionType
+from typing import Union
 
 
 class MockEntityNameFormatter:
