@@ -1,6 +1,7 @@
+from onediff_utils import singleton_decorator
+
 from onediff.infer_compiler.backends.oneflow.transform import register
 from onediff.utils.import_utils import is_oneflow_available
-from onediff_utils import singleton_decorator
 
 
 @singleton_decorator

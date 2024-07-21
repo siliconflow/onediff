@@ -1,11 +1,10 @@
 from enum import Enum
-
 from .patch_executor import (
     CachedCrossAttentionPatch,
     DeepCacheUNetExecutorPatch,
     UiNodeWithIndexPatch,
-    UNetExtraInputOptions,
 )
+from .patch_executor import UNetExtraInputOptions
 
 
 class PatchType(Enum):

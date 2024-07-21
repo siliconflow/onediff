@@ -24,7 +24,7 @@ while getopts 'm:w:c:o:h' opt; do
     o)
       OUTPUT_FILE=$OPTARG
       ;;
-
+   
     ?|h)
       echo "Usage: $(basename $0) [-m model_dir] [-w warmups] [-c compiler] [-o output_file]"
       echo "  -m model_dir: the directory of the models, if not set, use HF models"

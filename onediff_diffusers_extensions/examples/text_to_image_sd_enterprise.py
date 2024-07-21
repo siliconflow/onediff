@@ -1,11 +1,11 @@
-import argparse
 import os
 import time
+import argparse
+
+from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 
 import torch
 import torch.nn as nn
-
-from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 
 
 def parse_args():
@@ -16,9 +16,7 @@ def parse_args():
     parser.add_argument("--save_graph", action="store_true")
     parser.add_argument("--load_graph", action="store_true")
     parser.add_argument(
-        "--prompt",
-        type=str,
-        default="a photo of an astronaut riding a horse on mars",
+        "--prompt", type=str, default="a photo of an astronaut riding a horse on mars",
     )
     parser.add_argument("--height", type=int, default=512)
     parser.add_argument("--width", type=int, default=512)
@@ -56,8 +54,8 @@ assert os.path.isfile(
     os.path.join(args.model, "calibrate_info.txt")
 ), f"calibrate_info.txt is required in args.model ({args.model})"
 
-import onediff_quant
 from diffusers import StableDiffusionPipeline
+import onediff_quant
 from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
 onediff_quant.enable_load_quantized_model()
@@ -91,12 +89,7 @@ pipe.to("cuda")
 
 for sub_module_name, sub_calibrate_info in calibrate_info.items():
     replace_sub_module_with_quantizable_module(
-        pipe.unet,
-        sub_module_name,
-        sub_calibrate_info,
-        False,
-        False,
-        args.bits,
+        pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
 compile_options = OneflowCompileOptions()

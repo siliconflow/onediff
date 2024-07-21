@@ -8,7 +8,7 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
 - ComfyUI:
   - github: https://github.com/comfyanonymous/ComfyUI
   - commit: `5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1`
-  - Date:   `Wed Mar 20 20:48:54 2024 -0400`
+  - Date:   `Wed Mar 20 20:48:54 2024 -0400` 
 
 - ComfyUI-AnimateDiff-Evolved:
   - github: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
@@ -16,16 +16,16 @@ Please Refer to the Readme in the Respective Repositories for Installation Instr
   - Date:   `Wed Mar 20 15:50:08 2024 -0500`
 
 - OneDiff:
-  - github: https://github.com/siliconflow/onediff
+  - github: https://github.com/siliconflow/onediff 
 
 
 ### Quick Start
 
-> Recommend running the official example of ComfyUI AnimateDiff Evolved now, and then trying OneDiff acceleration.
+> Recommend running the official example of ComfyUI AnimateDiff Evolved now, and then trying OneDiff acceleration. 
 
 Experiment (NVIDIA A100-PCIE-40GB) Workflow for OneDiff Acceleration in ComfyUI-AnimateDiff-Evolved:
 
-1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node.
+1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node. 
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 
@@ -62,3 +62,4 @@ https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved?tab=readme-ov-file#sa
 
 
 [**`Community and Support`**](https://github.com/siliconflow/onediff?tab=readme-ov-file#community-and-support)
+

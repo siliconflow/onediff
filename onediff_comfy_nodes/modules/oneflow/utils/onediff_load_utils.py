@@ -3,7 +3,7 @@ from pathlib import Path
 import folder_paths
 import torch
 from comfy import model_management
-from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
+from onediff.infer_compiler import OneflowCompileOptions, oneflow_compile
 
 from ..config import _USE_UNET_INT8, ONEDIFF_QUANTIZED_OPTIMIZED_MODELS
 from .graph_path import generate_graph_path
@@ -29,9 +29,7 @@ def onediff_load_quant_checkpoint_advanced(
     load_device = model_management.get_torch_device()
     diffusion_model = modelpatcher.model.diffusion_model.to(load_device)
     quant_unet = quantize_unet(
-        diffusion_model=diffusion_model,
-        inplace=True,
-        calibrate_info=calibrate_info,
+        diffusion_model=diffusion_model, inplace=True, calibrate_info=calibrate_info,
     )
     modelpatcher.model.diffusion_model = quant_unet
 

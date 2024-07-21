@@ -13,13 +13,13 @@ from onediff.infer_compiler.backends.oneflow import (
 
 from ..booster_interface import BoosterExecutor
 from .onediff_controlnet import OneDiffControlLora
+from .utils.graph_path import generate_graph_path
 from .utils.booster_utils import (
     get_model_type,
     is_fp16_model,
     set_compiled_options,
     set_environment_for_svd_img2vid,
 )
-from .utils.graph_path import generate_graph_path
 
 
 class BasicOneFlowBoosterExecutor(BoosterExecutor):

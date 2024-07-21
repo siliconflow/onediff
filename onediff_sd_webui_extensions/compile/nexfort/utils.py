@@ -9,9 +9,9 @@ from modules import shared
 from modules.hypernetworks import hypernetwork
 from modules.sd_hijack_optimizations import SdOptimization
 from modules.sd_hijack_utils import CondFunc
+from onediff_utils import singleton_decorator
 
 from onediff.utils.import_utils import is_nexfort_available
-from onediff_utils import singleton_decorator
 
 
 @singleton_decorator

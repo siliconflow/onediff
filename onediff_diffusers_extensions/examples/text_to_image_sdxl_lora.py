@@ -1,16 +1,11 @@
-from pathlib import Path
-
 import torch
+from pathlib import Path
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 from onediff.torch_utils import TensorInplaceAssign
 
 try:
-    from onediffx.lora import (
-        load_and_fuse_lora,
-        unfuse_lora,
-        update_graph_with_constant_folding_info,
-    )
+    from onediffx.lora import load_and_fuse_lora, unfuse_lora, update_graph_with_constant_folding_info
 except ImportError:
     raise RuntimeError(
         "OneDiff onediffx is not installed. Please check onediff_diffusers_extensions/README.md to install onediffx."
@@ -24,15 +19,7 @@ LORA_MODEL_ID = "hf-internal-testing/sdxl-1.0-lora"
 LORA_FILENAME = "sd_xl_offset_example-lora_1.0.safetensors"
 
 pipe.unet = oneflow_compile(pipe.unet)
-latents = torch.randn(
-    1,
-    4,
-    128,
-    128,
-    generator=torch.cuda.manual_seed(0),
-    dtype=torch.float16,
-    device="cuda",
-)
+latents = torch.randn(1, 4, 128, 128, generator=torch.cuda.manual_seed(0), dtype=torch.float16, device="cuda")
 
 # There are three methods to load LoRA into OneDiff compiled model
 # 1. pipe.load_lora_weights (Low Performence)

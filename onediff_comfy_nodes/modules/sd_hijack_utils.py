@@ -1,9 +1,9 @@
 """Hijack utils for stable-diffusion."""
 import importlib
 import inspect
-from collections import deque
 from types import FunctionType
 from typing import Callable, List, Union
+from collections import deque
 
 __all__ = ["Hijacker", "hijack_func"]
 
@@ -58,9 +58,7 @@ class CondFunc:
             return self(*args, **kwargs)
 
         setattr(
-            resolved_obj,
-            func_path[-1],
-            hijacked_method,
+            resolved_obj, func_path[-1], hijacked_method,
         )
 
         def unhijack_func():

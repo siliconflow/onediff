@@ -1,6 +1,6 @@
-import functools
-import json
 import os
+import json
+import functools
 
 import torch
 from onediff.infer_compiler import compile, DeployableModule
@@ -115,10 +115,9 @@ def fuse_qkv_projections_in_pipe(pipe):
 def convert_pipe_to_memory_format(
     pipe, *, ignores=(), memory_format=torch.preserve_format
 ):
-    import functools
-
     from nexfort.utils.attributes import multi_recursive_apply
     from nexfort.utils.memory_format import apply_memory_format
+    import functools
 
     if memory_format == torch.preserve_format:
         return pipe

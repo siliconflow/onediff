@@ -6,13 +6,13 @@
 
 ---
 
-Performance of Community Edition
+Performance of Community Edition 
 
 Updated on January 23, 2024. Device: RTX 3090
 
 
 <div align="center">
-
+  
   **SDXL End2End Time** , Image Size 1024x1024 , Batch Size 1 , steps 20
 
   <a href="https://github.com/siliconflow/onediff/tree/main" target="_blank">
@@ -51,7 +51,7 @@ Updated on January 23, 2024. Device: RTX 3090
 ### Installation Guide
 This guide provides two methods to install ComfyUI and integrate it with the OneDiff library: via the Comfy CLI or directly from GitHub.
 
-<details close>
+<details close> 
 <summary> Option 1: Installing via Comfy CLI </summary>
 
 1. **Install Comfy CLI**:
@@ -98,7 +98,7 @@ First, install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI), 
      ```
 
 4. **Install a Compiler Backend**
-
+  
     For instructions on installing a compiler backend for OneDiff, please refer to the OneDiff GitHub repository [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-a-compiler-backend).
 
 
@@ -125,7 +125,7 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 
 
-### Compiler Cache
+### Compiler Cache 
 **Avoid compilation time for online serving**
 
 ```shell

@@ -11,15 +11,14 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-import importlib.metadata
-
-import types
 from typing import Any, Dict, Optional, Tuple
 
+import types
 import torch
 from oneflow.nn.graph.proxy import ProxyModule
 
 from packaging import version
+import importlib.metadata
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_0260_v = version.parse("0.26.0")
@@ -38,7 +37,6 @@ logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
 
 if diffusers_version >= diffusers_0210_v:
-
     class CrossAttnDownBlock2D(diffusers_unet_2d_blocks.CrossAttnDownBlock2D):
         def forward(
             self,
@@ -74,16 +72,11 @@ if diffusers_version >= diffusers_0210_v:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = (
-                        {"use_reentrant": False}
-                        if is_torch_version(">=", "1.11.0")
-                        else {}
-                    )
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if is_torch_version(">=", "1.11.0") else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(resnet),
-                        hidden_states,
-                        temb,
-                        **ckpt_kwargs,
+                        create_custom_forward(resnet), hidden_states, temb, **ckpt_kwargs,
                     )
                     hidden_states = attn(
                         hidden_states,
@@ -123,13 +116,10 @@ if diffusers_version >= diffusers_0210_v:
 
             return hidden_states, output_states
 
+
     class DownBlock2D(diffusers_unet_2d_blocks.DownBlock2D):
         def forward(
-            self,
-            hidden_states,
-            temb=None,
-            scale: float = 1.0,
-            exist_block_number=None,
+            self, hidden_states, temb=None, scale: float = 1.0, exist_block_number=None,
         ):
             # print("exist_block_number:", exist_block_number, type(self))
             output_states = ()
@@ -171,6 +161,7 @@ if diffusers_version >= diffusers_0210_v:
                 output_states = output_states + (hidden_states,)
 
             return hidden_states, output_states
+
 
     class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
@@ -220,16 +211,11 @@ if diffusers_version >= diffusers_0210_v:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = (
-                        {"use_reentrant": False}
-                        if is_torch_version(">=", "1.11.0")
-                        else {}
-                    )
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if is_torch_version(">=", "1.11.0") else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(resnet),
-                        hidden_states,
-                        temb,
-                        **ckpt_kwargs,
+                        create_custom_forward(resnet), hidden_states, temb, **ckpt_kwargs,
                     )
                     hidden_states = attn(
                         hidden_states,
@@ -254,10 +240,7 @@ if diffusers_version >= diffusers_0210_v:
                 for upsampler in self.upsamplers:
                     if isinstance(self, ProxyModule):
                         hidden_states = upsampler(
-                            hidden_states,
-                            upsample_size,
-                            output_like=output_like,
-                            scale=lora_scale,
+                            hidden_states, upsample_size, output_like=output_like, scale=lora_scale
                         )
                     else:
                         hidden_states = upsampler(
@@ -265,6 +248,7 @@ if diffusers_version >= diffusers_0210_v:
                         )
 
             return hidden_states, prv_f
+
 
     class UpBlock2D(diffusers_unet_2d_blocks.UpBlock2D):
         def forward(
@@ -319,21 +303,11 @@ if diffusers_version >= diffusers_0210_v:
             if self.upsamplers is not None:
                 for upsampler in self.upsamplers:
                     if isinstance(self, ProxyModule):
-                        hidden_states = upsampler(
-                            hidden_states,
-                            upsample_size,
-                            scale=scale,
-                            output_like=output_like,
-                        )
+                        hidden_states = upsampler(hidden_states, upsample_size, scale=scale, output_like=output_like,)
                     else:
-                        hidden_states = upsampler(
-                            hidden_states,
-                            upsample_size,
-                            scale=scale,
-                        )
+                        hidden_states = upsampler(hidden_states, upsample_size, scale=scale,)
 
             return hidden_states, prv_f
-
 else:
 
     class CrossAttnDownBlock2D(diffusers_unet_2d_blocks.CrossAttnDownBlock2D):
@@ -352,9 +326,7 @@ else:
             if diffusers_version >= diffusers_0270_v:
                 if cross_attention_kwargs is not None:
                     if cross_attention_kwargs.get("scale", None) is not None:
-                        logger.warning(
-                            "Passing `scale` to `cross_attention_kwargs` is depcrecated. `scale` will be ignored."
-                        )
+                        logger.warning("Passing `scale` to `cross_attention_kwargs` is depcrecated. `scale` will be ignored.")
 
             output_states = ()
 
@@ -372,16 +344,11 @@ else:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = (
-                        {"use_reentrant": False}
-                        if is_torch_version(">=", "1.11.0")
-                        else {}
-                    )
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if is_torch_version(">=", "1.11.0") else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(resnet),
-                        hidden_states,
-                        temb,
-                        **ckpt_kwargs,
+                        create_custom_forward(resnet), hidden_states, temb, **ckpt_kwargs,
                     )
                     hidden_states = attn(
                         hidden_states,
@@ -421,12 +388,10 @@ else:
 
             return hidden_states, output_states
 
+
     class DownBlock2D(diffusers_unet_2d_blocks.DownBlock2D):
         def forward(
-            self,
-            hidden_states,
-            temb=None,
-            exist_block_number=None,
+            self, hidden_states, temb=None, exist_block_number=None,
         ):
             # print("exist_block_number:", exist_block_number, type(self))
             output_states = ()
@@ -469,6 +434,7 @@ else:
 
             return hidden_states, output_states
 
+
     class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
@@ -487,9 +453,7 @@ else:
             if diffusers_version >= diffusers_0270_v:
                 if cross_attention_kwargs is not None:
                     if cross_attention_kwargs.get("scale", None) is not None:
-                        logger.warning(
-                            "Passing `scale` to `cross_attention_kwargs` is depcrecated. `scale` will be ignored."
-                        )
+                        logger.warning("Passing `scale` to `cross_attention_kwargs` is depcrecated. `scale` will be ignored.")
             prv_f = []
 
             for i, (resnet, attn) in enumerate(zip(self.resnets, self.attentions)):
@@ -518,16 +482,11 @@ else:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = (
-                        {"use_reentrant": False}
-                        if is_torch_version(">=", "1.11.0")
-                        else {}
-                    )
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if is_torch_version(">=", "1.11.0") else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
-                        create_custom_forward(resnet),
-                        hidden_states,
-                        temb,
-                        **ckpt_kwargs,
+                        create_custom_forward(resnet), hidden_states, temb, **ckpt_kwargs,
                     )
                     hidden_states = attn(
                         hidden_states,
@@ -555,9 +514,12 @@ else:
                             hidden_states, upsample_size, output_like
                         )
                     else:
-                        hidden_states = upsampler(hidden_states, upsample_size)
+                        hidden_states = upsampler(
+                            hidden_states, upsample_size
+                        )
 
             return hidden_states, prv_f
+
 
     class UpBlock2D(diffusers_unet_2d_blocks.UpBlock2D):
         def forward(
@@ -611,9 +573,7 @@ else:
             if self.upsamplers is not None:
                 for upsampler in self.upsamplers:
                     if isinstance(self, ProxyModule):
-                        hidden_states = upsampler(
-                            hidden_states, upsample_size, output_like
-                        )
+                        hidden_states = upsampler(hidden_states, upsample_size, output_like)
                     else:
                         hidden_states = upsampler(hidden_states, upsample_size)
 
@@ -621,10 +581,10 @@ else:
 
 
 update_cls = {
-    "CrossAttnDownBlock2D": CrossAttnDownBlock2D,
-    "DownBlock2D": DownBlock2D,
-    "CrossAttnUpBlock2D": CrossAttnUpBlock2D,
-    "UpBlock2D": UpBlock2D,
+  "CrossAttnDownBlock2D": CrossAttnDownBlock2D,
+  "DownBlock2D": DownBlock2D,
+  "CrossAttnUpBlock2D": CrossAttnUpBlock2D,
+  "UpBlock2D": UpBlock2D,
 }
 
 if diffusers_version >= diffusers_0260_v:
@@ -634,15 +594,11 @@ else:
     src_get_down_block = diffusers.models.unet_2d_blocks.get_down_block
     src_get_up_block = diffusers.models.unet_2d_blocks.get_up_block
 
-down_globals = {k: v for k, v in src_get_down_block.__globals__.items()}
+down_globals = {k : v for k, v in src_get_down_block.__globals__.items()}
 down_globals.update(update_cls)
-get_down_block = types.FunctionType(
-    src_get_down_block.__code__, down_globals, argdefs=src_get_down_block.__defaults__
-)
+get_down_block = types.FunctionType(src_get_down_block.__code__, down_globals, argdefs=src_get_down_block.__defaults__)
 
 
-up_globals = {k: v for k, v in src_get_up_block.__globals__.items()}
+up_globals = {k : v for k, v in src_get_up_block.__globals__.items()}
 up_globals.update(update_cls)
-get_up_block = types.FunctionType(
-    src_get_up_block.__code__, up_globals, argdefs=src_get_up_block.__defaults__
-)
+get_up_block = types.FunctionType(src_get_up_block.__code__, up_globals, argdefs=src_get_up_block.__defaults__)

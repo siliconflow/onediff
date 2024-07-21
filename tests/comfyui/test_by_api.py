@@ -2,6 +2,7 @@ import argparse
 import json
 import os
 
+
 import requests
 from PIL import Image
 

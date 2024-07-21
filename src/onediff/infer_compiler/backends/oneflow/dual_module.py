@@ -1,16 +1,15 @@
 import os
 import types
-from itertools import chain
 from typing import Any
-
-import oneflow as flow
+from itertools import chain
 
 import torch
+import oneflow as flow
 from oneflow.utils.tensor import to_torch
 
 from onediff.utils import logger
-from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .transform.builtin_transform import torch2oflow
+from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 
 
 class DualModule(torch.nn.Module):
@@ -58,10 +57,7 @@ class DualModule(torch.nn.Module):
                 + [x for x, _ in oneflow_module.named_buffers()]
             )
             for name, tensor in chain.from_iterable(
-                [
-                    torch_module.named_parameters(),
-                    torch_module.named_buffers(),
-                ]
+                [torch_module.named_parameters(), torch_module.named_buffers(),]
             ):
                 if name not in oneflow_tensor_list:
                     tensor.data = tensor.to(*args, **kwargs)
@@ -114,7 +110,7 @@ class DualModule(torch.nn.Module):
 
             torch_obj = getattr(module, name)
 
-            if hasattr(torch_obj, "copy_"):
+            if hasattr(torch_obj, 'copy_'):
                 torch_obj.copy_(value)
             else:
                 setattr(module, name, value)

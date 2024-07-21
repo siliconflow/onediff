@@ -1,9 +1,7 @@
 from types import FunctionType
 from typing import Type, Union
-
 import torch
 from torch import nn
-
 from ..deployable_module import DeployableModule
 
 

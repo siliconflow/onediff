@@ -104,7 +104,7 @@ python ./src/onediff/quantization/quant_pipeline_test.py \
         --linear_ssim_threshold 0.991 \
         --save_as_float False \
         --cache_dir "./run_sd-v1-5" \
-        --quantized_model ./quantized_model
+        --quantized_model ./quantized_model 
 ```
 
 If you want to load a quantized model, you can modify the quantized_model parameter to the path of the specific model, such as the [sd-1.5-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1) and [sd-1.5-onediff-deepcache models](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-deepcache-int8). [Stable-diffusion-v2-1-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-enterprise) it has not been quantified, so it needs to be quantified first.

@@ -1,11 +1,11 @@
 """Module to convert PyTorch code to OneFlow."""
-from .builtin_transform import (
-    default_converter,
-    get_attr,
-    map_args,
-    proxy_class,
-    ProxySubmodule,
-    torch2oflow,
-)
-from .custom_transform import register
 from .manager import transform_mgr
+from .builtin_transform import torch2oflow, default_converter
+from .custom_transform import register
+
+from .builtin_transform import (
+    ProxySubmodule,
+    proxy_class,
+    map_args,
+    get_attr,
+)

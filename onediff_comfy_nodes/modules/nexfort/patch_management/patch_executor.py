@@ -1,9 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Dict, List
 
-from comfy.model_base import BaseModel
-
 from comfy.model_patcher import ModelPatcher
+from comfy.model_base import BaseModel
 
 
 class PatchExecutorBase(ABC):
@@ -109,7 +108,9 @@ class DeepCacheUNetExecutorPatch(PatchExecutorBase):
 
 class UNetExtraInputOptions(PatchExecutorBase):
     def __init__(self) -> None:
-        """UNetExtraInputOptions"""
+        """UNetExtraInputOptions
+       
+        """
         super().__init__()
         self.patch_name = type(self).__name__
 

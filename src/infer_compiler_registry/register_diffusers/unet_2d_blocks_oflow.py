@@ -1,9 +1,8 @@
-import importlib.metadata
 from typing import Any, Dict, List, Optional, Tuple, Union
-
+from packaging import version
+import importlib.metadata
 import oneflow as torch
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
-from packaging import version
 
 diffusers_0210_v = version.parse("0.21.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
@@ -69,11 +68,11 @@ if diffusers_version < diffusers_0210_v:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = (
-                        {"use_reentrant": False}
-                        if transformed_diffusers.utils.is_torch_version(">=", "1.11.0")
-                        else {}
-                    )
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if transformed_diffusers.utils.is_torch_version(
+                        ">=", "1.11.0"
+                    ) else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(resnet),
                         hidden_states,
@@ -147,6 +146,7 @@ if diffusers_version < diffusers_0210_v:
                     hidden_states = upsampler(hidden_states, upsample_size, output_like)
 
             return hidden_states
+
 
 else:
 
@@ -236,11 +236,11 @@ else:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = (
-                        {"use_reentrant": False}
-                        if transformed_diffusers.utils.is_torch_version(">=", "1.11.0")
-                        else {}
-                    )
+                    ckpt_kwargs: Dict[str, Any] = {
+                        "use_reentrant": False
+                    } if transformed_diffusers.utils.is_torch_version(
+                        ">=", "1.11.0"
+                    ) else {}
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(resnet),
                         hidden_states,

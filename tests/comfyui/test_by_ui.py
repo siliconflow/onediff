@@ -1,5 +1,5 @@
 """
-Before running this script, you need to start the Selenium and ComfyUI services.
+Before running this script, you need to start the Selenium and ComfyUI services. 
 You can start their containers using Docker Compose.
 
 Please set the following environment variables (whose values are for reference only):
@@ -19,7 +19,7 @@ And then:
 
 **Note**:
   It is advisable to execute the following commands in the 'diffusers' directory
-unless you are fully aware of the implications of executing them in a different
+unless you are fully aware of the implications of executing them in a different 
 directory.
 
 git clone https://github.com/comfyanonymous/ComfyUI.git
@@ -44,44 +44,28 @@ import time
 
 from PIL import Image
 from selenium import webdriver
-from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.by import By
-from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Test ComfyUI workflow by Selenium.")
     parser.add_argument(
-        "-w",
-        "--workflow",
-        type=str,
-        required=True,
-        help="Workflow file",
+        "-w", "--workflow", type=str, required=True, help="Workflow file",
     )
     parser.add_argument(
-        "-t",
-        "--timeout",
-        type=int,
-        default="200",
+        "-t", "--timeout", type=int, default="200",
     )
     parser.add_argument(
-        "--host",
-        type=str,
-        default="127.0.0.1",
-        help="The selenium service host",
+        "--host", type=str, default="127.0.0.1", help="The selenium service host",
     )
     parser.add_argument(
-        "--port",
-        type=str,
-        default="4444",
-        help="The selenium service port",
+        "--port", type=str, default="4444", help="The selenium service port",
     )
     parser.add_argument(
-        "--comfy_port",
-        type=str,
-        default="8188",
-        help="The ComfyUI service port",
+        "--comfy_port", type=str, default="8188", help="The ComfyUI service port",
     )
     args = parser.parse_args()
     return args
@@ -192,12 +176,12 @@ def launch_prompt(driver):
         launch_and_wait(driver, timeout=args.timeout)
 
         duration = time.time() - start_time
-        print(f"{args.workflow} has finished, time elapsed: {duration:.1f}")
-
+        print(
+            f"{args.workflow} has finished, time elapsed: {duration:.1f}"
+        )
+        
         if duration < 2:
-            raise ValueError(
-                "Execution duration is too short, possible error in workflow execution"
-            )
+            raise ValueError("Execution duration is too short, possible error in workflow execution")
 
         print(f"check if error occurs...")
         check_error_occurs(driver)

@@ -3,9 +3,7 @@
 hijack ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus/IPAdapterPlus.py"""
 
 import functools
-
 from onediff.utils.log_utils import logger
-
 from ..utils.booster_utils import is_using_oneflow_backend
 from ._config import ipadapter_plus_hijacker, ipadapter_plus_pt
 from .set_model_patch_replace import set_model_patch_replace_v2

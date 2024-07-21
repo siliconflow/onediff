@@ -57,8 +57,8 @@ assert os.path.isfile(
     os.path.join(args.model, "calibrate_info.txt")
 ), f"calibrate_info.txt is required in args.model ({args.model})"
 
-import onediff_quant
 from diffusers import StableDiffusionXLPipeline
+import onediff_quant
 from onediff_quant.utils import replace_sub_module_with_quantizable_module
 
 onediff_quant.enable_load_quantized_model()
@@ -80,22 +80,14 @@ with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
         ]
 
 pipe = StableDiffusionXLPipeline.from_pretrained(
-    args.model,
-    torch_dtype=torch.float16,
-    use_safetensors=True,
-    variant="fp16",
+    args.model, torch_dtype=torch.float16, use_safetensors=True, variant="fp16",
 )
 pipe.to("cuda")
 
 
 for sub_module_name, sub_calibrate_info in calibrate_info.items():
     replace_sub_module_with_quantizable_module(
-        pipe.unet,
-        sub_module_name,
-        sub_calibrate_info,
-        False,
-        False,
-        args.bits,
+        pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
     )
 
 compile_options = OneflowCompileOptions()

@@ -1,5 +1,6 @@
-from onediff.infer_compiler.backends.oneflow import online_quantization_utils
 from register_comfy.CrossAttentionPatch import is_crossAttention_patch
+
+from onediff.infer_compiler.backends.oneflow import online_quantization_utils
 
 from .patch_executor import PatchExecutorBase
 

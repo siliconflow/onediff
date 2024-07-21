@@ -1,8 +1,7 @@
-import importlib.metadata
-
 from onediff.infer_compiler.backends.oneflow.transform import register
 
 from packaging import version
+import importlib.metadata
 
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
@@ -11,40 +10,40 @@ from diffusers.models.attention_processor import (
     Attention,
     AttnProcessor,
     AttnProcessor2_0,
-    LoRAAttnProcessor2_0,
 )
+from diffusers.models.attention_processor import LoRAAttnProcessor2_0
 
 if diffusers_version < version.parse("0.26.00"):
-    from diffusers.models.transformer_2d import Transformer2DModel
+    from diffusers.models.unet_2d_condition import UNet2DConditionModel
     from diffusers.models.unet_2d_blocks import (
         AttnUpBlock2D,
         CrossAttnUpBlock2D,
         UpBlock2D,
     )
-    from diffusers.models.unet_2d_condition import UNet2DConditionModel
+    from diffusers.models.transformer_2d import Transformer2DModel
 else:
-    from diffusers.models.transformers.transformer_2d import Transformer2DModel
+    from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel
     from diffusers.models.unets.unet_2d_blocks import (
         AttnUpBlock2D,
         CrossAttnUpBlock2D,
         UpBlock2D,
     )
-    from diffusers.models.unets.unet_2d_condition import UNet2DConditionModel
+    from diffusers.models.transformers.transformer_2d import Transformer2DModel
 
 if diffusers_version >= version.parse("0.25.00"):
     from diffusers.models.upsampling import Upsample2D
 else:
     from diffusers.models.resnet import Upsample2D
 if diffusers_version >= version.parse("0.24.00"):
-    from diffusers.models.attention import TemporalBasicTransformerBlock
     from diffusers.models.resnet import SpatioTemporalResBlock
+    from diffusers.models.attention import TemporalBasicTransformerBlock
 
     if diffusers_version >= version.parse("0.26.00"):
-        from diffusers.models.transformers.transformer_temporal import (
-            TransformerSpatioTemporalModel,
-        )
         from diffusers.models.unets.unet_spatio_temporal_condition import (
             UNetSpatioTemporalConditionModel,
+        )
+        from diffusers.models.transformers.transformer_temporal import (
+            TransformerSpatioTemporalModel,
         )
     else:
         from diffusers.models.transformer_temporal import TransformerSpatioTemporalModel
@@ -61,25 +60,27 @@ if diffusers_version >= version.parse("0.24.00"):
 
     from .spatio_temporal_oflow import (
         SpatioTemporalResBlock as SpatioTemporalResBlockOflow,
-        TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow,
-        TemporalDecoder as TemporalDecoderOflow,
+    )
+    from .spatio_temporal_oflow import TemporalDecoder as TemporalDecoderOflow
+    from .spatio_temporal_oflow import (
         TransformerSpatioTemporalModel as TransformerSpatioTemporalModelOflow,
+    )
+    from .spatio_temporal_oflow import (
+        TemporalBasicTransformerBlock as TemporalBasicTransformerBlockOflow,
+    )
+    from .spatio_temporal_oflow import (
         UNetSpatioTemporalConditionModel as UNetSpatioTemporalConditionModelOflow,
     )
 
-from .attention_processor_oflow import (
-    Attention as AttentionOflow,
-    AttnProcessor as AttnProcessorOflow,
-    LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow,
-)
+from .attention_processor_oflow import Attention as AttentionOflow
+from .attention_processor_oflow import AttnProcessor as AttnProcessorOflow
+from .attention_processor_oflow import LoRAAttnProcessor2_0 as LoRAAttnProcessorOflow
+from .unet_2d_condition_oflow import UNet2DConditionModel as UNet2DConditionModelOflow
+from .unet_2d_blocks_oflow import AttnUpBlock2D as AttnUpBlock2DOflow
+from .unet_2d_blocks_oflow import CrossAttnUpBlock2D as CrossAttnUpBlock2DOflow
+from .unet_2d_blocks_oflow import UpBlock2D as UpBlock2DOflow
 from .resnet_oflow import Upsample2D as Upsample2DOflow
 from .transformer_2d_oflow import Transformer2DModel as Transformer2DModelOflow
-from .unet_2d_blocks_oflow import (
-    AttnUpBlock2D as AttnUpBlock2DOflow,
-    CrossAttnUpBlock2D as CrossAttnUpBlock2DOflow,
-    UpBlock2D as UpBlock2DOflow,
-)
-from .unet_2d_condition_oflow import UNet2DConditionModel as UNet2DConditionModelOflow
 
 # For CI
 if diffusers_version >= version.parse("0.24.00"):

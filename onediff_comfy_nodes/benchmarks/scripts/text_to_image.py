@@ -80,10 +80,7 @@ class ImageInfo(NamedTuple):
 
 class WorkflowProcessor:
     def __init__(
-        self,
-        output_images: bool,
-        output_dir: str,
-        logger,
+        self, output_images: bool, output_dir: str, logger,
     ):
         self.output_images = output_images
         self.output_dir = output_dir
@@ -119,9 +116,7 @@ def run_workflow(
     logger.info(f"Result directory: {result_dir}")
 
     processor = WorkflowProcessor(
-        output_images,
-        os.path.join(result_dir, "imgs"),
-        logger,
+        output_images, os.path.join(result_dir, "imgs"), logger,
     )
 
     result = {}
@@ -177,7 +172,7 @@ def run_workflow(
                                 "basic_image_path": baseline_image_path,
                             }
                         )
-                        logger.info(f"SSIM: {ssim_value=}")
+                        logger.info(f'SSIM: {ssim_value=}')
                         assert (
                             ssim_value > ssim_threshold
                         ), f"SSIM value {ssim_value} is not greater than the threshold {ssim_threshold}"

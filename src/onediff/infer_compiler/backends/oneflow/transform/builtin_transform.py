@@ -1,24 +1,22 @@
 """Convert torch object to oneflow object."""
 
-import importlib
 import os
-import traceback
+import importlib
 import types
+import traceback
+from functools import singledispatch, partial
 from collections import OrderedDict
 from collections.abc import Iterable
-from functools import partial, singledispatch
-from typing import Any, Union
-
-import oneflow as flow
+from typing import Union, Any
 import torch
-
-from onediff.utils import logger
-from ..import_tools.importer import is_need_mock
+import oneflow as flow
 
 from .manager import transform_mgr
+from onediff.utils import logger
+from .patch_for_diffusers import diffusers_checker
+from ..import_tools.importer import is_need_mock
 
 from .patch_for_comfy import PatchForComfy
-from .patch_for_diffusers import diffusers_checker
 
 __all__ = [
     "proxy_class",
@@ -248,7 +246,7 @@ def _(mod: torch.nn.Module, verbose=False):
         if verbose:
             logger.info(
                 f"""
-            Warning: {type(of_mod)} is in training mode
+            Warning: {type(of_mod)} is in training mode 
             and is turned into eval mode which is good for infrence optimation.
             """
             )

@@ -1,5 +1,4 @@
 import collections
-
 from ..modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
 
 

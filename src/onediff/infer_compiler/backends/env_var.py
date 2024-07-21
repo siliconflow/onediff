@@ -1,8 +1,7 @@
 import dataclasses
 import os
-from typing import Optional
-
 import torch
+from typing import Optional
 
 from onediff.utils import set_boolean_env_var, set_integer_env_var
 

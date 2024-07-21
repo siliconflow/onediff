@@ -2,11 +2,11 @@
 
 ### Quick Start
 
-> Recommend running the official example of ComfyUI_IPAdapter_plus now, and then trying OneDiff acceleration.
+> Recommend running the official example of ComfyUI_IPAdapter_plus now, and then trying OneDiff acceleration. 
 
 Experiment (GeForce RTX 3090) Workflow for OneDiff Acceleration in ComfyUI_IPAdapter_plus:
 
-1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node.
+1. Replace the **`Load Checkpoint`** node with **`Load Checkpoint - OneDiff`** node. 
 2. Add a **`Batch Size Patcher`** node before the **`Ksampler`** node (due to temporary lack of support for dynamic batch size).
 As follows:
 ![workflow (19)](https://github.com/siliconflow/onediff/assets/117806079/07b153fd-a236-4c8d-a220-9b5823a79c17)

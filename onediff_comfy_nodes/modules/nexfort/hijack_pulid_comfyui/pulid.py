@@ -1,9 +1,8 @@
 from functools import partial
-
+from ._config import pulid_comfyui, pulid_comfyui_hijacker
 from ..booster_utils import is_using_nexfort_backend
 
 from ..hijack_ipadapter_plus.set_model_patch_replace import set_model_patch_replace
-from ._config import pulid_comfyui, pulid_comfyui_hijacker
 
 # ComfyUI/custom_nodes/PuLID_ComfyUI/pulid.py
 set_model_patch_replace_fn = pulid_comfyui.pulid.set_model_patch_replace

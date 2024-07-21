@@ -9,18 +9,12 @@ import torch
 import torch.nn as nn
 from nodes import KSampler, VAEDecode
 from onediff.infer_compiler import oneflow_compile
-
 # onediff
-from onediff.torch_utils.module_operations import get_sub_module, modify_sub_module
+from onediff.torch_utils.module_operations import (get_sub_module, modify_sub_module)
 from onediff_quant import Quantizer
-
 # onediff_quant
-from onediff_quant.utils import (
-    find_quantizable_modules,
-    get_quantize_module,
-    metric_quantize_costs,
-    symm_quantize,
-)
+from onediff_quant.utils import (find_quantizable_modules, get_quantize_module,
+                                 metric_quantize_costs, symm_quantize)
 
 # onediff_comfy_nodes
 from .model_patcher import OneFlowDeepCacheSpeedUpModelPatcher

@@ -1,10 +1,9 @@
 import time
 from pathlib import Path
 
+import torch
 import pandas as pd
 import safetensors.torch
-
-import torch
 from diffusers import DiffusionPipeline
 
 from onediff.infer_compiler import oneflow_compile
@@ -75,9 +74,7 @@ print("")
 load_and_fuse_lora_time = []
 for i, (name, lora) in enumerate(loras.items()):
     with TimerContextManager("load_and_fuse_lora", Path(name).stem):
-        load_and_fuse_lora(
-            pipe, lora.copy(), adapter_name=Path(name).stem, lora_scale=1.0
-        )
+        load_and_fuse_lora(pipe, lora.copy(), adapter_name=Path(name).stem, lora_scale=1.0)
         unfuse_lora(pipe)
     load_and_fuse_lora_time.append(_time)
 

@@ -1,12 +1,11 @@
 import warnings
 from typing import List, Optional
-
+import torch
 import numpy as np
 import PIL.Image
-import torch
+from PIL import Image
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.utils import deprecate
-from PIL import Image
 
 
 def patch_image_prcessor(processor):

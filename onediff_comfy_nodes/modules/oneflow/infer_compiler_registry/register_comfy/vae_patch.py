@@ -19,8 +19,7 @@ class AttnBlock(AttnBlock_porxy):
         B, C, _, _ = x.shape
         # compute attention
         q, k, v = map(
-            lambda t: t.reshape(B, 1, C, -1).transpose(2, 3).contiguous(),
-            (q, k, v),
+            lambda t: t.reshape(B, 1, C, -1).transpose(2, 3).contiguous(), (q, k, v),
         )
 
         _, _, _, head_dim = q.shape

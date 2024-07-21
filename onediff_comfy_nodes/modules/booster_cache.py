@@ -1,8 +1,7 @@
-from collections import OrderedDict
-from functools import singledispatch
-
 import torch
+from collections import OrderedDict
 from comfy.model_patcher import ModelPatcher
+from functools import singledispatch
 from comfy.sd import VAE
 from onediff.torch_utils.module_operations import get_sub_module
 

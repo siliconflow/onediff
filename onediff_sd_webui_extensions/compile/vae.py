@@ -1,9 +1,9 @@
+from compile.utils import get_onediff_backend
 from modules import shared
-from modules.sd_vae_approx import model as get_vae_model, sd_vae_approx_models
+from modules.sd_vae_approx import model as get_vae_model
+from modules.sd_vae_approx import sd_vae_approx_models
 
 from onediff.infer_compiler import compile
-
-from compile.utils import get_onediff_backend
 
 __all__ = ["VaeCompileCtx"]
 

@@ -1,14 +1,14 @@
-import importlib.metadata
-import types
 from typing import Any, Dict, Optional, Tuple, Union
+import types
 
 from packaging import version
+import importlib.metadata
 
 diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
-import diffusers
 import torch
+import diffusers
 from diffusers.utils import is_torch_version
 
 
@@ -54,9 +54,7 @@ class DownBlockSpatioTemporal(diffusers_unet_3d_blocks.DownBlockSpatioTemporal):
                     )
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
 
             output_states = output_states + (hidden_states,)
@@ -76,9 +74,7 @@ class DownBlockSpatioTemporal(diffusers_unet_3d_blocks.DownBlockSpatioTemporal):
         return hidden_states, output_states
 
 
-class CrossAttnDownBlockSpatioTemporal(
-    diffusers_unet_3d_blocks.CrossAttnDownBlockSpatioTemporal
-):
+class CrossAttnDownBlockSpatioTemporal(diffusers_unet_3d_blocks.CrossAttnDownBlockSpatioTemporal):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
@@ -103,9 +99,9 @@ class CrossAttnDownBlockSpatioTemporal(
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = (
-                    {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
-                )
+                ckpt_kwargs: Dict[str, Any] = {
+                    "use_reentrant": False
+                } if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(resnet),
                     hidden_states,
@@ -122,9 +118,7 @@ class CrossAttnDownBlockSpatioTemporal(
                 )[0]
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
                 hidden_states = attn(
                     hidden_states,
@@ -195,9 +189,7 @@ class UpBlockSpatioTemporal(diffusers_unet_3d_blocks.UpBlockSpatioTemporal):
                     )
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
 
         if self.upsamplers is not None:
@@ -207,9 +199,7 @@ class UpBlockSpatioTemporal(diffusers_unet_3d_blocks.UpBlockSpatioTemporal):
         return hidden_states, prv_f
 
 
-class CrossAttnUpBlockSpatioTemporal(
-    diffusers_unet_3d_blocks.CrossAttnUpBlockSpatioTemporal
-):
+class CrossAttnUpBlockSpatioTemporal(diffusers_unet_3d_blocks.CrossAttnUpBlockSpatioTemporal):
     def forward(
         self,
         hidden_states: torch.FloatTensor,
@@ -242,9 +232,9 @@ class CrossAttnUpBlockSpatioTemporal(
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = (
-                    {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
-                )
+                ckpt_kwargs: Dict[str, Any] = {
+                    "use_reentrant": False
+                } if is_torch_version(">=", "1.11.0") else {}
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(resnet),
                     hidden_states,
@@ -260,9 +250,7 @@ class CrossAttnUpBlockSpatioTemporal(
                 )[0]
             else:
                 hidden_states = resnet(
-                    hidden_states,
-                    temb,
-                    image_only_indicator=image_only_indicator,
+                    hidden_states, temb, image_only_indicator=image_only_indicator,
                 )
                 hidden_states = attn(
                     hidden_states,

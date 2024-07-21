@@ -45,9 +45,7 @@ def save_graph(deploy_module, prefix: str, device: str, subfolder: str):
     module_class_name = match.group(1)
 
     graph_filename = os.path.join(
-        OUTPUT_FOLDER,
-        subfolder,
-        f"{prefix}-{device}-{module_class_name}.graph",
+        OUTPUT_FOLDER, subfolder, f"{prefix}-{device}-{module_class_name}.graph",
     )
 
     if isinstance(deploy_module, DeployableModule):

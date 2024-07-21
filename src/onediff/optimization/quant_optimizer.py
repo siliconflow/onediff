@@ -1,16 +1,14 @@
 import time
-from copy import deepcopy
-
 import torch
 import torch.nn as nn
-
-from onediff.infer_compiler.backends.oneflow.transform.manager import transform_mgr
-from onediff.infer_compiler.backends.oneflow.utils.cost_util import cost_cnt
+from copy import deepcopy
+from onediff.utils import logger
 from onediff.infer_compiler.backends.oneflow.utils.version_util import (
     is_quantization_enabled,
 )
+from onediff.infer_compiler.backends.oneflow.utils.cost_util import cost_cnt
+from onediff.infer_compiler.backends.oneflow.transform.manager import transform_mgr
 from onediff.torch_utils.module_operations import modify_sub_module
-from onediff.utils import logger
 
 
 __all__ = ["quantize_model", "varify_can_use_quantization"]
@@ -38,12 +36,9 @@ def quantize_model(
     if varify_can_use_quantization() is False:
         return model
 
+    from onediff_quant.utils import symm_quantize_sub_module, find_quantizable_modules
+    from onediff_quant.utils import get_quantize_module
     from onediff_quant import Quantizer
-    from onediff_quant.utils import (
-        find_quantizable_modules,
-        get_quantize_module,
-        symm_quantize_sub_module,
-    )
 
     quantize_conv_cnt, quantize_linear_cnt = 0, 0
 
