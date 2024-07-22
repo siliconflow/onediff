@@ -28,21 +28,22 @@ ATTENTION_FP16_SCORE_ACCUM_MAX_M = 0
 COMPILER_CONFIG = None
 
 
-import os
+import argparse
 import importlib
 import inspect
-import argparse
-import time
 import json
+import os
 import random
-from PIL import Image, ImageDraw
+import time
+
+import imageio
 
 import torch
-from onediffx import compile_pipe
-from diffusers.schedulers import DDIMScheduler
 from diffusers.models import AutoencoderKL, AutoencoderKLTemporalDecoder
+from diffusers.schedulers import DDIMScheduler
+from onediffx import compile_pipe
+from PIL import Image, ImageDraw
 from transformers import T5EncoderModel, T5Tokenizer
-import imageio
 
 
 def parse_args():
@@ -85,7 +86,9 @@ def parse_args():
         choices=["none", "nexfort", "compile"],
     )
     parser.add_argument(
-        "--compiler-config", type=str, default=COMPILER_CONFIG,
+        "--compiler-config",
+        type=str,
+        default=COMPILER_CONFIG,
     )
     parser.add_argument(
         "--attention-fp16-score-accum-max-m",
@@ -121,7 +124,9 @@ class IterationProfiler:
             self.num_iterations += 1
         return callback_kwargs
 
+
 from contextlib import contextmanager
+
 
 @contextmanager
 def conditional_context(enabled, context_manager):
@@ -130,6 +135,7 @@ def conditional_context(enabled, context_manager):
             yield cm
     else:
         yield None
+
 
 def main():
     args = parse_args()
@@ -145,7 +151,7 @@ def main():
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     from models.latte_t2v import LatteT2V
-    from sample.pipeline_latte  import LattePipeline
+    from sample.pipeline_latte import LattePipeline
 
     transformer_model = LatteT2V.from_pretrained(
         model_path, subfolder="transformer", video_length=args.video_length
@@ -234,7 +240,9 @@ def main():
         return kwarg_inputs
 
     with conditional_context(args.profile, torch.profiler.profile()) as prof:
-        with conditional_context(args.profile, torch.profiler.record_function("latte warmup")):
+        with conditional_context(
+            args.profile, torch.profiler.record_function("latte warmup")
+        ):
             if args.warmups > 0:
                 print("=======================================")
                 print("Begin warmup")
@@ -270,7 +278,9 @@ def main():
         print(f"Max reserved CUDA memory : {cuda_mem_max_reserved:.3f}GiB")
         print("=======================================")
 
-        with conditional_context(args.profile, torch.profiler.record_function("latte export")):
+        with conditional_context(
+            args.profile, torch.profiler.record_function("latte export")
+        ):
             if args.output_video is not None:
                 # export_to_video(output_frames[0], args.output_video, fps=args.fps)
                 try:

@@ -1,19 +1,20 @@
 import argparse
 import time
-import torch
-from PIL import Image
 from pathlib import Path
 
+import torch
+
 from diffusers import (
-    AutoPipelineForText2Image,
     AutoPipelineForImage2Image,
-    StableDiffusionXLPipeline,
-    StableDiffusionXLImg2ImgPipeline,
-    StableDiffusionPipeline,
+    AutoPipelineForText2Image,
     StableDiffusionImg2ImgPipeline,
+    StableDiffusionPipeline,
+    StableDiffusionXLImg2ImgPipeline,
+    StableDiffusionXLPipeline,
 )
 
 from onediff.quantization import QuantPipeline
+from PIL import Image
 
 
 parser = argparse.ArgumentParser()
@@ -64,12 +65,22 @@ parser.add_argument("--seed", type=int, default=111)
 parser.add_argument("--cache_dir", type=str, default=None)
 args = parser.parse_args()
 
-pipeline_cls = AutoPipelineForText2Image if args.input_image is None else AutoPipelineForImage2Image
-is_safetensors_model = Path(args.model).is_file and Path(args.model).suffix == ".safetensors"
+pipeline_cls = (
+    AutoPipelineForText2Image
+    if args.input_image is None
+    else AutoPipelineForImage2Image
+)
+is_safetensors_model = (
+    Path(args.model).is_file and Path(args.model).suffix == ".safetensors"
+)
 
 if is_safetensors_model:
-    try: # check if safetensors is SDXL
-        pipeline_cls = StableDiffusionXLPipeline if args.input_image is None else StableDiffusionXLImg2ImgPipeline
+    try:  # check if safetensors is SDXL
+        pipeline_cls = (
+            StableDiffusionXLPipeline
+            if args.input_image is None
+            else StableDiffusionXLImg2ImgPipeline
+        )
         pipe = QuantPipeline.from_single_file(
             pipeline_cls,
             args.model,
@@ -78,7 +89,11 @@ if is_safetensors_model:
             use_safetensors=True,
         )
     except:
-        pipeline_cls = StableDiffusionPipeline if args.input_image is None else StableDiffusionImg2ImgPipeline
+        pipeline_cls = (
+            StableDiffusionPipeline
+            if args.input_image is None
+            else StableDiffusionImg2ImgPipeline
+        )
         pipe = QuantPipeline.from_single_file(
             pipeline_cls,
             args.model,

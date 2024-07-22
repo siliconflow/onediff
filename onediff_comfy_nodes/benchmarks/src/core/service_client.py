@@ -15,7 +15,9 @@ __all__ = ["comfy_client_context", "ComfyGraph", "ComfyClient"]
 
 class ComfyGraph:
     def __init__(
-        self, graph: dict, sampler_nodes: list[str],
+        self,
+        graph: dict,
+        sampler_nodes: list[str],
     ):
         self.graph = graph
         self.sampler_nodes = sampler_nodes
@@ -30,7 +32,8 @@ class ComfyGraph:
                 self.graph[negative_prompt_node]["inputs"]["text"] = negative_prompt
 
     def set_sampler_name(
-        self, sampler_name: str,
+        self,
+        sampler_name: str,
     ):
         # sets the sampler name for the sampler nodes (eg. base and refiner)
         for node in self.sampler_nodes:

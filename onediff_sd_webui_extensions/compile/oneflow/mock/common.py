@@ -1,7 +1,7 @@
 import math
 from inspect import isfunction
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from oneflow import nn
 
 
@@ -58,7 +58,7 @@ class CrossAttentionOflow(nn.Module):
         inner_dim = dim_head * heads
         context_dim = default(context_dim, query_dim)
 
-        self.scale = dim_head ** -0.5
+        self.scale = dim_head**-0.5
         self.heads = heads
 
         self.to_q = nn.Linear(query_dim, inner_dim, bias=False)
