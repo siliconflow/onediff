@@ -1,14 +1,14 @@
-import pytest
 import random
 from PIL import Image
 from typing import Dict
 from pathlib import Path
+from typing import Dict, List, Tuple
+
+import numpy as np
+import pytest
+import safetensors.torch
 
 import torch
-from torch import Tensor
-import numpy as np
-import safetensors.torch
-from skimage.metrics import structural_similarity
 from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
@@ -156,7 +156,12 @@ def preload_multi_loras(pipe, loras):
 
 def test_lora_loading(pipe, get_loras):
     pipe.unet = oneflow_compile(pipe.unet)
-    pipe("a cat", height=HEIGHT, width=WIDTH, num_inference_steps=NUM_STEPS,).images[0]
+    pipe(
+        "a cat",
+        height=HEIGHT,
+        width=WIDTH,
+        num_inference_steps=NUM_STEPS,
+    ).images[0]
     loras = get_loras()
     prepare_target_images(pipe, loras)
 
@@ -174,6 +179,7 @@ def test_lora_loading(pipe, get_loras):
         )
         unfuse_lora(pipe)
         images_fusion.save(f"./test_sdxl_lora_{name}_{HEIGHT}_{WIDTH}.png")
+
         print(f"lora {name} ssim {ssim}")
         assert ssim > 0.92, f"LoRA {name} ssim too low"
 

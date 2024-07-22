@@ -42,7 +42,10 @@ def parse_args():
         "--width", type=int, default=1024, help="Width of the generated image."
     )
     parser.add_argument(
-        "--guidance_scale", type=float, default=4.5, help="The scale factor for the guidance."
+        "--guidance_scale",
+        type=float,
+        default=4.5,
+        help="The scale factor for the guidance.",
     )
     parser.add_argument(
         "--num-inference-steps", type=int, default=28, help="Number of inference steps."
@@ -193,7 +196,7 @@ def main():
             f"Generated image saved to {args.saved_image} in {inference_time:.2f} seconds."
         )
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
-        print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
+        print(f"Max used CUDA memory : {cuda_mem_after_used:.3f} GiB")
 
     if args.run_multiple_resolutions:
         gen_args["prompt"] = args.prompt

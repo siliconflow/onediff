@@ -6,6 +6,9 @@ from packaging import version
 
 import diffusers
 
+import torch
+from packaging import version
+
 if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils.import_utils import is_peft_available
 

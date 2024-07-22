@@ -11,7 +11,7 @@ from importlib_metadata import version
 from onediff.utils.import_utils import is_oneflow_available
 
 if is_oneflow_available():
-    import oneflow as flow
+    import oneflow as flow  # usort: skip
 
 from compile import init_backend, is_oneflow_backend
 from modules import shared

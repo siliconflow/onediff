@@ -1,7 +1,14 @@
 from enum import Enum
-from .patch_executor import CachedCrossAttentionPatch, DeepCacheUNetExecutorPatch, UiNodeWithIndexPatch
-from .patch_executor import CrossAttentionForwardMasksPatch, UNetExtraInputOptions
+
+from .patch_executor import (
+    CachedCrossAttentionPatch,
+    CrossAttentionForwardMasksPatch,
+    DeepCacheUNetExecutorPatch,
+    UiNodeWithIndexPatch,
+    UNetExtraInputOptions,
+)
 from .quantized_input_patch import QuantizedInputPatch
+
 
 class PatchType(Enum):
     CachedCrossAttentionPatch = CachedCrossAttentionPatch

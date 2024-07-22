@@ -122,7 +122,7 @@ Ensure that you have installed [OneDiff ComfyUI Nodes](onediff_comfy_nodes/READM
 
   For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v1-5-onediff-enterprise-v1](https://huggingface.co/siliconflow/stable-diffusion-v1-5-onediff-comfy-enterprise-v1/tree/main).
 
-<details> 
+<details>
 <summary> Download the required model files </summary>
 
 1. Download the [`v1-5-pruned.safetensors`](https://huggingface.co/runwayml/stable-diffusion-v1-5/resolve/main/v1-5-pruned.safetensors) file and place it in the `ComfyUI/models/checkpoints/` directory:
@@ -149,7 +149,7 @@ Click the links below to view the workflow images, or load them directly into Co
 
   For more information and to **access the model files and Workflow below**, please visit [Hugging Face - stable-diffusion-v2-1-onediff-enterprise](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/tree/main).
 
-<details> 
+<details>
 <summary> Download the required model files </summary>
 
 1. Download the [`v2-1_768-ema-pruned.zip`](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/v2-1_768-ema-pruned.zip) file and unzip ,then place the .safetensors in the `ComfyUI/models/checkpoints/` directory:
@@ -166,7 +166,7 @@ wget https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-ente
 
 </details>
 
-Click the links below to view the workflow images, or load them directly into ComfyUI. 
+Click the links below to view the workflow images, or load them directly into ComfyUI.
 
   - Workflow: [SD 2.1](https://huggingface.co/siliconflow/stable-diffusion-v2-1-onediff-comfy-enterprise/blob/main/onediff_stable_diffusion_2_1.png)
 
@@ -174,7 +174,7 @@ Click the links below to view the workflow images, or load them directly into Co
 
   For model details and to **access the model files and Workflow below**, please  visit [Hugging Face - sdxl-base-1.0-onediff-comfy-enterprise-v1](https://huggingface.co/siliconflow/sdxl-base-1.0-onediff-comfy-enterprise-v1/tree/main).
 
-<details> 
+<details>
 <summary> Download the required model files </summary>
 
 1. Download the [`sd_xl_base_1.0.safetensors`](https://huggingface.co/stabilityai/stable-diffusion-xl-base-1.0/resolve/main/sd_xl_base_1.0.safetensors) file and place it in the `ComfyUI/models/checkpoints/` directory:
@@ -373,20 +373,20 @@ To download the necessary models, please visit the [siliconflow/stable-video-dif
 Run [image_to_video.py](benchmarks/image_to_video.py):
 
 ```bash
-python3 benchmarks/image_to_video.py \     
-  --model $model_path \    
-  --input-image path/to/input_image.jpg \     
-  --output-video path/to/output_image.mp4   
+python3 benchmarks/image_to_video.py \
+  --model $model_path \
+  --input-image path/to/input_image.jpg \
+  --output-video path/to/output_image.mp4
 ```
 
 #### SVD + DeepCache
 
 ```bash
-python3 benchmarks/image_to_video.py \     
-  --model $model_path \     
-  --deepcache \     
-  --input-image path/to/input_image.jpg \     
-  --output-video path/to/output_image.mp4 
+python3 benchmarks/image_to_video.py \
+  --model $model_path \
+  --deepcache \
+  --input-image path/to/input_image.jpg \
+  --output-video path/to/output_image.mp4
 ```
 
 ## Quantitative model

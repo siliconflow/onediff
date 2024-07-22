@@ -1,22 +1,21 @@
 """ image to image graph load ,a old example"""
-import time
-import os
 import gc
+import os
 import shutil
-import unittest
 import tempfile
-from PIL import Image
+import time
+import unittest
 
 import numpy as np
-import oneflow as flow
+from PIL import Image
+import oneflow as flow  # usort: skip
 import oneflow as torch
+
+from diffusers import EulerDiscreteScheduler, utils
 
 from onediff import (
     OneFlowStableDiffusionImg2ImgPipeline as StableDiffusionImg2ImgPipeline,
 )
-
-from diffusers import EulerDiscreteScheduler
-from diffusers import utils
 
 from onediff.infer_compiler.backends.oneflow.utils.cost_util import cost_cnt
 

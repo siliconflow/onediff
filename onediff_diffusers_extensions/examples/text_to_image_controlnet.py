@@ -1,15 +1,15 @@
 import argparse
 
-from diffusers import (
-    StableDiffusionControlNetPipeline,
-    ControlNetModel,
-    UniPCMultistepScheduler,
-)
-from diffusers.utils import load_image
+import cv2
 import numpy as np
 import torch
 
-import cv2
+from diffusers import (
+    ControlNetModel,
+    StableDiffusionControlNetPipeline,
+    UniPCMultistepScheduler,
+)
+from diffusers.utils import load_image
 from PIL import Image
 
 parser = argparse.ArgumentParser()
@@ -21,7 +21,9 @@ parser.add_argument(
     default="https://hf.co/datasets/huggingface/documentation-images/resolve/main/diffusers/input_image_vermeer.png",
 )
 parser.add_argument(
-    "--prompt", type=str, default="chinese painting style women",
+    "--prompt",
+    type=str,
+    default="chinese painting style women",
 )
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)

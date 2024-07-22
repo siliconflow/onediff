@@ -36,6 +36,7 @@ class OneDiffXWarning(Warning):
     pass
 
 
+
 warnings.filterwarnings("always", category=OneDiffXWarning)
 
 USE_PEFT_BACKEND = False
@@ -191,7 +192,8 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
         if isinstance(m, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d)):
             _unfuse_lora(m)
         elif is_peft_available() and isinstance(
-            m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+            m,
+            (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
         ):
             _unfuse_lora(m.base_layer)
 
@@ -231,7 +233,8 @@ def set_and_fuse_adapters(
         if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
             _set_adapter(m, adapter_names, adapter_weights)
         elif is_peft_available() and isinstance(
-            m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+            m,
+            (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
         ):
             _set_adapter(m.base_layer, adapter_names, adapter_weights)
 
@@ -258,7 +261,8 @@ def delete_adapters(
         if isinstance(m, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
             _delete_adapter(m, adapter_names, safe_delete=safe_delete)
         elif is_peft_available() and isinstance(
-            m, (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
+            m,
+            (peft.tuners.lora.layer.Linear, peft.tuners.lora.layer.Conv2d),
         ):
             _delete_adapter(m.base_layer, adapter_names, safe_delete=safe_delete)
 
@@ -300,7 +304,8 @@ class LRUCacheDict(OrderedDict):
 
 
 def load_state_dict_cached(
-    lora: Union[str, Path, Dict[str, torch.Tensor]], **kwargs,
+    lora: Union[str, Path, Dict[str, torch.Tensor]],
+    **kwargs,
 ) -> Tuple[Dict, Dict]:
     assert isinstance(lora, (str, Path, dict))
     if isinstance(lora, dict):
@@ -317,7 +322,10 @@ def load_state_dict_cached(
         )
         return CachedLoRAs[lora_name]
 
-    state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(lora, **kwargs,)
+    state_dict, network_alphas = LoraLoaderMixin.lora_state_dict(
+        lora,
+        **kwargs,
+    )
     CachedLoRAs[lora_name] = (state_dict, network_alphas)
     logger.debug(f"[OneDiffX Cached LoRA] create cached lora of name: {str(lora_name)}")
     return state_dict, network_alphas

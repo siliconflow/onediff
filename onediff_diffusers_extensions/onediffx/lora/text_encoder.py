@@ -5,6 +5,9 @@ from packaging import version
 
 import diffusers
 
+import torch
+from packaging import version
+
 if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils import convert_state_dict_to_diffusers
 else:

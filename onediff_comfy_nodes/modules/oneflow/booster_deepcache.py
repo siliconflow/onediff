@@ -5,9 +5,9 @@ from typing import Optional
 from comfy.model_patcher import ModelPatcher
 
 from ..booster_interface import BoosterExecutor
+from .utils.booster_utils import set_compiled_options
 from .utils.deep_cache_speedup import deep_cache_speedup
 from .utils.graph_path import generate_graph_path
-from .utils.booster_utils import set_compiled_options
 
 
 @dataclass

@@ -1,9 +1,10 @@
+import importlib.metadata
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
 
-from packaging import version
-import importlib.metadata
 from oneflow.nn.graph.proxy import ProxyModule
+
+from packaging import version
 
 diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
@@ -18,9 +19,9 @@ else:
     )
 
 import torch
+from diffusers.models.modeling_utils import ModelMixin
 
 from diffusers.utils import BaseOutput, logging
-from diffusers.models.modeling_utils import ModelMixin
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
