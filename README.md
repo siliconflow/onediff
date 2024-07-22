@@ -137,7 +137,7 @@ Install OneFlow is Optional.
 
   For CN users
   ```bash
-  python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
+  python3 -m pip install -U --pre oneflow -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/community/cu118
   ```
 
 
@@ -153,7 +153,7 @@ Install OneFlow is Optional.
 
   For CN users
   ```bash
-  python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
+  python3 -m pip install -U --pre oneflow -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/community/cu121
   ```
 
 
@@ -165,7 +165,7 @@ Install OneFlow is Optional.
   ```
   For CN users
   ```bash
-  python3 -m pip install -U --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu122
+  python3 -m pip install -U --pre oneflow -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/community/cu122
   ```
 
 </details>

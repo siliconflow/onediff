@@ -14,8 +14,8 @@ on:
 env:
   REGION_ID: cn-beijing
   REGISTRY: registry.cn-beijing.aliyuncs.com
-  NAMESPACE: oneflow
-  ONEFLOW_PIP_INDEX: "https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118"
+  NAMESPACE: oneflow  ## need change?
+  ONEFLOW_PIP_INDEX: "https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/community/cu118"
 
 concurrency:
   group: sd-${{ github.ref }}

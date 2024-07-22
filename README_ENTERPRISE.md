@@ -81,24 +81,24 @@ python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=o
 **CUDA 11.8**
 
 ```bash
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu118/ && \
-python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/ && \
+python3 -m pip install --pre oneflow -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/main/cu118/ && \
+python3 -m pip install --pre onediff-quant -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/onediff-quant/ && \
 python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=onediff
 ```
 
 **CUDA 12.1**
 
 ```bash
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu121/ && \
-python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/ && \
+python3 -m pip install --pre oneflow -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/main/cu121/ && \
+python3 -m pip install --pre onediff-quant -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/onediff-quant/ && \
 python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=onediff
 ```
 
 **CUDA 12.2**
 
 ```bash
-python3 -m pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/main/cu122/ && \
-python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/ && \
+python3 -m pip install --pre oneflow -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/branch/main/cu122/ && \
+python3 -m pip install --pre onediff-quant -f https://siliconflow-public.oss-cn-beijing.aliyuncs.com/onediff-quant/ && \
 python3 -m pip install git+https://github.com/siliconflow/onediff.git@main#egg=onediff
 ```
 
