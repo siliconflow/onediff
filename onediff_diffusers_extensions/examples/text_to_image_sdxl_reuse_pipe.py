@@ -1,10 +1,10 @@
-import os
 import argparse
+import os
 
 import torch
+from diffusers import StableDiffusionXLPipeline
 
 from onediff.infer_compiler import oneflow_compile
-from diffusers import StableDiffusionXLPipeline
 
 # import diffusers
 # diffusers.logging.set_verbosity_info()
@@ -14,7 +14,9 @@ parser.add_argument(
     "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
 )
 parser.add_argument(
-    "--new_base", type=str, default="dataautogpt3/OpenDalleV1.1",
+    "--new_base",
+    type=str,
+    default="dataautogpt3/OpenDalleV1.1",
 )
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
@@ -50,7 +52,10 @@ OUTPUT_TYPE = "pil"
 
 # SDXL base: StableDiffusionXLPipeline
 base = StableDiffusionXLPipeline.from_pretrained(
-    args.base, torch_dtype=torch.float16, variant=args.variant, use_safetensors=True,
+    args.base,
+    torch_dtype=torch.float16,
+    variant=args.variant,
+    use_safetensors=True,
 )
 base.to("cuda")
 
@@ -142,8 +147,8 @@ image = new_base(
 image[0].save(f"new_base_reuse_graph_h{args.height}-w{args.width}-{args.saved_image}")
 image_graph = image[0]
 
-from skimage.metrics import structural_similarity
 import numpy as np
+from skimage.metrics import structural_similarity
 
 ssim = structural_similarity(
     np.array(image_eager), np.array(image_graph), channel_axis=-1, data_range=255

@@ -1,8 +1,10 @@
-from diffusers import AutoPipelineForText2Image
-from onediff.quantization.quantize_pipeline import QuantPipeline
 import argparse
+
 import torch
+from diffusers import AutoPipelineForText2Image
+
 from onediff.infer_compiler import oneflow_compile
+from onediff.quantization.quantize_pipeline import QuantPipeline
 
 
 def parse_args():

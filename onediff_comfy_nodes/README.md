@@ -6,13 +6,13 @@
 
 ---
 
-Performance of Community Edition 
+Performance of Community Edition
 
 Updated on January 23, 2024. Device: RTX 3090
 
 
 <div align="center">
-  
+
   **SDXL End2End Time** , Image Size 1024x1024 , Batch Size 1 , steps 20
 
   <a href="https://github.com/siliconflow/onediff/tree/main" target="_blank">
@@ -39,87 +39,105 @@ Updated on January 23, 2024. Device: RTX 3090
 - [OneDiff ComfyUI Nodes](#onediff-comfyui-nodes)
   - [Documentation](#documentation)
     - [Installation Guide](#installation-guide)
-      - [Setup Community Edition](#setup-community-edition)
-      - [Setup Enterprise Edition](#setup-enterprise-edition)
     - [Basic Node Usage](#basic-node-usage)
+      - [Model Speedup](#model-speedup)
       - [Load Checkpoint - OneDiff](#load-checkpoint---onediff)
-    - [Quantization](#quantization)
     - [Compiler Cache](#compiler-cache)
-      - [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
-  - [OneDiff Community Examples](#onediff-community-examples)
-    - [IPAdapter](#ipadapter)
-    - [LoRA](#lora)
-    - [ControlNet](#controlnet)
-    - [SVD](#svd)
-    - [DeepCache](#deepcache)
-    - [InstantID](#instantid)
+    - [Quantization](#quantization)
+  - [Tutorials](#tutorials)
   - [Contact](#contact)
 
 
 ### Installation Guide
-
-Please install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI) first, and then:
-
-#### Setup Community Edition
+This guide provides two methods to install ComfyUI and integrate it with the OneDiff library: via the Comfy CLI or directly from GitHub.
 
 <details close>
-<summary>Setup Community Edition</summary>
+<summary> Option 1: Installing via Comfy CLI </summary>
 
-1. Install OneFlow Community
-  * Install OneFlow Community(CUDA 11.x)
+1. **Install Comfy CLI**:
+   ```shell
+   pip install comfy-cli
+   ```
 
-    ```bash
-    pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu118
-    ```
+2. **Install ComfyUI**:
+   ```shell
+   comfy install
+   ```
 
-  * Install OneFlow Community(CUDA 12.x)
-
-    ```bash
-    pip install --pre oneflow -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/branch/community/cu121
-    ```
-2. Install OneDiff
-    ```bash
-    git clone https://github.com/siliconflow/onediff.git
-    cd onediff && pip install -e .
-    ```
-
-3. Install onediff_comfy_nodes for ComfyUI
-
-    ```bash
-    cd onediff
-    ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    # or
-    # cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    ```
+3. **Install OneDiff Comfy Nodes**:
+   ```shell
+   comfy node install onediff_comfy_nodes
+   ```
+   By default, this installs the oneflow backend. You can add other backends if needed; please refer to the OneDiff GitHub repository [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-a-compiler-backend).
 
 </details>
 
-#### Setup Enterprise Edition
+<details close>
+<summary> Option 2: Installing via GitHub </summary>
 
-1. [Install OneDiff Enterprise](../README_ENTERPRISE.md#install-onediff-enterprise)
+First, install and set up [ComfyUI](https://github.com/comfyanonymous/ComfyUI), and then follow these steps:
 
-2. Install onediff_comfy_nodes for ComfyUI
-    ```bash
-    git clone https://github.com/siliconflow/onediff.git
-    cd onediff 
-    cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
-    ```
+1. **Clone OneDiff Repository**:
+   ```shell
+   git clone https://github.com/siliconflow/onediff.git
+   ```
+
+2. **Install OneDiff**:
+   ```shell
+   cd onediff && pip install -e .
+   ```
+
+3. **Integrate OneDiff Comfy Nodes with ComfyUI**:
+   - **Symbolic Link (Recommended)**:
+     ```shell
+     ln -s $(pwd)/onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+     ```
+   - **Copy Directory**:
+     ```shell
+     cp -r onediff_comfy_nodes path/to/ComfyUI/custom_nodes/
+     ```
+
+4. **Install a Compiler Backend**
+
+    For instructions on installing a compiler backend for OneDiff, please refer to the OneDiff GitHub repository [here](https://github.com/siliconflow/onediff?tab=readme-ov-file#install-a-compiler-backend).
+
 
 </details>
+
+
+
 
 
 ### Basic Node Usage
 
 **Note** All the images in this section can be loaded directly into ComfyUI. You can load them in ComfyUI to get the full workflow.
 
+#### Model Speedup
+![](./docs/model_speedup_basic.png)
+
 #### Load Checkpoint - OneDiff
 
 "Load Checkpoint - OneDiff" is the optimized version of "LoadCheckpoint", designed to accelerate the inference speed without any awareness required. It maintains the same input and output as the original node.
 
-![](workflows/model-speedup.png)
+![](./docs/model-speedup.png)
 
 The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VAE acceleration.
 
+
+
+### Compiler Cache
+**Avoid compilation time for online serving**
+
+```shell
+# Set custom directory for saving graphs in ComfyUI with OneFlow backend
+export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"
+
+# Enable graph cache for faster compilation
+export TORCHINDUCTOR_FX_GRAPH_CACHE=1
+
+# Specify persistent cache directory for Torchinductor
+export TORCHINDUCTOR_CACHE_DIR=~/.torchinductor_cache
+```
 
 ### Quantization
 
@@ -127,60 +145,19 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 
 OneDiff Enterprise offers a quantization method that reduces memory usage, increases speed, and maintains quality without any loss.
 
-If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
-
-![](workflows/onediff_quant_base.png)
-
-### Compiler Cache 
-#### Avoid compilation time for online serving
-The `"Load Checkpoint - OneDiff"` node automatically caches compiled results locally in the default directory `ComfyUI/input/graphs`. To save graphs in a custom directory, utilize `export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"`.
-
-## OneDiff Community Examples 
-
-### IPAdapter
-> doc link: [Accelerating cubiq/ComfyUI_IPAdapter_plus with OneDiff](./modules/oneflow/hijack_ipadapter_plus/README.md)
-
-### LoRA                  
-
-This example demonstrates how to utilize LoRAs. You have the flexibility to modify the LoRA models or adjust their strength without the need for recompilation.
-
-[Lora Speedup](workflows/model-speedup-lora.png)
-
-### ControlNet
-
-> doc link: [ControlNet](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/ControlNet)
+If you possess a OneDiff Enterprise license key, you can access instructions on OneDiff quantization and related models by visiting [Online Quantization for ComfyUI](./docs/ComfyUI_Online_Quantization.md). Alternatively, you can [contact](#contact) us to inquire about purchasing the OneDiff Enterprise license.
 
 
-While there is an example demonstrating OpenPose ControlNet, it's important to note that OneDiff seamlessly supports a wide range of ControlNet types, including depth mapping, canny, and more. 
+## Tutorials
 
-[ControlNet Speedup](workflows/ControlNet/controlnet_onediff.png)
-
-### SVD
-> doc link: [SVD](https://github.com/siliconflow/onediff/tree/main/onediff_comfy_nodes/workflows/SVD)
-
-This example illustrates how OneDiff can be used to enhance the performance of a video model, specifically in the context of text-to-video generation using SVD. Furthermore, it is compatible with [SVD 1.1](https://huggingface.co/stabilityai/stable-video-diffusion-img2vid-xt-1-1).
-
-[SVD Speedup](workflows/text-to-video-speedup.png)
-
-### DeepCache
-
-DeepCache is an innovative algorithm that substantially boosts the speed of diffusion models, achieving an approximate 2x improvement. When used in conjunction with OneDiff, it further accelerates the diffusion model to approximately 3x.
-
-Here are the example of applying DeepCache to SD and SVD models.
-
-[Module DeepCache SpeedUp on SD](workflows/deep-cache.png)
-
-[Module DeepCache SpeedUp on SVD](workflows/svd-deepcache.png)
-
-[Module DeepCache SpeedUp on LoRA](workflows/lora_deepcache/README.md) 
-
-
-### InstantID 
-
-> doc link: [Accelerating cubiq/ComfyUI_InstantID with OneDiff](./modules/oneflow/hijack_comfyui_instantid/README.md)
-
-> doc link: [Accelerating ZHO-ZHO-ZHO/ComfyUI-InstantID with OneDiff](./workflows/ComfyUI_InstantID_OneDiff.md)
-
+- [Accelerate SD3 with onediff](./docs/sd3/README.md)
+- [First Switch Lora](./docs/lora.md)
+- [Accelerate cubiq/PuLID_ComfyUI](./docs/README.md)
+- [Accelerate cubiq/ComfyUI_IPAdapter_plus](./docs/README.md)
+- [Accelerate cubiq/ComfyUI_InstantID](./docs/README.md)
+- [Accelerate ControlNet](./docs/ControlNet/README.md)
+- [SVD](./docs/SVD/README.md)
+- [DeepCache](./docs/lora_deepcache/README.md)
 
 ## Contact
 
