@@ -1,5 +1,6 @@
 # TODO: remove this file to diffusers/src/infer_compiler_registry/register_diffusers
 from abc import ABC, abstractmethod
+
 from onediff.utils import logger
 
 try:

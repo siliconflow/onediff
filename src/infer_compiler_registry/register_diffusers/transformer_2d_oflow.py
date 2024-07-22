@@ -1,12 +1,12 @@
+import importlib.metadata
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from packaging import version
-import importlib.metadata
 
 import oneflow as torch
 import oneflow.nn.functional as F
-from oneflow import nn
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+from oneflow import nn
+from packaging import version
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 
@@ -370,7 +370,6 @@ if diffusers_version < diffusers_0220_v:
 
             return Transformer2DModelOutput(sample=output)
 
-
 elif diffusers_version < diffusers_02499_v:
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -616,7 +615,7 @@ elif diffusers_version < diffusers_02499_v:
                     inner_dim, elementwise_affine=False, eps=1e-6
                 )
                 self.scale_shift_table = nn.Parameter(
-                    torch.randn(2, inner_dim) / inner_dim ** 0.5
+                    torch.randn(2, inner_dim) / inner_dim**0.5
                 )
                 self.proj_out = nn.Linear(
                     inner_dim, patch_size * patch_size * self.out_channels
@@ -886,7 +885,6 @@ elif diffusers_version < diffusers_02499_v:
 
             return Transformer2DModelOutput(sample=output)
 
-
 else:
     transformed_diffusers = transform_mgr.transform_package("diffusers")
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
@@ -1096,9 +1094,11 @@ else:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = {
-                        "use_reentrant": False
-                    } if is_torch_version(">=", "1.11.0") else {}
+                    ckpt_kwargs: Dict[str, Any] = (
+                        {"use_reentrant": False}
+                        if is_torch_version(">=", "1.11.0")
+                        else {}
+                    )
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(block),
                         hidden_states,

@@ -8,23 +8,26 @@ import torch.nn as nn
 from comfy.controlnet import ControlNet
 from comfy.model_patcher import ModelPatcher
 from onediff.infer_compiler import oneflow_compile
-from onediff.infer_compiler.backends.oneflow import OneflowDeployableModule as DeployableModule
+from onediff.infer_compiler.backends.oneflow import (
+    OneflowDeployableModule as DeployableModule,
+)
+from onediff.optimization import quant_optimizer
 from onediff_quant.quantization import QuantizationConfig
 from onediff_quant.quantization.module_operations import get_sub_module
 from onediff_quant.quantization.quantize_calibrators import (
     QuantizationMetricsCalculator,
 )
 from onediff_quant.quantization.quantize_config import Metric
-from onediff.optimization import quant_optimizer
 
 from .booster_basic import BoosterExecutor
-from .utils.graph_path import generate_graph_path
+from .patch_management import create_patch_executor, PatchType
 from .utils.booster_utils import (
     is_fp16_model,
     set_compiled_options,
     set_environment_for_svd_img2vid,
 )
-from .patch_management import PatchType, create_patch_executor
+from .utils.graph_path import generate_graph_path
+
 
 class SubQuantizationPercentileCalculator(QuantizationMetricsCalculator):
     def __init__(
@@ -206,7 +209,14 @@ class OnelineQuantizationBoosterExecutor(BoosterExecutor):
 
     def _set_optimized_model_for_deepcace(self, model: ModelPatcher):
         # TODO
-        print("Warning: DeepCache + OnelineQuantization only support default configurations:")
-        model.fast_deep_cache_unet.quantize = partial(quant_optimizer.quantize_model, model.fast_deep_cache_unet, quantize_conv=False)
-        model.deep_cache_unet.quantize = partial(quant_optimizer.quantize_model, model.deep_cache_unet, quantize_conv=False)
-        
+        print(
+            "Warning: DeepCache + OnelineQuantization only support default configurations:"
+        )
+        model.fast_deep_cache_unet.quantize = partial(
+            quant_optimizer.quantize_model,
+            model.fast_deep_cache_unet,
+            quantize_conv=False,
+        )
+        model.deep_cache_unet.quantize = partial(
+            quant_optimizer.quantize_model, model.deep_cache_unet, quantize_conv=False
+        )

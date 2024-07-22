@@ -4,12 +4,13 @@ Date:   Thu Apr 11 22:43:05 2024 -0400
 """
 
 from typing import Dict
+
 import torch
 from comfy.samplers import calc_cond_batch, can_concat_cond, cond_cat, get_area_and_mult
 
 from ..sd_hijack_utils import Hijacker
-from .patch_management import PatchType, create_patch_executor
 from .booster_utils import is_using_nexfort_backend
+from .patch_management import create_patch_executor, PatchType
 
 
 def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
@@ -103,22 +104,31 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         ):
             patch_executor = create_patch_executor(PatchType.UNetExtraInputOptions)
             extra_options = transformer_options
-            sigma = extra_options["sigmas"][0].item() if 'sigmas' in extra_options else 999999999.9
+            sigma = (
+                extra_options["sigmas"][0].item()
+                if "sigmas" in extra_options
+                else 999999999.9
+            )
             assert "_sigmas" not in extra_options
             extra_options["_sigmas"] = {}
-            attn2_patch_dict = extra_options['patches_replace']["attn2"]
+            attn2_patch_dict = extra_options["patches_replace"]["attn2"]
             for k, attn_m in attn2_patch_dict.items():
                 out_lst = []
                 for i, callback in enumerate(attn_m.callback):
-                    if sigma <= attn_m.kwargs[i]["sigma_start"] and sigma >= attn_m.kwargs[i]["sigma_end"]:
+                    if (
+                        sigma <= attn_m.kwargs[i]["sigma_start"]
+                        and sigma >= attn_m.kwargs[i]["sigma_end"]
+                    ):
                         out_lst.append(1)
                     else:
                         out_lst.append(0)
                 # extra inputs
-                transformer_options["_sigmas"][attn_m.forward_patch_key] = torch.randn(*out_lst)
+                transformer_options["_sigmas"][attn_m.forward_patch_key] = torch.randn(
+                    *out_lst
+                )
 
             # extra inputs
-            transformer_options["_attn2"] =  patch_executor.get_patch(diff_model)[
+            transformer_options["_attn2"] = patch_executor.get_patch(diff_model)[
                 "attn2"
             ]
 
@@ -184,5 +194,7 @@ def cond_func(orig_func, model, *args, **kwargs):
 
 samplers_hijack = Hijacker()
 samplers_hijack.register(
-    orig_func=calc_cond_batch, sub_func=calc_cond_batch_of, cond_func=cond_func,
+    orig_func=calc_cond_batch,
+    sub_func=calc_cond_batch_of,
+    cond_func=cond_func,
 )

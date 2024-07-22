@@ -1,9 +1,10 @@
 import torch
 from comfy import model_management
 
-from .CrossAttentionPatch import Attn2Replace, ipadapter_attention
-from ..patch_management import create_patch_executor, PatchType
 from ..booster_utils import clear_deployable_module_cache_and_unbind
+from ..patch_management import create_patch_executor, PatchType
+
+from .CrossAttentionPatch import Attn2Replace, ipadapter_attention
 
 
 def set_model_patch_replace(
@@ -44,7 +45,7 @@ def set_model_patch_replace(
                 split1dict[k] = v
             else:
                 split2dict[k] = v
-        
+
         # patch for weight
         # weight = split1dict["weight"]
         # if isinstance(weight, (int, float)):

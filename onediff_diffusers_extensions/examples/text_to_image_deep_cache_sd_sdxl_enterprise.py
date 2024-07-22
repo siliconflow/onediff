@@ -97,17 +97,28 @@ with open(os.path.join(args.model, "calibrate_info.txt"), "r") as f:
 
 if args.model_type == "sdxl":
     pipe = StableDiffusionXLPipeline.from_pretrained(
-        args.model, torch_dtype=torch.float16, use_safetensors=True, variant="fp16",
+        args.model,
+        torch_dtype=torch.float16,
+        use_safetensors=True,
+        variant="fp16",
     )
 else:
     pipe = StableDiffusionPipeline.from_pretrained(
-        args.model, revision="fp16", variant="fp16", torch_dtype=torch.float16,
+        args.model,
+        revision="fp16",
+        variant="fp16",
+        torch_dtype=torch.float16,
     )
 pipe.to("cuda")
 
 for sub_module_name, sub_calibrate_info in calibrate_info.items():
     replace_sub_module_with_quantizable_module(
-        pipe.unet, sub_module_name, sub_calibrate_info, False, False, args.bits,
+        pipe.unet,
+        sub_module_name,
+        sub_calibrate_info,
+        False,
+        False,
+        args.bits,
     )
 
 compile_options = OneflowCompileOptions()
