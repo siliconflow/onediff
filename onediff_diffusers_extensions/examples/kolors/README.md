@@ -72,7 +72,7 @@ Data update date: 2024-07-23
 | Framework          | Iteration Speed (it/s) | E2E Time (seconds) | Max Memory Used (GiB) | Warmup time (seconds) <sup>2</sup> | Warmup with Cache time (seconds) |
 |--------------------|------------------------|--------------------|-----------------------|-------------|------------------------|
 | PyTorch            | 8.36                   | 6.34               | 20.622                | 7.88        | -                      |
-| OneDiff (OneFlow)  | 11.54                  | 4.69               | 20.627                | 50.02       | -                      |
+| OneDiff (OneFlow)  | 11.54                  | 4.69               | 20.627                | 50.02       | 12.82                  |
 | OneDiff (NexFort)  | 10.53                  | 5.02               | 21.622                | 269.89      | 73.31                  |
 
  <sup>2</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz.
@@ -84,7 +84,7 @@ Data update date: 2024-07-23
 | Framework          | Iteration Speed (it/s) | E2E Time (seconds) | Max Memory Used (GiB) | Warmup time (seconds) <sup>3</sup> | Warmup with Cache time (seconds) |
 |--------------------|------------------------|--------------------|-----------------------|-------------|------------------------|
 | PyTorch            | 9.88                   | 5.38               | 20.622                | 6.61        | -                      |
-| OneDiff (OneFlow)  | 13.70                  | 3.96               | 20.627                | 52.93       | -                      |
+| OneDiff (OneFlow)  | 13.70                  | 3.96               | 20.627                | 52.93       | 11.79                  |
 | OneDiff (NexFort)  | 13.20                  | 4.04               | 21.622                | 150.78      | 58.07                  |
 
  <sup>3</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468.
