@@ -3,7 +3,7 @@ import json
 import time
 
 from diffusers import DPMSolverMultistepScheduler, KolorsPipeline
-from onediffx import compile_pipe, quantize_pipe
+from onediffx import compile_pipe, quantize_pipe, load_pipe, save_pipe
 from onediff.infer_compiler import oneflow_compile
 import torch
 
@@ -71,6 +71,8 @@ def parse_args():
         type=(lambda x: str(x).lower() in ["true", "1", "yes"]),
         default=False,
     )
+    parser.add_argument("--oneflow_save", action=argparse.BooleanOptionalAction)
+    parser.add_argument("--oneflow_load", action=argparse.BooleanOptionalAction)
     return parser.parse_args()
 
 
@@ -110,8 +112,14 @@ class KolorsGenerator:
 
         print("Starting warmup...")
         start_time = time.time()
+        if args.oneflow_load:
+            load_pipe(self.pipe, dir="cached_pipe")
+
         for _ in range(warmup_iterations):
             self.pipe(**warmup_args)
+
+        if args.oneflow_save:
+            save_pipe(self.pipe, dir="cached_pipe")
         end_time = time.time()
         print("Warmup complete.")
         print(f"Warmup time: {end_time - start_time:.2f} seconds")

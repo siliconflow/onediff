@@ -60,7 +60,7 @@ Data update date: 2024-07-23
 | Framework          | Iteration Speed (it/s) | E2E Time (seconds) | Max Memory Used (GiB) | Warmup time (seconds) <sup>1</sup> | Warmup with Cache time (seconds) |
 |--------------------|------------------------|--------------------|-----------------------|-------------|------------------------|
 | PyTorch            | 8.11                   | 6.55               | 20.623                | 7.09        | -                      |
-| OneDiff (OneFlow)  | 15.16                  | 3.86               | 20.622                | 39.61       | -                      |
+| OneDiff (OneFlow)  | 15.16                  | 3.86               | 20.622                | 39.61       | 7.47                   |
 | OneDiff (NexFort)  | 14.68                  | 3.71               | 21.623                | 190.14      | 50.46                  |
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on AMD EPYC 7543 32-Core Processor.
