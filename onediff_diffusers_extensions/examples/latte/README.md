@@ -13,6 +13,16 @@
 
 ## Environment setup
 ### Set up Latte
+
+#### From HF diffusers
+Note: HF diffusers has bug on LattePipeline on 20240723
+Reference: https://huggingface.co/docs/diffusers/main/en/api/pipelines/latte
+```bash
+# make sure LattePipeline avaliable in HF diffusers(diffusers version >= 0.30)
+pip install git+https://github.com/huggingface/diffusers.git@main
+```
+
+#### (Optional)From latte project
 HF model: https://huggingface.co/maxin-cn/Latte-1
 ```bash
 git clone -b run https://github.com/siliconflow/dit_latte/

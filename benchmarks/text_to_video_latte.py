@@ -96,6 +96,7 @@ def parse_args():
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
     )
     parser.add_argument("--profile", action="store_true")
+    parser.add_argument("--from_hf", action="store_true")
     return parser.parse_args()
 
 
@@ -137,19 +138,42 @@ def conditional_context(enabled, context_manager):
         yield None
 
 
-def main():
-    args = parse_args()
+_is_form_hf = False
 
-    if os.path.exists(args.model):
-        model_path = args.model
+
+def get_pipeline(args, model_path, device):
+    global _is_form_hf
+    if args.from_hf:
+        # Has error for now
+        # File "python3.10/site-packages/diffusers/schedulers/scheduling_ddim.py", line 413, in step
+        # pred_original_sample = (sample - beta_prod_t ** (0.5) * model_output) / alpha_prod_t ** (0.5)
+        # RuntimeError: The size of tensor a (4) must match the size of tensor b (8) at non-singleton dimension 1
+        print("get pipeline from diffusers")
+        _is_form_hf = True
+        return get_pipeline_from_hf(args, model_path, device)
     else:
-        from huggingface_hub import snapshot_download
+        print("get pipeline from source")
+        _is_form_hf = False
+        return get_pipeline_from_source(args, model_path, device)
 
-        model_path = snapshot_download(repo_id=args.model)
 
-    torch.set_grad_enabled(False)
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+def get_pipeline_from_hf(args, model_path, device):
+    # Get pipeline from diffusers
+    # diffusers version >= 0.30
+    from diffusers import LattePipeline
 
+    pipe = LattePipeline.from_pretrained(args.model, torch_dtype=torch.float16).to(
+        device
+    )
+
+    # Convert to channels_last memory format
+    pipe.transformer.to(memory_format=torch.channels_last)
+    pipe.vae.to(memory_format=torch.channels_last)
+    return pipe
+
+
+def get_pipeline_from_source(args, model_path, device):
+    # Get pipeline from https://github.com/siliconflow/dit_latte/
     from models.latte_t2v import LatteT2V
     from sample.pipeline_latte import LattePipeline
 
@@ -193,6 +217,24 @@ def main():
         transformer=transformer_model,
     ).to(device)
 
+    return pipe
+
+
+def main():
+    args = parse_args()
+
+    if os.path.exists(args.model):
+        model_path = args.model
+    else:
+        from huggingface_hub import snapshot_download
+
+        model_path = snapshot_download(repo_id=args.model)
+
+    torch.set_grad_enabled(False)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    pipe = get_pipeline(args, model_path, device)
+
     if args.compiler == "none":
         pass
     elif args.compiler == "nexfort":
@@ -230,15 +272,19 @@ def main():
             enable_temporal_attentions=args.enable_temporal_attentions,
             num_images_per_prompt=1,
             mask_feature=True,
-            enable_vae_temporal_decoder=args.enable_vae_temporal_decoder,
             **(
                 dict()
                 if args.extra_call_kwargs is None
                 else json.loads(args.extra_call_kwargs)
             ),
         )
+        if not _is_form_hf:
+            kwarg_inputs[
+                "enable_vae_temporal_decoder"
+            ] = args.enable_vae_temporal_decoder
         return kwarg_inputs
 
+    kwarg_inputs = get_kwarg_inputs()
     with conditional_context(args.profile, torch.profiler.profile()) as prof:
         with conditional_context(
             args.profile, torch.profiler.record_function("latte warmup")
@@ -248,14 +294,17 @@ def main():
                 print("Begin warmup")
                 begin = time.time()
                 for _ in range(args.warmups):
-                    pipe(**get_kwarg_inputs()).video
+                    out = pipe(**kwarg_inputs)
+                    if _is_form_hf:
+                        videos = out.frames[0]
+                    else:
+                        videos = out.video
                 end = time.time()
                 print("End warmup")
                 print(f"Warmup time: {end - begin:.3f}s")
 
                 print("=======================================")
 
-        kwarg_inputs = get_kwarg_inputs()
         iter_profiler = IterationProfiler()
         if "callback_on_step_end" in inspect.signature(pipe).parameters:
             kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
@@ -264,7 +313,11 @@ def main():
         with torch.profiler.record_function("latte run"):
             torch.manual_seed(args.seed)
             begin = time.time()
-            videos = pipe(**kwarg_inputs).video
+            out = pipe(**kwarg_inputs)
+            if _is_form_hf:
+                videos = out.frames[0]
+            else:
+                videos = out.video
             end = time.time()
 
         print("=======================================")
