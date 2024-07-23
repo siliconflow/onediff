@@ -25,14 +25,14 @@
 
 For example:
 
-<img src="imgs/replace_a100.png" height="500">
+<img src="imgs/replace_a100.png" height="400">
 
 ## News
 - [2024/07/23] :rocket: Up to 1.7x Speedup for Kolors: [Kolors Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/kolors)
-- [2024/06/18]:rocket: Acceleration for DiT: [SD3 Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/sd3), [PixArt Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/pixart), and [Latte Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/latte)
-- [2024/04/13]:rocket: [OneDiff 1.0 is out! (Acceleration of SD & SVD with one line of code)](https://www.reddit.com/r/StableDiffusion/comments/1c5gy1e/onediff_10_is_out_acceleration_of_sd_svd_with_one/)
-- [2024/01/12]:rocket: [Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
-- [2023/12/19]:rocket: [Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
+- [2024/06/18] :rocket: Acceleration for DiT models: [SD3 Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/sd3), [PixArt Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/pixart), and [Latte Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/latte)
+- [2024/04/13] :rocket: [OneDiff 1.0 is released (Acceleration of SD & SVD with one line of code)](https://www.reddit.com/r/StableDiffusion/comments/1c5gy1e/onediff_10_is_out_acceleration_of_sd_svd_with_one/)
+- [2024/01/12] :rocket: [Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
+- [2023/12/19] :rocket: [Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
 
 ---
 <!-- toc -->
