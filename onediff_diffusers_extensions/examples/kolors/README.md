@@ -53,7 +53,7 @@ python3 onediff_diffusers_extensions/examples/kolors/text_to_image_kolors.py \
 
 ## Performance comparation
 
-Testing on an NVIDIA RTX 4090 GPU, using a resolution of 1024x1024 and 50 steps:
+**Testing on an NVIDIA RTX 4090 GPU, using a resolution of 1024x1024 and 50 steps:**
 
 Data update date: 2024-07-23
 
@@ -65,7 +65,7 @@ Data update date: 2024-07-23
 
  <sup>1</sup> OneDiff Warmup with Compilation time is tested on AMD EPYC 7543 32-Core Processor.
 
-Testing on NVIDIA A100-PCIE-40GB:
+**Testing on NVIDIA A100-PCIE-40GB:**
 
 Data update date: 2024-07-23
 
@@ -77,7 +77,7 @@ Data update date: 2024-07-23
 
  <sup>2</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Gold 6348 CPU @ 2.60GHz.
 
-Testing on NVIDIA A100-SXM4-80GB:
+**Testing on NVIDIA A100-SXM4-80GB:**
 
 Data update date: 2024-07-23
 
