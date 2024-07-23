@@ -1,3 +1,13 @@
+"""
+python3 onediff_diffusers_extensions/examples/text_to_image_model_switching.py \
+    --models \
+        runwayml/stable-diffusion-v1-5 \
+        /data/home/wangyi/models/base/AWPainting_v1.2.safetensors \
+        /data/home/wangyi/models/base/Deliberate_v2.safetensors \
+        /data/home/wangyi/models/base/liblib_huanshiyihua_v1.0.safetensors \
+        /data/home/wangyi/models/base/realisticVisionV6.0.safetensors \
+"""
+
 import argparse
 from collections import OrderedDict, defaultdict
 from pathlib import Path
@@ -11,8 +21,6 @@ from onediff.utils.import_utils import is_nexfort_available, is_oneflow_availabl
 
 USE_ONEFLOW = is_oneflow_available()
 USE_NEXFORT = is_nexfort_available()
-if USE_ONEFLOW:
-    import oneflow as flow
 IMAGES = defaultdict(OrderedDict)
 
 
@@ -44,15 +52,15 @@ def load_pipe(model_name_or_path: str):
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Simple demo of image generation.")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
+        "--prompt", type=str, default="a cat"
     )
     parser.add_argument(
         "--models", type=str, nargs="+", default=[],
     )
-    parser.add_argument("--height", type=int, default=1024)
-    parser.add_argument("--width", type=int, default=1024)
+    parser.add_argument("--height", type=int, default=512)
+    parser.add_argument("--width", type=int, default=512)
     parser.add_argument("--steps", type=int, default=30)
     parser.add_argument("--warmup", type=int, default=1)
     parser.add_argument("--seed", type=int, default=1)
@@ -68,6 +76,7 @@ IMAGES = defaultdict(OrderedDict)
 pipe = load_pipe(args.models[0])
 pipe = pipe.to("cuda")
 for model in args.models:
+    print(f"using model: {model}")
     new_pipe = load_pipe(model)
     load_pipe_weights(pipe, new_pipe)
     torch.manual_seed(args.seed)
@@ -98,6 +107,7 @@ if USE_ONEFLOW:
         ).images
 
     for model in args.models:
+        print(f"using model: {model}")
         new_pipe = load_pipe(model)
         load_pipe_weights(pipe, new_pipe)
         torch.manual_seed(args.seed)
@@ -117,6 +127,7 @@ if USE_NEXFORT:
     del pipe
     torch.cuda.empty_cache()
     if USE_ONEFLOW:
+        import oneflow as flow
         flow.cuda.empty_cache()
     nexfort_options = {
         "mode": "cudagraphs:benchmark:max-autotune:low-precision:cache-all",
@@ -141,6 +152,7 @@ if USE_NEXFORT:
         ).images
 
     for model in args.models:
+        print(f"using model: {model}")
         new_pipe = load_pipe(model)
         load_pipe_weights(pipe, new_pipe)
         torch.manual_seed(args.seed)

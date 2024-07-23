@@ -1,3 +1,12 @@
+"""
+python3 onediff_diffusers_extensions/examples/text_to_image_lora_switching.py \
+    --base stabilityai/stable-diffusion-xl-base-1.0 \
+    --loras \
+        /data/home/wangyi/models/lora/Cartoon_SDXL_V1.safetensors \
+        /data/home/wangyi/models/lora/pixel-art-xl.safetensors \
+        /data/home/wangyi/models/lora/SDXL-Emoji-Lora-r4.safetensors \
+        ostris/watercolor_style_lora_sdxl/watercolor_v1_sdxl.safetensors \
+"""
 from collections import defaultdict, OrderedDict
 from matplotlib import pyplot as plt
 from pathlib import Path
@@ -8,9 +17,6 @@ from onediff.utils.import_utils import is_oneflow_available, is_nexfort_availabl
 
 USE_ONEFLOW = is_oneflow_available()
 USE_NEXFORT = is_nexfort_available()
-if USE_ONEFLOW:
-    import oneflow as flow
-
 from diffusers import StableDiffusionXLPipeline
 
 from onediffx import compile_pipe
@@ -20,12 +26,12 @@ IMAGES = defaultdict(OrderedDict)
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Simple demo of image generation.")
+    parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--prompt", type=str, default="a photo of an astronaut riding a horse on mars"
+        "--prompt", type=str, default="a cat"
     )
     parser.add_argument(
-        "--base", type=str, default="runwayml/stable-diffusion-v1-5",
+        "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0",
     )
     parser.add_argument("--height", type=int, default=1024)
     parser.add_argument("--width", type=int, default=1024)
@@ -48,6 +54,7 @@ pipe = pipe.to("cuda")
 # ---------- torch backend ----------
 print("using torch backend")
 for lora in args.loras:
+    print(f"using lora: {lora}")
     torch.manual_seed(args.seed)
     if Path(lora).exists():
         pipe.load_lora_weights(lora)
@@ -87,6 +94,7 @@ if USE_ONEFLOW:
         ).images
 
     for lora in args.loras:
+        print(f"using lora: {lora}")
         if Path(lora).exists():
             load_and_fuse_lora(pipe, lora)
         else:
@@ -109,6 +117,7 @@ if USE_NEXFORT:
     del pipe
     torch.cuda.empty_cache()
     if USE_ONEFLOW:
+        import oneflow as flow
         flow.cuda.empty_cache()
     nexfort_options = {
         "mode": "cudagraphs:benchmark:max-autotune:low-precision:cache-all",
@@ -135,6 +144,7 @@ if USE_NEXFORT:
         ).images
 
     for lora in args.loras:
+        print(f"using lora: {lora}")
         torch.manual_seed(args.seed)
         if Path(lora).exists():
             load_and_fuse_lora(pipe, lora)
@@ -152,7 +162,7 @@ if USE_NEXFORT:
         IMAGES["nexfort"][Path(lora).stem] = image
 
 
-fig, axs = plt.subplots(3, 3, figsize=(10, 10))
+fig, axs = plt.subplots(len(args.loras), 3, figsize=(10, 10))
 for i, (backend, images) in enumerate(IMAGES.items()):
     for j, (lora, image) in enumerate(images.items()):
         axs[j, i].imshow(image)
@@ -163,4 +173,4 @@ for col in range(3):
     axs[0, col].set_title(column_titles[col])
 
 plt.tight_layout(rect=[0.1, 0, 1, 1])
-plt.savefig("result.png")
+plt.savefig("onediff_lora_switching.png")
