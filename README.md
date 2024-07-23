@@ -23,10 +23,6 @@
 - Out-of-the-box **acceleration** for popular UIs/libs(such as **HF diffusers** and **ComfyUI**)
 - PyTorch code **compilation tools** and strong optimized **GPU Kernels** for diffusion models
 
-For example:
-
-<img src="imgs/replace_a100.png" height="400">
-
 ## News
 - [2024/07/23] :rocket: Up to 1.7x Speedup for Kolors: [Kolors Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/kolors)
 - [2024/06/18] :rocket: Acceleration for DiT models: [SD3 Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/sd3), [PixArt Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/pixart), and [Latte Acceleration Report](https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_extensions/examples/latte)
@@ -70,6 +66,9 @@ onediff is the abbreviation of "**one** line of code to accelerate **diff**usion
 - [onediff for Stable Diffusion web UI](https://github.com/siliconflow/onediff/tree/main/onediff_sd_webui_extensions)
 
 ### Performance comparison
+
+<img src="imgs/replace_a100.png" height="400">
+
 #### SDXL E2E time
 - Model stabilityai/stable-diffusion-xl-base-1.0;
 - Image size 1024*1024, batch size 1, steps 30;
