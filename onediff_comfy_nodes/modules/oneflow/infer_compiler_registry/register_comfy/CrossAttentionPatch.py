@@ -26,6 +26,10 @@ def tensor_to_size(source, dest_size):
     return source
 
 
+def get_weight_subidxs(weight,ad_params,sub_idxs):
+    return weight[ad_params[sub_idxs]]
+
+
 class Attn2Replace:
     def __init__(self, callback=None, **kwargs):
         self.callback = [callback]
@@ -163,7 +167,7 @@ def ipadapter_attention(
         if ad_params is not None and ad_params["sub_idxs"] is not None:
             if isinstance(weight, torch.Tensor) and weight.dim() != 0:
                 weight = tensor_to_size(weight, ad_params["full_length"])
-                weight = torch.Tensor(weight[ad_params["sub_idxs"]])
+                weight = get_weight_subidxs(weight,ad_params,"sub_idxs")
                 # if torch.all(weight == 0):
                 #     return 0
                 weight = weight.repeat(
@@ -174,8 +178,8 @@ def ipadapter_attention(
 
             # if image length matches or exceeds full_length get sub_idx images
             if cond.shape[0] >= ad_params["full_length"]:
-                cond = torch.Tensor(cond[ad_params["sub_idxs"]])
-                uncond = torch.Tensor(uncond[ad_params["sub_idxs"]])
+                cond = get_weight_subidxs(cond,ad_params,"sub_idxs")
+                uncond = get_weight_subidxs(uncond,ad_params,"sub_idxs")
             # otherwise get sub_idxs images
             else:
                 cond = tensor_to_size(cond, ad_params["full_length"])
