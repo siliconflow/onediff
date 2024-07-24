@@ -6,6 +6,7 @@ from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 from packaging import version
 
 diffusers_0210_v = version.parse("0.21.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
@@ -150,7 +151,16 @@ if diffusers_version < diffusers_0210_v:
 
 else:
 
-    class AttnUpBlock2D(transformed_diffusers.models.unet_2d_blocks.AttnUpBlock2D):
+    if diffusers_version >= diffusers_0260_v:
+        AttnUpBlock2DBase = transformed_diffusers.models.unets.unet_2d_blocks.AttnUpBlock2D
+        CrossAttnUpBlock2DBase = transformed_diffusers.models.unets.unet_2d_blocks.CrossAttnUpBlock2D
+        UpBlock2DBase = transformed_diffusers.models.unets.unet_2d_blocks.UpBlock2D
+    else:
+        AttnUpBlock2DBase = transformed_diffusers.models.unet_2d_blocks.AttnUpBlock2D
+        CrossAttnUpBlock2DBase = transformed_diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D
+        UpBlock2DBase = transformed_diffusers.models.unet_2d_blocks.UpBlock2D
+
+    class AttnUpBlock2D(AttnUpBlock2DBase):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -179,9 +189,7 @@ else:
 
             return hidden_states
 
-    class CrossAttnUpBlock2D(
-        transformed_diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D
-    ):
+    class CrossAttnUpBlock2D(CrossAttnUpBlock2DBase):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -277,7 +285,7 @@ else:
 
             return hidden_states
 
-    class UpBlock2D(transformed_diffusers.models.unet_2d_blocks.UpBlock2D):
+    class UpBlock2D(UpBlock2DBase):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
