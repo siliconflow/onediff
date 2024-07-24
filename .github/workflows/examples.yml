@@ -148,6 +148,8 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
+        should-run-pro:
+          - ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         image:
           - onediff:cu118
           - onediff-pro:cu121
@@ -155,6 +157,9 @@ jobs:
           - diffusers_examples
           - comfy
           - webui
+        exclude:
+          - should-run-pro: false
+            image: onediff-pro:cu121
     steps:
       - name: Login to ACR with the AccessKey pair
         if: github.event.pull_request.head.repo.full_name == github.repository
