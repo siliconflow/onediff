@@ -37,7 +37,7 @@ concurrency:
 
 jobs:
   upload_src:
-    if: github.repository == 'siliconflow/onediff'
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [ubuntu-latest]
     outputs:
       onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
@@ -166,7 +166,7 @@ jobs:
           set -x
           docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
       - name: Setup ossutil
-        if: github.repository == 'siliconflow/onediff'
+        if: github.event.pull_request.head.repo.full_name == github.repository
         run: |
           if [ ! -f "$HOME/ossutil64" ]; then
             curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
@@ -174,17 +174,17 @@ jobs:
           fi
           $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
       - name: Checkout vis OSS
-        if: github.repository == 'siliconflow/onediff'
+        if: github.event.pull_request.head.repo.full_name == github.repository
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.onediff_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.onediff_src_url }})
       - name: Checkout Comfy vis OSS
-        if: matrix.test-suite == 'comfy' && github.repository == 'siliconflow/onediff'
+        if: matrix.test-suite == 'comfy' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.comfy_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
       - name: Checkout WebUI vis OSS
-        if: matrix.test-suite == 'webui' && github.repository == 'siliconflow/onediff'
+        if: matrix.test-suite == 'webui' && github.event.pull_request.head.repo.full_name == github.repository
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
