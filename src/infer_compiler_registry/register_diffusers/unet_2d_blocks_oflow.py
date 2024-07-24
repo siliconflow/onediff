@@ -6,6 +6,7 @@ from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 from packaging import version
 
 diffusers_0210_v = version.parse("0.21.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
