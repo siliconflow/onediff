@@ -1,4 +1,4 @@
-# Run kolors with onediff (Beta Release)
+# Run Kolors with onediff
 
 
 ## Environment setup
