@@ -157,6 +157,7 @@ jobs:
           - webui
     steps:
       - name: Login to ACR with the AccessKey pair
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: aliyun/acr-login@v1
         with:
           login-server: https://registry.${{env.REGION_ID}}.aliyuncs.com
