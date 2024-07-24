@@ -13,6 +13,7 @@ transformed_diffusers = transform_mgr.transform_package("diffusers")
 diffusers_0220_v = version.parse("0.22.0")
 diffusers_02499_v = version.parse("0.24.99")
 diffusers_0270_v = version.parse("0.27.0")
+diffusers_0280_v = version.parse("0.28.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 if diffusers_version < diffusers_0220_v:
@@ -885,7 +886,7 @@ elif diffusers_version < diffusers_02499_v:
 
             return Transformer2DModelOutput(sample=output)
 
-else:
+elif diffusers_version < diffusers_0280_v:
     transformed_diffusers = transform_mgr.transform_package("diffusers")
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -1212,3 +1213,5 @@ else:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
+else:
+    from .transformer_2d.v_0_28 import Transformer2DModel, Transformer2DModelOutput
