@@ -37,7 +37,6 @@ concurrency:
 
 jobs:
   upload_src:
-    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: [ubuntu-latest]
     outputs:
       onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
@@ -45,6 +44,7 @@ jobs:
       webui_src_url: ${{ steps.upload_to_oss.outputs.webui_src_url }}
     steps:
       - name: Setup ossutil
+        if: github.event.pull_request.head.repo.full_name == github.repository
         run: |
           curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o ossutil64
           sudo chmod +x ossutil64
@@ -128,6 +128,7 @@ jobs:
           git clean -f
           zip -r webui-src.zip .
       - name: Upload src
+        if: github.event.pull_request.head.repo.full_name == github.repository
         id: upload_to_oss
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
