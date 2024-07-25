@@ -1,9 +1,9 @@
 # mypy: allow-untyped-defs
 # This is mainly a copy of the PyTorch's `collect_env.py` script with some modifications
+# Run it with `python collect_env.py` or `python -m onediff.utils.collect_env`
 
 # Unlike the rest of the PyTorch this file must be python2 compliant.
 # This script outputs relevant system environment info
-# Run it with `python collect_env.py` or `python -m torch.utils.collect_env`
 import datetime
 import locale
 import os
@@ -40,6 +40,8 @@ SystemEnv = namedtuple(
     "SystemEnv",
     [
         "torch_version",
+        "oneflow_version",
+        "nexfort_version",
         "is_debug_build",
         "cuda_compiled_version",
         "gcc_version",
@@ -86,6 +88,10 @@ DEFAULT_PIP_PATTERNS = {
     "triton",
     "optree",
     "onnx",
+    "oneflow",
+    "nexfort",
+    "diffusers",
+    "transformers",
 }
 
 
@@ -536,6 +542,11 @@ def get_env_info():
     else:
         oneflow_v_str = "none"
 
+    if NEXFORT_AVAILABLE:
+        nexfort_v_str = nexfort.__version__
+    else:
+        nexfort_v_str = "none"
+
     return SystemEnv(
         torch_version=version_str,
         oneflow_version=oneflow_v_str,
@@ -574,6 +585,9 @@ PyTorch version: {torch_version}
 Is debug build: {is_debug_build}
 CUDA used to build PyTorch: {cuda_compiled_version}
 ROCM used to build PyTorch: {hip_compiled_version}
+
+OneFlow version: {oneflow_version}
+Nexfort version: {nexfort_version}
 
 OS: {os}
 GCC version: {gcc_version}
