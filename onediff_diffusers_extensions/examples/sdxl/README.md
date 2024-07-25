@@ -83,7 +83,7 @@ Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 1024*1024, iterati
 
 <sup>2</sup> AMD EPYC 7543 32-Core Processor.
 
-<sup>3</sup> Intel(R) Xeon(R) Gold 6150 CPU @ 2.70GHz (8 core).
+<sup>3</sup> Intel(R) Xeon(R) Gold 6150 CPU @ 2.70GHz (8 cores).
 
 ## Dynamic shape for SDXL
 
