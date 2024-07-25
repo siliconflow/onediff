@@ -6,19 +6,21 @@ from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 from packaging import version
 
 diffusers_0210_v = version.parse("0.21.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 diffusers_0270_v = version.parse("0.27.0")
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
-diffusers_0260_v = version.parse("0.26.0")
-if diffusers_version >= diffusers_0260_v:
-    UNet2DConditionOutput = (
-        transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionOutput
-    )
-else:
+if diffusers_version < diffusers_0260_v:
     UNet2DConditionOutput = (
         transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
     )
+    proxy_UNet2DConditionModel = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+else:
+    UNet2DConditionOutput = (
+        transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionOutput
+    )
+    proxy_UNet2DConditionModel = transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionModel
 
 try:
     USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
@@ -28,12 +30,7 @@ except Exception as e:
     USE_PEFT_BACKEND = False
 
 
-if diffusers_version >= diffusers_0260_v:
-    UNet2DConditionModelBase = transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionModel
-else:
-    UNet2DConditionModelBase = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
-
-class UNet2DConditionModel(UNet2DConditionModelBase):
+class UNet2DConditionModel(proxy_UNet2DConditionModel):
     def forward(
         self,
         sample: torch.FloatTensor,
