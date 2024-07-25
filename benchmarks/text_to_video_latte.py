@@ -95,8 +95,9 @@ def parse_args():
         type=int,
         default=ATTENTION_FP16_SCORE_ACCUM_MAX_M,
     )
-    parser.add_argument("--profile", action="store_true")
-    parser.add_argument("--from_hf", action="store_true")
+    parser.add_argument("--profile_warmup", action="store_true")
+    parser.add_argument("--profile_run", action="store_true")
+    parser.add_argument("--from-hf", action="store_true")
     return parser.parse_args()
 
 
@@ -285,9 +286,11 @@ def main():
         return kwarg_inputs
 
     kwarg_inputs = get_kwarg_inputs()
-    with conditional_context(args.profile, torch.profiler.profile()) as prof:
+    with conditional_context(
+        args.profile_warmup, torch.profiler.profile()
+    ) as prof_warmup:
         with conditional_context(
-            args.profile, torch.profiler.record_function("latte warmup")
+            args.profile_warmup, torch.profiler.record_function("latte warmup")
         ):
             if args.warmups > 0:
                 print("=======================================")
@@ -302,15 +305,19 @@ def main():
                 end = time.time()
                 print("End warmup")
                 print(f"Warmup time: {end - begin:.3f}s")
-
                 print("=======================================")
+    if prof_warmup:
+        prof_warmup.export_chrome_trace("latte_prof_warmup.json")
 
+    with conditional_context(args.profile_run, torch.profiler.profile()) as prof_run:
         iter_profiler = IterationProfiler()
         if "callback_on_step_end" in inspect.signature(pipe).parameters:
             kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
         elif "callback" in inspect.signature(pipe).parameters:
             kwarg_inputs["callback"] = iter_profiler.callback_on_step_end
-        with torch.profiler.record_function("latte run"):
+        with conditional_context(
+            args.profile_run, torch.profiler.record_function("latte run")
+        ):
             torch.manual_seed(args.seed)
             begin = time.time()
             out = pipe(**kwarg_inputs)
@@ -332,7 +339,7 @@ def main():
         print("=======================================")
 
         with conditional_context(
-            args.profile, torch.profiler.record_function("latte export")
+            args.profile_run, torch.profiler.record_function("latte export")
         ):
             if args.output_video is not None:
                 # export_to_video(output_frames[0], args.output_video, fps=args.fps)
@@ -344,8 +351,8 @@ def main():
                     print("Error when saving {}".format(args.prompt))
             else:
                 print("Please set `--output-video` to save the output video")
-    if prof:
-        prof.export_chrome_trace("latte_with_cache_prof.json")
+    if prof_run:
+        prof_run.export_chrome_trace("latte_prof_run.json")
 
 
 if __name__ == "__main__":
