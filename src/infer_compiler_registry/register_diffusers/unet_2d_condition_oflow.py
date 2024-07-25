@@ -502,5 +502,5 @@ class UNet2DConditionModel(UNet2DConditionModelBase):
 
 
 
-if diffusers_version >= diffusers_0270_v:
+if diffusers_version < diffusers_0270_v:
     UNet2DConditionModel = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel

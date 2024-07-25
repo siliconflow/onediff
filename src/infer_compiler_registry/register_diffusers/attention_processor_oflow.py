@@ -32,7 +32,7 @@ def is_xformers_available():
 from packaging import version
 import importlib.metadata
 import oneflow as torch
-from onediff.infer_compiler.transform import transform_mgr
+from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 
 diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))

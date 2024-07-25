@@ -1216,4 +1216,4 @@ elif diffusers_version < diffusers_0270_v:
 
 else:
     # diffusers/models/transformers/transformer_2d.py
-    Transformer2DModel = transformed_diffusers.models.transformer_2d.Transformer2DModel
+    Transformer2DModel = transformed_diffusers.models.transformers.transformer_2d.Transformer2DModel
