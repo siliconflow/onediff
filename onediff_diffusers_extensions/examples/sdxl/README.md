@@ -66,9 +66,9 @@ python3 benchmarks/text_to_image.py \
 ## Performance comparison
 
 Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 1024*1024, iterating 20 steps:
-| Metric                               | RTX 3090  1024*1024   | RTX 4090 1024*1024    |RTX 4090(32G) 1024*1024|RTX 4090(48G) 1024*1024| 
+| Metric                               | RTX 3090  1024*1024   | RTX 4090 1024*1024    |RTX 4090(32G) 1024*1024|RTX 4090(48G) 1024*1024|
 | ------------------------------------ | --------------------- | --------------------- | --------------------- | --------------------- |
-| Data update date (yyyy-mm-dd)        | 2024-07-10            | 2024-07-10            |2024-07-25             |2024-07-25             |  
+| Data update date (yyyy-mm-dd)        | 2024-07-10            | 2024-07-10            |2024-07-25             |2024-07-25             |
 | PyTorch iteration speed              | 4.08 it/s             | 6.93 it/s             |6.158 it/s             |7.585 it/s             |
 | OneDiff iteration speed              | 7.21 it/s (+76.7%)    | 13.92 it/s (+100.9%)  |11.789 it/s (+91.4%)   |14.895 it/s (96.3%)    |
 | PyTorch E2E time                     | 5.60 s                | 3.23 s                |3.674s                 |2.972 s                |
