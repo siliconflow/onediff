@@ -1,5 +1,6 @@
 import functools
 
+
 def patch_input_adapter(in_args, in_kwargs):
     return in_args, in_kwargs
 
