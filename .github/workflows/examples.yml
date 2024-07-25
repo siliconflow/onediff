@@ -196,16 +196,16 @@ jobs:
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
       - name: Checkout
-        if: github.repository != 'siliconflow/onediff'
+        if: github.event.pull_request.head.repo.full_name != github.repository
         uses: actions/checkout@v4
       - name: Checkout ComfyUI
-        if: matrix.test-suite == 'comfy' && github.repository != 'siliconflow/onediff'
+        if: matrix.test-suite == 'comfy' && github.event.pull_request.head.repo.full_name != github.repository
         uses: actions/checkout@v4
         with:
           repository: comfyanonymous/ComfyUI
           path: ${{ env.COMFYUI_SRC_DIR }}
       - name: Checkout Stable Diffusion WebUI
-        if: matrix.test-suite == 'webui' && github.repository != 'siliconflow/onediff'
+        if: matrix.test-suite == 'webui' && github.event.pull_request.head.repo.full_name != github.repository
         uses: actions/checkout@v4
         with:
           repository: AUTOMATIC1111/stable-diffusion-webui
