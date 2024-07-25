@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import importlib.metadata
 from typing import Callable, Dict, List, Optional, Union
 
 from packaging import version
-import importlib.metadata
 
 diffusers_0240_v = version.parse("0.24.0")
 diffusers_0251_v = version.parse("0.25.1")
@@ -25,29 +25,30 @@ diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 import numpy as np
 import PIL.Image
 import torch
-from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
 from diffusers.image_processor import VaeImageProcessor
 from diffusers.models import AutoencoderKLTemporalDecoder
 from diffusers.schedulers import EulerDiscreteScheduler
 from diffusers.utils import BaseOutput, logging
 from diffusers.utils.torch_utils import randn_tensor
+from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
 logger = logging.get_logger(__name__)  # pylint: disable=invalid-name
 
-from diffusers import StableVideoDiffusionPipeline as DiffusersStableVideoDiffusionPipeline
+from diffusers import (
+    StableVideoDiffusionPipeline as DiffusersStableVideoDiffusionPipeline,
+)
 from diffusers.pipelines.stable_video_diffusion import (
     StableVideoDiffusionPipelineOutput,
 )
 
-
-from .models.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
 from .models.fast_unet_spatio_temporal_condition import (
     FastUNetSpatioTemporalConditionModel,
 )
 
-
 from .models.pipeline_utils import enable_deep_cache_pipeline
+
+from .models.unet_spatio_temporal_condition import UNetSpatioTemporalConditionModel
 
 
 enable_deep_cache_pipeline()
@@ -154,12 +155,14 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
         # corresponds to doing no classifier free guidance.
         if diffusers_version > diffusers_0240_v:
             self._guidance_scale = max_guidance_scale
-        else:   
+        else:
             do_classifier_free_guidance = max_guidance_scale > 1.0
 
         # 3. Encode input image
         if diffusers_version > diffusers_0240_v:
-            image_embeddings = self._encode_image(image, device, num_videos_per_prompt, self.do_classifier_free_guidance)
+            image_embeddings = self._encode_image(
+                image, device, num_videos_per_prompt, self.do_classifier_free_guidance
+            )
         else:
             image_embeddings = self._encode_image(
                 image, device, num_videos_per_prompt, do_classifier_free_guidance
@@ -172,8 +175,12 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
 
         # 4. Encode input image using VAE
         if diffusers_version > diffusers_0251_v:
-            image = self.image_processor.preprocess(image, height=height, width=width).to(device)
-            noise = randn_tensor(image.shape, generator=generator, device=device, dtype=image.dtype)
+            image = self.image_processor.preprocess(
+                image, height=height, width=width
+            ).to(device)
+            noise = randn_tensor(
+                image.shape, generator=generator, device=device, dtype=image.dtype
+            )
         else:
             image = self.image_processor.preprocess(image, height=height, width=width)
             noise = randn_tensor(
@@ -195,7 +202,9 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
                 do_classifier_free_guidance=self.do_classifier_free_guidance,
             )
         if diffusers_version > diffusers_0240_v:
-            image_latents = self._encode_vae_image(image, device, num_videos_per_prompt, self.do_classifier_free_guidance)
+            image_latents = self._encode_vae_image(
+                image, device, num_videos_per_prompt, self.do_classifier_free_guidance
+            )
         else:
             image_latents = self._encode_vae_image(
                 image, device, num_videos_per_prompt, do_classifier_free_guidance
@@ -272,10 +281,16 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
             for i, t in enumerate(timesteps):
                 # expand the latents if we are doing classifier free guidance
                 if diffusers_version > diffusers_0240_v:
-                    latent_model_input = torch.cat([latents] * 2) if self.do_classifier_free_guidance else latents
+                    latent_model_input = (
+                        torch.cat([latents] * 2)
+                        if self.do_classifier_free_guidance
+                        else latents
+                    )
                 else:
                     latent_model_input = (
-                        torch.cat([latents] * 2) if do_classifier_free_guidance else latents
+                        torch.cat([latents] * 2)
+                        if do_classifier_free_guidance
+                        else latents
                     )
                 latent_model_input = self.scheduler.scale_model_input(
                     latent_model_input, t
@@ -313,7 +328,9 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
                 if diffusers_version > diffusers_0240_v:
                     if self.do_classifier_free_guidance:
                         noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)
-                        noise_pred = noise_pred_uncond + self.guidance_scale * (noise_pred_cond - noise_pred_uncond)
+                        noise_pred = noise_pred_uncond + self.guidance_scale * (
+                            noise_pred_cond - noise_pred_uncond
+                        )
                 else:
                     if do_classifier_free_guidance:
                         noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)

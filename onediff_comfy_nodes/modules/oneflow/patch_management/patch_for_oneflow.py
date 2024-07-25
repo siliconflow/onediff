@@ -2,7 +2,7 @@
 fix: TypeError: can only concatenate str (not "tuple") to str
 TODO: fix in oneflow
 """
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from oneflow.framework.args_tree import NamedArg
 
 

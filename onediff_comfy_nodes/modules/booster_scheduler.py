@@ -1,10 +1,12 @@
 import copy
-import torch.nn as nn
 from functools import singledispatchmethod, wraps
 from typing import List
+
+import torch.nn as nn
+from comfy import model_management
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
-from comfy import model_management
+
 from .booster_cache import BoosterCacheService
 from .booster_interface import BoosterExecutor, BoosterSettings
 

@@ -3,6 +3,7 @@ import traceback
 
 COMFYUI_ROOT = os.getenv("COMFYUI_ROOT")
 from onediff.utils.import_utils import DynamicModuleLoader
+
 from ...sd_hijack_utils import Hijacker
 
 __all__ = ["pulid_comfyui", "pulid_comfyui_hijacker"]

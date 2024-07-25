@@ -28,7 +28,7 @@ bash scripts/install_env.sh $COMFYUI_ROOT
 
 cd  $COMFYUI_ROOT
 
-python main.py --gpu-only --port 8188 --extra-model-paths-config path/to/onediff/tests/comfyui/extra_model_paths.yaml 
+python main.py --gpu-only --port 8188 --extra-model-paths-config path/to/onediff/tests/comfyui/extra_model_paths.yaml
 ```
 
 ## Usage Example

@@ -34,7 +34,7 @@ while getopts 'm:w:p:o:d:v:p:h' opt; do
     v)
       TRT_VERSION=$OPTARG
       ;;
-   
+
     ?|h)
       echo "Usage: $(basename $0) [-m model_dir] [-w warmups] [-p prompt] [-o output_file] [-d work_dir] [-v trt_version] [-h]"
       echo "  -m model_dir: the directory of the models, if not set, use HF models"
@@ -102,7 +102,7 @@ esac
 python3 -m pip install torch torchvision --index-url https://download.pytorch.org/whl/cu${TORCH_CUDA_TAG}
 
 cd $TRT_REPO_DIR/demo/Diffusion
-python3 -m pip install -r requirements.txt 
+python3 -m pip install -r requirements.txt
 
 if [ ! -z "${MODEL_DIR}" ]; then
   echo "model_dir specified, use local models"
