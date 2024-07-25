@@ -66,18 +66,18 @@ python3 benchmarks/text_to_image.py \
 ## Performance comparison
 
 Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 1024*1024, iterating 20 steps:
-| Metric                               | RTX 3090  1024*1024   | RTX 4090 1024*1024    |RTX 4090(32G) 1024*1024|RTX 4090(48G) 1024*1024|
-| ------------------------------------ | --------------------- | --------------------- | --------------------- | --------------------- |
-| Data update date (yyyy-mm-dd)        | 2024-07-10            | 2024-07-10            |2024-07-25             |2024-07-25             |
-| PyTorch iteration speed              | 4.08 it/s             | 6.93 it/s             |6.158 it/s             |7.585 it/s             |
-| OneDiff iteration speed              | 7.21 it/s (+76.7%)    | 13.92 it/s (+100.9%)  |11.789 it/s (+91.4%)   |14.895 it/s (96.3%)    |
-| PyTorch E2E time                     | 5.60 s                | 3.23 s                |3.674s                 |2.972 s                |
-| OneDiff E2E time                     | 3.41 s (-39.1%)       | 1.67 s (-48.3%)       |2.029s (-44.8%)        |1.571s (-47.2%)        |
-| PyTorch Max Mem Used                 | 10.467 GiB            | 10.467 GiB            |10.465 GiB             |10.471 GiB             |
-| OneDiff Max Mem Used                 | 12.004 GiB            | 12.021 GiB            |12.002 GiB             |12.013 GiB             |
-| PyTorch Warmup with Run time         |                       |                       |                       |                       |
-| OneDiff Warmup with Compilation time | 474.36 s <sup>1</sup> | 236.54 s <sup>2</sup> |142.691 s <sup>3</sup> |287.011 s <sup>3</sup> |
-| OneDiff Warmup with Cache time       | 306.84 s              | 104.57 s              |142.992s               |132.207 s              |
+| Metric                               | RTX 3090  1024*1024   | RTX 4090 1024*1024    |RTX 4090(32G) 1024*1024|RTX 4090(48G) 1024*1024|RTX 4090(48G) 2048*2048|  
+| ------------------------------------ | --------------------- | --------------------- | --------------------- | --------------------- |---------------------- |
+| Data update date (yyyy-mm-dd)        | 2024-07-10            | 2024-07-10            |2024-07-25             |2024-07-25             |2024-07-25             |  
+| PyTorch iteration speed              | 4.08 it/s             | 6.93 it/s             |6.158 it/s             |7.585 it/s             |1.649 it/s             |         
+| OneDiff iteration speed              | 7.21 it/s (+76.7%)    | 13.92 it/s (+100.9%)  |11.789 it/s (+91.4%)   |14.895 it/s (+96.3%)   |2.967 it/s (+79.9%)    |
+| PyTorch E2E time                     | 5.60 s                | 3.23 s                |3.674s                 |2.972 s                |13.422s                |
+| OneDiff E2E time                     | 3.41 s (-39.1%)       | 1.67 s (-48.3%)       |2.029s (-44.8%)        |1.571s (-47.2%)        |7.688s(-42.8%)         |
+| PyTorch Max Mem Used                 | 10.467 GiB            | 10.467 GiB            |10.465 GiB             |10.471 GiB             |21.723 GiB             |
+| OneDiff Max Mem Used                 | 12.004 GiB            | 12.021 GiB            |12.002 GiB             |12.013 GiB             |24.015 GiB             |
+| PyTorch Warmup with Run time         |                       |                       |                       |                       |                       |
+| OneDiff Warmup with Compilation time | 474.36 s <sup>1</sup> | 236.54 s <sup>2</sup> |142.691 s <sup>3</sup> |287.011 s <sup>3</sup> |502.223 s <sup>3</sup> |
+| OneDiff Warmup with Cache time       | 306.84 s              | 104.57 s              |142.992s               |132.207 s              |363.051 s              |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
 
