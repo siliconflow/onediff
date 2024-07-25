@@ -34,12 +34,27 @@ try:
 except (ImportError, NameError, AttributeError, OSError):
     NEXFORT_AVAILABLE = False
 
+try:
+    import onediff
+
+    ONEDIFF_AVAILABLE = True
+except (ImportError, NameError, AttributeError, OSError):
+    ONEDIFF_AVAILABLE = False
+
+try:
+    import onediffx
+
+    ONEDIFFX_AVAILABLE = True
+except (ImportError, NameError, AttributeError, OSError):
+    ONEDIFFX_AVAILABLE = False
 
 # System Environment Information
 SystemEnv = namedtuple(
     "SystemEnv",
     [
         "torch_version",
+        "onediff_version",
+        "onediffx_version",
         "oneflow_version",
         "nexfort_version",
         "is_debug_build",
@@ -88,8 +103,6 @@ DEFAULT_PIP_PATTERNS = {
     "triton",
     "optree",
     "onnx",
-    "oneflow",
-    "nexfort",
     "diffusers",
     "transformers",
 }
@@ -547,10 +560,22 @@ def get_env_info():
     else:
         nexfort_v_str = "none"
 
+    if ONEDIFF_AVAILABLE:
+        onediff_v_str = onediff.__version__
+    else:
+        onediff_v_str = "none"
+
+    if ONEDIFFX_AVAILABLE:
+        onediffx_v_str = onediffx.__version__
+    else:
+        onediffx_v_str = "none"
+
     return SystemEnv(
         torch_version=version_str,
         oneflow_version=oneflow_v_str,
         nexfort_version=nexfort_v_str,
+        onediff_version=onediff_v_str,
+        onediffx_version=onediffx_v_str,
         is_debug_build=debug_mode_str,
         python_version="{} ({}-bit runtime)".format(
             sys_version, sys.maxsize.bit_length() + 1
@@ -588,6 +613,8 @@ ROCM used to build PyTorch: {hip_compiled_version}
 
 OneFlow version: {oneflow_version}
 Nexfort version: {nexfort_version}
+OneDiff version: {onediff_version}
+OneDiffX version: {onediffx_version}
 
 OS: {os}
 GCC version: {gcc_version}
