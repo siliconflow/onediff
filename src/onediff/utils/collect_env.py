@@ -20,6 +20,21 @@ try:
 except (ImportError, NameError, AttributeError, OSError):
     TORCH_AVAILABLE = False
 
+try:
+    import oneflow
+
+    ONEFLOW_AVAILABLE = True
+except (ImportError, NameError, AttributeError, OSError):
+    ONEFLOW_AVAILABLE = False
+
+try:
+    import nexfort
+
+    NEXFORT_AVAILABLE = True
+except (ImportError, NameError, AttributeError, OSError):
+    NEXFORT_AVAILABLE = False
+
+
 # System Environment Information
 SystemEnv = namedtuple(
     "SystemEnv",
@@ -509,8 +524,22 @@ def get_env_info():
 
     conda_packages = get_conda_packages(run_lambda)
 
+    if ONEFLOW_AVAILABLE:
+        import oneflow
+        import oneflow.sysconfig
+
+        oneflow_v_str = (
+            f"path: {oneflow.__path__}, version: {oneflow.__version__}, git_commit: {oneflow.__git_commit__}, "
+            f"cmake_build_type: {oneflow.sysconfig.cmake_build_type()}, rdma: {oneflow.sysconfig.with_rdma()}, "
+            f"mlir: {oneflow.sysconfig.with_mlir()}, enterprise: {oneflow.sysconfig.with_enterprise()}"
+        )
+    else:
+        oneflow_v_str = "none"
+
     return SystemEnv(
         torch_version=version_str,
+        oneflow_version=oneflow_v_str,
+        nexfort_version=nexfort_v_str,
         is_debug_build=debug_mode_str,
         python_version="{} ({}-bit runtime)".format(
             sys_version, sys.maxsize.bit_length() + 1
