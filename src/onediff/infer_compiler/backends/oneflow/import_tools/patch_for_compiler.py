@@ -16,7 +16,13 @@ class FakeCuda:
 
     @staticmethod
     def _scaled_dot_product_attention_math(
-        query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False, scale=None,
+        query,
+        key,
+        value,
+        attn_mask=None,
+        dropout_p=0.0,
+        is_causal=False,
+        scale=None,
     ):
         scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
 
@@ -51,7 +57,13 @@ class FakeCuda:
 
     @staticmethod
     def scaled_dot_product_attention(
-        query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False, scale=None,
+        query,
+        key,
+        value,
+        attn_mask=None,
+        dropout_p=0.0,
+        is_causal=False,
+        scale=None,
     ):
         """Scaled Dot-Product Attention
         Args:

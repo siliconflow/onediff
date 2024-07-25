@@ -43,9 +43,7 @@ if diffusers_version < diffusers_0210_v:
                     else:
                         hidden_states = upsampler(hidden_states)
 
-    class CrossAttnUpBlock2D(
-        diffusers_unet_2d_blocks.CrossAttnUpBlock2D
-    ):
+    class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -185,9 +183,7 @@ else:
 
             return hidden_states
 
-    class CrossAttnUpBlock2D(
-        diffusers_unet_2d_blocks.CrossAttnUpBlock2D
-    ):
+    class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
