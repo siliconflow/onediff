@@ -145,7 +145,8 @@ jobs:
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
-          rm -rm */.git
+          rm -rf */.git
+          rm -rf */*.zip
       - name: Upload src
         if: github.event.pull_request.head.repo.full_name == github.repository
         id: upload_to_oss
@@ -157,7 +158,10 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           name: onediff_src_pkg
-          path: "*/*-src.zip"
+          path: |
+            onediff
+            ComfyUI
+            ${{ env.WEBUI_SRC_DIR }}
           compression-level: 9
 
   run-examples:
@@ -223,9 +227,9 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         working-directory: artifact_dist/onediff_src_pkg
         run: |
-          unzip -o */$(basename ${{ needs.upload_src.outputs.onediff_src_url }})
-          unzip -o */$(basename ${{ needs.upload_src.outputs.comfy_src_url }})
-          unzip -o */$(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
+          mv onediff/* ${{ github.workspace }}
+          mv ComfyUI ${{ github.workspace }}/ComfyUI
+          mv ${{env.WEBUI_SRC_DIR}} ${{ github.workspace }}/${{env.WEBUI_SRC_DIR}}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
