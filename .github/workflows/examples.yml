@@ -36,6 +36,15 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  pre-commit:
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - uses: pre-commit/action@v3.0.1
   upload_src:
     runs-on: [ubuntu-latest]
     outputs:
