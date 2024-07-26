@@ -182,7 +182,11 @@ jobs:
       - name: Print src
         run: |
           ls -al
+      - name: Print ComfyUI
+        run: |
           ls -al ComfyUI
+      - name: Print ${{env.WEBUI_SRC_DIR}}
+        run: |
           ls -al ${{env.WEBUI_SRC_DIR}}
 
   run-examples:
