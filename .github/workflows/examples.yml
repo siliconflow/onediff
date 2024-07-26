@@ -181,9 +181,9 @@ jobs:
           mv ${{env.WEBUI_SRC_DIR}} ${{ github.workspace }}/${{env.WEBUI_SRC_DIR}}
       - name: Print src
         run: |
-          ls -l
-          ls -l ComfyUI
-          ls -l ${{env.WEBUI_SRC_DIR}}
+          ls -al
+          ls -al ComfyUI
+          ls -al ${{env.WEBUI_SRC_DIR}}
 
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
