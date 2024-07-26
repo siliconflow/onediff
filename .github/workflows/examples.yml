@@ -181,8 +181,6 @@ jobs:
         exclude:
           - should-run-pro: false
             image: onediff-pro:cu121
-          - should-run-pro: false
-            test-suite: webui
     steps:
       - name: Login to ACR with the AccessKey pair
         if: github.event.pull_request.head.repo.full_name == github.repository
