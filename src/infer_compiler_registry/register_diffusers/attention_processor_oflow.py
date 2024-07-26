@@ -2374,7 +2374,6 @@ if is_ip_adapter_available():
 
             if attn.group_norm is not None:
                 hidden_states = attn.group_norm(hidden_states.transpose(1, 2)).transpose(1, 2)
-
             query = attn.to_q(hidden_states)
 
             if encoder_hidden_states is None:
@@ -2388,10 +2387,16 @@ if is_ip_adapter_available():
             inner_dim = key.shape[-1]
             head_dim = inner_dim // attn.heads
 
-            query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
 
-            key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-            value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+            # modified to support dynamic shape for onediff (view -> reshape)
+            # query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+
+            # key = key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+            # value = value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+            query = query.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+
+            key = key.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+            value = value.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
 
             # the output of sdp = (batch, num_heads, seq_len, head_dim)
             # TODO: add support for attn.scale when we move to Torch 2.1
@@ -2437,7 +2442,7 @@ if is_ip_adapter_available():
             for current_ip_hidden_states, scale, to_k_ip, to_v_ip, mask in zip(
                 ip_hidden_states, self.scale, self.to_k_ip, self.to_v_ip, ip_adapter_masks
             ):
-                skip = False
+                skip = True
                 # if isinstance(scale, list):
                 #     if all(s == 0 for s in scale):
                 #         skip = True
@@ -2453,8 +2458,11 @@ if is_ip_adapter_available():
                             ip_key = to_k_ip(current_ip_hidden_states[:, i, :, :])
                             ip_value = to_v_ip(current_ip_hidden_states[:, i, :, :])
 
-                            ip_key = ip_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-                            ip_value = ip_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                            # modified to support dynamic shape for onediff (view -> reshape)
+                            # ip_key = ip_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                            # ip_value = ip_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                            ip_key = ip_key.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                            ip_value = ip_value.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
 
                             # the output of sdp = (batch, num_heads, seq_len, head_dim)
                             # TODO: add support for attn.scale when we move to Torch 2.1
@@ -2480,8 +2488,11 @@ if is_ip_adapter_available():
                         ip_key = to_k_ip(current_ip_hidden_states)
                         ip_value = to_v_ip(current_ip_hidden_states)
 
-                        ip_key = ip_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-                        ip_value = ip_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                        # modified to support dynamic shape for onediff (view -> reshape)
+                        # ip_key = ip_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                        # ip_value = ip_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                        ip_key = ip_key.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                        ip_value = ip_value.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
 
                         # the output of sdp = (batch, num_heads, seq_len, head_dim)
                         # TODO: add support for attn.scale when we move to Torch 2.1

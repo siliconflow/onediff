@@ -294,12 +294,16 @@ class UNet2DConditionModel(proxy_UNet2DConditionModel):
                     f"{self.__class__} has the config param `encoder_hid_dim_type` set to 'ip_image_proj' which requires the keyword argument `image_embeds` to be passed in  `added_conditions`"
                 )
             image_embeds = added_cond_kwargs.get("image_embeds")
-            image_embeds = self.encoder_hid_proj(image_embeds).to(
-                encoder_hidden_states.dtype
-            )
-            encoder_hidden_states = torch.cat(
-                [encoder_hidden_states, image_embeds], dim=1
-            )
+            if diffusers_version < diffusers_0270_v:
+                image_embeds = self.encoder_hid_proj(image_embeds).to(
+                    encoder_hidden_states.dtype
+                )
+                encoder_hidden_states = torch.cat(
+                    [encoder_hidden_states, image_embeds], dim=1
+                )
+            else:
+                image_embeds = self.encoder_hid_proj(image_embeds)
+                encoder_hidden_states = (encoder_hidden_states, image_embeds)
 
         # 2. pre-process
         sample = self.conv_in(sample)
@@ -501,3 +505,5 @@ class UNet2DConditionModel(proxy_UNet2DConditionModel):
 
 if diffusers_version < diffusers_0270_v:
     UNet2DConditionModel = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+# elif diffusers_version >= version.parse("0.29.0"):
+#     from .unet_2d_condition.v_0_29 import UNet2DConditionModel, UNet2DConditionOutput

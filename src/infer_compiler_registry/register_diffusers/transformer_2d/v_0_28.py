@@ -1,4 +1,4 @@
-import torch
+import oneflow as torch
 from typing import Optional, Dict, Any
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
 transformed_diffusers = transform_mgr.transform_package("diffusers")
