@@ -39,7 +39,7 @@ image_file_prefix = "/share_nfs/onediff_ci/diffusers/images/1.0"
 
 
 @pytest.fixture
-def prepare_loras() -> Dict[str, Dict[str, Tensor]]:
+def prepare_loras() -> Dict[str, Dict[str, torch.Tensor]]:
     loras = [
         "/share_nfs/onediff_ci/diffusers/loras/SDXL-Emoji-Lora-r4.safetensors",
         "/share_nfs/onediff_ci/diffusers/loras/sdxl_metal_lora.safetensors",
@@ -52,7 +52,7 @@ def prepare_loras() -> Dict[str, Dict[str, Tensor]]:
 
 
 @pytest.fixture
-def get_loras(prepare_loras) -> Dict[str, Dict[str, Tensor]]:
+def get_loras(prepare_loras) -> Dict[str, Dict[str, torch.Tensor]]:
     def _get_loras():
         return {name: lora_dict.copy() for name, lora_dict in prepare_loras.items()}
 
@@ -60,7 +60,7 @@ def get_loras(prepare_loras) -> Dict[str, Dict[str, Tensor]]:
 
 
 @pytest.fixture
-def get_multi_loras(prepare_loras) -> Dict[str, Dict[str, Tensor]]:
+def get_multi_loras(prepare_loras) -> Dict[str, Dict[str, torch.Tensor]]:
     def _get_multi_loras():
         multi_lora = {}
         current_name = []
