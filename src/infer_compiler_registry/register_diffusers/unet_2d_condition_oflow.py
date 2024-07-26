@@ -509,5 +509,6 @@ class UNet2DConditionModel(proxy_UNet2DConditionModel):
 
 if diffusers_version < diffusers_0270_v:
     UNet2DConditionModel = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+# TODO(Wangyi): concat op bug here
 # elif diffusers_version >= version.parse("0.29.0"):
 #     from .unet_2d_condition.v_0_29 import UNet2DConditionModel, UNet2DConditionOutput

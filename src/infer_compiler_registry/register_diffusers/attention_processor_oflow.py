@@ -2442,7 +2442,7 @@ if is_ip_adapter_available():
             for current_ip_hidden_states, scale, to_k_ip, to_v_ip, mask in zip(
                 ip_hidden_states, self.scale, self.to_k_ip, self.to_v_ip, ip_adapter_masks
             ):
-                skip = True
+                skip = False
                 # if isinstance(scale, list):
                 #     if all(s == 0 for s in scale):
                 #         skip = True
