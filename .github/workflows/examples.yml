@@ -156,7 +156,11 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           name: onediff_src_pkg
-          path: ${{ github.workspace }}/*/*.zip
+          path: |
+            onediff/onediff-src.zip
+            ComfyUI/comfyui-src.zip
+            ${{ env.WEBUI_SRC_DIR }}/webui-src.zip
+          compression-level: 9
 
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
@@ -217,7 +221,7 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           path: artifact_dist
-      - name: Checkout
+      - name: Checkout via artifact
         if: github.event.pull_request.head.repo.full_name != github.repository
         working-directory: artifact_dist/onediff_src_pkg
         run: |
