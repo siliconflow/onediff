@@ -166,6 +166,7 @@ jobs:
 
   valiad-src-pkg:
     runs-on: [ubuntu-latest]
+    needs: [upload_src]
     steps:
       - uses: actions/download-artifact@v4
         if: github.event.pull_request.head.repo.full_name != github.repository
@@ -178,6 +179,11 @@ jobs:
           mv onediff/* ${{ github.workspace }}
           mv ComfyUI ${{ github.workspace }}/ComfyUI
           mv ${{env.WEBUI_SRC_DIR}} ${{ github.workspace }}/${{env.WEBUI_SRC_DIR}}
+      - name: Print src
+        run: |
+          ls -l
+          ls -l ComfyUI
+          ls -l ${{env.WEBUI_SRC_DIR}}
 
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
