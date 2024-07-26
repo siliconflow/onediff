@@ -3,11 +3,9 @@ from setuptools import find_packages, setup
 
 def get_version():
     variables = {}
-    with open("onediffx/__init__.py", "r") as f:
-        for line in f:
-            if line.startswith("__version__"):
-                exec(line, variables)
-    return variables["__version__"]
+    with open("onediffx/version.py", "r") as f:
+        exec(f.read(), {}, variables)
+    return variables["_version"]
 
 
 setup(
