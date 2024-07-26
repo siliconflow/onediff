@@ -3,12 +3,12 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
-import torch
-from packaging import version
-
 import diffusers
+
+import torch
 from diffusers.loaders import LoraLoaderMixin
 from onediff.utils import logger
+from packaging import version
 
 if version.parse(diffusers.__version__) >= version.parse("0.21.0"):
     from diffusers.models.lora import PatchedLoraProjection
@@ -34,7 +34,6 @@ is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.par
 
 class OneDiffXWarning(Warning):
     pass
-
 
 
 warnings.filterwarnings("always", category=OneDiffXWarning)
@@ -220,9 +219,13 @@ def set_and_fuse_adapters(
         adapter_names = [adapter_names]
 
     if adapter_weights is None:
-        adapter_weights = [1.0,] * len(adapter_names)
+        adapter_weights = [
+            1.0,
+        ] * len(adapter_names)
     elif isinstance(adapter_weights, (int, float)):
-        adapter_weights = [adapter_weights,] * len(adapter_names)
+        adapter_weights = [
+            adapter_weights,
+        ] * len(adapter_names)
 
     adapter_names = [x for x in adapter_names if x in pipeline._adapter_names]
     pipeline._active_adapter_names = {

@@ -1,9 +1,6 @@
 import warnings
 from typing import Dict, List, Optional, Union
 
-import torch
-from packaging import version
-
 import diffusers
 
 import torch
@@ -133,7 +130,9 @@ def _set_adapter(
             if adapter in self.scaling
         ]
     elif isinstance(adapter_weights, float):
-        adapter_weights = [adapter_weights,] * len(adapter_names)
+        adapter_weights = [
+            adapter_weights,
+        ] * len(adapter_names)
     _unfuse_lora(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device

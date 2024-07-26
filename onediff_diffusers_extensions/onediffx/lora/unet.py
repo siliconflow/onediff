@@ -8,10 +8,7 @@ from diffusers.utils import is_accelerate_available
 from onediff.infer_compiler import DeployableModule
 from onediff.utils import logger
 
-from .utils import (
-    _load_lora_and_optionally_fuse,
-    is_peft_available,
-)
+from .utils import _load_lora_and_optionally_fuse, is_peft_available
 
 if is_peft_available():
     import peft

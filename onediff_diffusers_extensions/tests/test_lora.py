@@ -1,6 +1,4 @@
 import random
-from PIL import Image
-from typing import Dict
 from pathlib import Path
 from typing import Dict, List, Tuple
 
@@ -13,13 +11,14 @@ from diffusers import DiffusionPipeline
 from onediff.infer_compiler import oneflow_compile
 
 from onediffx.lora import (
-    load_and_fuse_lora,
-    unfuse_lora,
-    set_and_fuse_adapters,
-    get_active_adapters,
     delete_adapters,
+    get_active_adapters,
+    load_and_fuse_lora,
     load_lora_and_optionally_fuse,
+    set_and_fuse_adapters,
+    unfuse_lora,
 )
+from PIL import Image
 
 HEIGHT = 1024
 WIDTH = 1024
@@ -138,7 +137,13 @@ def prepare_target_images_multi_lora(pipe, loras, multi_loras):
 
     print("Didn't find target images, try to generate...")
     for names, loras in multi_loras.items():
-        pipe.set_adapters(names, [LORA_SCALE,] * len(names))
+        pipe.set_adapters(
+            names,
+            [
+                LORA_SCALE,
+            ]
+            * len(names),
+        )
         image = generate_image(pipe)
         image_name = f"{image_file_prefix}/test_sdxl_multi_lora_{'_'.join(names)}_{HEIGHT}_{WIDTH}.png"
         image.save(image_name)
@@ -149,7 +154,10 @@ def prepare_target_images_multi_lora(pipe, loras, multi_loras):
 def preload_multi_loras(pipe, loras):
     for name, lora in loras.items():
         load_lora_and_optionally_fuse(
-            pipe, lora.copy(), adapter_name=name, fuse=False,
+            pipe,
+            lora.copy(),
+            adapter_name=name,
+            fuse=False,
         )
         unfuse_lora(pipe)
 
@@ -192,7 +200,14 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
     preload_multi_loras(pipe, loras)
 
     for names, loras in multi_loras.items():
-        set_and_fuse_adapters(pipe, names, [LORA_SCALE,] * len(names))
+        set_and_fuse_adapters(
+            pipe,
+            names,
+            [
+                LORA_SCALE,
+            ]
+            * len(names),
+        )
 
         images_fusion = generate_image(pipe)
         image_name = "_".join(names)

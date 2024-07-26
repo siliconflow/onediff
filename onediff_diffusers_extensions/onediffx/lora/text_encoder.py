@@ -1,8 +1,5 @@
 from collections import defaultdict
 
-import torch
-from packaging import version
-
 import diffusers
 
 import torch
