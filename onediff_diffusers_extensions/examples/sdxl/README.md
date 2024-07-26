@@ -75,6 +75,8 @@ Testing on NVIDIA GeForce RTX 3090 / 4090, with image size of 1024*1024, iterati
 | OneDiff E2E time                     | 3.41 s (-39.1%)       | 1.67 s (-48.3%)       |2.029s (-44.8%)        |1.571s (-47.2%)        |7.688s(-42.8%)         |
 | PyTorch Max Mem Used                 | 10.467 GiB            | 10.467 GiB            |10.465 GiB             |10.471 GiB             |21.723 GiB             |
 | OneDiff Max Mem Used                 | 12.004 GiB            | 12.021 GiB            |12.002 GiB             |12.013 GiB             |24.015 GiB             |
+| PyTorch Max reserved CUDA memory Used|                       |                       |                       |                       |35.615 GiB             |
+| OneDiff Max reserved CUDA memory Used|                       |                       |                       |                       |35.666 GiB             |
 | PyTorch Warmup with Run time         |                       |                       |                       |                       |                       |
 | OneDiff Warmup with Compilation time | 474.36 s <sup>1</sup> | 236.54 s <sup>2</sup> |142.691 s <sup>3</sup> |287.011 s <sup>3</sup> |502.223 s <sup>3</sup> |
 | OneDiff Warmup with Cache time       | 306.84 s              | 104.57 s              |142.992s               |132.207 s              |363.051 s              |
