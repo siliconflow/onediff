@@ -40,7 +40,9 @@ setup(
             "pre-commit",
         ],
     },
-    # use_scm_version=True,
-    use_scm_version={"write_to": "src/onediff/_version.py"},
+    use_scm_version={
+        "write_to": "src/onediff/_version.py",
+        "fallback_version": "0.0.0",
+    },
     setup_requires=["setuptools_scm"],
 )

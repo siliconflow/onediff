@@ -36,6 +36,7 @@ setup(
     use_scm_version={
         "root": "../",
         "write_to": "./onediff_diffusers_extensions/onediffx/_version.py",
+        "fallback_version": "0.0.0",
     },
     setup_requires=["setuptools_scm"],
 )
