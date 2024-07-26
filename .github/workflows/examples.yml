@@ -140,6 +140,12 @@ jobs:
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
+      - uses: actions/upload-artifact@v3
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        with:
+          name: onediff_src_pkg
+          path: */*.zip
+
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
@@ -195,21 +201,17 @@ jobs:
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
+      - uses: actions/download-artifact@v3
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        with:
+          path: /tmp/artifact_dist
       - name: Checkout
         if: github.event.pull_request.head.repo.full_name != github.repository
-        uses: actions/checkout@v4
-      - name: Checkout ComfyUI
-        if: matrix.test-suite == 'comfy' && github.event.pull_request.head.repo.full_name != github.repository
-        uses: actions/checkout@v4
-        with:
-          repository: comfyanonymous/ComfyUI
-          path: ${{ env.COMFYUI_SRC_DIR }}
-      - name: Checkout Stable Diffusion WebUI
-        if: matrix.test-suite == 'webui' && github.event.pull_request.head.repo.full_name != github.repository
-        uses: actions/checkout@v4
-        with:
-          repository: AUTOMATIC1111/stable-diffusion-webui
-          path: ${{ env.WEBUI_SRC_DIR }}
+        working-directory: /tmp/artifact_dist/onediff_src_pkg
+        run: |
+          unzip -o $(basename ${{ needs.upload_src.outputs.onediff_src_url }})
+          unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
+          unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
