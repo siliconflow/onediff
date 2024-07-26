@@ -1,6 +1,8 @@
 import oneflow as torch
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
 register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -20,10 +22,13 @@ LoRACompatibleConv = transformed_diffusers.models.lora.LoRACompatibleConv
 LoRACompatibleLinear = transformed_diffusers.models.lora.LoRACompatibleLinear
 ModelMixin = transformed_diffusers.models.modeling_utils.ModelMixin
 AdaLayerNormSingle = transformed_diffusers.models.normalization.AdaLayerNormSingle
-Transformer2DModelOutput = transformed_diffusers.models.transformers.transformer_2d.Transformer2DModelOutput
+Transformer2DModelOutput = (
+    transformed_diffusers.models.transformers.transformer_2d.Transformer2DModelOutput
+)
 proxy_Transformer2DModel = (
     transformed_diffusers.models.transformers.transformer_2d.Transformer2DModel
 )
+
 
 class Transformer2DModel(proxy_Transformer2DModel):
     def forward(
@@ -79,7 +84,9 @@ class Transformer2DModel(proxy_Transformer2DModel):
         """
         if cross_attention_kwargs is not None:
             if cross_attention_kwargs.get("scale", None) is not None:
-                logger.warning("Passing `scale` to `cross_attention_kwargs` is deprecated. `scale` will be ignored.")
+                logger.warning(
+                    "Passing `scale` to `cross_attention_kwargs` is deprecated. `scale` will be ignored."
+                )
         # ensure attention_mask is a bias, and give it a singleton query_tokens dimension.
         #   we may have done this conversion already, e.g. if we came here via UNet2DConditionModel#forward.
         #   we can tell by counting dims; if ndim == 2: it's a mask rather than a bias.
@@ -100,7 +107,9 @@ class Transformer2DModel(proxy_Transformer2DModel):
 
         # convert encoder_attention_mask to a bias the same way we do for attention_mask
         if encoder_attention_mask is not None and encoder_attention_mask.ndim == 2:
-            encoder_attention_mask = (1 - encoder_attention_mask.to(hidden_states.dtype)) * -10000.0
+            encoder_attention_mask = (
+                1 - encoder_attention_mask.to(hidden_states.dtype)
+            ) * -10000.0
             encoder_attention_mask = encoder_attention_mask.unsqueeze(1)
 
         hidden_states_in = hidden_states
@@ -113,8 +122,16 @@ class Transformer2DModel(proxy_Transformer2DModel):
         elif self.is_input_vectorized:
             hidden_states = self.latent_image_embedding(hidden_states)
         elif self.is_input_patches:
-            height, width = hidden_states.shape[-2] // self.patch_size, hidden_states.shape[-1] // self.patch_size
-            hidden_states, encoder_hidden_states, timestep, embedded_timestep = self._operate_on_patched_inputs(
+            height, width = (
+                hidden_states.shape[-2] // self.patch_size,
+                hidden_states.shape[-1] // self.patch_size,
+            )
+            (
+                hidden_states,
+                encoder_hidden_states,
+                timestep,
+                embedded_timestep,
+            ) = self._operate_on_patched_inputs(
                 hidden_states, encoder_hidden_states, timestep, added_cond_kwargs
             )
 
@@ -131,7 +148,9 @@ class Transformer2DModel(proxy_Transformer2DModel):
 
                     return custom_forward
 
-                ckpt_kwargs: Dict[str, Any] = {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                ckpt_kwargs: Dict[str, Any] = (
+                    {"use_reentrant": False} if is_torch_version(">=", "1.11.0") else {}
+                )
                 hidden_states = torch.utils.checkpoint.checkpoint(
                     create_custom_forward(block),
                     hidden_states,
@@ -203,7 +222,9 @@ class Transformer2DModel(proxy_Transformer2DModel):
 
         return Transformer2DModelOutput(sample=output)
 
-    def _get_output_for_continuous_inputs(self, hidden_states, residual, batch_size, height, width, inner_dim):
+    def _get_output_for_continuous_inputs(
+        self, hidden_states, residual, batch_size, height, width, inner_dim
+    ):
         # # hidden_states = hidden_states.reshape(batch, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
         # hidden_states = (
         #     hidden_states.permute(0, 2, 1)
@@ -215,13 +236,17 @@ class Transformer2DModel(proxy_Transformer2DModel):
         return
         if not self.use_linear_projection:
             hidden_states = (
-                hidden_states.reshape(batch_size, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
+                hidden_states.reshape(batch_size, height, width, inner_dim)
+                .permute(0, 3, 1, 2)
+                .contiguous()
             )
             hidden_states = self.proj_out(hidden_states)
         else:
             hidden_states = self.proj_out(hidden_states)
             hidden_states = (
-                hidden_states.reshape(batch_size, height, width, inner_dim).permute(0, 3, 1, 2).contiguous()
+                hidden_states.reshape(batch_size, height, width, inner_dim)
+                .permute(0, 3, 1, 2)
+                .contiguous()
             )
 
         output = hidden_states + residual
@@ -238,7 +263,13 @@ class Transformer2DModel(proxy_Transformer2DModel):
         return output
 
     def _get_output_for_patched_inputs(
-        self, hidden_states, timestep, class_labels, embedded_timestep, height=None, width=None
+        self,
+        hidden_states,
+        timestep,
+        class_labels,
+        embedded_timestep,
+        height=None,
+        width=None,
     ):
         raise
         # import ipdb; ipdb.set_trace()
@@ -247,10 +278,14 @@ class Transformer2DModel(proxy_Transformer2DModel):
                 timestep, class_labels, hidden_dtype=hidden_states.dtype
             )
             shift, scale = self.proj_out_1(F.silu(conditioning)).chunk(2, dim=1)
-            hidden_states = self.norm_out(hidden_states) * (1 + scale[:, None]) + shift[:, None]
+            hidden_states = (
+                self.norm_out(hidden_states) * (1 + scale[:, None]) + shift[:, None]
+            )
             hidden_states = self.proj_out_2(hidden_states)
         elif self.config.norm_type == "ada_norm_single":
-            shift, scale = (self.scale_shift_table[None] + embedded_timestep[:, None]).chunk(2, dim=1)
+            shift, scale = (
+                self.scale_shift_table[None] + embedded_timestep[:, None]
+            ).chunk(2, dim=1)
             hidden_states = self.norm_out(hidden_states)
             # Modulation
             hidden_states = hidden_states * (1 + scale) + shift
@@ -261,11 +296,23 @@ class Transformer2DModel(proxy_Transformer2DModel):
         if self.adaln_single is None:
             height = width = int(hidden_states.shape[1] ** 0.5)
         hidden_states = hidden_states.reshape(
-            shape=(-1, height, width, self.patch_size, self.patch_size, self.out_channels)
+            shape=(
+                -1,
+                height,
+                width,
+                self.patch_size,
+                self.patch_size,
+                self.out_channels,
+            )
         )
         hidden_states = torch.einsum("nhwpqc->nchpwq", hidden_states)
         output = hidden_states.reshape(
-            shape=(-1, self.out_channels, height * self.patch_size, width * self.patch_size)
+            shape=(
+                -1,
+                self.out_channels,
+                height * self.patch_size,
+                width * self.patch_size,
+            )
         )
         return output
 

@@ -2,10 +2,11 @@ import argparse
 import json
 import time
 
-from diffusers import DPMSolverMultistepScheduler, KolorsPipeline
-from onediffx import compile_pipe, quantize_pipe, load_pipe, save_pipe
-from onediff.infer_compiler import oneflow_compile
 import torch
+
+from diffusers import DPMSolverMultistepScheduler, KolorsPipeline
+from onediff.infer_compiler import oneflow_compile
+from onediffx import compile_pipe, load_pipe, quantize_pipe, save_pipe
 
 
 def parse_args():
@@ -103,7 +104,7 @@ class KolorsGenerator:
         elif compiler == "oneflow":
             print("oneflow backend compile...")
             # self.pipe.unet = self.oneflow_compile(self.pipe.unet)
-            self.pipe = compile_pipe(self.pipe, ignores=['text_encoder', 'vae'])
+            self.pipe = compile_pipe(self.pipe, ignores=["text_encoder", "vae"])
 
     def warmup(self, gen_args, warmup_iterations):
         warmup_args = gen_args.copy()

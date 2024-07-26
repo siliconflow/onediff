@@ -17,6 +17,4 @@ def get_version():
         return _base_version
 
 
-__version__ = get_version()
-__author__ = "OneDiff"
-__credits__ = "OneDiff contributors"
+_version = get_version()

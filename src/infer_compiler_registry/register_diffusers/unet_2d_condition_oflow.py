@@ -15,12 +15,16 @@ if diffusers_version < diffusers_0260_v:
     UNet2DConditionOutput = (
         transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
     )
-    proxy_UNet2DConditionModel = transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+    proxy_UNet2DConditionModel = (
+        transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+    )
 else:
     UNet2DConditionOutput = (
         transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionOutput
     )
-    proxy_UNet2DConditionModel = transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionModel
+    proxy_UNet2DConditionModel = (
+        transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionModel
+    )
 
 try:
     USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND

@@ -922,7 +922,7 @@ else:
         )
         proxy_Transformer2DModel = (
             transformed_diffusers.models.transformer_2d.Transformer2DModel
-        )  
+        )
 
     class Transformer2DModel(proxy_Transformer2DModel):
         def forward(
@@ -1214,5 +1214,6 @@ else:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
-# else:
-#     from .transformer_2d.v_0_28 import Transformer2DModel, Transformer2DModelOutput
+
+else:
+    from .transformer_2d.v_0_28 import Transformer2DModel, Transformer2DModelOutput
