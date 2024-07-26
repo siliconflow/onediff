@@ -145,6 +145,7 @@ jobs:
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
+          rm -rm */.git
       - name: Upload src
         if: github.event.pull_request.head.repo.full_name == github.repository
         id: upload_to_oss
@@ -156,10 +157,7 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           name: onediff_src_pkg
-          path: |
-            onediff/onediff-src.zip
-            ComfyUI/comfyui-src.zip
-            ${{ env.WEBUI_SRC_DIR }}/webui-src.zip
+          path: */*-src.zip
           compression-level: 9
 
   run-examples:
