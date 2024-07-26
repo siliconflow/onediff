@@ -225,9 +225,9 @@ jobs:
         if: github.event.pull_request.head.repo.full_name != github.repository
         working-directory: artifact_dist/onediff_src_pkg
         run: |
-          unzip -o onediff/$(basename ${{ needs.upload_src.outputs.onediff_src_url }})
-          unzip -o ComfyUI/$(basename ${{ needs.upload_src.outputs.comfy_src_url }})
-          unzip -o stable-diffusion-webui/$(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
+          unzip -o */$(basename ${{ needs.upload_src.outputs.onediff_src_url }})
+          unzip -o */$(basename ${{ needs.upload_src.outputs.comfy_src_url }})
+          unzip -o */$(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
