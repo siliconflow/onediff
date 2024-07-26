@@ -137,18 +137,21 @@ jobs:
           git clean -f
           zip -r webui-src.zip .
       - name: Upload src
-        if: github.event.pull_request.head.repo.full_name == github.repository
-        id: upload_to_oss
+        id: set_env
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
           WEBUI_DST="oss://gh-src-cache/onediff/${{ github.sha }}/webui-src.zip"
-          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
-          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
-          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${WEBUI_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
+      - name: Upload src
+        if: github.event.pull_request.head.repo.full_name == github.repository
+        id: upload_to_oss
+        run: |
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${step.set_env.outputs.onediff_src_url}
+          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${step.set_env.outputs.comfy_src_url}
+          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${step.set_env.outputs.webui_src_url}
       - uses: actions/upload-artifact@v4
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
@@ -213,10 +216,10 @@ jobs:
       - uses: actions/download-artifact@v4
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
-          path: /tmp/artifact_dist
+          path: artifact_dist
       - name: Checkout
         if: github.event.pull_request.head.repo.full_name != github.repository
-        working-directory: /tmp/artifact_dist/onediff_src_pkg
+        working-directory: artifact_dist/onediff_src_pkg
         run: |
           unzip -o $(basename ${{ needs.upload_src.outputs.onediff_src_url }})
           unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
