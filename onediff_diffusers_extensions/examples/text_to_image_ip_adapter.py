@@ -96,7 +96,7 @@ if args.compile:
     pipe = compile_pipe(pipe, backend=args.compiler, options=compile_options)
     if args.compiler == "oneflow" and os.path.exists(cache_path):
         # TODO(WangYi): load pipe has bug here, which makes scale unchangeable
-        load_pipe(pipe, cache_path)
+        # load_pipe(pipe, cache_path)
         pass
 
 
@@ -152,3 +152,4 @@ if args.multi_resolution:
 if args.compiler == "oneflow":
     if not os.path.exists(cache_path):
         os.makedirs(cache_path)
+    save_pipe(pipe, cache_path)
