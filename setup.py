@@ -4,9 +4,7 @@ from setuptools import find_packages, setup
 def get_version():
     variables = {}
     with open("src/onediff/__init__.py", "r") as f:
-        for line in f:
-            if line.startswith("__version__"):
-                exec(line, variables)
+        exec(f.read(), {}, variables)
     return variables["__version__"]
 
 

@@ -1,4 +1,3 @@
-__version__ = "1.2.0.dev1"
 from onediff.infer_compiler import OneflowCompileOptions
 
 from .compilers.diffusion_pipeline_compiler import (
@@ -7,6 +6,7 @@ from .compilers.diffusion_pipeline_compiler import (
     quantize_pipe,
     save_pipe,
 )
+from .version import _version as __version__
 
 __all__ = [
     "compile_pipe",
