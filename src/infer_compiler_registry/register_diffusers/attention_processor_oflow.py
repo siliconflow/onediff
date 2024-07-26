@@ -28,15 +28,18 @@ def is_xformers_available():
     return False
 
 
-# from .lora import LoRALinearLayer
-from packaging import version
 import importlib.metadata
+
 import oneflow as torch
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+
+# from .lora import LoRALinearLayer
+from packaging import version
 
 diffusers_0270_v = version.parse("0.27.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 transformed_diffusers = transform_mgr.transform_package("diffusers")
+
 
 def is_ip_adapter_available():
     return diffusers_version >= diffusers_0270_v
@@ -371,13 +374,17 @@ class Attention(nn.Module):
         # The `Attention` class can call different attention processors / attention functions
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
-        attn_parameters = set(inspect.signature(self.processor.__class__.__call__).parameters.keys())
+        attn_parameters = set(
+            inspect.signature(self.processor.__class__.__call__).parameters.keys()
+        )
         # unused_kwargs = [k for k, _ in cross_attention_kwargs.items() if k not in attn_parameters]
         # if len(unused_kwargs) > 0:
         #     logger.warning(
         #         f"cross_attention_kwargs {unused_kwargs} are not expected by {self.processor.__class__.__name__} and will be ignored."
         #     )
-        cross_attention_kwargs = {k: w for k, w in cross_attention_kwargs.items() if k in attn_parameters}
+        cross_attention_kwargs = {
+            k: w for k, w in cross_attention_kwargs.items() if k in attn_parameters
+        }
 
         return self.processor(
             self,
@@ -2123,11 +2130,14 @@ class SpatialNorm(nn.Module):
         return new_f
 
 
-
 if is_ip_adapter_available():
-    IPAdapterMaskProcessor = transformed_diffusers.image_processor.IPAdapterMaskProcessor
+    IPAdapterMaskProcessor = (
+        transformed_diffusers.image_processor.IPAdapterMaskProcessor
+    )
+
     class IPAdapterAttnProcessor(nn.Module):
-        def __call__(self,
+        def __call__(
+            self,
             attn: Attention,
             hidden_states: torch.FloatTensor,
             encoder_hidden_states: Optional[torch.FloatTensor] = None,
@@ -2145,7 +2155,7 @@ if is_ip_adapter_available():
                 scale,
                 ip_adapter_masks,
             )
-        
+
         def forward(
             self,
             attn: Attention,
@@ -2167,7 +2177,12 @@ if is_ip_adapter_available():
                         "You have passed a tensor as `encoder_hidden_states`. This is deprecated and will be removed in a future release."
                         " Please make sure to update your script to pass `encoder_hidden_states` as a tuple to suppress this warning."
                     )
-                    deprecate("encoder_hidden_states not a tuple", "1.0.0", deprecation_message, standard_warn=False)
+                    deprecate(
+                        "encoder_hidden_states not a tuple",
+                        "1.0.0",
+                        deprecation_message,
+                        standard_warn=False,
+                    )
                     end_pos = encoder_hidden_states.shape[1] - self.num_tokens[0]
                     encoder_hidden_states, ip_hidden_states = (
                         encoder_hidden_states[:, :end_pos, :],
@@ -2181,22 +2196,32 @@ if is_ip_adapter_available():
 
             if input_ndim == 4:
                 batch_size, channel, height, width = hidden_states.shape
-                hidden_states = hidden_states.view(batch_size, channel, height * width).transpose(1, 2)
+                hidden_states = hidden_states.view(
+                    batch_size, channel, height * width
+                ).transpose(1, 2)
 
             batch_size, sequence_length, _ = (
-                hidden_states.shape if encoder_hidden_states is None else encoder_hidden_states.shape
+                hidden_states.shape
+                if encoder_hidden_states is None
+                else encoder_hidden_states.shape
             )
-            attention_mask = attn.prepare_attention_mask(attention_mask, sequence_length, batch_size)
+            attention_mask = attn.prepare_attention_mask(
+                attention_mask, sequence_length, batch_size
+            )
 
             if attn.group_norm is not None:
-                hidden_states = attn.group_norm(hidden_states.transpose(1, 2)).transpose(1, 2)
+                hidden_states = attn.group_norm(
+                    hidden_states.transpose(1, 2)
+                ).transpose(1, 2)
 
             query = attn.to_q(hidden_states)
 
             if encoder_hidden_states is None:
                 encoder_hidden_states = hidden_states
             elif attn.norm_cross:
-                encoder_hidden_states = attn.norm_encoder_hidden_states(encoder_hidden_states)
+                encoder_hidden_states = attn.norm_encoder_hidden_states(
+                    encoder_hidden_states
+                )
 
             key = attn.to_k(encoder_hidden_states)
             value = attn.to_v(encoder_hidden_states)
@@ -2213,14 +2238,18 @@ if is_ip_adapter_available():
                 if not isinstance(ip_adapter_masks, List):
                     # for backward compatibility, we accept `ip_adapter_mask` as a tensor of shape [num_ip_adapter, 1, height, width]
                     ip_adapter_masks = list(ip_adapter_masks.unsqueeze(1))
-                if not (len(ip_adapter_masks) == len(self.scale) == len(ip_hidden_states)):
+                if not (
+                    len(ip_adapter_masks) == len(self.scale) == len(ip_hidden_states)
+                ):
                     raise ValueError(
                         f"Length of ip_adapter_masks array ({len(ip_adapter_masks)}) must match "
                         f"length of self.scale array ({len(self.scale)}) and number of ip_hidden_states "
                         f"({len(ip_hidden_states)})"
                     )
                 else:
-                    for index, (mask, scale, ip_state) in enumerate(zip(ip_adapter_masks, self.scale, ip_hidden_states)):
+                    for index, (mask, scale, ip_state) in enumerate(
+                        zip(ip_adapter_masks, self.scale, ip_hidden_states)
+                    ):
                         if not isinstance(mask, torch.Tensor) or mask.ndim != 4:
                             raise ValueError(
                                 "Each element of the ip_adapter_masks array should be a tensor with shape "
@@ -2242,7 +2271,11 @@ if is_ip_adapter_available():
 
             # for ip-adapter
             for current_ip_hidden_states, scale, to_k_ip, to_v_ip, mask in zip(
-                ip_hidden_states, self.scale, self.to_k_ip, self.to_v_ip, ip_adapter_masks
+                ip_hidden_states,
+                self.scale,
+                self.to_k_ip,
+                self.to_v_ip,
+                ip_adapter_masks,
             ):
                 skip = False
                 if isinstance(scale, list):
@@ -2263,9 +2296,15 @@ if is_ip_adapter_available():
                             ip_key = attn.head_to_batch_dim(ip_key)
                             ip_value = attn.head_to_batch_dim(ip_value)
 
-                            ip_attention_probs = attn.get_attention_scores(query, ip_key, None)
-                            _current_ip_hidden_states = torch.bmm(ip_attention_probs, ip_value)
-                            _current_ip_hidden_states = attn.batch_to_head_dim(_current_ip_hidden_states)
+                            ip_attention_probs = attn.get_attention_scores(
+                                query, ip_key, None
+                            )
+                            _current_ip_hidden_states = torch.bmm(
+                                ip_attention_probs, ip_value
+                            )
+                            _current_ip_hidden_states = attn.batch_to_head_dim(
+                                _current_ip_hidden_states
+                            )
                             mask_downsample = IPAdapterMaskProcessor.downsample(
                                 mask[:, i, :, :],
                                 batch_size,
@@ -2273,9 +2312,13 @@ if is_ip_adapter_available():
                                 _current_ip_hidden_states.shape[2],
                             )
 
-                            mask_downsample = mask_downsample.to(dtype=query.dtype, device=query.device)
+                            mask_downsample = mask_downsample.to(
+                                dtype=query.dtype, device=query.device
+                            )
 
-                            hidden_states = hidden_states + scale[i] * (_current_ip_hidden_states * mask_downsample)
+                            hidden_states = hidden_states + scale[i] * (
+                                _current_ip_hidden_states * mask_downsample
+                            )
                     else:
                         ip_key = to_k_ip(current_ip_hidden_states)
                         ip_value = to_v_ip(current_ip_hidden_states)
@@ -2283,9 +2326,15 @@ if is_ip_adapter_available():
                         ip_key = attn.head_to_batch_dim(ip_key)
                         ip_value = attn.head_to_batch_dim(ip_value)
 
-                        ip_attention_probs = attn.get_attention_scores(query, ip_key, None)
-                        current_ip_hidden_states = torch.bmm(ip_attention_probs, ip_value)
-                        current_ip_hidden_states = attn.batch_to_head_dim(current_ip_hidden_states)
+                        ip_attention_probs = attn.get_attention_scores(
+                            query, ip_key, None
+                        )
+                        current_ip_hidden_states = torch.bmm(
+                            ip_attention_probs, ip_value
+                        )
+                        current_ip_hidden_states = attn.batch_to_head_dim(
+                            current_ip_hidden_states
+                        )
 
                         hidden_states = hidden_states + scale * current_ip_hidden_states
 
@@ -2295,7 +2344,9 @@ if is_ip_adapter_available():
             hidden_states = attn.to_out[1](hidden_states)
 
             if input_ndim == 4:
-                hidden_states = hidden_states.transpose(-1, -2).reshape(batch_size, channel, height, width)
+                hidden_states = hidden_states.transpose(-1, -2).reshape(
+                    batch_size, channel, height, width
+                )
 
             if attn.residual_connection:
                 hidden_states = hidden_states + residual
@@ -2304,16 +2355,18 @@ if is_ip_adapter_available():
 
             return hidden_states
 
-
     class IPAdapterAttnProcessor2_0(torch.nn.Module):
-        def __call__(self, attn: Attention,
+        def __call__(
+            self,
+            attn: Attention,
             hidden_states: torch.FloatTensor,
             encoder_hidden_states: Optional[torch.FloatTensor] = None,
             attention_mask: Optional[torch.FloatTensor] = None,
             temb: Optional[torch.FloatTensor] = None,
             scale: float = 1.0,
-            ip_adapter_masks: Optional[torch.FloatTensor] = None):
-            
+            ip_adapter_masks: Optional[torch.FloatTensor] = None,
+        ):
+
             return self.forward(
                 attn,
                 hidden_states,
@@ -2323,7 +2376,7 @@ if is_ip_adapter_available():
                 scale,
                 ip_adapter_masks,
             )
-        
+
         def forward(
             self,
             attn: Attention,
@@ -2346,7 +2399,12 @@ if is_ip_adapter_available():
                         "You have passed a tensor as `encoder_hidden_states`. This is deprecated and will be removed in a future release."
                         " Please make sure to update your script to pass `encoder_hidden_states` as a tuple to suppress this warning."
                     )
-                    deprecate("encoder_hidden_states not a tuple", "1.0.0", deprecation_message, standard_warn=False)
+                    deprecate(
+                        "encoder_hidden_states not a tuple",
+                        "1.0.0",
+                        deprecation_message,
+                        standard_warn=False,
+                    )
                     end_pos = encoder_hidden_states.shape[1] - self.num_tokens[0]
                     encoder_hidden_states, ip_hidden_states = (
                         encoder_hidden_states[:, :end_pos, :],
@@ -2360,33 +2418,44 @@ if is_ip_adapter_available():
 
             if input_ndim == 4:
                 batch_size, channel, height, width = hidden_states.shape
-                hidden_states = hidden_states.view(batch_size, channel, height * width).transpose(1, 2)
+                hidden_states = hidden_states.view(
+                    batch_size, channel, height * width
+                ).transpose(1, 2)
 
             batch_size, sequence_length, _ = (
-                hidden_states.shape if encoder_hidden_states is None else encoder_hidden_states.shape
+                hidden_states.shape
+                if encoder_hidden_states is None
+                else encoder_hidden_states.shape
             )
 
             if attention_mask is not None:
-                attention_mask = attn.prepare_attention_mask(attention_mask, sequence_length, batch_size)
+                attention_mask = attn.prepare_attention_mask(
+                    attention_mask, sequence_length, batch_size
+                )
                 # scaled_dot_product_attention expects attention_mask shape to be
                 # (batch, heads, source_length, target_length)
-                attention_mask = attention_mask.view(batch_size, attn.heads, -1, attention_mask.shape[-1])
+                attention_mask = attention_mask.view(
+                    batch_size, attn.heads, -1, attention_mask.shape[-1]
+                )
 
             if attn.group_norm is not None:
-                hidden_states = attn.group_norm(hidden_states.transpose(1, 2)).transpose(1, 2)
+                hidden_states = attn.group_norm(
+                    hidden_states.transpose(1, 2)
+                ).transpose(1, 2)
             query = attn.to_q(hidden_states)
 
             if encoder_hidden_states is None:
                 encoder_hidden_states = hidden_states
             elif attn.norm_cross:
-                encoder_hidden_states = attn.norm_encoder_hidden_states(encoder_hidden_states)
+                encoder_hidden_states = attn.norm_encoder_hidden_states(
+                    encoder_hidden_states
+                )
 
             key = attn.to_k(encoder_hidden_states)
             value = attn.to_v(encoder_hidden_states)
 
             inner_dim = key.shape[-1]
             head_dim = inner_dim // attn.heads
-
 
             # modified to support dynamic shape for onediff (view -> reshape)
             # query = query.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
@@ -2401,24 +2470,35 @@ if is_ip_adapter_available():
             # the output of sdp = (batch, num_heads, seq_len, head_dim)
             # TODO: add support for attn.scale when we move to Torch 2.1
             hidden_states = F.scaled_dot_product_attention(
-                query, key, value, attn_mask=attention_mask, dropout_p=0.0, is_causal=False
+                query,
+                key,
+                value,
+                attn_mask=attention_mask,
+                dropout_p=0.0,
+                is_causal=False,
             )
 
-            hidden_states = hidden_states.transpose(1, 2).reshape(batch_size, -1, attn.heads * head_dim)
+            hidden_states = hidden_states.transpose(1, 2).reshape(
+                batch_size, -1, attn.heads * head_dim
+            )
             hidden_states = hidden_states.to(query.dtype)
 
             if ip_adapter_masks is not None:
                 if not isinstance(ip_adapter_masks, List):
                     # for backward compatibility, we accept `ip_adapter_mask` as a tensor of shape [num_ip_adapter, 1, height, width]
                     ip_adapter_masks = list(ip_adapter_masks.unsqueeze(1))
-                if not (len(ip_adapter_masks) == len(self.scale) == len(ip_hidden_states)):
+                if not (
+                    len(ip_adapter_masks) == len(self.scale) == len(ip_hidden_states)
+                ):
                     raise ValueError(
                         f"Length of ip_adapter_masks array ({len(ip_adapter_masks)}) must match "
                         f"length of self.scale array ({len(self.scale)}) and number of ip_hidden_states "
                         f"({len(ip_hidden_states)})"
                     )
                 else:
-                    for index, (mask, scale, ip_state) in enumerate(zip(ip_adapter_masks, self.scale, ip_hidden_states)):
+                    for index, (mask, scale, ip_state) in enumerate(
+                        zip(ip_adapter_masks, self.scale, ip_hidden_states)
+                    ):
                         if not isinstance(mask, torch.Tensor) or mask.ndim != 4:
                             raise ValueError(
                                 "Each element of the ip_adapter_masks array should be a tensor with shape "
@@ -2440,14 +2520,18 @@ if is_ip_adapter_available():
 
             # for ip-adapter
             for current_ip_hidden_states, scale, to_k_ip, to_v_ip, mask in zip(
-                ip_hidden_states, self.scale, self.to_k_ip, self.to_v_ip, ip_adapter_masks
+                ip_hidden_states,
+                self.scale,
+                self.to_k_ip,
+                self.to_v_ip,
+                ip_adapter_masks,
             ):
                 skip = False
                 # if isinstance(scale, list):
                 #     if all(s == 0 for s in scale):
                 #         skip = True
                 # elif scale == 0:
-                    # skip = True
+                # skip = True
                 if not skip:
                     if mask is not None:
                         if not isinstance(scale, list):
@@ -2461,19 +2545,32 @@ if is_ip_adapter_available():
                             # modified to support dynamic shape for onediff (view -> reshape)
                             # ip_key = ip_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
                             # ip_value = ip_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-                            ip_key = ip_key.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-                            ip_value = ip_value.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                            ip_key = ip_key.reshape(
+                                batch_size, -1, attn.heads, head_dim
+                            ).transpose(1, 2)
+                            ip_value = ip_value.reshape(
+                                batch_size, -1, attn.heads, head_dim
+                            ).transpose(1, 2)
 
                             # the output of sdp = (batch, num_heads, seq_len, head_dim)
                             # TODO: add support for attn.scale when we move to Torch 2.1
                             _current_ip_hidden_states = F.scaled_dot_product_attention(
-                                query, ip_key, ip_value, attn_mask=None, dropout_p=0.0, is_causal=False
+                                query,
+                                ip_key,
+                                ip_value,
+                                attn_mask=None,
+                                dropout_p=0.0,
+                                is_causal=False,
                             )
 
-                            _current_ip_hidden_states = _current_ip_hidden_states.transpose(1, 2).reshape(
-                                batch_size, -1, attn.heads * head_dim
+                            _current_ip_hidden_states = (
+                                _current_ip_hidden_states.transpose(1, 2).reshape(
+                                    batch_size, -1, attn.heads * head_dim
+                                )
                             )
-                            _current_ip_hidden_states = _current_ip_hidden_states.to(query.dtype)
+                            _current_ip_hidden_states = _current_ip_hidden_states.to(
+                                query.dtype
+                            )
 
                             mask_downsample = IPAdapterMaskProcessor.downsample(
                                 mask[:, i, :, :],
@@ -2482,8 +2579,12 @@ if is_ip_adapter_available():
                                 _current_ip_hidden_states.shape[2],
                             )
 
-                            mask_downsample = mask_downsample.to(dtype=query.dtype, device=query.device)
-                            hidden_states = hidden_states + scale[i] * (_current_ip_hidden_states * mask_downsample)
+                            mask_downsample = mask_downsample.to(
+                                dtype=query.dtype, device=query.device
+                            )
+                            hidden_states = hidden_states + scale[i] * (
+                                _current_ip_hidden_states * mask_downsample
+                            )
                     else:
                         ip_key = to_k_ip(current_ip_hidden_states)
                         ip_value = to_v_ip(current_ip_hidden_states)
@@ -2491,21 +2592,31 @@ if is_ip_adapter_available():
                         # modified to support dynamic shape for onediff (view -> reshape)
                         # ip_key = ip_key.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
                         # ip_value = ip_value.view(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-                        ip_key = ip_key.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
-                        ip_value = ip_value.reshape(batch_size, -1, attn.heads, head_dim).transpose(1, 2)
+                        ip_key = ip_key.reshape(
+                            batch_size, -1, attn.heads, head_dim
+                        ).transpose(1, 2)
+                        ip_value = ip_value.reshape(
+                            batch_size, -1, attn.heads, head_dim
+                        ).transpose(1, 2)
 
                         # the output of sdp = (batch, num_heads, seq_len, head_dim)
                         # TODO: add support for attn.scale when we move to Torch 2.1
                         current_ip_hidden_states = F.scaled_dot_product_attention(
-                            query, ip_key, ip_value, attn_mask=None, dropout_p=0.0, is_causal=False
+                            query,
+                            ip_key,
+                            ip_value,
+                            attn_mask=None,
+                            dropout_p=0.0,
+                            is_causal=False,
                         )
 
-                        current_ip_hidden_states = current_ip_hidden_states.transpose(1, 2).reshape(
-                            batch_size, -1, attn.heads * head_dim
+                        current_ip_hidden_states = current_ip_hidden_states.transpose(
+                            1, 2
+                        ).reshape(batch_size, -1, attn.heads * head_dim)
+                        current_ip_hidden_states = current_ip_hidden_states.to(
+                            query.dtype
                         )
-                        current_ip_hidden_states = current_ip_hidden_states.to(query.dtype)
                         hidden_states = hidden_states + scale * current_ip_hidden_states
-                        
 
             # linear proj
             hidden_states = attn.to_out[0](hidden_states)
@@ -2513,7 +2624,9 @@ if is_ip_adapter_available():
             hidden_states = attn.to_out[1](hidden_states)
 
             if input_ndim == 4:
-                hidden_states = hidden_states.transpose(-1, -2).reshape(batch_size, channel, height, width)
+                hidden_states = hidden_states.transpose(-1, -2).reshape(
+                    batch_size, channel, height, width
+                )
 
             if attn.residual_connection:
                 hidden_states = hidden_states + residual

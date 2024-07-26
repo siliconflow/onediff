@@ -4,10 +4,10 @@ import os
 from pathlib import Path
 
 import torch
-from onediffx import compile_pipe, load_pipe, save_pipe
 
 from diffusers import AutoPipelineForText2Image
 from diffusers.utils import load_image
+from onediffx import compile_pipe, load_pipe, save_pipe
 
 nexfort_options = {
     "mode": "cudagraphs:benchmark:max-autotune:low-precision:cache-all",
@@ -20,9 +20,7 @@ nexfort_options = {
 }
 
 parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--base", type=str, default="runwayml/stable-diffusion-v1-5"
-)
+parser.add_argument("--base", type=str, default="runwayml/stable-diffusion-v1-5")
 parser.add_argument("--ipadapter", type=str, default="h94/IP-Adapter")
 parser.add_argument("--subfolder", type=str, default="models")
 parser.add_argument("--weight_name", type=str, default="ip-adapter_sd15.bin")
@@ -60,12 +58,8 @@ parser.add_argument(
     "--compiler", type=str, default="oneflow", choices=["nexfort", "oneflow"]
 )
 parser.add_argument("--compile-options", type=str, default=nexfort_options)
-parser.add_argument(
-    "--cache-dir", default="./onediff_cache", help="cache directory"
-)
-parser.add_argument(
-    "--multi-resolution", action="store_true"
-)
+parser.add_argument("--cache-dir", default="./onediff_cache", help="cache directory")
+parser.add_argument("--multi-resolution", action="store_true")
 args = parser.parse_args()
 
 # load an image
@@ -73,7 +67,9 @@ ip_adapter_image = load_image(args.input_image)
 
 # load stable diffusion and ip-adapter
 pipe = AutoPipelineForText2Image.from_pretrained(
-    args.base, torch_dtype=torch.float16, variant="fp16",
+    args.base,
+    torch_dtype=torch.float16,
+    variant="fp16",
 )
 pipe.load_ip_adapter(
     args.ipadapter, subfolder=args.subfolder, weight_name=args.weight_name
@@ -128,7 +124,7 @@ for scale in scales:
         height=args.height,
         width=args.width,
         num_inference_steps=args.n_steps,
-        generator = torch.Generator(device="cpu").manual_seed(0),
+        generator=torch.Generator(device="cpu").manual_seed(0),
     ).images[0]
     image_path = (
         f"{Path(args.saved_image).stem}_{scale}" + Path(args.saved_image).suffix
@@ -138,6 +134,7 @@ for scale in scales:
 
 if args.multi_resolution:
     from itertools import product
+
     sizes = [1024, 512, 768, 256]
     for h, w in product(sizes, sizes):
         image = pipe(
@@ -147,7 +144,7 @@ if args.multi_resolution:
             height=h,
             width=w,
             num_inference_steps=args.n_steps,
-            generator = torch.Generator(device="cpu").manual_seed(0),
+            generator=torch.Generator(device="cpu").manual_seed(0),
         ).images[0]
         print(f"Running at resolution: {h}x{w}")
 
