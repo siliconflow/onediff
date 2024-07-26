@@ -161,7 +161,6 @@ jobs:
           path: |
             onediff
             ComfyUI
-            ${{ env.WEBUI_SRC_DIR }}
           compression-level: 9
 
   valiad-src-pkg:
@@ -178,16 +177,12 @@ jobs:
         run: |
           mv onediff/* ${{ github.workspace }}
           mv ComfyUI ${{ github.workspace }}/ComfyUI
-          mv ${{env.WEBUI_SRC_DIR}} ${{ github.workspace }}/${{env.WEBUI_SRC_DIR}}
       - name: Print src
         run: |
           ls -al
       - name: Print ComfyUI
         run: |
           ls -al ComfyUI
-      - name: Print ${{env.WEBUI_SRC_DIR}}
-        run: |
-          ls -al ${{env.WEBUI_SRC_DIR}}
 
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
@@ -256,7 +251,6 @@ jobs:
         run: |
           mv onediff/* ${{ github.workspace }}
           mv ComfyUI ${{ github.workspace }}/ComfyUI
-          mv ${{env.WEBUI_SRC_DIR}} ${{ github.workspace }}/${{env.WEBUI_SRC_DIR}}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
