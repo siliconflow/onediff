@@ -1,16 +1,8 @@
 from setuptools import find_packages, setup
 
 
-def get_version():
-    variables = {}
-    with open("src/onediff/__init__.py", "r") as f:
-        exec(f.read(), {}, variables)
-    return variables["__version__"]
-
-
 setup(
     name="onediff",
-    version=get_version(),
     description="an out-of-the-box acceleration library for diffusion models",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
@@ -48,4 +40,7 @@ setup(
             "pre-commit",
         ],
     },
+    # use_scm_version=True,
+    use_scm_version={"write_to": "src/onediff/_version.py"},
+    setup_requires=["setuptools_scm"],
 )

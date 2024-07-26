@@ -1,16 +1,8 @@
 from setuptools import find_packages, setup
 
 
-def get_version():
-    variables = {}
-    with open("onediffx/version.py", "r") as f:
-        exec(f.read(), {}, variables)
-    return variables["_version"]
-
-
 setup(
     name="onediffx",
-    version=get_version(),
     description="onediff extensions for diffusers",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
@@ -41,4 +33,9 @@ setup(
     ],
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
+    use_scm_version={
+        "root": "../",
+        "write_to": "./onediff_diffusers_extensions/onediffx/_version.py",
+    },
+    setup_requires=["setuptools_scm"],
 )
