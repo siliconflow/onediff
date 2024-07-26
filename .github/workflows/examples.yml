@@ -164,6 +164,21 @@ jobs:
             ${{ env.WEBUI_SRC_DIR }}
           compression-level: 9
 
+  valiad-src-pkg:
+    runs-on: [ubuntu-latest]
+    steps:
+      - uses: actions/download-artifact@v4
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        with:
+          path: artifact_dist
+      - name: Checkout via artifact
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        working-directory: artifact_dist/onediff_src_pkg
+        run: |
+          mv onediff/* ${{ github.workspace }}
+          mv ComfyUI ${{ github.workspace }}/ComfyUI
+          mv ${{env.WEBUI_SRC_DIR}} ${{ github.workspace }}/${{env.WEBUI_SRC_DIR}}
+
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
