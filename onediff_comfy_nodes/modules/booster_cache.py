@@ -5,6 +5,7 @@ import torch
 from comfy.model_patcher import ModelPatcher
 from comfy.sd import VAE
 from onediff.torch_utils.module_operations import get_sub_module
+from onediff.utils.import_utils import is_oneflow_available
 
 
 @singledispatch

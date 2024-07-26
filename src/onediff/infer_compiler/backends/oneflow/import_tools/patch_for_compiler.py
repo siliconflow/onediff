@@ -16,9 +16,15 @@ class FakeCuda:
 
     @staticmethod
     def _scaled_dot_product_attention_math(
-        query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False
+        query,
+        key,
+        value,
+        attn_mask=None,
+        dropout_p=0.0,
+        is_causal=False,
+        scale=None,
     ):
-        d_k = query.size(-1)
+        scale_factor = 1 / math.sqrt(query.size(-1)) if scale is None else scale
 
         if is_causal:
             assert attn_mask is None, "Cannot use both attn_mask and is_causal=True"
@@ -34,7 +40,7 @@ class FakeCuda:
                 new_attn_mask.masked_fill_(mask, float("-inf"))
                 attn_mask = new_attn_mask
 
-        scores = flow.matmul(query, key.transpose(-2, -1)) / math.sqrt(d_k)
+        scores = flow.matmul(query, key.transpose(-2, -1)) / scale_factor
 
         if attn_mask is not None:
             scores.add_(attn_mask)
@@ -51,7 +57,13 @@ class FakeCuda:
 
     @staticmethod
     def scaled_dot_product_attention(
-        query, key, value, attn_mask=None, dropout_p=0.0, is_causal=False
+        query,
+        key,
+        value,
+        attn_mask=None,
+        dropout_p=0.0,
+        is_causal=False,
+        scale=None,
     ):
         """Scaled Dot-Product Attention
         Args:
@@ -77,7 +89,7 @@ class FakeCuda:
         """
         if attn_mask is not None or dropout_p > 0.0:
             return FakeCuda._scaled_dot_product_attention_math(
-                query, key, value, attn_mask, dropout_p, is_causal
+                query, key, value, attn_mask, dropout_p, is_causal, scale
             )
 
         batch_size, num_heads, target_seq_len, head_dim = query.shape
@@ -91,6 +103,7 @@ class FakeCuda:
             value_layout="BHMK",
             output_layout="BM(HK)",
             causal=is_causal,
+            scale=scale,
         )
         # (N, L, H x Ev) -> (N, H, L, Ev)
         value_embed_dim = value.shape[-1]

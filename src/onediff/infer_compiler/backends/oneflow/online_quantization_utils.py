@@ -1,3 +1,6 @@
+import functools
+
+
 def patch_input_adapter(in_args, in_kwargs):
     return in_args, in_kwargs
 
@@ -45,6 +48,7 @@ def online_quantize_model(
 
 
 def quantize_and_deploy_wrapper(func):
+    @functools.wraps(func)
     def wrapper(self: "DeployableModule", *args, **kwargs):
         torch_model = self._torch_module
         quant_config = self._deployable_module_quant_config
