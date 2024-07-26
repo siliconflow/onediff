@@ -149,7 +149,7 @@ jobs:
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           name: onediff_src_pkg
@@ -210,7 +210,7 @@ jobs:
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         if: github.event.pull_request.head.repo.full_name != github.repository
         with:
           path: /tmp/artifact_dist
