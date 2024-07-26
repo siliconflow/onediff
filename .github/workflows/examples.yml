@@ -48,9 +48,9 @@ jobs:
   upload_src:
     runs-on: [ubuntu-latest]
     outputs:
-      onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
-      comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
-      webui_src_url: ${{ steps.upload_to_oss.outputs.webui_src_url }}
+      onediff_src_url: ${{ steps.set_env.outputs.onediff_src_url }}
+      comfy_src_url: ${{ steps.set_env.outputs.comfy_src_url }}
+      webui_src_url: ${{ steps.set_env.outputs.webui_src_url }}
     steps:
       - name: Setup ossutil
         if: github.event.pull_request.head.repo.full_name == github.repository
