@@ -136,7 +136,7 @@ jobs:
           git reset --hard
           git clean -f
           zip -r webui-src.zip .
-      - name: Upload src
+      - name: Set src env
         id: set_env
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
