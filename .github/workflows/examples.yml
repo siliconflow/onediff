@@ -157,9 +157,9 @@ jobs:
       - name: Upload src
         id: upload_to_oss
         run: |
-          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${step.set_env.outputs.onediff_src_url}
-          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${step.set_env.outputs.comfy_src_url}
-          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${step.set_env.outputs.webui_src_url}
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${{ steps.set_env.outputs.onediff_src_url }}
+          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${{ steps.set_env.outputs.comfy_src_url }}
+          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${{ steps.set_env.outputs.webui_src_url }}
 
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
