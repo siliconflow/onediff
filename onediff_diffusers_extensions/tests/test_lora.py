@@ -1,7 +1,6 @@
 import random
 from pathlib import Path
 from typing import Dict, List, Tuple
-from skimage.metrics import structural_similarity
 
 import numpy as np
 import pytest
@@ -20,6 +19,7 @@ from onediffx.lora import (
     unfuse_lora,
 )
 from PIL import Image
+from skimage.metrics import structural_similarity
 
 HEIGHT = 1024
 WIDTH = 1024
