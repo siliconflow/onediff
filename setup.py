@@ -1,5 +1,8 @@
+import os
+
 from setuptools import find_packages, setup
 
+local_scheme = os.getenv("VERSION_LOCAL_SCHEME", "node-and-date")
 
 setup(
     name="onediff",
@@ -43,6 +46,8 @@ setup(
     use_scm_version={
         "write_to": "src/onediff/_version.py",
         "fallback_version": "0.0.0",
+        "version_scheme": "guess-next-dev",
+        "local_scheme": local_scheme,
     },
     setup_requires=["setuptools_scm"],
 )
