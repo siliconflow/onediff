@@ -1,22 +1,8 @@
-_base_version = "1.2.0.dev1"
+try:
+    from ._version import version as __version__, version_tuple
+except ImportError:
+    __version__ = "unknown version"
+    version_tuple = (0, 0, "unknown version")
 
-
-def get_version():
-    global _base_version
-    try:
-        import subprocess
-
-        commit_id = (
-            subprocess.check_output(["git", "rev-parse", "--short", "HEAD"])
-            .strip()
-            .decode("utf-8")
-        )
-        return f"{_base_version}+git.{commit_id}"
-    except Exception as e:
-        print(f"Error retrieving git commit ID: {e}")
-        return _base_version
-
-
-__version__ = get_version()
 __author__ = "OneDiff"
 __credits__ = "OneDiff contributors"
