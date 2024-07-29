@@ -30,11 +30,12 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-      - run: cd ./onediff_diffusers_extensions
-      - run: python3 -m build
+      - run: |
+          cd ./onediff_diffusers_extensions
+          python3 -m build
       - name: Publish extension
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN_ONEDIFF_X }}
-          packages_dir: ./dist
+          packages_dir: ./onediff_diffusers_extensions/dist
