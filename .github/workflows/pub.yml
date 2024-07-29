@@ -4,8 +4,8 @@ on:
   push:
     branches:
       - "pub/*"
-    schedule:
-      - cron: "0 1 * * *"
+  schedule:
+    - cron: "0 1 * * *"
 
 concurrency:
   group: onediff-pub-${{ github.ref }}
