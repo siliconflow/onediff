@@ -37,8 +37,8 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     use_scm_version={
-        "root": "../",
-        "write_to": "./onediff_diffusers_extensions/onediffx/_version.py",
+        # "root": "../",
+        "write_to": "./onediffx/_version.py",
         "fallback_version": "0.0.0",
         "version_scheme": "guess-next-dev",
         "local_scheme": local_scheme,
