@@ -4,7 +4,7 @@ import collections
 class LRUCache(collections.OrderedDict):
     __slots__ = ["LEN"]
 
-    def __init__(self, capacity: int=9):
+    def __init__(self, capacity: int = 9):
         self.LEN = capacity
 
     def get(self, key: str, default=None) -> any:

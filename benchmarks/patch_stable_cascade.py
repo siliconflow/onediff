@@ -78,11 +78,11 @@ def pixel_shuffle(input, upscale_factor):
     *batch_dims, channels, height, width = input.shape
 
     assert (
-        channels % (upscale_factor ** 2) == 0
+        channels % (upscale_factor**2) == 0
     ), "Number of channels must be divisible by the square of the upscale factor"
 
     # Calculate new channels after applying upscale_factor
-    new_channels = channels // (upscale_factor ** 2)
+    new_channels = channels // (upscale_factor**2)
 
     # Reshape input to (*batch_dims, new_channels, upscale_factor, upscale_factor, height, width)
     reshaped = input.reshape(
@@ -143,7 +143,7 @@ def pixel_unshuffle(input, downscale_factor):
     # Final reshape
     output = permuted.reshape(
         *batch_dims,
-        channels * downscale_factor ** 2,
+        channels * downscale_factor**2,
         height // downscale_factor,
         width // downscale_factor,
     )

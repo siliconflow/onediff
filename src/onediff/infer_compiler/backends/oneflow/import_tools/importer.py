@@ -1,15 +1,16 @@
+import importlib
 import os
 import sys
-import importlib
-from inspect import ismodule
-from typing import Optional, Union
 from functools import lru_cache
-from types import FunctionType, ModuleType
-from pathlib import Path
 from importlib.metadata import requires
-from .format_utils import MockEntityNameFormatter
-from .dyn_mock_mod import DynamicMockModule
+from inspect import ismodule
+from pathlib import Path
+from types import FunctionType, ModuleType
+from typing import Optional, Union
+
 from onediff.utils import logger
+from .dyn_mock_mod import DynamicMockModule
+from .format_utils import MockEntityNameFormatter
 
 __all__ = ["LazyMocker", "is_need_mock"]
 

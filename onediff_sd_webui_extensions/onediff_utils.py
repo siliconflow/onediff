@@ -11,7 +11,7 @@ from importlib_metadata import version
 from onediff.utils.import_utils import is_oneflow_available
 
 if is_oneflow_available():
-    import oneflow as flow
+    import oneflow as flow  # usort: skip
 
 from compile import init_backend, is_oneflow_backend
 from modules import shared
@@ -49,6 +49,11 @@ all_compiler_caches = []
 def all_compiler_caches_path():
     import modules.shared as shared
 
+    # for webui <= 1.8, the function will be called before ui initialized
+    # At that time, shared opts doesn't have attribute `onediff_compiler_caches_path`
+    if not hasattr(shared.opts, "onediff_compiler_caches_path"):
+        return None
+
     caches_path = Path(shared.opts.onediff_compiler_caches_path)
     if not caches_path.exists():
         caches_path.mkdir(parents=True)
@@ -65,6 +70,9 @@ def get_all_compiler_caches():
 def refresh_all_compiler_caches(path: Path = None):
     global all_compiler_caches
     path = path or all_compiler_caches_path()
+    if path is None:
+        return
+
     all_compiler_caches = [f.stem for f in Path(path).iterdir() if f.is_file()]
 
 

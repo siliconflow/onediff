@@ -1,5 +1,5 @@
 ## OneDiff Nexfort compiler backend(Beta Release)
-OneDiff Nexfort is a lightweight [torch 2.0 compiler backend](https://pytorch.org/docs/stable/torch.compiler.html) strongly optimized for Diffusion Models. 
+OneDiff Nexfort is a lightweight [torch 2.0 compiler backend](https://pytorch.org/docs/stable/torch.compiler.html) strongly optimized for Diffusion Models.
 
 Currently, it is especially for DiT(Diffusion Transformer) models which is the backbone of [SD3](https://stability.ai/news/stable-diffusion-3) and [Sora](https://openai.com/sora/).
 
@@ -42,8 +42,7 @@ python3 -m nexfort.utils.clear_inductor_cache
 Advanced cache functionality is currently in development.
 
 ### Dynamic shape
-Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. You just need to enable `dynamic` during compilation, as in `'{"mode": "max-autotune
-", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the <https://pytorch.org/docs/stable/generated/torch.compile.html> and <https://github.com/pytorch/pytorch/blob/main/docs/source/torch.compiler_dynamic_shapes.rst> page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
+Onediff's nexfort backend also supports out-of-the-box dynamic shape inference. You just need to enable `dynamic` during compilation, as in `'{"mode": "max-autotune", "dynamic": true}'`. To understand how dynamic shape support works, please refer to the <https://pytorch.org/docs/stable/generated/torch.compile.html> and <https://github.com/pytorch/pytorch/blob/main/docs/source/torch.compiler_dynamic_shapes.rst> page. To avoid over-specialization and re-compilation, you need to initially call your model with a non-typical shape. For example: you can first call your Stable Diffusion model with a shape of 512x768 (height != width).
 
 Test SDXL:
 ```

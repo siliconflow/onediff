@@ -29,26 +29,44 @@ env:
   STABLE_DIFFUSION_XL_COMMIT_HASH: 45c443b316737a4ab6e40413d7794a7f5657c19f
   K_DIFFUSION_COMMIT_HASH: ab527a9a6d347f364e3d185ba6d714e22d80cb3c
   BLIP_COMMIT_HASH: 48211a1594f1321b00f14c9f7a5b4813144b2fb9
-
+  OSS_AK_ID_BASE64: TFRBSTV0RmROVlFTQ2VQdG1wdkhQYlQx
+  OSS_AK_SC_BASE64: MTlrSlFRT1M0WUZvQ05SV1IyTUxDUDBpTlM0UURS
+  OSS_ACCESS_KEY_ID: ${{ secrets.OSS_ACCESS_KEY_ID }}
+  OSS_ACCESS_KEY_SECRET: ${{ secrets.OSS_ACCESS_KEY_SECRET }}
 
 concurrency:
   group: sd-examples-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
+  pre-commit:
+    runs-on: [ubuntu-latest]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.10'
+    - uses: pre-commit/action@v3.0.1
   upload_src:
-    if: github.repository == 'siliconflow/onediff'
     runs-on: [ubuntu-latest]
     outputs:
-      onediff_src_url: ${{ steps.upload_to_oss.outputs.onediff_src_url }}
-      comfy_src_url: ${{ steps.upload_to_oss.outputs.comfy_src_url }}
-      webui_src_url: ${{ steps.upload_to_oss.outputs.webui_src_url }}
+      onediff_src_url: ${{ steps.set_env.outputs.onediff_src_url }}
+      comfy_src_url: ${{ steps.set_env.outputs.comfy_src_url }}
+      webui_src_url: ${{ steps.set_env.outputs.webui_src_url }}
     steps:
+      - name: Setup ossutil
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          OSS_ACCESS_KEY_ID=$(echo -n "${{ env.OSS_AK_ID_BASE64 }}" | base64 -d)
+          OSS_ACCESS_KEY_SECRET=$(echo -n "${{ env.OSS_AK_SC_BASE64 }}" | base64 -d)
+          echo "OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}" >> ${GITHUB_ENV}
+          echo "OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}" >> ${GITHUB_ENV}
       - name: Setup ossutil
         run: |
           curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o ossutil64
           sudo chmod +x ossutil64
-          ./ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+          ./ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ env.OSS_ACCESS_KEY_ID }} -k ${{ env.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
       - name: Checkout
         uses: actions/checkout@v4
         with:
@@ -127,18 +145,22 @@ jobs:
           git reset --hard
           git clean -f
           zip -r webui-src.zip .
-      - name: Upload src
-        id: upload_to_oss
+      - name: Set src env
+        id: set_env
         run: |
           ONEDIFF_DST="oss://gh-src-cache/onediff/${{ github.sha }}/onediff-src.zip"
           COMFY_DST="oss://gh-src-cache/onediff/${{ github.sha }}/comfyui-src.zip"
           WEBUI_DST="oss://gh-src-cache/onediff/${{ github.sha }}/webui-src.zip"
-          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${ONEDIFF_DST}
-          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${COMFY_DST}
-          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${WEBUI_DST}
           echo "onediff_src_url=${ONEDIFF_DST}" >> $GITHUB_OUTPUT
           echo "comfy_src_url=${COMFY_DST}" >> $GITHUB_OUTPUT
           echo "webui_src_url=${WEBUI_DST}" >> $GITHUB_OUTPUT
+      - name: Upload src
+        id: upload_to_oss
+        run: |
+          ./ossutil64 cp --disable-ignore-error --update onediff/onediff-src.zip ${{ steps.set_env.outputs.onediff_src_url }}
+          ./ossutil64 cp --disable-ignore-error --update ComfyUI/comfyui-src.zip ${{ steps.set_env.outputs.comfy_src_url }}
+          ./ossutil64 cp --disable-ignore-error --update ${{ env.WEBUI_SRC_DIR }}/webui-src.zip ${{ steps.set_env.outputs.webui_src_url }}
+
   run-examples:
     name: " ${{ matrix.test-suite }} ${{ matrix.image }}"
     runs-on: [self-hosted, cuda]
@@ -147,6 +169,8 @@ jobs:
       fail-fast: false
       max-parallel: 5
       matrix:
+        should-run-pro:
+          - ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         image:
           - onediff:cu118
           - onediff-pro:cu121
@@ -154,55 +178,49 @@ jobs:
           - diffusers_examples
           - comfy
           - webui
+        exclude:
+          - should-run-pro: false
+            image: onediff-pro:cu121
     steps:
       - name: Login to ACR with the AccessKey pair
+        if: github.event.pull_request.head.repo.full_name == github.repository
         uses: aliyun/acr-login@v1
         with:
           login-server: https://registry.${{env.REGION_ID}}.aliyuncs.com
           username: "${{ secrets.ACR_USERNAME }}"
           password: "${{ secrets.ACR_PASSWORD }}"
+      - name: Setup ossutil
+        if: github.event.pull_request.head.repo.full_name != github.repository
+        run: |
+          OSS_ACCESS_KEY_ID=$(echo -n "${{ env.OSS_AK_ID_BASE64 }}" | base64 -d)
+          OSS_ACCESS_KEY_SECRET=$(echo -n "${{ env.OSS_AK_SC_BASE64 }}" | base64 -d)
+          echo "OSS_ACCESS_KEY_ID=${OSS_ACCESS_KEY_ID}" >> ${GITHUB_ENV}
+          echo "OSS_ACCESS_KEY_SECRET=${OSS_ACCESS_KEY_SECRET}" >> ${GITHUB_ENV}
       - name: Fix permissions
         run: |
           set -x
-          docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf *
+          docker run --rm -v $PWD:$PWD -w $PWD busybox rm -rf .[^.]* *
       - name: Setup ossutil
-        if: github.repository == 'siliconflow/onediff'
         run: |
           if [ ! -f "$HOME/ossutil64" ]; then
             curl http://gosspublic.alicdn.com/ossutil/1.7.15/ossutil64 -o $HOME/ossutil64
             chmod +x $HOME/ossutil64
           fi
-          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ secrets.OSS_ACCESS_KEY_ID }} -k ${{ secrets.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
+          $HOME/ossutil64 config -e oss-cn-beijing.aliyuncs.com -i ${{ env.OSS_ACCESS_KEY_ID }} -k ${{ env.OSS_ACCESS_KEY_SECRET }}  -L EN -c $HOME/.ossutilconfig
       - name: Checkout vis OSS
-        if: github.repository == 'siliconflow/onediff'
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.onediff_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.onediff_src_url }})
       - name: Checkout Comfy vis OSS
-        if: matrix.test-suite == 'comfy' && github.repository == 'siliconflow/onediff'
+        if: matrix.test-suite == 'comfy'
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.comfy_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.comfy_src_url }})
       - name: Checkout WebUI vis OSS
-        if: matrix.test-suite == 'webui' && github.repository == 'siliconflow/onediff'
+        if: matrix.test-suite == 'webui'
         run: |
           $HOME/ossutil64 cp ${{ needs.upload_src.outputs.webui_src_url }} .
           unzip -o $(basename ${{ needs.upload_src.outputs.webui_src_url }}) -d ${{env.WEBUI_SRC_DIR}}
-      - name: Checkout
-        if: github.repository != 'siliconflow/onediff'
-        uses: actions/checkout@v4
-      - name: Checkout ComfyUI
-        if: matrix.test-suite == 'comfy' && github.repository != 'siliconflow/onediff'
-        uses: actions/checkout@v4
-        with:
-          repository: comfyanonymous/ComfyUI
-          path: ${{ env.COMFYUI_SRC_DIR }}
-      - name: Checkout Stable Diffusion WebUI
-        if: matrix.test-suite == 'webui' && github.repository != 'siliconflow/onediff'
-        uses: actions/checkout@v4
-        with:
-          repository: AUTOMATIC1111/stable-diffusion-webui
-          path: ${{ env.WEBUI_SRC_DIR }}
       - name: Clean docker containers
         run: |
           docker rm -f ${{ env.CONTAINER_NAME }} || true
@@ -242,7 +260,7 @@ jobs:
           SDXL_BASE: ${{ env.SDXL_BASE }}
           UNET_INT8: ${{ env.UNET_INT8 }}
           SILICON_ONEDIFF_LICENSE_KEY: ${{ secrets.SILICON_ONEDIFF_LICENSE_KEY }}
-          
+
       - name: Setup docker for WebUI Test
         if: matrix.test-suite == 'webui'
         run: |
@@ -315,7 +333,7 @@ jobs:
       - name: Setup OneDiff diffusers extension
         if: matrix.test-suite == 'diffusers_examples'
         run: |
-          docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 -m pip install -e .
+          docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} sh -c 'cd onediff_diffusers_extensions && python3 -m pip install -e .'
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantize_custom_model.py
@@ -351,7 +369,7 @@ jobs:
         run: |
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 onediff_diffusers_extensions/examples/text_to_image_sd_enterprise.py  --model /share_nfs/hf_models/stable-diffusion-v1-5-int8 --width 512 --height 512 --saved_image /src/onediff/output_enterprise_sd.png
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantitative_quality.py
-      
+
       - name: Install Requirements for WebUI
         if: matrix.test-suite == 'webui'
         run: |

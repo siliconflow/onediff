@@ -4,7 +4,7 @@ import argparse
 
 import torch
 from diffusers import StableDiffusionXLPipeline
-from onediffx import compile_pipe, save_pipe, load_pipe
+from onediffx import compile_pipe, load_pipe, save_pipe
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -18,7 +18,7 @@ pipe = StableDiffusionXLPipeline.from_pretrained(
     "/share_nfs/hf_models/stable-diffusion-xl-base-1.0",
     torch_dtype=torch.float16,
     variant="fp16",
-    use_safetensors=True
+    use_safetensors=True,
 )
 pipe.to("cuda")
 

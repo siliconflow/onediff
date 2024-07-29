@@ -1,15 +1,20 @@
 import os
+
 import torch
 import torch.nn as nn
 
-from diffusers.models.attention_processor import Attention
-from diffusers.models.attention_processor import AttnProcessor, AttnProcessor2_0
+from diffusers.models.attention_processor import (
+    Attention,
+    AttnProcessor,
+    AttnProcessor2_0,
+)
+
 from .attention_processor import FusedSelfAttnProcessor
 
 _IS_ONEDIFF_QUANT_AVAILABLE = 0
 try:
     import onediff_quant
-    from onediff_quant import StaticQuantLinearModule, DynamicQuantLinearModule
+    from onediff_quant import DynamicQuantLinearModule, StaticQuantLinearModule
 
     _IS_ONEDIFF_QUANT_AVAILABLE = 1
 except ImportError as e:

@@ -1,24 +1,30 @@
 import types
-import torch
 from functools import wraps
 
-import oneflow as flow
+import torch
+
+import oneflow as flow  # usort: skip
 
 from onediff.utils import logger
 from onediff.utils.chache_utils import LRUCache
 
 from ..deployable_module import DeployableModule
-
-from .transform.manager import transform_mgr
-from .transform.builtin_transform import torch2oflow
+from ..env_var import OneflowCompileOptions
+from .args_tree_util import input_output_processor
 
 from .dual_module import DualModule, get_mixed_dual_module
-from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
-from .args_tree_util import input_output_processor
-from .param_utils import parse_device, check_device, generate_constant_folding_info
 from .graph_management_utils import graph_file_management
+from .oneflow_exec_mode import oneflow_exec_mode, oneflow_exec_mode_enabled
 from .online_quantization_utils import quantize_and_deploy_wrapper
-from ..env_var import OneflowCompileOptions
+from .param_utils import (
+    check_device,
+    generate_constant_folding_info,
+    parse_device,
+    update_graph_with_constant_folding_info,
+)
+from .transform.builtin_transform import torch2oflow
+
+from .transform.manager import transform_mgr
 
 
 @torch2oflow.register
@@ -55,7 +61,11 @@ def get_oneflow_graph(model, size=9, dynamic_graph=True):
 
 class OneflowDeployableModule(DeployableModule):
     def __init__(
-        self, torch_module, oneflow_module, dynamic=True, options=None,
+        self,
+        torch_module,
+        oneflow_module,
+        dynamic=True,
+        options=None,
     ):
         torch.nn.Module.__init__(self)
         object.__setattr__(
@@ -118,9 +128,9 @@ class OneflowDeployableModule(DeployableModule):
             )
         return self._deployable_module_dpl_graph
 
-    @input_output_processor
     @handle_deployable_exception
     @graph_file_management
+    @input_output_processor
     def apply_model(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
@@ -133,10 +143,10 @@ class OneflowDeployableModule(DeployableModule):
                 )
         return output
 
-    @quantize_and_deploy_wrapper
-    @input_output_processor
     @handle_deployable_exception
+    @quantize_and_deploy_wrapper
     @graph_file_management
+    @input_output_processor
     def forward(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
             dpl_graph = self.get_graph()
@@ -167,9 +177,9 @@ class OneflowDeployableModule(DeployableModule):
         return self
 
     # TODO(): Just for transformers VAE decoder
-    @input_output_processor
     @handle_deployable_exception
     @graph_file_management
+    @input_output_processor
     def decode(self, *args, **kwargs):
         if self._deployable_module_options.use_graph:
 
@@ -195,6 +205,8 @@ class OneflowDeployableModule(DeployableModule):
             file_path, device, run_warmup, state_dict=state_dict
         )
         generate_constant_folding_info(self)
+        update_graph_with_constant_folding_info(self)
+        self._load_graph_first_run = False
 
     def save_graph(self, file_path, *, process_state_dict=lambda x: x):
         self.get_graph().save_graph(file_path, process_state_dict=process_state_dict)
@@ -203,7 +215,7 @@ class OneflowDeployableModule(DeployableModule):
         return self._deployable_module_model.extra_repr()
 
     def set_graph_file(self, file_path: str) -> None:
-        """ Sets the path of the graph file.
+        """Sets the path of the graph file.
 
         If the new file path is different from the old one, clears old graph data.
 

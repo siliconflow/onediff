@@ -1,18 +1,19 @@
+import importlib.metadata
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
-from packaging import version
-import importlib.metadata
 
 import oneflow as torch
 import oneflow.nn.functional as F
-from oneflow import nn
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+from oneflow import nn
+from packaging import version
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 
 diffusers_0220_v = version.parse("0.22.0")
 diffusers_02499_v = version.parse("0.24.99")
 diffusers_0270_v = version.parse("0.27.0")
+diffusers_0280_v = version.parse("0.28.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 if diffusers_version < diffusers_0220_v:
@@ -370,7 +371,6 @@ if diffusers_version < diffusers_0220_v:
 
             return Transformer2DModelOutput(sample=output)
 
-
 elif diffusers_version < diffusers_02499_v:
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -616,7 +616,7 @@ elif diffusers_version < diffusers_02499_v:
                     inner_dim, elementwise_affine=False, eps=1e-6
                 )
                 self.scale_shift_table = nn.Parameter(
-                    torch.randn(2, inner_dim) / inner_dim ** 0.5
+                    torch.randn(2, inner_dim) / inner_dim**0.5
                 )
                 self.proj_out = nn.Linear(
                     inner_dim, patch_size * patch_size * self.out_channels
@@ -886,8 +886,7 @@ elif diffusers_version < diffusers_02499_v:
 
             return Transformer2DModelOutput(sample=output)
 
-
-else:
+elif diffusers_version < diffusers_0280_v:
     transformed_diffusers = transform_mgr.transform_package("diffusers")
     ConfigMixin = transformed_diffusers.configuration_utils.ConfigMixin
     register_to_config = transformed_diffusers.configuration_utils.register_to_config
@@ -907,12 +906,22 @@ else:
     LoRACompatibleLinear = transformed_diffusers.models.lora.LoRACompatibleLinear
     ModelMixin = transformed_diffusers.models.modeling_utils.ModelMixin
     AdaLayerNormSingle = transformed_diffusers.models.normalization.AdaLayerNormSingle
-    Transformer2DModelOutput = (
-        transformed_diffusers.models.transformer_2d.Transformer2DModelOutput
-    )
-    proxy_Transformer2DModel = (
-        transformed_diffusers.models.transformer_2d.Transformer2DModel
-    )
+    diffusers_0260_v = version.parse("0.26.0")
+    diffusers_0280_v = version.parse("0.28.0")
+    if diffusers_version >= diffusers_0260_v:
+        Transformer2DModelOutput = (
+            transformed_diffusers.models.transformers.transformer_2d.Transformer2DModelOutput
+        )
+        proxy_Transformer2DModel = (
+            transformed_diffusers.models.transformers.transformer_2d.Transformer2DModel
+        )
+    else:
+        Transformer2DModelOutput = (
+            transformed_diffusers.models.transformer_2d.Transformer2DModelOutput
+        )
+        proxy_Transformer2DModel = (
+            transformed_diffusers.models.transformer_2d.Transformer2DModel
+        )
 
     class Transformer2DModel(proxy_Transformer2DModel):
         def forward(
@@ -1061,6 +1070,12 @@ else:
                     )
 
             # 2. Blocks
+            if diffusers_version >= diffusers_0280_v:
+                self.caption_projection = None
+                if self.caption_channels is not None:
+                    self.caption_projection = PixArtAlphaTextProjection(
+                        in_features=self.caption_channels, hidden_size=self.inner_dim
+                    )
             if self.caption_projection is not None:
                 batch_size = hidden_states.shape[0]
                 encoder_hidden_states = self.caption_projection(encoder_hidden_states)
@@ -1080,9 +1095,11 @@ else:
 
                         return custom_forward
 
-                    ckpt_kwargs: Dict[str, Any] = {
-                        "use_reentrant": False
-                    } if is_torch_version(">=", "1.11.0") else {}
+                    ckpt_kwargs: Dict[str, Any] = (
+                        {"use_reentrant": False}
+                        if is_torch_version(">=", "1.11.0")
+                        else {}
+                    )
                     hidden_states = torch.utils.checkpoint.checkpoint(
                         create_custom_forward(block),
                         hidden_states,
@@ -1196,3 +1213,6 @@ else:
                 return (output,)
 
             return Transformer2DModelOutput(sample=output)
+
+else:
+    from .transformer_2d.v_0_28 import Transformer2DModel, Transformer2DModelOutput

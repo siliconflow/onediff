@@ -1,5 +1,5 @@
 # /ComfyUI/custom_nodes/ComfyUI-AnimateDiff-Evolved/animatediff/sampling.py
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from einops import rearrange
 from onediff.infer_compiler import DeployableModule
 from onediff.infer_compiler.backends.oneflow.transform import register
@@ -118,9 +118,13 @@ def cond_func(orig_func, self, model, *args, **kwargs):
 
 
 animatediff_hijacker.register(
-    FunctionInjectionHolder.inject_functions, inject_functions, cond_func,
+    FunctionInjectionHolder.inject_functions,
+    inject_functions,
+    cond_func,
 )
 
 animatediff_hijacker.register(
-    FunctionInjectionHolder.restore_functions, restore_functions, cond_func,
+    FunctionInjectionHolder.restore_functions,
+    restore_functions,
+    cond_func,
 )

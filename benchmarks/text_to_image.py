@@ -23,19 +23,24 @@ COMPILER = "oneflow"
 COMPILER_CONFIG = None
 QUANTIZE_CONFIG = None
 
-import os
+import argparse
 import importlib
 import inspect
-import argparse
-import time
 import json
-import torch
+import os
+import time
+
 import matplotlib.pyplot as plt
 import numpy as np
-from PIL import Image, ImageDraw
+import torch
 from diffusers.utils import load_image
+from onediff.infer_compiler import oneflow_compile
 
-from onediffx import compile_pipe, quantize_pipe # quantize_pipe currently only supports the nexfort backend.
+from onediffx import (  # quantize_pipe currently only supports the nexfort backend.
+    compile_pipe,
+    quantize_pipe,
+)
+from PIL import Image, ImageDraw
 
 
 def parse_args():
@@ -61,6 +66,7 @@ def parse_args():
     parser.add_argument("--input-image", type=str, default=INPUT_IMAGE)
     parser.add_argument("--control-image", type=str, default=CONTROL_IMAGE)
     parser.add_argument("--output-image", type=str, default=OUTPUT_IMAGE)
+    parser.add_argument("--print-output", action="store_true")
     parser.add_argument("--throughput", action="store_true")
     parser.add_argument("--deepcache", action="store_true")
     parser.add_argument(
@@ -244,7 +250,13 @@ def main():
         pass
     elif args.compiler == "oneflow":
         print("Oneflow backend is now active...")
-        pipe = compile_pipe(pipe)
+        # Note: The compile_pipe() based on the oneflow backend is incompatible with T5EncoderModel.
+        # pipe = compile_pipe(pipe)
+        if hasattr(pipe, "unet"):
+            pipe.unet = oneflow_compile(pipe.unet)
+        if hasattr(pipe, "transformer"):
+            pipe.transformer = oneflow_compile(pipe.transformer)
+        pipe.vae.decoder = oneflow_compile(pipe.vae.decoder)
     elif args.compiler == "nexfort":
         print("Nexfort backend is now active...")
         if args.quantize:
@@ -267,7 +279,7 @@ def main():
             options = json.loads(args.compiler_config)
         else:
             # config with string
-            options = '{"mode": "max-optimize:max-autotune:freezing", "memory_format": "channels_last"}'
+            options = '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}'
         pipe = compile_pipe(
             pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
@@ -369,13 +381,22 @@ def main():
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
     if args.compiler == "oneflow":
-        import oneflow as flow
+        import oneflow as flow  # usort: skip
 
         cuda_mem_after_used = flow._oneflow_internal.GetCUDAMemoryUsed() / 1024
     else:
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
     print("=======================================")
+
+    if args.print_output:
+        from onediff.utils.import_utils import is_nexfort_available
+
+        if is_nexfort_available():
+            from nexfort.utils.term_image import print_image
+
+            for image in output_images:
+                print_image(image, max_width=80)
 
     if args.output_image is not None:
         output_images[0].save(args.output_image)

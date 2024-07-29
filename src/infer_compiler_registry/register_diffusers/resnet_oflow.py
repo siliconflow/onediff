@@ -1,11 +1,12 @@
+import importlib.metadata
 from typing import Optional
+
 import oneflow as torch
 import oneflow.nn as nn
 import oneflow.nn.functional as F
-from packaging import version
-import importlib.metadata
 
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+from packaging import version
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 
@@ -65,7 +66,6 @@ if diffusers_version < diffusers_0210_v:
                     hidden_states = self.Conv2d_0(hidden_states)
 
             return hidden_states
-
 
 else:
 

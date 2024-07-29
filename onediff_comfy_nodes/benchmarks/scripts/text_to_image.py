@@ -1,9 +1,10 @@
 import argparse
+import json
 import os
 import sys
 import time
 from io import BytesIO
-from typing import List, Union
+from typing import List, NamedTuple, Union
 
 import numpy as np
 from PIL import Image
@@ -45,6 +46,15 @@ def parse_args():
         default=0.5,
         help="SSIM threshold for image comparison.",
     )
+    parser.add_argument(
+        "--output-dir",
+        type=str,
+        default="results",
+        help="Directory for output results.",
+    )
+    parser.add_argument(
+        "--exp-name", type=str, default="exp", help="Experiment name for logging."
+    )
     return parser.parse_args()
 
 
@@ -62,38 +72,38 @@ def calculate_ssim(image1: Image.Image, image2: Image.Image) -> float:
     return ssim(image1_np, image2_np, channel_axis=2)
 
 
+class ImageInfo(NamedTuple):
+    height: int
+    width: int
+    image_path: str = ""
+
+
 class WorkflowProcessor:
     def __init__(
         self,
         output_images: bool,
         output_dir: str,
-        baseline_dir: str,
         logger,
-        ssim_threshold,
     ):
         self.output_images = output_images
         self.output_dir = output_dir
-        self.baseline_dir = baseline_dir
         self.logger = logger
-        self.ssim_threshold = ssim_threshold
 
-    def process_image(self, image_data: bytes, index: int) -> None:
+    def process_image(self, image_data: bytes, index: int) -> ImageInfo:
         pil_image = Image.open(BytesIO(image_data))
         self.logger.info(
             f"Image Size - Height: {pil_image.height}px, Width: {pil_image.width}px"
         )
         assert np.array(pil_image).any() != 0, "Image is blank"
 
+        image_path = ""
         if self.output_images:
             image_path = save_image(image_data, self.output_dir, f"image_{index}.png")
             self.logger.info(f"Saved image to: {image_path}")
 
-        if self.baseline_dir:
-            baseline_image_path = os.path.join(self.baseline_dir, f"image_{index}.png")
-            baseline_image = Image.open(baseline_image_path)
-            ssim_value = calculate_ssim(pil_image, baseline_image)
-            self.logger.info(f"SSIM value with baseline: {ssim_value}")
-            assert ssim_value > self.ssim_threshold
+        return ImageInfo(
+            height=pil_image.height, width=pil_image.width, image_path=image_path
+        )
 
 
 def run_workflow(
@@ -102,20 +112,30 @@ def run_workflow(
     output_images: bool = True,
     baseline_dir: str = None,
     ssim_threshold: float = 0.5,
+    output_dir: str = "results",
+    exp_name: str = "exp",
 ) -> None:
-    logger, result_dir = setup_logging(exp_name="exp")
+    logger, result_dir = setup_logging(output_dir, exp_name=exp_name)
     logger.info(f"Result directory: {result_dir}")
 
     processor = WorkflowProcessor(
         output_images,
         os.path.join(result_dir, "imgs"),
-        baseline_dir,
         logger,
-        ssim_threshold,
     )
+
+    result = {}
+    result_file_name = "results.json"
+    baseline_result = None
+    if baseline_dir:
+        result_file_path = os.path.join(baseline_dir, result_file_name)
+        if os.path.exists(result_file_path):
+            with open(result_file_path, "r") as fp:
+                baseline_result = json.load(fp)
 
     with comfy_client_context(port=comfy_port) as client:
         logger.info(f"Testing workflows: {workflow}")
+
         for i, comfy_graph in enumerate(dispatch_generator(workflow)):
             start_time = time.time()
             images = client.get_images(comfy_graph.graph)
@@ -134,12 +154,50 @@ def run_workflow(
 
             for images_output in images.values():
                 for image_data in images_output:
-                    processor.process_image(image_data, i)
+                    out = processor.process_image(image_data, i)
+                    result[i] = {
+                        "height": out.height,
+                        "width": out.width,
+                        "image_path": out.image_path,
+                    }
+                    e2e_time = end_time - start_time
+                    logger.info(f"Workflow {i} E2E:  {e2e_time:.2f} seconds")
+                    result[i].update({"e2e_time": e2e_time})
 
-            e2e_time = end_time - start_time
-            logger.info(f"Workflow {i} E2E:  {e2e_time:.2f} seconds")
-            # if i>0: # TODO refine
-            #     assert e2e_time < 10 # sec
+                    if baseline_dir:
+                        baseline_image_path = os.path.join(
+                            baseline_dir, f"image_{i}.png"
+                        )
+                        baseline_image = Image.open(baseline_image_path)
+                        pil_image = Image.open(BytesIO(image_data))
+                        ssim_value = calculate_ssim(pil_image, baseline_image)
+                        result[i].update(
+                            {
+                                "ssim_value": ssim_value,
+                                "basic_image_path": baseline_image_path,
+                            }
+                        )
+                        logger.info(f"SSIM: {ssim_value=}")
+                        assert (
+                            ssim_value > ssim_threshold
+                        ), f"SSIM value {ssim_value} is not greater than the threshold {ssim_threshold}"
+
+                        if baseline_result:
+                            basic_time = baseline_result[str(i)]["e2e_time"]
+                            result[i].update({"basic_e2e_time": basic_time})
+                            percentage_improvement = (
+                                basic_time - e2e_time
+                            ) / basic_time
+                            result[i].update(
+                                {"percentage_improvement": percentage_improvement}
+                            )
+
+        # Save results to a JSON file
+        result_file = os.path.join(result_dir, result_file_name)
+        with open(result_file, "w") as f:
+            json.dump(result, f, indent=4)
+
+        logger.info(f"Results saved to {result_file}")
 
 
 if __name__ == "__main__":
@@ -150,4 +208,6 @@ if __name__ == "__main__":
         args.output_images,
         args.baseline_dir,
         args.ssim_threshold,
+        args.output_dir,
+        args.exp_name,
     )

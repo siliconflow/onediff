@@ -1,23 +1,16 @@
+import os
+
 from setuptools import find_packages, setup
 
-
-def get_version():
-    variables = {}
-    with open("src/onediff/__init__.py", "r") as f:
-        for line in f:
-            if line.startswith("__version__"):
-                exec(line, variables)
-    return variables["__version__"]
-
+local_scheme = os.getenv("VERSION_LOCAL_SCHEME", "node-and-date")
 
 setup(
     name="onediff",
-    version=get_version(),
     description="an out-of-the-box acceleration library for diffusion models",
     url="https://github.com/siliconflow/onediff",
     author="OneDiff contributors",
     license="Apache-2.0",
-    license_files=('LICENSE',),
+    license_files=("LICENSE",),
     author_email="contact@siliconflow.com",
     package_dir={"": "src"},
     packages=find_packages("src"),
@@ -43,4 +36,18 @@ setup(
     ],
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
+    extras_require={
+        # optional dependencies, required by some features
+        # dev dependencies. Install them by `pip3 install 'onediff[dev]'`
+        "dev": [
+            "pre-commit",
+        ],
+    },
+    use_scm_version={
+        "write_to": "src/onediff/_version.py",
+        "fallback_version": "0.0.0",
+        "version_scheme": "guess-next-dev",
+        "local_scheme": local_scheme,
+    },
+    setup_requires=["setuptools_scm"],
 )

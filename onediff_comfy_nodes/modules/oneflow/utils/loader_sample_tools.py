@@ -3,8 +3,9 @@ from pathlib import Path
 # ComfyUI
 from comfy import model_management
 from folder_paths import get_input_directory
+
 # onediff
-from onediff.infer_compiler import OneflowCompileOptions, oneflow_compile
+from onediff.infer_compiler import oneflow_compile, OneflowCompileOptions
 from onediff.infer_compiler.backends.oneflow.transform import torch2oflow
 from onediff.optimization.quant_optimizer import quantize_model
 

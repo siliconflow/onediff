@@ -1,7 +1,9 @@
 import re
+import types
+
 import torch
-import oneflow as flow
-from typing import List, Dict, Any, Union
+import oneflow as flow  # usort: skip
+from typing import Any, Dict, List, Union
 
 from onediff.utils import logger
 
@@ -108,8 +110,25 @@ def generate_constant_folding_info(
         for k, v in zip(*graph._c_nn_graph.get_runtime_var_states())
         if k.startswith("variable_transpose_") and v.ndim == 4
     }
+
     setattr(deployable_module, CONSTANT_FOLDING_INFO_ATTR, result)
+
     set_constant_folded_conv_attr(deployable_module, result)
+
+    def make_custom_copy_(module):
+        def custom_copy_(self, src, non_blocking=False):
+            torch.Tensor.copy_(self, src, non_blocking)
+            # Update graph related tensors
+            update_graph_related_tensor(module)
+
+        return custom_copy_
+
+    from onediff.torch_utils.module_operations import get_sub_module
+
+    torch_model: torch.nn.Module = deployable_module._torch_module
+    for k in result.keys():
+        module = get_sub_module(torch_model, removesuffix(k, ".weight"))
+        module.weight.copy_ = types.MethodType(make_custom_copy_(module), module.weight)
 
 
 def update_graph_with_constant_folding_info(

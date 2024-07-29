@@ -4,9 +4,9 @@ from typing import Union
 import torch
 from ldm.modules.diffusionmodules.openaimodel import UNetModel as LdmUNetModel
 from modules import sd_models_types, shared
-from sgm.modules.diffusionmodules.openaimodel import UNetModel as SgmUNetModel
 
 from onediff.infer_compiler import DeployableModule
+from sgm.modules.diffusionmodules.openaimodel import UNetModel as SgmUNetModel
 
 from .backend import OneDiffBackend
 

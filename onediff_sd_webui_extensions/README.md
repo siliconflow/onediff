@@ -55,7 +55,7 @@ Accessing http://server:7860/ from a web browser.
 
 ## Extensions Usage
 
-To activate OneDiff extension acceleration, follow these steps: 
+To activate OneDiff extension acceleration, follow these steps:
 Select `onediff_diffusion_model` from the Script menu, enter a prompt in the text box (e.g., "a black dog"), and then click the "Generate" button.
 
 ![onediff_script](images/onediff_script.jpg)
