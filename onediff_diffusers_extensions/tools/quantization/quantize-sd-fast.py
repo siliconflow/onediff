@@ -8,7 +8,7 @@ from diffusers import (
     AutoPipelineForImage2Image,
     AutoPipelineForText2Image,
     StableDiffusionImg2ImgPipeline,
-    UNet2DConditionModel
+    UNet2DConditionModel,
     StableDiffusionPipeline,
     StableDiffusionXLImg2ImgPipeline,
     StableDiffusionXLPipeline,
