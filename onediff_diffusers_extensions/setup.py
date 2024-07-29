@@ -4,10 +4,6 @@ from setuptools import find_packages, setup
 
 
 local_scheme = os.getenv("VERSION_LOCAL_SCHEME", "node-and-date")
-if local_scheme == "node-and-date":
-    write_to = "./onediff_diffusers_extensions/onediffx/_version.py"
-else:
-    write_to = "./onediffx/_version.py"
 
 setup(
     name="onediffx",
@@ -43,7 +39,7 @@ setup(
     long_description_content_type="text/markdown",
     use_scm_version={
         "root": "../",
-        "write_to": write_to,
+        "write_to": "./onediff_diffusers_extensions/onediffx/_version.py",
         "fallback_version": "0.0.0",
         "version_scheme": "guess-next-dev",
         "local_scheme": local_scheme,

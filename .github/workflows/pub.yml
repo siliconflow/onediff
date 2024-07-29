@@ -30,6 +30,17 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
+      - run: |
+          echo "Current directory after build:"
+          pwd
+          echo "Contents of current directory after build:"
+          ls -al
+          echo "Parent directory after build:"
+          cd ..
+          pwd
+          echo "Contents of parent directory after build:"
+          ls -al
+        working-directory: ./onediff_diffusers_extensions
       - run: python3 -m build
         working-directory: ./onediff_diffusers_extensions
       - name: Publish extension
