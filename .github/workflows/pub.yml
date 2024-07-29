@@ -30,9 +30,6 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-      # - run: |
-      #     cd ./onediff_diffusers_extensions
-      #     python3 -m build
       - run: python3 -m build
         working-directory: ./onediff_diffusers_extensions
       - name: Publish extension
