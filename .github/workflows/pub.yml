@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - run: cat src/onediff/__init__.py
       - run: python3 -m pip install build
       - name: Set environment variable
