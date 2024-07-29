@@ -4,12 +4,14 @@ on:
   push:
     branches:
       - "pub/*"
-  schedule:
-    - cron: "0 1 * * *"
+      - main
 
 concurrency:
   group: onediff-pub-${{ github.ref }}
   cancel-in-progress: true
+
+env:
+  VERSION_LOCAL_SCHEME: no-local-version
 
 jobs:
   publish:
@@ -22,10 +24,7 @@ jobs:
           fetch-depth: 0
       - run: cat src/onediff/__init__.py
       - run: python3 -m pip install build
-      - name: Set environment variable
-        env:
-          VERSION_LOCAL_SCHEME: no-local-version
-        run: echo "VERSION_LOCAL_SCHEME=$VERSION_LOCAL_SCHEME"
+      - run: echo "VERSION_LOCAL_SCHEME=$VERSION_LOCAL_SCHEME"
       - run: python3 -m build
       - name: Publish package
         uses: pypa/gh-action-pypi-publish@27b31702a0e7fc50959f5ad993c78deac1bdfc29
