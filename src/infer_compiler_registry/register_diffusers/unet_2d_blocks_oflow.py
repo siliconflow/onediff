@@ -11,9 +11,14 @@ diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
 
+if diffusers_version >= version.parse("0.26.0"):
+    diffusers_unet_2d_blocks = transformed_diffusers.models.unets.unet_2d_blocks
+else:
+    diffusers_unet_2d_blocks = transformed_diffusers.models.unet_2d_blocks
+
 if diffusers_version < diffusers_0210_v:
 
-    class AttnUpBlock2D(transformed_diffusers.models.unet_2d_blocks.AttnUpBlock2D):
+    class AttnUpBlock2D(diffusers_unet_2d_blocks.AttnUpBlock2D):
         def forward(
             self,
             hidden_states,
@@ -38,9 +43,7 @@ if diffusers_version < diffusers_0210_v:
                     else:
                         hidden_states = upsampler(hidden_states)
 
-    class CrossAttnUpBlock2D(
-        transformed_diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D
-    ):
+    class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -106,7 +109,7 @@ if diffusers_version < diffusers_0210_v:
 
             return hidden_states
 
-    class UpBlock2D(transformed_diffusers.models.unet_2d_blocks.UpBlock2D):
+    class UpBlock2D(diffusers_unet_2d_blocks.UpBlock2D):
         def forward(
             self,
             hidden_states,
@@ -151,16 +154,7 @@ if diffusers_version < diffusers_0210_v:
 
 else:
 
-    if diffusers_version >= diffusers_0260_v:
-        AttnUpBlock2DBase = transformed_diffusers.models.unets.unet_2d_blocks.AttnUpBlock2D
-        CrossAttnUpBlock2DBase = transformed_diffusers.models.unets.unet_2d_blocks.CrossAttnUpBlock2D
-        UpBlock2DBase = transformed_diffusers.models.unets.unet_2d_blocks.UpBlock2D
-    else:
-        AttnUpBlock2DBase = transformed_diffusers.models.unet_2d_blocks.AttnUpBlock2D
-        CrossAttnUpBlock2DBase = transformed_diffusers.models.unet_2d_blocks.CrossAttnUpBlock2D
-        UpBlock2DBase = transformed_diffusers.models.unet_2d_blocks.UpBlock2D
-
-    class AttnUpBlock2D(AttnUpBlock2DBase):
+    class AttnUpBlock2D(diffusers_unet_2d_blocks.AttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -189,7 +183,7 @@ else:
 
             return hidden_states
 
-    class CrossAttnUpBlock2D(CrossAttnUpBlock2DBase):
+    class CrossAttnUpBlock2D(diffusers_unet_2d_blocks.CrossAttnUpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
@@ -285,7 +279,7 @@ else:
 
             return hidden_states
 
-    class UpBlock2D(UpBlock2DBase):
+    class UpBlock2D(diffusers_unet_2d_blocks.UpBlock2D):
         def forward(
             self,
             hidden_states: torch.FloatTensor,
