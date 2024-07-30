@@ -10,7 +10,7 @@ body:
       #### Before submitting a bug, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/siliconflow/onediff/issues?q=is%3Aissue+sort%3Acreated-desc+).
 - type: textarea
   attributes:
-    label: Your current environment Information
+    label: Your current environment information
     description: |
       Please run the following and paste the output below.
       ```sh
