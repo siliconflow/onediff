@@ -1,11 +1,30 @@
 name: 🐛 Bug Report
 description: Create a report to help us reproduce and fix the bug
+title: "[Bug] "
+labels: ["Request-bug"]
 
 body:
 - type: markdown
   attributes:
     value: >
       #### Before submitting a bug, please make sure the issue hasn't been already addressed by searching through [the existing and past issues](https://github.com/siliconflow/onediff/issues?q=is%3Aissue+sort%3Acreated-desc+).
+- type: textarea
+  attributes:
+    label: Your current environment Information
+    description: |
+      Please run the following and paste the output below.
+      ```sh
+      python -m onediff.utils.collect_env
+      ```
+      If onediff is not installed, you can run like this.
+      ```sh
+      wget https://raw.githubusercontent.com/siliconflow/onediff/main/src/onediff/utils/collect_env.py
+      # For security purposes, please check the contents of collect_env.py before running it.
+      python collect_env.py
+      ```
+  validations:
+    required: true
+
 - type: textarea
   attributes:
     label: 🐛 Describe the bug
@@ -38,18 +57,7 @@ body:
       ```
   validations:
     required: true
-- type: textarea
-  attributes:
-    label: Versions
-    description: |
-      Please run the following and paste the output below.
-      ```sh
-      wget https://raw.githubusercontent.com/siliconflow/onediff/main/src/onediff/utils/collect_env.py
-      # For security purposes, please check the contents of collect_env.py before running it.
-      python collect_env.py
-      ```
-  validations:
-    required: true
+
 - type: markdown
   attributes:
     value: >
