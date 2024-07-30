@@ -14,6 +14,7 @@
 </p>
 
 <p>
+  <a href="https://github.com/siliconflow/onediff/wiki/Contribution-Guide" target="_blank"><img src="https://img.shields.io/badge/Contribution-wiki-green"></a>
   <a href="https://github.com/siliconflow/onediff/wiki" target="_blank"><img src="https://img.shields.io/badge/Community-wiki-green"></a>
   <a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Stars&color=green"></a>
   <a href="https://discord.gg/RKJTjZMcPQ" target="_blank"><img src="https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square"></a>
