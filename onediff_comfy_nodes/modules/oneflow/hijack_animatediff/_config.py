@@ -1,6 +1,6 @@
 """
 github: https://github.com/Kosinkadink/ComfyUI-AnimateDiff-Evolved
-commit: 5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1 
+commit: 5d875d77fe6e31a4b0bc6dc36f0441eba3b6afe1
 """
 import os
 
@@ -21,7 +21,7 @@ try:
     else:
         load_animatediff_package = False
 except Exception as e:
-   print(f"Warning: Failed to load {pkg_name} from {animatediff_root} due to {e}")
-   load_animatediff_package = False
+    print(f"Warning: Failed to load {pkg_name} from {animatediff_root} due to {e}")
+    load_animatediff_package = False
 
 animatediff_hijacker = Hijacker()

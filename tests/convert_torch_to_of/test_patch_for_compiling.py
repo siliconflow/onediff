@@ -4,9 +4,11 @@ Install:
 Uasge:
     python -m pytest diffusers/tests/torch_to_oflow/test_temp_fix_compile_impl.py
 """
-import pytest
 import numpy as np
-from onediff.infer_compiler.backends.oneflow.import_tools.patch_for_compiler import FakeCuda
+import pytest
+from onediff.infer_compiler.backends.oneflow.import_tools.patch_for_compiler import (
+    FakeCuda,
+)
 
 
 @pytest.mark.parametrize("batch_size", [8])
@@ -43,7 +45,7 @@ def test_flash_attention(
         return result.cpu().detach().numpy()
 
     def oneflow_flash_attention() -> np.ndarray:
-        import oneflow as flow
+        import oneflow as flow  # usort: skip
 
         q = flow.tensor(query, dtype=flow.float16).to("cuda")
         k = flow.tensor(key, dtype=flow.float16).to("cuda")

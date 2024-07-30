@@ -1,6 +1,9 @@
 import torch
-import oneflow as flow
+import oneflow as flow  # usort: skip
+import functools
+
 from oneflow.framework.args_tree import ArgsTree
+
 from onediff.utils import logger
 
 from .utils.hash_utils import generate_input_structure_key
@@ -34,6 +37,7 @@ def input_output_processor(func):
         out = out_tree.map_leaf(output_fn)
         return out[0]
 
+    @functools.wraps(func)
     def wrapper(self: "OneflowDeployableModule", *args, **kwargs):
         mapped_args, mapped_kwargs, input_structure_key = process_input(*args, **kwargs)
         if (

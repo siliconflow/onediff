@@ -1,11 +1,12 @@
 import hashlib
 import os
 import subprocess
+
 import yaml
 
-from git import Repo
-
 from _logger import logger
+
+from git import Repo
 
 
 def load_yaml(*, file):

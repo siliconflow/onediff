@@ -1,5 +1,5 @@
 # ComfyUI/comfy/hijack_model_management.py
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from comfy.model_management import soft_empty_cache
 
 from ..sd_hijack_utils import Hijacker

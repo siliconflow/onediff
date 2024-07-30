@@ -1,5 +1,5 @@
 import onediff_quant
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from onediff.infer_compiler.backends.oneflow.transform import register
 
 torch2oflow_class_map = {
