@@ -21,22 +21,25 @@ Current test is based on an 8 steps distillation model.
 ### Run 1024x1024 Without Compile (Original PyTorch HF Diffusers Baseline)
 ```bash
 python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light.py \
---saved_image sdxl_light.png
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --saved_image sdxl_light.png
 ```
 
 ### Run 1024x1024 With Compile [OneFlow Backend]
 ```bash
 python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light.py \
---compiler oneflow \
---saved_image sdxl_light_oneflow_compile.png
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler oneflow \
+   --saved_image sdxl_light_oneflow_compile.png
 ```
 
 ### Run 1024x1024 With Compile [NexFort Backend]
 ```bash
 python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light.py \
---compiler nexfort \
---compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false}}' \
---saved_image sdxl_light_nexfort_compile.png
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler nexfort \
+   --compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false}}' \
+   --saved_image sdxl_light_nexfort_compile.png
 ```
 
 
@@ -49,9 +52,9 @@ Quantization is a feature for onediff enterprise.
 
 Execute the following command to quantize the model, where `--quantized_model` is the path to the quantized model. For an introduction to the quantization parameters, refer to: https://github.com/siliconflow/onediff/blob/main/README_ENTERPRISE.md#diffusers-with-onediff-enterprise
 
-```
+```bash
 python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
-   --quantized_model ./sdxl_lightning_oneflow_quant \
+   --quantized_model /path/to/sdxl_lightning_oneflow_quant \
    --conv_ssim_threshold 0.1 \
    --linear_ssim_threshold 0.1 \
    --conv_compute_density_threshold 300 \
@@ -62,24 +65,26 @@ python3 onediff_diffusers_extensions/tools/quantization/quantize-sd-fast.py \
 
 Test the quantized model:
 
-```
+```bash
 python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light.py \
---compiler oneflow \
---use_quantization \
---base ./sdxl_lightning_oneflow_quant \
---saved_image sdxl_light_oneflow_quant.png
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler oneflow \
+   --use_quantization \
+   --base /path/to/sdxl_lightning_oneflow_quant \
+   --saved_image sdxl_light_oneflow_quant.png
 ```
 
 
 ### Run 1024x1024 With Quantization [NexFort Backend]
 
-```
+```bash
 python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light.py \
-  --compiler nexfort \
-  --compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false}}' \
-  --use_quantization \
-  --quantize-config '{"quant_type": "int8_dynamic"}' \
-  --saved_image sdxl_light_nexfort_quant.png
+   --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler nexfort \
+   --compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "options": {"triton.fuse_attention_allow_fp16_reduction": false}}' \
+   --use_quantization \
+   --quantize-config '{"quant_type": "int8_dynamic"}' \
+   --saved_image sdxl_light_nexfort_quant.png
 ```
 
 

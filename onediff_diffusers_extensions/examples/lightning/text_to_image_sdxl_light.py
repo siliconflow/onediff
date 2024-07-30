@@ -40,7 +40,7 @@ parser.add_argument("--seed", type=int, default=1)
 parser.add_argument(
     "--compiler",
     type=str,
-    default="none",
+    default="oneflow",
     help="Compiler backend to use. Options: 'none', 'nexfort', 'oneflow'",
 )
 parser.add_argument(
