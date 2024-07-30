@@ -49,8 +49,10 @@ class FunctionSelectorByCommitDate:
         for pair in iterable:
             commit_hash, func = pair
             other_commit_date = self._get_commit_date(commit_hash)
-            if cur_date > other_commit_date and (sel_date and other_commit_date > sel_date):
+            if cur_date > other_commit_date and (
+                sel_date and other_commit_date > sel_date
+            ):
                 sel_date = other_commit_date
                 sel_func = func
 
-        return sel_func 
+        return sel_func

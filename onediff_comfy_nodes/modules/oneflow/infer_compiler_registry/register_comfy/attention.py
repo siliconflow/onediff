@@ -392,7 +392,9 @@ class SpatialVideoTransformer(
         ):
             transformer_options["block_index"] = it_
             x = block(
-                x, context=spatial_context, transformer_options=transformer_options,
+                x,
+                context=spatial_context,
+                transformer_options=transformer_options,
             )
 
             x_mix = x
@@ -425,7 +427,6 @@ class SpatialVideoTransformer(
         return out
 
 
-
 def attention_pytorch_oneflow(q, k, v, heads, mask=None, attn_precision=None):
     b, _, dim_head = q.shape
     dim_head //= heads
@@ -442,4 +443,3 @@ def attention_pytorch_oneflow(q, k, v, heads, mask=None, attn_precision=None):
         causal=False,
     )
     return out
-

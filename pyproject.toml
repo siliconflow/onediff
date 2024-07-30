@@ -1,6 +1,0 @@
-# pyproject.toml
-
-# pip install black==19.10b0
-# black --config pyproject.toml file
-[tool.black]
-line-length = 88

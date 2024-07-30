@@ -1,16 +1,29 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
-from packaging import version
 import importlib.metadata
+from typing import Any, Dict, List, Optional, Tuple, Union
+
 import oneflow as torch
 from onediff.infer_compiler.backends.oneflow.transform import transform_mgr
+from packaging import version
 
 diffusers_0210_v = version.parse("0.21.0")
+diffusers_0260_v = version.parse("0.26.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 transformed_diffusers = transform_mgr.transform_package("diffusers")
-UNet2DConditionOutput = (
-    transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
-)
+if diffusers_version < diffusers_0260_v:
+    UNet2DConditionOutput = (
+        transformed_diffusers.models.unet_2d_condition.UNet2DConditionOutput
+    )
+    proxy_UNet2DConditionModel = (
+        transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
+    )
+else:
+    UNet2DConditionOutput = (
+        transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionOutput
+    )
+    proxy_UNet2DConditionModel = (
+        transformed_diffusers.models.unets.unet_2d_condition.UNet2DConditionModel
+    )
 
 try:
     USE_PEFT_BACKEND = transformed_diffusers.utils.USE_PEFT_BACKEND
@@ -20,9 +33,7 @@ except Exception as e:
     USE_PEFT_BACKEND = False
 
 
-class UNet2DConditionModel(
-    transformed_diffusers.models.unet_2d_condition.UNet2DConditionModel
-):
+class UNet2DConditionModel(proxy_UNet2DConditionModel):
     def forward(
         self,
         sample: torch.FloatTensor,
@@ -97,7 +108,7 @@ class UNet2DConditionModel(
         # The overall upsampling factor is equal to 2 ** (# num of upsampling layers).
         # However, the upsampling interpolation output size can be forced to fit any upsampling size
         # on the fly if necessary.
-        default_overall_up_factor = 2 ** self.num_upsamplers
+        default_overall_up_factor = 2**self.num_upsamplers
 
         # upsample size should be forwarded when sample is not a multiple of `default_overall_up_factor`
         # forward_upsample_size = False

@@ -1,7 +1,8 @@
+import argparse
+
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 import yaml
-import argparse
 
 
 def parse_args():

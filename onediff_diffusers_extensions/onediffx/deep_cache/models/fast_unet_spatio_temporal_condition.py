@@ -1,6 +1,7 @@
+from typing import Optional, Tuple, Union
+
 import torch
 import torch.nn as nn
-from typing import Union, Optional, Tuple
 from diffusers.utils import BaseOutput, logging
 from oneflow.nn.graph.proxy import ProxyModule
 

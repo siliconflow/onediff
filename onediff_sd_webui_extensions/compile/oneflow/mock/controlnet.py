@@ -1,4 +1,4 @@
-import oneflow as flow
+import oneflow as flow  # usort: skip
 from compile.oneflow.mock.common import timestep_embedding
 from ldm.modules.diffusionmodules.openaimodel import UNetModel
 from modules import devices
@@ -29,6 +29,7 @@ def aligned_adding(base, x, require_channel_alignment):
         # logger.info('[Warning] ControlNet finds unexpected mis-alignment in tensor shape.')
         x = flow.nn.functional.interpolate(x, size=(base_h, base_w), mode="nearest")
     return base + x
+
 
 def cat(tensors, *args, **kwargs):
     if len(tensors) == 2:

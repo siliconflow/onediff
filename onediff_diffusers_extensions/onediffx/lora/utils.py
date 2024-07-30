@@ -1,10 +1,11 @@
 import os
-from typing import Dict, Union, List
-from packaging import version
 from collections import OrderedDict
+from typing import Dict, List, Union
+
+import diffusers
 
 import torch
-import diffusers
+from packaging import version
 
 if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
     from diffusers.utils.import_utils import is_peft_available
@@ -14,7 +15,9 @@ if version.parse(diffusers.__version__) >= version.parse("0.22.0"):
 else:
     is_peft_available = lambda: False
 
-from onediff.infer_compiler.backends.oneflow.param_utils import update_graph_related_tensor
+from onediff.infer_compiler.backends.oneflow.param_utils import (
+    update_graph_related_tensor,
+)
 
 if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
@@ -80,7 +83,9 @@ def get_delta_weight(
     weight: float,
 ):
     if weight == 0:
-        return torch.zeros_like(self.weight, dtype=self.weight.dtype, device=self.weight.device)
+        return torch.zeros_like(
+            self.weight, dtype=self.weight.dtype, device=self.weight.device
+        )
 
     if isinstance(self, (torch.nn.Linear, PatchedLoraProjection)):
         lora_weight = torch.bmm(w_up[None, :], w_down[None, :])[0]
@@ -116,7 +121,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
     if adapter_weights is None:
         adapter_weights = 1.0
     if isinstance(adapter_weights, float):
-        adapter_weights = [adapter_weights,] * len(adapter_names)
+        adapter_weights = [
+            adapter_weights,
+        ] * len(adapter_names)
     _unfuse_lora(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device
@@ -131,13 +138,9 @@ def _set_adapter(self, adapter_names, adapter_weights):
         w_down = self.lora_A[adapter].float().to(device)
         w_up = self.lora_B[adapter].float().to(device)
         if delta_weight is None:
-            delta_weight = get_delta_weight(
-                self, w_up, w_down, self.scaling[adapter]
-            )
+            delta_weight = get_delta_weight(self, w_up, w_down, self.scaling[adapter])
         else:
-            delta_weight += get_delta_weight(
-                self, w_up, w_down, self.scaling[adapter]
-            )
+            delta_weight += get_delta_weight(self, w_up, w_down, self.scaling[adapter])
 
     if delta_weight is not None:
         fused_weight = self.weight.data.float() + delta_weight

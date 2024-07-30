@@ -1,6 +1,6 @@
 from onediff.infer_compiler.backends.oneflow.transform import register
 
-import oneflow as flow
+import oneflow as flow  # usort: skip
 import diffusers_enterprise_lite
 
 torch2oflow_class_map = {
