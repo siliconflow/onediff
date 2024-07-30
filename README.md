@@ -2,22 +2,26 @@
 <img src="imgs/onediff_logo.png" height="100">
 </p>
 
----
-<p>
-  <a href="https://pypistats.org/packages/onediff" target="_blank"><img src="https://img.shields.io/pypi/dw/onediff?style=square&label=Pip install"></a>
-  <a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Stars&color=green"></a>
+<p align="center">
+  <a href="https://pypi.org/project/onediff" target="_blank"><img src="https://img.shields.io/pypi/v/onediff"></a>
+  <a href="https://pypistats.org/packages/onediff" target="_blank"><img src="https://img.shields.io/pypi/dm/onediff?style=square&label=Pip install"></a>
   <a href="https://github.com/siliconflow/onediff?tab=Apache-2.0-1-ov-file#readme" target="_blank"><img src="https://img.shields.io/github/license/siliconflow/onediff"></a>
-  <a href="https://github.com/siliconflow/onediff/wiki" target="_blank"><img src="https://img.shields.io/badge/OneDiff-Community wiki-green"></a>
-  <a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-green?logo=twitter&amp"></a>
-  <a href="https://discord.gg/RKJTjZMcPQ" target="_blank"><img src="https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aissue+is%3Aclosed" target="_blank"><img src="https://img.shields.io/github/issues-closed/siliconflow/onediff?color=blue"></a>
+  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aopen+is%3Aissue" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff"></a>
 </p>
 
-<p>
-  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aopen+is%3Aissue" target="_blank"><img src="https://img.shields.io/github/issues/siliconflow/onediff"></a>
-  <a href="https://github.com/siliconflow/onediff/issues?q=is%3Aissue+is%3Aclosed" target="_blank"><img src="https://img.shields.io/github/issues-closed/siliconflow/onediff?color=blue"></a>
+<p align="center">
+  <a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Stars&color=green"></a>
+  <a href="https://discord.gg/RKJTjZMcPQ" target="_blank"><img src="https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square"></a>
+  <a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-green?logo=twitter&amp"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/sd.yml" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule"></a>
 </p>
+<p align="center">
+  | <a href="https://github.com/siliconflow/onediff?tab=readme-ov-file#documentation"><b>Documentation</b></a> | <a href="https://github.com/siliconflow/onediff/wiki"><b>Community</b></a> | <a href="https://github.com/siliconflow/onediff/wiki/Contribution-Guide"><b>Contribution</b></a> |
+</p>
+
+---
 
 **onediff** is an out-of-the-box acceleration library for diffusion models, it provides:
 - Out-of-the-box **acceleration** for popular UIs/libs(such as **HF diffusers** and **ComfyUI**)
