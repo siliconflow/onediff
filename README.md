@@ -254,3 +254,15 @@ If you need Enterprise-level Support for your system or business, you can email 
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
 | More Extreme and Dedicated optimization(usually another 20~100% performance gain) for the most used model | Yes                                     |                                         |
 | Technical Support for deployment                                                                          | High priority support                   | Community                               |
+
+## Citation
+```bibtex
+@software{Cai_OneDiff_An_out-of-the-box_2024,
+author = {Cai, Shenghang},
+month = jun,
+title = {{OneDiff: An out-of-the-box acceleration library for diffusion models}},
+url = {https://github.com/siliconflow/onediff},
+version = {1.1.0},
+year = {2024}
+}
+```

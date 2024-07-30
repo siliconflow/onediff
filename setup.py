@@ -44,7 +44,7 @@ setup(
         ],
     },
     use_scm_version={
-        "write_to": "src/onediff/_version.py",
+        "version_file": "src/onediff/_version.py",
         "fallback_version": "0.0.0",
         "version_scheme": "guess-next-dev",
         "local_scheme": local_scheme,
