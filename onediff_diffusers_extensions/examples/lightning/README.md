@@ -1,5 +1,19 @@
 # Run SDXL-Lightning with OneDiff
 
+1. [Environment Setup](#environment-setup)
+   - [Set Up OneDiff](#set-up-onediff)
+   - [Set Up Compiler Backend](#set-up-compiler-backend)
+   - [Set Up SDXL-Lightning](#set-up-sdxl-lightning)
+2. [Compile](#compile)
+   - [Without Compile (Original PyTorch HF Diffusers Baseline)](#without-compile)
+   - [With OneFlow Backend](#with-oneflow-backend)
+   - [With NexFort Backend](#with-nexfort-backend)
+3. [Quantization (Int8)](#quantization)
+   - [With Quantization - OneFlow Backend](#with-quantization---oneflow-backend)
+   - [With Quantization - NexFort Backend](#with-quantization---nexfort-backend)
+4. [Performance Comparison](#performance-comparison)
+5. [Quality](#quality)
+
 ## Environment Setup
 
 ### Set Up OneDiff
@@ -99,3 +113,6 @@ python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light
 | OneFlow Quantization      | 43.45 (+195.95%)                | 0.424 (-49.52%)                 |
 | NexFort Compile           | 28.07 (+91.18%)                 | 0.526 (-37.38%)                 |
 | NexFort Quantization      | 30.85 (+110.15%)                | 0.476 (-43.33%)                 |
+
+## Quality
+https://github.com/siliconflow/odeval/tree/main/models/lightning
