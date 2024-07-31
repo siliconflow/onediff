@@ -106,6 +106,7 @@ python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light
 
 **Testing on an NVIDIA RTX 4090 GPU, using a resolution of 1024x1024 and 8 steps:**
 
+Data update date: 2024-07-29
 | Configuration             | Iteration Speed (it/s)          | E2E Time (seconds)              |
 |---------------------------|---------------------------------|---------------------------------|
 | PyTorch                   | 14.68                           | 0.840                           |
