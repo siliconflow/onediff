@@ -2,9 +2,10 @@ import argparse
 import json
 import time
 
+import torch
+
 from diffusers import AutoPipelineForText2Image as pipeline_cls
 from onediffx import compile_pipe, quantize_pipe
-import torch
 
 
 def parse_args():
@@ -20,14 +21,14 @@ def parse_args():
     parser.add_argument(
         "--lora-model-id",
         type=str,
-        default="ostris/watercolor_style_lora_sdxl",
-        help="LoRA model identifier for fine-tuning weights."
+        default="minimaxir/sdxl-wrong-lora",
+        help="LoRA model identifier for fine-tuning weights.",
     )
     parser.add_argument(
         "--lora-filename",
         type=str,
-        default="watercolor_v1_sdxl.safetensors",
-        help="Filename for LoRA weights."
+        default="pytorch_lora_weights.bin",
+        help="Filename for LoRA weights.",
     )
     parser.add_argument(
         "--compiler-config", type=str, help="JSON string for compiler config."
@@ -38,7 +39,7 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default="A girl smiling",
+        default="anime style, 1 girl, indoors, sitting on the sofa, living room, pink hair, white sock, blue eyes, from back, from above, face towards viewer, playing video games, holding controller, black silk, parted lips.",
         help="Prompt for the image generation.",
     )
     parser.add_argument(
@@ -63,7 +64,7 @@ def parse_args():
         help="Path to save the generated image.",
     )
     parser.add_argument(
-        "--seed", type=int, default=3, help="Seed for random number generation."
+        "--seed", type=int, default=888, help="Seed for random number generation."
     )
     parser.add_argument(
         "--warmup-iterations",
@@ -73,12 +74,6 @@ def parse_args():
     )
     parser.add_argument(
         "--use_lora", action="store_true", help="Use LoRA weights for the generation"
-    )
-    parser.add_argument(
-        "--cross-attention-kwargs",
-        type=str,
-        default='{"scale": 0.5}',
-        help="JSON string for cross-attention configuration.",
     )
     return parser.parse_args()
 
@@ -94,8 +89,10 @@ class SDGenerator:
 
         if args.use_lora:
             print("Use LoRA...")
-            self.pipe.load_lora_weights(args.lora_model_id, weight_name=args.lora_filename)
-            # self.pipe.fuse_lora()
+            self.pipe.load_lora_weights(
+                args.lora_model_id, weight_name=args.lora_filename
+            )
+            self.pipe.fuse_lora()
 
         self.pipe.to(device)
 
@@ -147,17 +144,16 @@ class SDGenerator:
 def main():
     compiler_config = json.loads(args.compiler_config) if args.compiler_config else None
     quantize_config = json.loads(args.quantize_config) if args.quantize_config else None
-    cross_attention_kwargs = json.loads(args.cross_attention_kwargs)
 
     sd = SDGenerator(args.model, compiler_config, quantize_config)
 
     gen_args = {
         "prompt": args.prompt,
+        "negative_prompt": "wrong",
         "num_inference_steps": args.num_inference_steps,
         "height": args.height,
         "width": args.width,
         "guidance_scale": args.guidance_scale,
-        "cross_attention_kwargs": cross_attention_kwargs,
     }
 
     sd.warmup(gen_args, args.warmup_iterations)
