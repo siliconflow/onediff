@@ -35,7 +35,7 @@
 - [2023/12/19] :rocket: [Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
 
 ## Hiring
-We're hiring! If you are interested in working on onediff at SiliconFlow, we have roles open for [Interns](https://www.shixiseng.com/intern/inn_51hfodrx7f43) and [Engineers](https://www.zhipin.com/mpa/html/weijd/weijd-job/e03542c584120a261HN70ty7F1pW) in Beijing (near Tsinghua University). 
+We're hiring! If you are interested in working on onediff at SiliconFlow, we have roles open for [Interns](https://www.shixiseng.com/intern/inn_51hfodrx7f43) and [Engineers](https://www.zhipin.com/mpa/html/weijd/weijd-job/e03542c584120a261HN70ty7F1pW) in Beijing (near Tsinghua University).
 
 If you have contributed significantly to open-source software and are interested in remote work, you can contact us at `talent@siliconflow.cn` with `onediff` in the email title.
 
@@ -266,12 +266,12 @@ If you need Enterprise-level Support for your system or business, you can email 
 
 ## Citation
 ```bibtex
-@software{Cai_OneDiff_An_out-of-the-box_2024,
-author = {Cai, Shenghang},
-month = jun,
-title = {{OneDiff: An out-of-the-box acceleration library for diffusion models}},
-url = {https://github.com/siliconflow/onediff},
-version = {1.1.0},
-year = {2024}
+@misc{2022onediff,
+  author={OneDiff Contributors},
+  title = {OneDiff: An out-of-the-box acceleration library for diffusion models},
+  year = {2022},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/siliconflow/onediff}}
 }
 ```
