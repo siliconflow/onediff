@@ -447,3 +447,18 @@ When using nexfort as the backend for onediff compilation acceleration, the gene
 <p align="center">
 <img src="../../../imgs/nexfort_sd2_demo.png">
 </p>
+
+## Note
+If you encounter an error like below, please set the `"inductor.optimize_linear_epilogue": true` to `"inductor.optimize_linear_epilogue": false` in --compiler-config.
+
+```
+torch._dynamo.exc.BackendCompilerFailed: backend='nexfort' raised:                                                  ErrorFromChoice: CUDA error: CUBLAS_STATUS_NOT_SUPPORTED when calling `cublasLtMatmul( ltHandle, computeDesc.descriptor(), &alpha_val, mat1_ptr, Adesc.descriptor(), mat2_ptr, Bdesc.descriptor(), &beta_val, mat3_ptr, Ddesc.descriptor(), result_ptr, Cdesc.descriptor(), &heuristicResult.algo, workspace.data_ptr(), workspaceSize, at::cuda::getCurrentCUDAStream())`
+From choice ExternKernelCaller(extern_kernels.nexfort_cuda_linear_epilogue)
+inputs = [
+    torch.empty_strided((2, 10, 4096, 64), (2621440, 64, 640, 1), dtype=torch.float16, device='cuda'),
+    torch.empty_strided((640, 640), (640, 1), dtype=torch.float16, device='cuda'),
+    torch.empty_strided((640,), (1,), dtype=torch.float16, device='cuda'),
+    torch.empty_strided((2, 4096, 640), (2621440, 640, 1), dtype=torch.float16, device='cuda'),
+]
+out = torch.empty_strided((2, 4096, 640), (2621440, 640, 1), dtype=torch.float16, device='cuda')                    
+```
