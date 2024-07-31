@@ -33,8 +33,6 @@ import time
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
-import diffusers
-import onediff
 from diffusers.utils import load_image
 from onediff.infer_compiler import oneflow_compile
 
