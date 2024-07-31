@@ -7,6 +7,7 @@ import torch
 from diffusers import StableDiffusionXLPipeline
 from huggingface_hub import hf_hub_download
 from onediffx import compile_pipe, load_pipe, quantize_pipe, save_pipe
+from onediffx.utils.performance_monitor import track_inference_time
 from safetensors.torch import load_file
 
 try:
@@ -166,33 +167,29 @@ elif args.compiler == "nexfort":
         pipe = quantize_pipe(pipe, ignores=[], **nexfort_quantize_config)
 
 
-print("Warmup with running graphs...")
-torch.manual_seed(args.seed)
-image = pipe(
-    prompt=args.prompt,
-    height=args.height,
-    width=args.width,
-    num_inference_steps=n_steps,
-    guidance_scale=0,
-    output_type=OUTPUT_TYPE,
-).images
+with track_inference_time(warmup=True):
+    image = pipe(
+        prompt=args.prompt,
+        height=args.height,
+        width=args.width,
+        num_inference_steps=n_steps,
+        guidance_scale=0,
+        output_type=OUTPUT_TYPE,
+    ).images
 
 
 # Normal run
-print("Normal run...")
 torch.manual_seed(args.seed)
-start_t = time.time()
-image = pipe(
-    prompt=args.prompt,
-    height=args.height,
-    width=args.width,
-    num_inference_steps=n_steps,
-    guidance_scale=0,
-    output_type=OUTPUT_TYPE,
-).images
+with track_inference_time(warmup=False):
+    image = pipe(
+        prompt=args.prompt,
+        height=args.height,
+        width=args.width,
+        num_inference_steps=n_steps,
+        guidance_scale=0,
+        output_type=OUTPUT_TYPE,
+    ).images
 
-end_t = time.time()
-print(f"e2e ({n_steps} steps) elapsed: {end_t - start_t} s")
 
 image[0].save(args.saved_image)
 
