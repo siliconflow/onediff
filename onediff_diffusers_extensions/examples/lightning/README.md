@@ -36,6 +36,7 @@ Current test is based on an 8 steps distillation model.
 ```bash
 python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light.py \
    --prompt "product photography, world of warcraft orc warrior, white background" \
+   --compiler none \
    --saved_image sdxl_light.png
 ```
 
@@ -107,13 +108,15 @@ python3 onediff_diffusers_extensions/examples/lightning/text_to_image_sdxl_light
 **Testing on an NVIDIA RTX 4090 GPU, using a resolution of 1024x1024 and 8 steps:**
 
 Data update date: 2024-07-29
-| Configuration             | Iteration Speed (it/s)          | E2E Time (seconds)              |
-|---------------------------|---------------------------------|---------------------------------|
-| PyTorch                   | 14.68                           | 0.840                           |
-| OneFlow Compile           | 29.06 (+97.83%)                 | 0.530 (-36.90%)                 |
-| OneFlow Quantization      | 43.45 (+195.95%)                | 0.424 (-49.52%)                 |
-| NexFort Compile           | 28.07 (+91.18%)                 | 0.526 (-37.38%)                 |
-| NexFort Quantization      | 30.85 (+110.15%)                | 0.476 (-43.33%)                 |
+| Configuration             | Iteration Speed (it/s) | E2E Time (seconds) | Warmup time (seconds) <sup>1</sup> | Warmup with Cache time (seconds) |
+|---------------------------|------------------------|--------------------|-----------------------|----------------------------------|
+| PyTorch                   | 14.68                  | 0.840              | 1.31                  | -                                |
+| OneFlow Compile           | 29.06 (+97.83%)        | 0.530 (-36.90%)    | 52.26                 | 0.64                             |
+| OneFlow Quantization      | 43.45 (+195.95%)       | 0.424 (-49.52%)    | 59.87                 | 0.51                             |
+| NexFort Compile           | 28.07 (+91.18%)        | 0.526 (-37.38%)    | 539.67                | 68.79                            |
+| NexFort Quantization      | 30.85 (+110.15%)       | 0.476 (-43.33%)    | 610.25                | 93.28                            |
+
+ <sup>1</sup> OneDiff Warmup with Compilation time is tested on AMD EPYC 7543 32-Core Processor.
 
 ## Quality
 https://github.com/siliconflow/odeval/tree/main/models/lightning
