@@ -65,7 +65,7 @@ python3 benchmarks/text_to_image.py \
 
 ## Performance comparison
 
-Testing on NVIDIA GeForce RTX 3090 / 4090 / A100, with image size of 1024*1024, iterating 20 steps:
+Testing on NVIDIA GeForce RTX3090, RTX4090, A800-SXM4-80GB, with image size of 1024*1024, iterating 20 steps:
 | Metric                               | RTX 3090  1024*1024   | RTX 4090 1024*1024    | A800-SXM4-80GB, 1024*1024 |
 | ------------------------------------ | --------------------- | --------------------- | ------------------------- |
 | Data update date (yyyy-mm-dd)        | 2024-07-31            | 2024-07-31            | 2024-07-31                |

@@ -63,18 +63,18 @@ python3 benchmarks/text_to_image.py \
 
 ## Performance comparison
 
-Testing on NVIDIA GeForce RTX 3090 / 4090 / A100, with image size of 512*512, iterating 20 steps:
+Testing on NVIDIA GeForce RTX3090, RTX4090, A800-SXM4-80GB, with image size of 512*512, iterating 20 steps:
 | Metric                               | RTX3090, 512*512      | RTX4090, 512*512      | A800-SXM4-80GB, 512*512 |
 | ------------------------------------ | --------------------- | --------------------- | ----------------------- |
 | Data update date (yyyy-mm-dd)        | 2024-07-31            | 2024-07-31            | 2024-07-31              |
 | PyTorch iteration speed              | 21.25 it/s            | 38.32 it/s            | 36.11 it/s              |
-| OneDiff iteration speed              | 46.34 it/s            | 91.00 it/s            | 76.02 it/s              |
+| OneDiff iteration speed              | 46.34 it/s (+118.1%)  | 91.00 it/s (+137.5%)  | 76.02 it/s (+110.5%)    |
 | PyTorch E2E time                     | 1.07 s                | 0.61 s                | 0.64 s                  |
-| OneDiff E2E time                     | 0.50 s                | 0.25 s                | 0.30 s                  |
+| OneDiff E2E time                     | 0.50 s (-53.3%)       | 0.25 s (-59.0%)       | 0.30 s (-53.1%)         |
 | PyTorch Max Mem Used                 | 2.62 GiB              | 2.62 GiB              | 2.62 GiB                |
 | OneDiff Max Mem Used                 | 2.71 GiB              | 2.73 GiB              | 2.59 GiB                |
 | PyTorch Warmup with Run time         | 2.09 s                | 1.06 s                | 1.53 s                  |
-| OneDiff Warmup with Compilation time | 264.01 s              | 216.00 s              | 220.94 s                |
+| OneDiff Warmup with Compilation time | 264.01 s <sup>1</sup> | 216.00 s <sup>2</sup> | 220.94 s <sup>3</sup>   |
 | OneDiff Warmup with Cache time       | 40.50 s               | 27.25 s               | 29.58 s                 |
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Silver 4314 CPU @ 2.40GHz. Note this is just for reference, and it varies a lot on different CPU.
