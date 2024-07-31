@@ -34,6 +34,11 @@
 - [2024/01/12] :rocket: [Accelerating Stable Video Diffusion 3x faster with OneDiff DeepCache + Int8](https://www.reddit.com/r/StableDiffusion/comments/1adu2hn/accelerating_stable_video_diffusion_3x_faster/)
 - [2023/12/19] :rocket: [Accelerating SDXL 3x faster with DeepCache and OneDiff](https://www.reddit.com/r/StableDiffusion/comments/18lz2ir/accelerating_sdxl_3x_faster_with_deepcache_and/)
 
+## Hiring
+We're hiring! If you are interested in working on onediff at SiliconFlow, we have roles open for [Interns](https://www.shixiseng.com/intern/inn_51hfodrx7f43) and [Engineers](https://www.zhipin.com/mpa/html/weijd/weijd-job/e03542c584120a261HN70ty7F1pW) in Beijing (near Tsinghua University). 
+
+If you have contributed significantly to open-source software and are interested in remote work, you can contact us at `talent@siliconflow.cn` with `onediff` in the email title.
+
 ---
 <!-- toc -->
 - [Documentation](#documentation)
