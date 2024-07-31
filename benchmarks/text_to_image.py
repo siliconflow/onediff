@@ -378,15 +378,6 @@ def main():
     end = time.time()
 
     print("=======================================")
-    print(f"diffusers version: {diffusers.__version__}")
-    print(f"torch version: {torch.__version__}")
-    print(f"onediff version: {onediff.__version__}")
-    if args.compiler == "oneflow":
-        import oneflow
-        print(f"oneflow version: {oneflow.__version__}")
-    elif args.compiler == "nexfort":
-        import nexfort
-        print(f"nexfort version: {nexfort.__version__}")
     print(f"Inference time: {end - begin:.3f}s")
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
