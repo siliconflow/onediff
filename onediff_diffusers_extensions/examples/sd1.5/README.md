@@ -411,6 +411,8 @@ Versions of relevant libraries:
 
 ## Dynamic shape for SD1.5
 
+Add `"dynamic": true` in --compiler-config.
+
 Run:
 
 ```shell

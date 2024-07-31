@@ -426,6 +426,8 @@ Versions of relevant libraries:
 
 ## Dynamic shape for SD2
 
+Add `"dynamic": true` in --compiler-config.
+
 Run:
 
 ```shell
