@@ -116,7 +116,7 @@ We also maintain a repository for benchmarking the quality of generation after a
 
 You can visit the official [PyTorch website](https://pytorch.org/get-started/locally/) to select the appropriate torch version compatible with your CUDA installation. The website provides specific installation instructions tailored to your system configuration.
 ```
-python3 -m pip install "transformers==4.40.1" "diffusers==0.29.2"
+python3 -m pip install "transformers==4.40.1" "diffusers==0.27.2"
 ```
 
 #### 2. Install a compiler backend
