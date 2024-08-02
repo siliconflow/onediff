@@ -1,5 +1,5 @@
 """
-example: python examples/text_to_image.py --height 512 --width 512 --warmup 10 
+example: python examples/text_to_image.py --height 512 --width 512 --warmup 10
 
 Can be used with torch==2.4.0 diffusers==0.29.2
 """
@@ -8,16 +8,17 @@ import argparse
 import torch
 import oneflow as flow  # usort: skip
 
+import functools
+
+import torch._dynamo
 from diffusers import StableDiffusionPipeline
+
+from nexfort.frontends.diffusers.diffusion_pipeline_compiler import compile_pipe
 from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 
-from nexfort.frontends.diffusers.diffusion_pipeline_compiler import compile_pipe
-import functools
-import torch._dynamo
-
 torch._dynamo.config.suppress_errors = True
-TORCHDYNAMO_VERBOSE=1 
+TORCHDYNAMO_VERBOSE = 1
 
 compiler_ignores = []
 COMPILER_CONFIG = '{"mode": "max-autotune:benchmark:low-precision"}'
@@ -26,10 +27,13 @@ COMPILER_CONFIG = '{"mode": "max-autotune:benchmark:low-precision"}'
 MEMORY_FORMAT = "channels_last"
 import json
 
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Simple demo of image generation.")
     parser.add_argument(
-        "--prompt", type=str, default="a photo of an astronaut riding a horse on mars with long hair"
+        "--prompt",
+        type=str,
+        default="a photo of an astronaut riding a horse on mars with long hair",
     )
     parser.add_argument(
         "--model_id",
@@ -64,7 +68,9 @@ pipe = StableDiffusionPipeline.from_pretrained(
 pipe = pipe.to("cuda")
 pipe.enable_freeu(s1=0.9, s2=0.2, b1=1.1, b2=1.2)
 memory_format = getattr(torch, args.memory_format)
-compiler_config = json.loads(args.compiler_config) if args.compiler_config is not None else {}
+compiler_config = (
+    json.loads(args.compiler_config) if args.compiler_config is not None else {}
+)
 
 if args.compiler in ("none", "nexfort"):
     if args.compiler == "none":
