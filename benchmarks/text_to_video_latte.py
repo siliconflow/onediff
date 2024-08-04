@@ -352,6 +352,7 @@ def main():
             else:
                 print("Please set `--output-video` to save the output video")
     if prof_run:
+        print(prof_run.key_averages().table(sort_by="cuda_time_total", row_limit=100))
         prof_run.export_chrome_trace("latte_prof_run.json")
 
 
