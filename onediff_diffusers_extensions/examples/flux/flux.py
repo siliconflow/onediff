@@ -1,22 +1,80 @@
-import torch
-
-# only works at https://github.com/huggingface/diffusers/commit/ebf3ab1477dd480df1b8dd5d97a7b4aa3822716b
-# ebf3ab1477dd480df1b8dd5d97a7b4aa3822716b
-from diffusers import FluxPipeline
-
 # Reference: https://github.com/huggingface/diffusers/pull/9043
-pipe = FluxPipeline.from_pretrained(
-    "black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16, revision="refs/pr/1"
-)
-# pipe.enable_model_cpu_offload()
+# pipe = FluxPipeline.from_pretrained(
+#     "black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16, revision="refs/pr/1"
+# )
 
-prompt = "A cat holding a sign that says hello world"
-out = pipe(
-    prompt=prompt,
-    guidance_scale=0.0,
-    height=768,
-    width=1360,
-    num_inference_steps=4,
-    max_sequence_length=256,
+import argparse
+import time
+import numpy as np
+import torch
+# Depends on the main branch of diffusers
+from diffusers import FluxPipeline
+from PIL import Image
+parser = argparse.ArgumentParser()
+# on A800-02, export HF_HOME=/data0/hf_models
+parser.add_argument("--base", type=str, default="black-forest-labs/FLUX.1-schnell")
+parser.add_argument(
+    "--prompt",
+    type=str,
+    default="chinese painting style women",
+)
+parser.add_argument("--height", type=int, default=512)
+parser.add_argument("--width", type=int, default=512)
+parser.add_argument("--n_steps", type=int, default=4)
+parser.add_argument(
+    "--saved_image", type=str, required=False, default="flux-out.png"
+)
+parser.add_argument("--seed", type=int, default=1)
+parser.add_argument("--warmup", type=int, default=1)
+parser.add_argument("--run", type=int, default=3)
+parser.add_argument(
+    "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
+)
+args = parser.parse_args()
+# load stable diffusion
+pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16)
+# pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.float16)
+pipe.to("cuda")
+if args.compile:
+    from onediffx import compile_pipe
+    import os
+    os.environ['NEXFORT_FUSE_TIMESTEP_EMBEDDING'] = 0
+    os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = 1
+    options = {"mode": "O3"}
+    pipe = compile_pipe(pipe, backend="nexfort", options=options)
+# generate image
+generator = torch.manual_seed(args.seed)
+print("Warmup")
+for i in range(args.warmup):
+    image = pipe(
+        args.prompt,
+        height=args.height,
+        width=args.width,
+        output_type="pil",
+        num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
+        generator=torch.Generator("cpu").manual_seed(args.seed)
+    ).images[0]
+print("Run")
+for i in range(args.run):
+    begin = time.time()
+    image = pipe(
+        args.prompt,
+        height=args.height,
+        width=args.width,
+        output_type="pil",
+        num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
+        generator=torch.Generator("cpu").manual_seed(args.seed)
+    ).images[0]
+    end = time.time()
+    print(f"Inference time: {end - begin:.3f}s")
+    image.save(f"{i=}th_{args.saved_image}.png")
+
+print("New size")
+image = pipe(
+    args.prompt,
+    height=args.height // 2,
+    width=args.width // 2,
+    output_type="pil",
+    num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
+    generator=torch.Generator("cpu").manual_seed(args.seed)
 ).images[0]
-out.save("image.png")
