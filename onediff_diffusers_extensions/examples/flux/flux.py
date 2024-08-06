@@ -11,7 +11,8 @@ import torch
 from diffusers import FluxPipeline
 from PIL import Image
 parser = argparse.ArgumentParser()
-# on A800-02, export HF_HOME=/data0/hf_models
+# on A800-02
+# python flux.py --height 1024 --width 1024 --base /data0/hf_models/hub/models--black-forest-labs--FLUX.1-schnell/snapshots/93424e3a1530639fefdf08d2a7a954312e5cb254
 parser.add_argument("--base", type=str, default="black-forest-labs/FLUX.1-schnell")
 parser.add_argument(
     "--prompt",
@@ -38,8 +39,8 @@ pipe.to("cuda")
 if args.compile:
     from onediffx import compile_pipe
     import os
-    os.environ['NEXFORT_FUSE_TIMESTEP_EMBEDDING'] = 0
-    os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = 1
+    os.environ['NEXFORT_FUSE_TIMESTEP_EMBEDDING'] = '0'
+    os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = '1'
     options = {"mode": "O3"}
     pipe = compile_pipe(pipe, backend="nexfort", options=options)
 # generate image

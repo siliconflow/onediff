@@ -10,7 +10,7 @@
 from onediff.infer_compiler import compile
 
 # module is the model you want to compile
-options = '{"mode": "O3"}'  # mode can be O2 or O3
+options = {"mode": "O3"}  # mode can be O2 or O3
 compiled = compile(module, backend="nexfort", options=options)
 ```
 
