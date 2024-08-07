@@ -46,6 +46,7 @@ from PIL import Image, ImageDraw
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default=MODEL)
+    parser.add_argument("--dtype", type=str, default="fp16")
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     parser.add_argument("--scheduler", type=str, default=SCHEDULER)
@@ -92,6 +93,8 @@ def parse_args():
         default=QUANTIZE_CONFIG,
     )
     parser.add_argument("--quant-submodules-config-path", type=str, default=None)
+    parser.add_argument("--custom-revision", type=str, default=None)
+    parser.add_argument("--local-files-only", action="store_true")
     return parser.parse_args()
 
 
@@ -108,6 +111,8 @@ def load_pipe(
     scheduler=None,
     lora=None,
     controlnet=None,
+    custom_revision=None,
+    local_files_only=False,
 ):
     extra_kwargs = {}
     if custom_pipeline is not None:
@@ -115,6 +120,8 @@ def load_pipe(
     if variant is not None:
         extra_kwargs["variant"] = variant
     if dtype is not None:
+        dtype = getattr(torch, dtype)
+        assert isinstance(dtype, torch.dtype)
         extra_kwargs["torch_dtype"] = dtype
     if controlnet is not None:
         from diffusers import ControlNetModel
@@ -124,6 +131,11 @@ def load_pipe(
             torch_dtype=dtype,
         )
         extra_kwargs["controlnet"] = controlnet
+    if custom_revision is not None:
+        extra_kwargs["custom_revision"] = custom_revision
+    if local_files_only:
+        extra_kwargs["local_files_only"] = True
+
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
@@ -231,11 +243,14 @@ def main():
     pipe = load_pipe(
         pipeline_cls,
         args.model,
+        dtype=args.dtype,
         variant=args.variant,
         custom_pipeline=args.custom_pipeline,
         scheduler=args.scheduler,
         lora=args.lora,
         controlnet=args.controlnet,
+        custom_revision=args.custom_revision,
+        local_files_only=args.local_files_only,
     )
 
     core_net = None
