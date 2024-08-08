@@ -41,7 +41,7 @@ def parse_args():
         "--compiler",
         type=str,
         default="none",
-        help="Compiler backend to use. Options: 'none', 'nexfort'",
+        help="Compiler backend to use. Options: 'none', 'nexfort', 'torch'",
     )
     parser.add_argument(
         "--compiler-config", type=str, help="JSON string for compiler config."
@@ -104,6 +104,14 @@ class CogVideoGenerator:
                 print("nexfort backend quant...")
                 self.pipe = self.quantize_pipe(self.pipe, quantize_config)
 
+        elif compiler == "torch":
+            self.pipe.transformer = torch.compile(
+                self.pipe.transformer, mode="max-autotune", fullgraph=True
+            )
+            # self.pipe.vae.decode = torch.compile(
+            #     self.pipe.vae.decode, mode="max-autotune", fullgraph=True
+            # )
+
     def encode_prompt(self, prompt, num_videos_per_prompt):
         self.prompt_embeds, _ = self.pipe.encode_prompt(
             prompt=prompt,
@@ -145,7 +153,7 @@ class CogVideoGenerator:
     def compile_pipe(self, pipe, compiler_config):
         options = compiler_config
         pipe = compile_pipe(
-            pipe, backend="nexfort", options=options, fuse_qkv_projections=True
+            pipe, backend="nexfort", options=options, ignores=['vae'], fuse_qkv_projections=True
         )
         return pipe
 
@@ -169,13 +177,13 @@ def main():
         compiler=args.compiler,
     )
 
-    CogVideo.encode_prompt(args.prompt, args.num_videos_per_prompt)
+    # CogVideo.encode_prompt(args.prompt, args.num_videos_per_prompt)
 
     gen_args = {
-        "prompt_embeds": CogVideo.prompt_embeds,
+        "prompt": args.prompt,
         "num_inference_steps": args.num_inference_steps,
         "guidance_scale": args.guidance_scale,
-        "negative_prompt_embeds": torch.zeros_like(CogVideo.prompt_embeds),  # Not Supported negative prompt
+        # "negative_prompt_embeds": torch.zeros_like(CogVideo.prompt_embeds),  # Not Supported negative prompt
         "num_frames": 8,
     }
 
