@@ -23,7 +23,7 @@ def check_module_availability(module_name):
     return True
 
 
-_oneflow_available = check_module_availability("oneflow")
+_oneflow_available = None
 _onediff_quant_available = check_module_availability("onediff_quant")
 _nexfort_available = check_module_availability("nexfort")
 
@@ -33,6 +33,9 @@ if system != "Linux":
 
 
 def is_oneflow_available():
+    global _oneflow_available
+    if _oneflow_available is None:
+        _oneflow_available = check_module_availability("oneflow")
     return _oneflow_available
 
 
