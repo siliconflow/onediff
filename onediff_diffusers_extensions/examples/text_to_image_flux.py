@@ -18,32 +18,35 @@ parser.add_argument(
 parser.add_argument("--height", type=int, default=512)
 parser.add_argument("--width", type=int, default=512)
 parser.add_argument("--n_steps", type=int, default=4)
-parser.add_argument(
-    "--saved_image", type=str, required=False, default="flux-out.png"
-)
+parser.add_argument("--saved_image", type=str, required=False, default="flux-out.png")
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)
 parser.add_argument("--run", type=int, default=3)
 parser.add_argument(
     "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
 )
+parser.add_argument("--run-multiple-resolutions", action="store_true")
 args = parser.parse_args()
 
 
 # load stable diffusion
-import ipdb; ipdb.set_trace()
-# pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16, local_files_only=True, custom_revision="93424e3")
-pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16, custom_revision="93424e3a1530639fefdf08d2a7a954312e5cb254")
-# pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16)
-# pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.float16)
+pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16)
+# pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16, local_files_only=True, revision="93424e3a1530639fefdf08d2a7a954312e5cb254")
 pipe.to("cuda")
-
-# import ipdb; ipdb.set_trace()
 
 if args.compile:
     from onediffx import compile_pipe
 
-    pipe = compile_pipe(pipe, backend="nexfort")
+    pipe = compile_pipe(
+        pipe,
+        backend="nexfort",
+        options={
+            "options": {
+                "cuda.fuse_timestep_embedding": False,
+                "inductor.force_triton_sdpa": True,
+            }
+        },
+    )
 
 
 # generate image
@@ -56,8 +59,8 @@ for i in range(args.warmup):
         height=args.height,
         width=args.width,
         output_type="pil",
-        num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
-        generator=torch.Generator("cpu").manual_seed(args.seed)
+        num_inference_steps=args.n_steps,  # use a larger number if you are using [dev]
+        generator=torch.Generator("cpu").manual_seed(args.seed),
     ).images[0]
 
 
@@ -69,19 +72,30 @@ for i in range(args.run):
         height=args.height,
         width=args.width,
         output_type="pil",
-        num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
-        generator=torch.Generator("cpu").manual_seed(args.seed)
+        num_inference_steps=args.n_steps,  # use a larger number if you are using [dev]
+        generator=torch.Generator("cpu").manual_seed(args.seed),
     ).images[0]
     end = time.time()
     print(f"Inference time: {end - begin:.3f}s")
 
     image.save(f"{i=}th_{args.saved_image}.png")
 
-image = pipe(
-    args.prompt,
-    height=args.height // 2,
-    width=args.width // 2,
-    output_type="pil",
-    num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
-    generator=torch.Generator("cpu").manual_seed(args.seed)
-).images[0]
+
+if args.run_multiple_resolutions:
+    print("Test run with multiple resolutions...")
+    sizes = [1024, 512, 768, 256]
+    for h in sizes:
+        for w in sizes:
+            print(f"Running at resolution: {h}x{w}")
+            start_time = time.time()
+            image = pipe(
+                args.prompt,
+                height=h,
+                width=w,
+                output_type="pil",
+                num_inference_steps=args.n_steps,  # use a larger number if you are using [dev]
+                generator=torch.Generator("cpu").manual_seed(args.seed),
+            ).images[0]
+            end_time = time.time()
+            print(f"Inference time: {end_time - start_time:.2f} seconds")
+    image.save(f"{i=}th_{args.saved_image}_{h}x{w}.png")
