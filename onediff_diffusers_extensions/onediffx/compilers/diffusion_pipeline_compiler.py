@@ -37,7 +37,6 @@ _PARTS = [
     "vqgan.up_blocks",  # for StableCascadeDecoderPipeline
     "vae.decoder",
     "vae.encoder",
-    "transformer",
 ]
 
 
