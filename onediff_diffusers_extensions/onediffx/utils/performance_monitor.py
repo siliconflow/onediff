@@ -1,6 +1,8 @@
-import torch
 import time
 from contextlib import contextmanager
+
+import torch
+
 
 @contextmanager
 def track_inference_time(warmup=False, use_cuda=True):
@@ -16,7 +18,7 @@ def track_inference_time(warmup=False, use_cuda=True):
         start.record()
     else:
         start_time = time.time()
-    
+
     try:
         yield
     finally:
@@ -26,9 +28,8 @@ def track_inference_time(warmup=False, use_cuda=True):
             elapsed_time = start.elapsed_time(end) / 1000.0
         else:
             elapsed_time = time.time() - start_time
-        
+
         if warmup:
             print(f"Warmup run - Execution time: {elapsed_time:.2f} seconds")
         else:
             print(f"Normal run - Execution time: {elapsed_time:.2f} seconds")
-

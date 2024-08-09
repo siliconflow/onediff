@@ -112,4 +112,3 @@ python3 ./benchmarks/text_to_image.py \
 --compiler-config '{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last", "dynamic": true}' \
 --run_multiple_resolutions 1
 ```
-
