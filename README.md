@@ -12,13 +12,12 @@
 
 <p align="center">
   <a href="https://github.com/siliconflow/onediff/stargazers" target="_blank"><img src="https://img.shields.io/github/stars/siliconflow/onediff?style=square&label=Stars&color=green"></a>
-  <a href="https://discord.gg/RKJTjZMcPQ" target="_blank"><img src="https://dcbadge.vercel.app/api/server/RKJTjZMcPQ?style=square"></a>
   <a href="https://twitter.com/search?q=%22onediff%22&src=typed_query&f=live" target="_blank"><img src="https://img.shields.io/badge/Twitter-Discuss-green?logo=twitter&amp"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/sd.yml" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/sd.yml/badge.svg"></a>
   <a href="https://github.com/siliconflow/onediff/actions/workflows/examples.yml?query=event%3Aschedule" target="_blank"><img src="https://github.com/siliconflow/onediff/actions/workflows/examples.yml/badge.svg?event=schedule"></a>
 </p>
 <p align="center">
-  | <a href="https://github.com/siliconflow/onediff?tab=readme-ov-file#documentation"><b>Documentation</b></a> | <a href="https://github.com/siliconflow/onediff/wiki"><b>Community</b></a> | <a href="https://github.com/siliconflow/onediff/wiki/Contribution-Guide"><b>Contribution</b></a> |
+  | <a href="https://github.com/siliconflow/onediff?tab=readme-ov-file#documentation"><b>Documentation</b></a> | <a href="https://github.com/siliconflow/onediff/wiki"><b>Community</b></a> | <a href="https://github.com/siliconflow/onediff/wiki/Contribution-Guide"><b>Contribution</b></a> | <a href="https://discord.gg/RKJTjZMcPQ"><b>Discord</b></a> |
 </p>
 
 ---

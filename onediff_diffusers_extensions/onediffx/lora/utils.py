@@ -1,6 +1,5 @@
-import os
-from collections import OrderedDict
-from typing import Dict, List, Union
+import warnings
+from typing import Dict, List, Optional, Union
 
 import diffusers
 
@@ -23,12 +22,8 @@ if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
     from diffusers.loaders import PatchedLoraProjection
 else:
     from diffusers.models.lora import PatchedLoraProjection
-from onediff.infer_compiler.backends.oneflow.dual_module import DualModule
 
-if version.parse(diffusers.__version__) <= version.parse("0.20.0"):
-    from diffusers.loaders import PatchedLoraProjection
-else:
-    from diffusers.models.lora import PatchedLoraProjection
+from onediff.infer_compiler.backends.oneflow.dual_module import DualModule
 
 
 _adapter_layer_names = ()
@@ -44,7 +39,11 @@ def init_lora_infos(self: torch.nn.Module):
     self.active_adapter_names = {}
 
 
-def delete_lora_infos(self, adapter_names):
+def delete_lora_infos(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+    adapter_names: Optional[List[str]] = None,
+) -> None:
+
     if adapter_names is None:
         adapter_names = list(self.adapter_names.copy())
     curr_adapter_names = self.adapter_names.copy()
@@ -61,7 +60,9 @@ def delete_lora_infos(self, adapter_names):
             self.active_adapter_names.pop(adapter_name)
 
 
-def get_adapter_names(self):
+def get_adapter_names(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+):
     if not hasattr(self, "adapter_names"):
         result = "default_0"
     else:
@@ -81,7 +82,7 @@ def get_delta_weight(
     w_up: torch.Tensor,
     w_down: torch.Tensor,
     weight: float,
-):
+) -> torch.Tensor:
     if weight == 0:
         return torch.zeros_like(
             self.weight, dtype=self.weight.dtype, device=self.weight.device
@@ -101,7 +102,7 @@ def get_delta_weight(
     return lora_weight
 
 
-def offload_tensor(tensor, device):
+def offload_tensor(tensor: torch.Tensor, device: torch.device) -> torch.Tensor:
     cur_device = tensor.device
     if cur_device == device:
         return tensor.clone()
@@ -109,7 +110,11 @@ def offload_tensor(tensor, device):
         return tensor.to(device)
 
 
-def _set_adapter(self, adapter_names, adapter_weights):
+def _set_adapter(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+    adapter_names: List[str],
+    adapter_weights: Optional[Union[float, List[float]]] = None,
+):
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise TypeError(
             f"[OneDiffX _set_adapter] Expect type Linear or Conv2d, got {type(self)}"
@@ -119,8 +124,12 @@ def _set_adapter(self, adapter_names, adapter_weights):
     if not hasattr(self, "adapter_names"):
         return
     if adapter_weights is None:
-        adapter_weights = 1.0
-    if isinstance(adapter_weights, float):
+        adapter_weights = [
+            self.scaling[adapter]
+            for adapter in adapter_names
+            if adapter in self.scaling
+        ]
+    elif isinstance(adapter_weights, float):
         adapter_weights = [
             adapter_weights,
         ] * len(adapter_names)
@@ -148,7 +157,11 @@ def _set_adapter(self, adapter_names, adapter_weights):
         update_graph_related_tensor(self)
 
 
-def _delete_adapter(self, adapter_names):
+def _delete_adapter(
+    self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
+    adapter_names: List[str],
+    safe_delete: bool = True,
+) -> None:
     if not isinstance(self, (torch.nn.Linear, torch.nn.Conv2d, PatchedLoraProjection)):
         raise TypeError(
             f"[OneDiffX _delete_adapter] Expect type Linear or Conv2d, got {type(self)}"
@@ -157,21 +170,24 @@ def _delete_adapter(self, adapter_names):
         self = self.regular_linear_layer
     if not hasattr(self, "adapter_names"):
         return
-    _unfuse_lora(self, adapter_names=adapter_names)
+    if safe_delete:
+        _set_adapter(self, list(set(self.adapter_names) - set(adapter_names)))
+    else:
+        _unfuse_lora(self, adapter_names=adapter_names)
     delete_lora_infos(self, adapter_names)
 
 
-def fuse_lora(
+def _load_lora_and_optionally_fuse(
     self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
-    state_dict: Dict[str, torch.Tensor] = None,
-    lora_scale: float = 1.0,
-    alpha: float = None,
-    rank: float = None,
+    state_dict: Dict[str, torch.Tensor],
+    lora_scale: Optional[float] = None,
+    alpha: Optional[float] = None,
+    rank: Optional[float] = None,
     *,
-    adapter_name=None,
-    fuse=True,
-    prefix="lora",
-    offload_device="cpu",
+    adapter_name: Optional[str] = None,
+    fuse: bool = True,
+    prefix: str = "lora",
+    offload_device: str = "cpu",
 ) -> None:
     r"""
     This will fuse the LoRA weights in `state_dict` into Linear or Conv2d module.
@@ -187,6 +203,11 @@ def fuse_lora(
             Alpha parameter of LoRA weights. Default is None.
         rank (float, optional):
             Rank of LoRA weights. Default is None.
+        adapter_names (str, optional):
+            The name of the adapter to be set for the LoRA. If not provided, a default name will be generated.
+        fuse (bool, optional):
+            Determines whether to fuse the LoRA weights into the module. If False, the LoRA weights are merely loaded without fusion.
+            Defaults to True.
         prefix (str, optional):
             Prefix for up and down weight keys in the LoRA weight dictionary. Default is "lora".
         offload_device (str, optional):
@@ -211,6 +232,7 @@ def fuse_lora(
         init_lora_infos(self)
 
     dtype, device = self.weight.data.dtype, self.weight.data.device
+
     down_key = prefix + ".down.weight"
     up_key = prefix + ".up.weight"
 
@@ -222,15 +244,27 @@ def fuse_lora(
     if alpha is None:
         alpha = rank
 
+    if lora_scale is None:
+        lora_scale = 1.0
+
     self.scaling[adapter_name] = lora_scale * alpha / rank
     self.r[adapter_name] = rank
     self.lora_alpha[adapter_name] = alpha
     self.lora_A[adapter_name] = offload_tensor(w_down, offload_device)
     self.lora_B[adapter_name] = offload_tensor(w_up, offload_device)
     self.adapter_names.add(adapter_name)
-    self.active_adapter_names[adapter_name] = lora_scale
 
     if fuse:
+        if len(self.active_adapter_names) != 0 and dtype in [
+            torch.half,
+            torch.bfloat16,
+        ]:
+            warnings.warn(
+                "There is already merged LoRA adapters. "
+                "If you need to load another LoRA, please unmerge the existing LoRA adapters. "
+                "Otherwise, it may lead to accuracy issues, impacting the quality of the generated images."
+            )
+        self.active_adapter_names[adapter_name] = lora_scale
         lora_weight = get_delta_weight(self, w_up, w_down, self.scaling[adapter_name])
         fused_weight = self.weight.data.float() + lora_weight
         self.weight.data.copy_(fused_weight.to(device=device, dtype=dtype))
@@ -239,8 +273,8 @@ def fuse_lora(
 
 def _unfuse_lora(
     self: Union[torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d],
-    adapter_names: Union[str, List[str]] = None,
-):
+    adapter_names: Optional[Union[str, List[str]]] = None,
+) -> None:
     assert isinstance(self, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d))
     if not hasattr(self, "adapter_names"):
         return
