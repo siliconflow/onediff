@@ -7,6 +7,7 @@ from oneflow.framework.args_tree import ArgsTree
 from onediff.utils import logger
 
 from .utils.hash_utils import generate_input_structure_key
+from .graph_management_utils import graph_file_management
 
 
 def input_output_processor(func):
@@ -67,7 +68,12 @@ def input_output_processor(func):
                 self._deployable_module_input_structure_key = None
                 self._load_graph_first_run = True
 
-        output = func(self, *mapped_args, **mapped_kwargs)
+        output = (
+            graph_file_management(func)(self, *mapped_args, **mapped_kwargs)
+            if self._load_graph_first_run
+            else func(self, *mapped_args, **mapped_kwargs)
+        )
+
         return process_output(output)
 
     return wrapper
