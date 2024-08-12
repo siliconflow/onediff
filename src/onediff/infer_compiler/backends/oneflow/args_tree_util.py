@@ -5,9 +5,9 @@ import functools
 from oneflow.framework.args_tree import ArgsTree
 
 from onediff.utils import logger
+from .graph_management_utils import graph_file_management
 
 from .utils.hash_utils import generate_input_structure_key
-from .graph_management_utils import graph_file_management
 
 
 def input_output_processor(func):
