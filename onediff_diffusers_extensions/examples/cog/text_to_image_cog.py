@@ -1,11 +1,12 @@
 import argparse
 import json
 import time
-from typing import Union, List
+from typing import List, Union
 
-import PIL
 import imageio
 import numpy as np
+
+import PIL
 import torch
 
 from diffusers import CogVideoXPipeline
@@ -13,7 +14,9 @@ from onediffx import compile_pipe, quantize_pipe
 
 
 def export_to_video_imageio(
-    video_frames: Union[List[np.ndarray], List[PIL.Image.Image]], output_video_path: str = None, fps: int = 8
+    video_frames: Union[List[np.ndarray], List[PIL.Image.Image]],
+    output_video_path: str = None,
+    fps: int = 8,
 ) -> str:
     """
     Export the video frames to a video file using imageio lib to Avoid "green screen" issue (for example CogVideoX)
@@ -26,6 +29,7 @@ def export_to_video_imageio(
         for frame in video_frames:
             writer.append_data(frame)
     return output_video_path
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -52,7 +56,7 @@ def parse_args():
     parser.add_argument(
         "--prompt",
         type=str,
-        default='In the haunting backdrop of a war-torn city, where ruins and crumbled walls tell a story of devastation, a poignant close-up frames a young girl. Her face is smudged with ash, a silent testament to the chaos around her. Her eyes glistening with a mix of sorrow and resilience, capturing the raw emotion of a world that has lost its innocence to the ravages of conflict.',
+        default="In the haunting backdrop of a war-torn city, where ruins and crumbled walls tell a story of devastation, a poignant close-up frames a young girl. Her face is smudged with ash, a silent testament to the chaos around her. Her eyes glistening with a mix of sorrow and resilience, capturing the raw emotion of a world that has lost its innocence to the ravages of conflict.",
         help="Prompt for the image generation.",
     )
     parser.add_argument(
@@ -64,9 +68,17 @@ def parse_args():
     parser.add_argument(
         "--num-inference-steps", type=int, default=50, help="Number of inference steps."
     )
-    parser.add_argument("--num_videos_per_prompt", type=int, default=1, help="Number of videos to generate per prompt")
     parser.add_argument(
-        "--output_path", type=str, default="./output.mp4", help="The path where the generated video will be saved"
+        "--num_videos_per_prompt",
+        type=int,
+        default=1,
+        help="Number of videos to generate per prompt",
+    )
+    parser.add_argument(
+        "--output_path",
+        type=str,
+        default="./output.mp4",
+        help="The path where the generated video will be saved",
     )
     parser.add_argument(
         "--seed", type=int, default=66, help="Seed for random number generation."
@@ -90,8 +102,10 @@ class CogVideoGenerator:
         self, model, compiler_config=None, quantize_config=None, compiler="none"
     ):
         self.pipe = CogVideoXPipeline.from_pretrained(
-            model, torch_dtype=torch.float16, variant="fp16"
+            model, torch_dtype=torch.float16
         ).to(device)
+
+        self.pipe.enable_model_cpu_offload()
 
         self.prompt_embeds = None
 
@@ -153,7 +167,11 @@ class CogVideoGenerator:
     def compile_pipe(self, pipe, compiler_config):
         options = compiler_config
         pipe = compile_pipe(
-            pipe, backend="nexfort", options=options, ignores=['vae'], fuse_qkv_projections=True
+            pipe,
+            backend="nexfort",
+            options=options,
+            ignores=["vae"],
+            fuse_qkv_projections=True,
         )
         return pipe
 
@@ -177,19 +195,24 @@ def main():
         compiler=args.compiler,
     )
 
-    # CogVideo.encode_prompt(args.prompt, args.num_videos_per_prompt)
+    CogVideo.encode_prompt(args.prompt, args.num_videos_per_prompt)
 
     gen_args = {
-        "prompt": args.prompt,
+        # "prompt": args.prompt,
+        "prompt_embeds": CogVideo.prompt_embeds,
         "num_inference_steps": args.num_inference_steps,
         "guidance_scale": args.guidance_scale,
-        # "negative_prompt_embeds": torch.zeros_like(CogVideo.prompt_embeds),  # Not Supported negative prompt
-        "num_frames": 8,
+        "negative_prompt_embeds": torch.zeros_like(
+            CogVideo.prompt_embeds
+        ),  # Not Supported negative prompt
+        # "num_frames": 8,
     }
 
     CogVideo.warmup(gen_args, args.warmup_iterations)
+    torch.cuda.empty_cache()
 
     _, inference_time = CogVideo.generate(gen_args)
+    torch.cuda.empty_cache()
     print(
         f"Generated video saved to {args.output_path} in {inference_time:.2f} seconds."
     )
