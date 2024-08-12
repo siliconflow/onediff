@@ -132,8 +132,8 @@ The "Load Checkpoint - OneDiff" node  set `vae_speedup` :  `enable` to enable VA
 # Set custom directory for saving graphs in ComfyUI with OneFlow backend
 export COMFYUI_ONEDIFF_SAVE_GRAPH_DIR="/path/to/save/graphs"
 
-# Enable graph cache for faster compilation
-export TORCHINDUCTOR_FX_GRAPH_CACHE=1
+# Enable graph cache to avoid recompiling
+export NEXFORT_GRAPH_CACHE=1
 
 # Specify persistent cache directory for Torchinductor
 export TORCHINDUCTOR_CACHE_DIR=~/.torchinductor_cache
