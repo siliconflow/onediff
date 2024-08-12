@@ -71,8 +71,8 @@ Details at: https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_e
 
 Setting cache:
 ```
-# Enabled Inductor - FX Graph Cache. Default Off
-export TORCHINDUCTOR_FX_GRAPH_CACHE=1
+# Enabled Cache Nexfort Graph. Default Off
+export NEXFORT_GRAPH_CACHE=1
 
 # Setting Inductor - Autotuning Cache DIR. This cache is enabled by default.
 export TORCHINDUCTOR_CACHE_DIR=~/torchinductor
