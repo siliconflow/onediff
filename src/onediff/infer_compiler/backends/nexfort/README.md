@@ -27,7 +27,7 @@ Details at: https://github.com/siliconflow/onediff/tree/main/onediff_diffusers_e
 
 Setting cache:
 ```
-# Enabled Cache Nexfort Graph Cache. Default Off
+# Enabled Cache Compiled Graph Cache. Default Off
 export NEXFORT_GRAPH_CACHE=1
 
 # Setting Inductor - Autotuning Cache DIR. This cache is enabled by default.
