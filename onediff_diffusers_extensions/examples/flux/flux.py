@@ -2,6 +2,7 @@
 # pipe = FluxPipeline.from_pretrained(
 #     "black-forest-labs/FLUX.1-schnell", torch_dtype=torch.bfloat16, revision="refs/pr/1"
 # )
+# python flux.py --height 1024 --width 1024 --base /data0/hf_models/hub/models--black-forest-labs--FLUX.1-schnell/snapshots/93424e3a1530639fefdf08d2a7a954312e5cb254
 
 import argparse
 import time
