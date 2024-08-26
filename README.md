@@ -63,6 +63,7 @@ If you have contributed significantly to open-source software and are interested
     + [Avoid compilation time for new input shape](#avoid-compilation-time-for-new-input-shape)
     + [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
     + [onediff Enterprise Edition](#onediff-enterprise-edition)
+  * [Distributed Run](#distributed-run)
 <!-- tocstop -->
 
 ## Documentation
@@ -262,6 +263,9 @@ If you need Enterprise-level Support for your system or business, you can email 
 | --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
 | More Extreme and Dedicated optimization(usually another 20~100% performance gain) for the most used model | Yes                                     |                                         |
 | Technical Support for deployment                                                                          | High priority support                   | Community                               |
+
+### Distributed Run
+If you want to do distributed inference, you can use [xDiT](https://github.com/xdit-project/xDiT) or [DistriFusion](https://github.com/mit-han-lab/distrifuser), and use onediff's compiler to do single device acceleration.
 
 ## Citation
 ```bibtex
