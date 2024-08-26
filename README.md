@@ -265,7 +265,9 @@ If you need Enterprise-level Support for your system or business, you can email 
 | Technical Support for deployment                                                                          | High priority support                   | Community                               |
 
 ### Distributed Run
-If you want to do distributed inference, you can use [xDiT](https://github.com/xdit-project/xDiT) or [DistriFusion](https://github.com/mit-han-lab/distrifuser), and use onediff's compiler to do single device acceleration.
+If you want to do distributed inference, you can use onediff's compiler to do single-device acceleration in a distributed inference engine such as:
+- [xDiT](https://github.com/xdit-project/xDiT)
+- [DistriFusion](https://github.com/mit-han-lab/distrifuser)
 
 ## Citation
 ```bibtex
