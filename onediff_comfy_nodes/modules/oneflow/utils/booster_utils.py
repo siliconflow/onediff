@@ -1,5 +1,6 @@
 from typing import Union
 
+import comfy.sd
 import torch
 from comfy import model_management
 from comfy.model_base import BaseModel, SVD_img2vid
@@ -85,8 +86,8 @@ def is_using_oneflow_backend(module):
     if isinstance(module, DeployableModule):
         return True
 
-    print(module)
-    print(type(module))
+    if isinstance(module, comfy.sd.VAE):
+        return True
 
     raise RuntimeError("")
 
