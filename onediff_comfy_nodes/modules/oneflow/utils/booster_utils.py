@@ -85,6 +85,9 @@ def is_using_oneflow_backend(module):
     if isinstance(module, DeployableModule):
         return True
 
+    print(module)
+    print(type(module))
+
     raise RuntimeError("")
 
 
