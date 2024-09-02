@@ -6,6 +6,19 @@ from torch import nn
 
 from ..deployable_module import DeployableModule
 
+DISABLE_DEPLOYABLE = False
+
+
+def set_deployable_env_var(value: bool = False):
+    """
+    Set the DISABLE_DEPLOYABLE environment variable.
+
+    Args:
+        value (bool): The value to set for the environment variable.
+    """
+    global DISABLE_DEPLOYABLE
+    DISABLE_DEPLOYABLE = not value
+
 
 class NexfortDeployableModule(DeployableModule):
     def __init__(self, compiled_module, torch_module):
@@ -23,6 +36,8 @@ class NexfortDeployableModule(DeployableModule):
             object.__setattr__(self, "_buffers", compiled_module._orig_mod._buffers)
 
     def forward(self, *args, **kwargs):
+        if DISABLE_DEPLOYABLE:
+            return self._torch_module(*args, **kwargs)
         with torch._dynamo.utils.disable_cache_limit():
             return self._deployable_module_model(*args, **kwargs)
 
@@ -34,6 +49,8 @@ def _create_deployable_function(
     compiled_model, torch_module: FunctionType = None
 ) -> FunctionType:
     def deploy_function(*args, **kwargs):
+        if DISABLE_DEPLOYABLE:
+            return torch_module(*args, **kwargs)
         with torch._dynamo.utils.disable_cache_limit():
             return compiled_model(*args, **kwargs)
 

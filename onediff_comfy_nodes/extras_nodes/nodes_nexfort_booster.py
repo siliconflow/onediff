@@ -1,4 +1,8 @@
 import collections
+import os
+
+import yaml
+from onediff.infer_compiler.backends.nexfort import set_deployable_env_var
 
 from ..modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
 
@@ -52,8 +56,40 @@ class OneDiffNexfortBooster:
         )
 
 
+class ResolutionSpeedupChecker:
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(current_dir, "resolutions_config.yaml")
+    with open(config_path, "r") as file:
+        resolutions = yaml.safe_load(file)
+    height_width_dict = {x["height"]: x["width"] for x in resolutions["resolutions"]}
+
+    @classmethod
+    def INPUT_TYPES(s):
+        return {
+            "required": {
+                "samples": ("LATENT",),
+            }
+        }
+
+    RETURN_TYPES = ("LATENT",)
+    FUNCTION = "check"
+
+    def check(self, samples):
+        _, _, H, W = samples["samples"].shape
+        H, W = H * 8, W * 8
+        if H in self.height_width_dict and self.height_width_dict[H] == W:
+            set_deployable_env_var(True)
+        else:
+            set_deployable_env_var(False)
+        return (samples,)
+
+
 NODE_CLASS_MAPPINGS = {
     "OneDiffNexfortBooster": OneDiffNexfortBooster,
+    "ResolutionSpeedupChecker": ResolutionSpeedupChecker,
 }
 
-NODE_DISPLAY_NAME_MAPPINGS = {"OneDiffNexfortBooster": "Nexfort Booster - OneDiff"}
+NODE_DISPLAY_NAME_MAPPINGS = {
+    "OneDiffNexfortBooster": "Nexfort Booster - OneDiff",
+    "ResolutionSpeedupChecker": "Speedup Checker - Resolution",
+}
