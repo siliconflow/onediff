@@ -43,11 +43,15 @@ def apply_patch(org_fn, model, patch_kwargs, key, attention_func=None) -> None:
         split1dict = {}
         split2dict = {}
         for k, v in patch_kwargs.items():
-            if k in ["cond", "cond_alt", "uncond", "mask", "weight"] or isinstance(
+            if k in {"cond", "cond_alt", "uncond", "mask", "weight"} or isinstance(
                 v, torch.Tensor
             ):
                 split1dict[k] = v
             else:
+                split2dict[k] = v
+
+            if k in {"sigma_start", "sigma_end"}:
+                split1dict[k] = v
                 split2dict[k] = v
 
         # patch for weight

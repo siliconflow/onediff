@@ -62,6 +62,8 @@ class Attn2Replace:
                 sigma <= self.kwargs[i]["sigma_start"]
                 and sigma >= self.kwargs[i]["sigma_end"]
             ):
+                inputs = self.kwargs[i]
+                inputs.update(**patch_kwargs[i])
                 out = out + callback(
                     out,
                     q,
@@ -69,8 +71,7 @@ class Attn2Replace:
                     v,
                     extra_options,
                     optimized_attention=self.optimized_attention,
-                    **self.kwargs[i],
-                    **patch_kwargs[i]
+                    **inputs,
                 )
 
         return out.to(dtype=dtype)

@@ -99,11 +99,24 @@ def calc_cond_batch_of(orig_func, model, conds, x_in, timestep, model_options):
         if create_patch_executor(PatchType.CachedCrossAttentionPatch).check_patch(
             diff_model
         ):
-            transformer_options["sigmas"] = timestep[0].item()
+            _sigmas = timestep[0].item()
+            transformer_options["sigmas"] = _sigmas
             patch_executor = create_patch_executor(PatchType.UNetExtraInputOptions)
-            transformer_options["_attn2"] = patch_executor.get_patch(diff_model)[
-                "attn2"
-            ]
+            attn2_patch: dict = patch_executor.get_patch(diff_model)["attn2"]
+
+            sigmas_patch = {}
+            for key, patch_kwargs in attn2_patch.items():
+                for kwgs in patch_kwargs:
+                    if (
+                        "sigma_start" in kwgs
+                        and "sigma_end" in kwgs
+                        and _sigmas <= kwgs["sigma_start"]
+                        and _sigmas >= kwgs["sigma_end"]
+                    ):
+                        sigmas_patch[key] = "1"
+
+            transformer_options["_attn2"] = attn2_patch
+            transformer_options["_sigmas_patch"] = sigmas_patch
         else:
             transformer_options["sigmas"] = timestep
 
