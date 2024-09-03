@@ -259,7 +259,7 @@ Compile and save the compiled result offline, then load it online for serving
 #### Distributed Run
 If you want to do distributed inference, you can use onediff's compiler to do single-device acceleration in a distributed inference engine such as [xDiT](https://github.com/xdit-project/xDiT)
 
-### onediff Enterprise Solution
+### OneDiff Enterprise Solution
 If you need Enterprise-level Support for your system or business, you can email us at contact@siliconflow.com, or contact us through the website: https://siliconflow.cn/pricing
 |                                                          | onediff Enterprise Solution                      |
 | -------------------------------------------------------- | ------------------------------------------------ |
