@@ -63,7 +63,7 @@ If you have contributed significantly to open-source software and are interested
     + [Avoid compilation time for new input shape](#avoid-compilation-time-for-new-input-shape)
     + [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
     + [Distributed Run](#distributed-run)
-  * [onediff Enterprise Solution](#onediff-enterprise-solution)
+  * [OneDiff Enterprise Solution](#onediff-enterprise-solution)
 <!-- tocstop -->
 
 ## Documentation
