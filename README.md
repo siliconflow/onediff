@@ -62,8 +62,8 @@ If you have contributed significantly to open-source software and are interested
     + [PyTorch Module compilation](#pytorch-module-compilation)
     + [Avoid compilation time for new input shape](#avoid-compilation-time-for-new-input-shape)
     + [Avoid compilation time for online serving](#avoid-compilation-time-for-online-serving)
-    + [onediff Enterprise Edition](#onediff-enterprise-edition)
   * [Distributed Run](#distributed-run)
+  * [onediff Enterprise Solution](#onediff-enterprise-solution)
 <!-- tocstop -->
 
 ## Documentation
@@ -256,17 +256,18 @@ onediff supports the acceleration for SOTA models.
 Compile and save the compiled result offline, then load it online for serving
 - [Save and Load the compiled graph](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_save_load.py)
 - Compile at one device(such as device 0), then use the compiled result to other device(such as device 1~7). [Change device of the compiled graph to do multi-process serving](https://github.com/siliconflow/onediff/blob/main/onediff_diffusers_extensions/examples/text_to_image_sdxl_mp_load.py)
-#### onediff Enterprise Edition
-If you need Enterprise-level Support for your system or business, you can email us at contact@siliconflow.com, or contact us through the website: https://siliconflow.cn/pricing
-
-|                                                                                                           | onediff Enterprise Edition              | onediff Community Edition               |
-| --------------------------------------------------------------------------------------------------------- | --------------------------------------- | --------------------------------------- |
-| More Extreme and Dedicated optimization(usually another 20~100% performance gain) for the most used model | Yes                                     |                                         |
-| Technical Support for deployment                                                                          | High priority support                   | Community                               |
 
 ### Distributed Run
 If you want to do distributed inference, you can use onediff's compiler to do single-device acceleration in a distributed inference engine such as:
 - [xDiT](https://github.com/xdit-project/xDiT)
+
+### onediff Enterprise Solution
+If you need Enterprise-level Support for your system or business, you can email us at contact@siliconflow.com, or contact us through the website: https://siliconflow.cn/pricing
+|                                                      | onediff Enterprise Solution                      |
+| ---------------------------------------------------- | ------------------------------------------------ |
+| Diffusion model with more Extreme optimization       | Usually another 20%~30% or more performance gain |
+| Workflow end-to-end speedup and deployment solutions | Sometimes 200%~300% performance gain             |
+| Technical Support for deployment                     | High priority support                            |
 
 ## Citation
 ```bibtex
