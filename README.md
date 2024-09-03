@@ -261,11 +261,12 @@ If you want to do distributed inference, you can use onediff's compiler to do si
 
 ### onediff Enterprise Solution
 If you need Enterprise-level Support for your system or business, you can email us at contact@siliconflow.com, or contact us through the website: https://siliconflow.cn/pricing
-|                                                      | onediff Enterprise Solution                      |
-| ---------------------------------------------------- | ------------------------------------------------ |
-| Diffusion model with more Extreme optimization       | Usually another 20%~30% or more performance gain |
-| Workflow end-to-end speedup and deployment solutions | Sometimes 200%~300% performance gain             |
-| Technical Support for deployment                     | High priority support                            |
+|                                                          | onediff Enterprise Solution                      |
+| -------------------------------------------------------- | ------------------------------------------------ |
+| More extreme compiler optimization for diffusion process | Usually another 20%~30% or more performance gain |
+| Workflow end-to-end speedup solutions                    | Sometimes 200%~300% performance gain             |
+| Workflow end-to-end deployment solutions                 | Workflow to online model API                     |
+| Technical Support for deployment                         | High priority support                            |
 
 ## Citation
 ```bibtex
