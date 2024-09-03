@@ -264,8 +264,8 @@ If you need Enterprise-level Support for your system or business, you can email 
 |                                                          | onediff Enterprise Solution                      |
 | -------------------------------------------------------- | ------------------------------------------------ |
 | More extreme compiler optimization for diffusion process | Usually another 20%~30% or more performance gain |
-| Workflow end-to-end speedup solutions                    | Sometimes 200%~300% performance gain             |
-| Workflow end-to-end deployment solutions                 | Workflow to online model API                     |
+| End-to-end workflow speedup solutions                    | Sometimes 200%~300% performance gain             |
+| End-to-end workflow deployment solutions                 | Workflow to online model API                     |
 | Technical Support for deployment                         | High priority support                            |
 
 ## Citation
