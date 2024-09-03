@@ -9,7 +9,7 @@ from ..deployable_module import DeployableModule
 DISABLE_DEPLOYABLE = False
 
 
-def set_deployable_env_var(value: bool = False):
+def fallback_to_eager(value: bool = False):
     """
     Set the DISABLE_DEPLOYABLE environment variable.
 

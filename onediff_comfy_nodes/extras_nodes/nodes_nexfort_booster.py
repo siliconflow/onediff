@@ -2,7 +2,7 @@ import collections
 import os
 
 import yaml
-from onediff.infer_compiler.backends.nexfort import set_deployable_env_var
+from onediff.infer_compiler.backends.nexfort import fallback_to_eager
 
 from ..modules.nexfort.booster_basic import BasicNexFortBoosterExecutor
 
@@ -78,9 +78,9 @@ class ResolutionSpeedupChecker:
         _, _, H, W = samples["samples"].shape
         H, W = H * 8, W * 8
         if H in self.height_width_dict and self.height_width_dict[H] == W:
-            set_deployable_env_var(True)
+            fallback_to_eager(True)
         else:
-            set_deployable_env_var(False)
+            fallback_to_eager(False)
         return (samples,)
 
 
