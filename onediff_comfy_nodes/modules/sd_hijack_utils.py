@@ -162,7 +162,10 @@ class Hijacker:
     """
 
     def __init__(self, funcs_list=[]):
-        self.funcs_list = funcs_list
+        if funcs_list and isinstance(funcs_list, List):
+            self.funcs_list = funcs_list.copy()
+        else:
+            self.funcs_list = []
         self.unhijack_funcs = []
 
     def hijack(self, last=True):
