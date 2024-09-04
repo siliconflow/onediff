@@ -17,17 +17,17 @@ parser.add_argument("--base", type=str, default="black-forest-labs/FLUX.1-schnel
 parser.add_argument(
     "--prompt",
     type=str,
-    default="chinese painting style women",
+    default="anime scenery concept art, sunny day at beach, hyperrealistic!, fantasy art behance, huge dramatic brush strokes, heavens, by Takahashi Yuichi, view(full body + zoomed out), intricate and intense oil paint, panorama shot, incredible miyazaki, hyper realistic illustration, intricate dotart, header",
 )
-parser.add_argument("--height", type=int, default=512)
-parser.add_argument("--width", type=int, default=512)
+parser.add_argument("--height", type=int, default=1024)
+parser.add_argument("--width", type=int, default=1024)
 parser.add_argument("--n_steps", type=int, default=4)
 parser.add_argument(
     "--saved_image", type=str, required=False, default="flux-out.png"
 )
 parser.add_argument("--seed", type=int, default=1)
 parser.add_argument("--warmup", type=int, default=1)
-parser.add_argument("--run", type=int, default=3)
+parser.add_argument("--run", type=int, default=1)
 parser.add_argument(
     "--compile", type=(lambda x: str(x).lower() in ["true", "1", "yes"]), default=True
 )
@@ -41,12 +41,15 @@ pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16)
 # pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.float16)
 pipe.to("cuda")
 if args.compile:
-    from onediffx import compile_pipe
     import os
     os.environ['NEXFORT_FUSE_TIMESTEP_EMBEDDING'] = '0'
-    os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = '1'
+    # os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = '1'
+
     options = {"mode": "O3"}
-    pipe = compile_pipe(pipe, backend="nexfort", options=options)
+    #from onediffx import compile_pipe
+    # pipe = compile_pipe(pipe, backend="nexfort", options=options)
+    from onediff.infer_compiler import compile
+    pipe.transformer = compile(pipe.transformer, backend="nexfort", options=options)
 # generate image
 generator = torch.manual_seed(args.seed)
 print("Warmup")
@@ -72,7 +75,7 @@ for i in range(args.run):
     ).images[0]
     end = time.time()
     print(f"Inference time: {end - begin:.3f}s")
-    image.save(f"{i=}th_{args.saved_image}.png")
+    image.save(f'{i=}th_{args.saved_image}.png')
 
 print("New size")
 image = pipe(
