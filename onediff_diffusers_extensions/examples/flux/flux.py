@@ -35,7 +35,7 @@ args = parser.parse_args()
 # load stable diffusion
 
 # python flux.py --height 1024 --width 1024 --base /data0/hf_models/hub/models--black-forest-labs--FLUX.1-schnell/snapshots/93424e3a1530639fefdf08d2a7a954312e5cb254
-pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16)
+pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.float16)
 
 # pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16, local_files_only=True)
 # pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.float16)
@@ -44,45 +44,54 @@ if args.compile:
     import os
     os.environ['NEXFORT_FUSE_TIMESTEP_EMBEDDING'] = '0'
     # os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = '1'
+    os.environ['NEXFORT_FX_FORCE_FA3_SDPA'] = '1'
 
-    options = {"mode": "O3"}
+    options = {"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision"}
     #from onediffx import compile_pipe
     # pipe = compile_pipe(pipe, backend="nexfort", options=options)
     from onediff.infer_compiler import compile
     pipe.transformer = compile(pipe.transformer, backend="nexfort", options=options)
 # generate image
 generator = torch.manual_seed(args.seed)
-print("Warmup")
-for i in range(args.warmup):
-    image = pipe(
-        args.prompt,
-        height=args.height,
-        width=args.width,
-        output_type="pil",
-        num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
-        generator=torch.Generator("cpu").manual_seed(args.seed)
-    ).images[0]
-print("Run")
-for i in range(args.run):
-    begin = time.time()
-    image = pipe(
-        args.prompt,
-        height=args.height,
-        width=args.width,
-        output_type="pil",
-        num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
-        generator=torch.Generator("cpu").manual_seed(args.seed)
-    ).images[0]
-    end = time.time()
-    print(f"Inference time: {end - begin:.3f}s")
-    image.save(f'{i=}th_{args.saved_image}.png')
 
-print("New size")
-image = pipe(
-    args.prompt,
-    height=args.height // 2,
-    width=args.width // 2,
-    output_type="pil",
-    num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
-    generator=torch.Generator("cpu").manual_seed(args.seed)
-).images[0]
+#with torch.profiler.profile() as prof:
+if True:
+    print("Warmup")
+    #with torch.profiler.record_function("flux warmup"):
+    if True:
+        for i in range(args.warmup):
+            image = pipe(
+                args.prompt,
+                height=args.height,
+                width=args.width,
+                output_type="pil",
+                num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
+                generator=torch.Generator("cpu").manual_seed(args.seed)
+            ).images[0]
+    print("Run")
+    # with torch.profiler.record_function("flux compiled"):
+    if True:
+        for i in range(args.run):
+            begin = time.time()
+            image = pipe(
+                args.prompt,
+                height=args.height,
+                width=args.width,
+                output_type="pil",
+                num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
+                generator=torch.Generator("cpu").manual_seed(args.seed)
+            ).images[0]
+            end = time.time()
+            print(f"Inference time: {end - begin:.3f}s")
+    image.save(f'{i=}th_{args.saved_image}.png')
+# prof.export_chrome_trace("flux_compiled.json")
+
+# print("New size")
+# image = pipe(
+#     args.prompt,
+#     height=args.height // 2,
+#     width=args.width // 2,
+#     output_type="pil",
+#     num_inference_steps=args.n_steps, #use a larger number if you are using [dev]
+#     generator=torch.Generator("cpu").manual_seed(args.seed)
+# ).images[0]
