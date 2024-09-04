@@ -77,8 +77,8 @@ https://huggingface.co/stabilityai/stable-diffusion-3-medium/resolve/main/text_e
 # https://github.com/huggingface/transformers/issues/5486
 export TOKENIZERS_PARALLELISM=false
 
-# For graph cache to speedup compilation
-export TORCHINDUCTOR_FX_GRAPH_CACHE=1
+# For graph cache to to avoid recompiling
+export NEXFORT_GRAPH_CACHE=1
 # For persistent cache dir
 export TORCHINDUCTOR_CACHE_DIR=~/.torchinductor_cache
 cd $COMFYUI_DIR && python main.py --gpu-only --disable-cuda-malloc

@@ -1,0 +1,31 @@
+resolutions:
+  - width: 1024
+    height: 1024
+    aspect_ratio: '1:1 Square'
+  - width: 1152
+    height: 896
+    aspect_ratio: '9:7'
+  - width: 896
+    height: 1152
+    aspect_ratio: '7:9'
+  - width: 1216
+    height: 832
+    aspect_ratio: '19:13'
+  - width: 832
+    height: 1216
+    aspect_ratio: '13:19'
+  - width: 1344
+    height: 768
+    aspect_ratio: '7:4 Horizontal'
+  - width: 768
+    height: 1344
+    aspect_ratio: '4:7 Vertical'
+  - width: 1536
+    height: 640
+    aspect_ratio: '12:5 Horizontal'
+  - width: 640
+    height: 1536
+    aspect_ratio: '5:12 Vertical'
+  - width: 512
+    height: 512
+    aspect_ratio: '1:1 Square'
