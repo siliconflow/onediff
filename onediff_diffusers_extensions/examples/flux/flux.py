@@ -35,7 +35,7 @@ args = parser.parse_args()
 # load stable diffusion
 
 # python flux.py --height 1024 --width 1024 --base /data0/hf_models/hub/models--black-forest-labs--FLUX.1-schnell/snapshots/93424e3a1530639fefdf08d2a7a954312e5cb254
-pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.float16)
+pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16)
 
 # pipe = FluxPipeline.from_pretrained(args.base, torch_dtype=torch.bfloat16, local_files_only=True)
 # pipe = FluxPipeline.from_pretrained("black-forest-labs/FLUX.1-schnell", torch_dtype=torch.float16)
@@ -43,8 +43,8 @@ pipe.to("cuda")
 if args.compile:
     import os
     os.environ['NEXFORT_FUSE_TIMESTEP_EMBEDDING'] = '0'
-    # os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = '1'
-    os.environ['NEXFORT_FX_FORCE_FA3_SDPA'] = '1'
+    #os.environ['NEXFORT_FX_FORCE_TRITON_SDPA'] = '1'
+    #os.environ['NEXFORT_FX_FORCE_FA3_SDPA'] = '1'
 
     options = {"mode": "max-optimize:max-autotune:freezing:benchmark:low-precision"}
     #from onediffx import compile_pipe
