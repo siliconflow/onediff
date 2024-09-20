@@ -71,7 +71,7 @@ def is_using_oneflow_backend(module):
         print("OneFlow CUDA support is not available")
         return False
 
-    # Check if the module or its parameters are OneFlow tensors
+    # Check if the module
     if isinstance(module, oneflow.nn.Module):
         return True
 
