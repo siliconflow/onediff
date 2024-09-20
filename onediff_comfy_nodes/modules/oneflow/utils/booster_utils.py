@@ -67,7 +67,7 @@ def set_environment_for_svd_img2vid(model: ModelPatcher):
 
 def is_using_oneflow_backend(module):
     # First, check if oneflow is available and CUDA is enabled
-    if not oneflow.cuda.is_available():
+    if is_oneflow_available() and not oneflow.cuda.is_available():
         print("OneFlow CUDA support is not available")
         return False
 
