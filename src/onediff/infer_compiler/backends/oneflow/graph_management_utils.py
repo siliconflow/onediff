@@ -81,7 +81,7 @@ def graph_file_management(func):
                 return
 
             if not os.path.exists(graph_file):
-                logger.info(
+                logger.warning(
                     f"Graph file {graph_file} does not exist! Generating graph."
                 )
             else:
@@ -90,7 +90,7 @@ def graph_file_management(func):
                 self.load_graph(
                     graph_file, torch2oflow(graph_device), state_dict=state_dict
                 )
-                logger.info(f"Loaded graph file: {graph_file}")
+                logger.warning(f"Loaded graph file: {graph_file}")
                 is_first_load = False
 
         def handle_graph_saving():
@@ -110,7 +110,7 @@ def graph_file_management(func):
                 self.save_graph(
                     graph_file, process_state_dict=process_state_dict_before_saving
                 )
-                logger.info(f"Saved graph file: {graph_file}")
+                logger.warning(f"Saved graph file: {graph_file}")
 
             except Exception as e:
                 logger.error(f"Failed to save graph file: {graph_file}! {e}")
