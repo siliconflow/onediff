@@ -38,7 +38,7 @@ quantize_config='{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}'
 sd3_nexfort_compiler_config='{"mode": "max-optimize:max-autotune:low-precision:cache-all", "memory_format": "channels_last"}'
 flux_nexfort_compiler_config='{"mode": "max-optimize:max-autotune:low-precision", "memory_format": "channels_last"}'
 
-benchmark_sd_model_with_one_resolution() {
+benchmark_model_with_one_resolution() {
   model_name=$1
   model_path=$2
   steps=$3
@@ -87,47 +87,47 @@ source ~/miniconda3/etc/profile.d/conda.sh
 #########################################
 if [[ "${run_model}" =~ sd15|all ]]; then
   conda activate oneflow
-  benchmark_sd_model_with_one_resolution sd15 ${sd15_path} 30 none none 512 512 False
-  benchmark_sd_model_with_one_resolution sd15 ${sd15_path} 30 oneflow none 512 512 False
-  benchmark_sd_model_with_one_resolution sd15 ${sd15_path} 30 oneflow none 512 512 True
+  benchmark_model_with_one_resolution sd15 ${sd15_path} 30 none none 512 512 False
+  benchmark_model_with_one_resolution sd15 ${sd15_path} 30 oneflow none 512 512 False
+  benchmark_model_with_one_resolution sd15 ${sd15_path} 30 oneflow none 512 512 True
 fi
 
 if [[ "${run_model}" =~ sd21|all ]]; then
   conda activate oneflow
-  benchmark_sd_model_with_one_resolution sd21 ${sd21_path} 20 none none 768 768 False
-  benchmark_sd_model_with_one_resolution sd21 ${sd21_path} 20 oneflow none 768 768 False
-  benchmark_sd_model_with_one_resolution sd21 ${sd21_path} 20 oneflow none 768 768 True
+  benchmark_model_with_one_resolution sd21 ${sd21_path} 20 none none 768 768 False
+  benchmark_model_with_one_resolution sd21 ${sd21_path} 20 oneflow none 768 768 False
+  benchmark_model_with_one_resolution sd21 ${sd21_path} 20 oneflow none 768 768 True
 fi
 
 if [[ "${run_model}" =~ sdxl|all ]]; then
   conda activate oneflow
-  benchmark_sd_model_with_one_resolution sdxl ${sdxl_path} 30 none none 1024 1024 False
-  benchmark_sd_model_with_one_resolution sdxl ${sdxl_path} 30 oneflow none 1024 1024 False
-  benchmark_sd_model_with_one_resolution sdxl ${sdxl_path} 30 oneflow none 1024 1024 True
+  benchmark_model_with_one_resolution sdxl ${sdxl_path} 30 none none 1024 1024 False
+  benchmark_model_with_one_resolution sdxl ${sdxl_path} 30 oneflow none 1024 1024 False
+  benchmark_model_with_one_resolution sdxl ${sdxl_path} 30 oneflow none 1024 1024 True
 fi
 #########################################
 
 #########################################
 if [[ "${run_model}" =~ sd3|all ]]; then
   conda activate nexfort
-  benchmark_sd_model_with_one_resolution sd3 ${sd3_path} 28 none none 1024 1024 False
-  benchmark_sd_model_with_one_resolution sd3 ${sd3_path} 28 nexfort "${sd3_nexfort_compiler_config}" 1024 1024 False
-  benchmark_sd_model_with_one_resolution sd3 ${sd3_path} 28 nexfort "${sd3_nexfort_compiler_config}" 1024 1024 True
+  benchmark_model_with_one_resolution sd3 ${sd3_path} 28 none none 1024 1024 False
+  benchmark_model_with_one_resolution sd3 ${sd3_path} 28 nexfort "${sd3_nexfort_compiler_config}" 1024 1024 False
+  benchmark_model_with_one_resolution sd3 ${sd3_path} 28 nexfort "${sd3_nexfort_compiler_config}" 1024 1024 True
 fi
 
 
 if [[ "${run_model}" =~ flux|all ]]; then
   conda activate nexfort
-  benchmark_sd_model_with_one_resolution flux_dev ${flux_dev_path} 20 none none 1024 1024 False
-  benchmark_sd_model_with_one_resolution flux_dev ${flux_dev_path} 20 nexfort "${flux_nexfort_compiler_config}" 1024 1024 False
-  benchmark_sd_model_with_one_resolution flux_dev ${flux_dev_path} 20 nexfort "${flux_nexfort_compiler_config}" 1024 1024 True
-  benchmark_sd_model_with_one_resolution flux_dev ${flux_dev_path} 20 transform none 1024 1024 False
+  benchmark_model_with_one_resolution flux_dev ${flux_dev_path} 20 none none 1024 1024 False
+  benchmark_model_with_one_resolution flux_dev ${flux_dev_path} 20 nexfort "${flux_nexfort_compiler_config}" 1024 1024 False
+  benchmark_model_with_one_resolution flux_dev ${flux_dev_path} 20 nexfort "${flux_nexfort_compiler_config}" 1024 1024 True
+  benchmark_model_with_one_resolution flux_dev ${flux_dev_path} 20 transform none 1024 1024 False
 
 
-  benchmark_sd_model_with_one_resolution flux_schell ${flux_schell_path} 4 none none 1024 1024 False
-  benchmark_sd_model_with_one_resolution flux_schell ${flux_schell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 False
-  benchmark_sd_model_with_one_resolution flux_schell ${flux_schell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 True
-  benchmark_sd_model_with_one_resolution flux_schell ${flux_schell_path} 4 transform none 1024 1024 False
+  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 none none 1024 1024 False
+  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 False
+  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 True
+  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 transform none 1024 1024 False
 fi
 #########################################
 
