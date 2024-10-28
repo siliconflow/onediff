@@ -343,9 +343,6 @@ def main():
         print(f"Warmup time: {end - begin:.3f}s")
         print("=======================================")
 
-# warmup_compile + warmup_cache = warmup_time_first
-# warmup_compile = warmup_time_second 
-
 
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
