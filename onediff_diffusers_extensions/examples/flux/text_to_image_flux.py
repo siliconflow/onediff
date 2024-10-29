@@ -34,14 +34,13 @@ import numpy as np
 import torch
 from diffusers.utils import load_image
 
+from nexfort.compilers.transform_model import transform_model
+from nexfort.quantization import quantize
+
 from onediffx import (  # quantize_pipe currently only supports the nexfort backend.
     compile_pipe,
     quantize_pipe,
 )
-
-from nexfort.compilers.transform_model import transform_model
-from nexfort.quantization import quantize
-
 
 from PIL import Image, ImageDraw
 
@@ -75,7 +74,7 @@ def parse_args():
         "--compiler",
         type=str,
         default=COMPILER,
-        choices=["none", "transform" ,"nexfort", "compile", "compile-max-autotune"],
+        choices=["none", "transform", "nexfort", "compile", "compile-max-autotune"],
     )
     parser.add_argument(
         "--compiler-config",
@@ -98,6 +97,13 @@ def parse_args():
 
 
 args = parse_args()
+
+
+def get_gpu_memory():
+    gpu_id = torch.cuda.current_device()
+    total_memory = torch.cuda.get_device_properties(gpu_id).total_memory
+
+    return total_memory / 1024**3
 
 
 def load_pipe(
@@ -127,10 +133,8 @@ def load_pipe(
         )
         extra_kwargs["controlnet"] = controlnet
 
-
     pipe = pipeline_cls.from_pretrained(model_name, **extra_kwargs)
-    
-    
+
     if scheduler is not None and scheduler != "none":
         scheduler_cls = getattr(importlib.import_module("diffusers"), scheduler)
         pipe.scheduler = scheduler_cls.from_config(pipe.scheduler.config)
@@ -138,7 +142,7 @@ def load_pipe(
         pipe.load_lora_weights(lora)
         pipe.fuse_lora()
     pipe.safety_checker = None
-    if device is not None:
+    if device is not None and get_gpu_memory() > 24:
         pipe.to(torch.device(device))
     return pipe
 
@@ -221,6 +225,7 @@ def plot_data_and_model(data, coefficients):
 
 
 def main():
+
     from diffusers import FluxPipeline as pipeline_cls
 
     pipe = load_pipe(
@@ -250,15 +255,31 @@ def main():
                 quantize_config = json.loads(args.quantize_config)
             else:
                 quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}'
-            
-            #pipe = quantize_pipe(pipe, ignores=[], **quantize_config)
-            _ = quantize(pipe.transformer, **quantize_config)
+
+            if get_gpu_memory() > 24:
+                _ = quantize(pipe.transformer, **quantize_config)
+            else:
+                # for gpu with little memory, such as 4090
+                if hasattr(pipe, "transformer"):
+                    pipe.transformer = pipe.transformer.to("cuda")
+                    _ = quantize(pipe.transformer, **quantize_config)
+                    pipe.transformer = pipe.transformer.to("cpu")
+
+                if hasattr(pipe, "text_encoder_2"):
+                    pipe.text_encoder_2 = pipe.text_encoder_2.to("cuda")
+                    _ = quantize(pipe.text_encoder_2, **quantize_config)  # t5xxl
+                    pipe.text_encoder_2 = pipe.text_encoder_2.to("cpu")
+
+                # load pip to GPU
+                pipe.to("cuda")
+
         if args.compiler_config is not None:
             # config with dict
             options = json.loads(args.compiler_config)
         else:
             # config with string
             options = '{"mode": "max-optimize:max-autotune:low-precision:cache-all", "memory_format": "channels_last"}'
+
         pipe = compile_pipe(
             pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
@@ -343,7 +364,6 @@ def main():
         print(f"Warmup time: {end - begin:.3f}s")
         print("=======================================")
 
-
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
     kwarg_inputs = get_kwarg_inputs()
@@ -361,7 +381,6 @@ def main():
     iter_per_sec = iter_profiler.get_iter_per_sec()
     if iter_per_sec is not None:
         print(f"Iterations per second: {iter_per_sec:.3f}")
-
 
     cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
