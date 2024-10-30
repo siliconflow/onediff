@@ -35,17 +35,7 @@ def _(mod: DualModule, verbose=False):
 def handle_deployable_exception(func):
     @wraps(func)
     def wrapper(self, *args, **kwargs):
-        if transform_mgr.debug_mode:
-            return func(self, *args, **kwargs)
-        else:
-            try:
-                return func(self, *args, **kwargs)
-            except Exception as e:
-                logger.error(f"Exception in {func.__name__}: {e=}")
-                logger.warning("Recompile oneflow module ...")
-                del self._deployable_module_model.oneflow_module
-                self._deployable_module_dpl_graph = None
-                return func(self, *args, **kwargs)
+        return func(self, *args, **kwargs)
 
     return wrapper
 
