@@ -247,6 +247,7 @@ class OneflowDeployableModule(DeployableModule):
             >>> model.apply_online_quant(quant_config)
         """
         self._deployable_module_quant_config = quant_config
+        self._deployable_module_quantized = True
 
 
 def get_mixed_deployable_module(module_cls):
