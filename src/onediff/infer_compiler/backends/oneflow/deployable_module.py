@@ -247,25 +247,7 @@ class OneflowDeployableModule(DeployableModule):
             >>> model.apply_online_quant(quant_config)
         """
         self._deployable_module_quant_config = quant_config
-    def __init__(self, torch_module, oneflow_module, dynamic=True, options=None):
-        torch.nn.Module.__init__(self)
-        object.__setattr__(
-            self,
-            "_deployable_module_model",
-            get_mixed_dual_module(torch_module.__class__)(torch_module, oneflow_module),
-        )
-        object.__setattr__(self, "_modules", torch_module._modules)
-        object.__setattr__(self, "_torch_module", torch_module)
-        self._deployable_module_enable_dynamic = dynamic
-        self._deployable_module_quant_config = None
-        self._deployable_module_quantized = False
-        self._deployable_module_options = (
-            options if options is not None else OneflowCompileOptions()
-        )
-
-    def is_quantized(self):
-        """Returns whether the module has been quantized."""
-        return getattr(self, '_deployable_module_quantized', False)
+        self._deployable_module_quantized = True
 
 
 def get_mixed_deployable_module(module_cls):
