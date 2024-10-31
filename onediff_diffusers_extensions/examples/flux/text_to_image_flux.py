@@ -270,7 +270,7 @@ def main():
                     _ = quantize(pipe.text_encoder_2, **quantize_config)  # t5xxl
                     pipe.text_encoder_2 = pipe.text_encoder_2.to("cpu")
 
-                # load pip to GPU
+                # load pipe to GPU
                 pipe.to("cuda")
 
         if args.compiler_config is not None:
@@ -284,6 +284,29 @@ def main():
             pipe, backend="nexfort", options=options, fuse_qkv_projections=True
         )
     elif args.compiler == "transform":
+        if args.quantize:
+            if args.quantize_config is not None:
+                quantize_config = json.loads(args.quantize_config)
+            else:
+                quantize_config = '{"quant_type": "fp8_e4m3_e4m3_dynamic_per_tensor"}'
+
+            if get_gpu_memory() > 24:
+                _ = quantize(pipe.transformer, **quantize_config)
+            else:
+                # for gpu with little memory, such as 4090
+                if hasattr(pipe, "transformer"):
+                    pipe.transformer = pipe.transformer.to("cuda")
+                    _ = quantize(pipe.transformer, **quantize_config)
+                    pipe.transformer = pipe.transformer.to("cpu")
+
+                if hasattr(pipe, "text_encoder_2"):
+                    pipe.text_encoder_2 = pipe.text_encoder_2.to("cuda")
+                    _ = quantize(pipe.text_encoder_2, **quantize_config)  # t5xxl
+                    pipe.text_encoder_2 = pipe.text_encoder_2.to("cpu")
+
+                # load pipe to GPU
+                pipe.to("cuda")
+
         _ = transform_model(pipe.transformer)
     elif args.compiler in ("compile", "compile-max-autotune"):
         mode = "max-autotune" if args.compiler == "compile-max-autotune" else None
