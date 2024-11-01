@@ -35,6 +35,7 @@ import numpy as np
 import torch
 from diffusers.utils import load_image
 from onediff.infer_compiler import oneflow_compile
+from onediff.optimization.quant_optimizer import quantize_model
 
 from onediffx import (  # quantize_pipe currently only supports the nexfort backend.
     compile_pipe,
@@ -252,6 +253,13 @@ def main():
         print("Oneflow backend is now active...")
         # Note: The compile_pipe() based on the oneflow backend is incompatible with T5EncoderModel.
         # pipe = compile_pipe(pipe)
+        
+        if args.quantize: 
+            if hasattr(pipe, "unet"):
+                pipe.unet = quantize_model(pipe.unet)
+            if hasattr(pipe, "transformer"):
+                pipe.transformer = quantize_model(pipe.transformer)
+                
         if hasattr(pipe, "unet"):
             pipe.unet = oneflow_compile(pipe.unet)
         if hasattr(pipe, "transformer"):
