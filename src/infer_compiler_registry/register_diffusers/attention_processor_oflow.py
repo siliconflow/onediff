@@ -361,6 +361,16 @@ class Attention(nn.Module):
         # here we simply pass along all tensors to the selected processor class
         # For standard processors that are defined here, `**cross_attention_kwargs` is empty
 
+        from diffusers.models.attention_processor import (
+            AttnProcessor as DiffusersAttnProcessor,
+            AttnProcessor2_0 as DiffusersAttnProcessor2_0,
+        )
+
+        if isinstance(self.processor, DiffusersAttnProcessor) or isinstance(
+            self.processor, DiffusersAttnProcessor2_0
+        ):
+            self.set_processor(AttnProcessor())
+
         return self.processor(
             self,
             hidden_states,
