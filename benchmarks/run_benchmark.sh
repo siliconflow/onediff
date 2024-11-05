@@ -19,7 +19,7 @@ sd21_path="${model_dir}/stable-diffusion-2-1"
 sdxl_path="${model_dir}/stable-diffusion-xl-base-1.0"
 sd3_path="/data1/home/zhangxu/stable-diffusion-3-medium-diffusers"
 flux_dev_path="${model_dir}/FLUX.1-dev/snapshots/0ef5fff789c832c5c7f4e127f94c8b54bbcced44"
-flux_schell_path="${model_dir}/FLUX.1-schnell"
+flux_schnell_path="${model_dir}/FLUX.1-schnell"
 
 # get current time
 current_time=$(date +"%Y-%m-%d")
@@ -152,10 +152,10 @@ if [[ "${run_model}" =~ flux|all ]]; then
   benchmark_model_with_one_resolution flux_dev ${flux_dev_path} 20 transform none 1024 1024 False
 
 
-  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 none none 1024 1024 False
-  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 False
-  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 True
-  benchmark_model_with_one_resolution flux_schell ${flux_schell_path} 4 transform none 1024 1024 False
+  benchmark_model_with_one_resolution flux_schnell ${flux_schnell_path} 4 none none 1024 1024 False
+  benchmark_model_with_one_resolution flux_schnell ${flux_schnell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 False
+  benchmark_model_with_one_resolution flux_schnell ${flux_schnell_path} 4 nexfort "${flux_nexfort_compiler_config}" 1024 1024 True
+  benchmark_model_with_one_resolution flux_schnell ${flux_schnell_path} 4 transform none 1024 1024 False
 fi
 #########################################
 
