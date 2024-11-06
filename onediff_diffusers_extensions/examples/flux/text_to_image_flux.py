@@ -259,7 +259,7 @@ def main():
             if get_gpu_memory() > 24:
                 _ = quantize(pipe.transformer, **quantize_config)
             else:
-                # for gpu with little memory, such as 4090
+                # (TODO:support 4090) for gpu with little memory, such as 4090
                 if hasattr(pipe, "transformer"):
                     pipe.transformer = pipe.transformer.to("cuda")
                     _ = quantize(pipe.transformer, **quantize_config)
