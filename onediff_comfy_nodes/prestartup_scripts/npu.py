@@ -1,6 +1,7 @@
 _IS_NPU_AVAILABLE = False
 try:
     import torch_npu
+    from torch_npu.contrib import transfer_to_npu
 
     _IS_NPU_AVAILABLE = True
 except:
@@ -8,12 +9,7 @@ except:
 
 
 if _IS_NPU_AVAILABLE:
-    import torch
-    from torch_npu.contrib import transfer_to_npu
-
     import comfy
-    from comfy.cli_args import args
-    import comfy.model_management
     from comfy.model_management import (
         is_device_cpu,
         is_intel_xpu,
