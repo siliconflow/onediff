@@ -15,13 +15,13 @@ import oneflow as flow  # usort: skip
 
 from diffusers import StableDiffusionXLPipeline
 
-# from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from onediffx import compile_pipe
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
-    "--base", type=str, default="stabilityai/stable-diffusion-xl-base-1.0"
+    "--base", type=str, default="/maasjfs/hf_models/stable-diffusion-xl-base-1.0"
 )
 parser.add_argument("--variant", type=str, default="fp16")
 parser.add_argument(
@@ -82,7 +82,7 @@ base = StableDiffusionXLPipeline.from_pretrained(
 base.to("cuda")
 
 # # Compile unet with oneflow
-# if args.compile_unet:
+# if args.compiler == "oneflow":
 #     print("Compiling unet with oneflow.")
 #     base.unet = oneflow_compile(base.unet)
 
@@ -93,6 +93,7 @@ base.to("cuda")
 
 # Compile the pipe
 if args.compiler == "oneflow":
+    # pass
     base = compile_pipe(base)
 elif args.compiler == "nexfort":
     if args.compiler_config is not None:
