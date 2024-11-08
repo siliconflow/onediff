@@ -106,9 +106,13 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
         if diffusers_version >= diffusers_0280_v:
-            self.video_processor = VideoProcessor(do_resize=True, vae_scale_factor=self.vae_scale_factor)
+            self.video_processor = VideoProcessor(
+                do_resize=True, vae_scale_factor=self.vae_scale_factor
+            )
         else:
-            self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
+            self.image_processor = VaeImageProcessor(
+                vae_scale_factor=self.vae_scale_factor
+            )
 
         self.fast_unet = FastUNetSpatioTemporalConditionModel(self.unet)
 
@@ -195,9 +199,13 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
                 image.shape, generator=generator, device=device, dtype=image.dtype
             )
         else:
-            image = self.video_processor.preprocess(image, height=height, width=width).to(device)
-            noise = randn_tensor(image.shape, generator=generator, device=device, dtype=image.dtype)
-            
+            image = self.video_processor.preprocess(
+                image, height=height, width=width
+            ).to(device)
+            noise = randn_tensor(
+                image.shape, generator=generator, device=device, dtype=image.dtype
+            )
+
         image = image + noise_aug_strength * noise
 
         needs_upcasting = (
@@ -372,9 +380,13 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
                 self.vae.to(dtype=torch.float16)
             frames = self.decode_latents(latents, num_frames, decode_chunk_size)
             if diffusers_version < diffusers_0280_v:
-                frames = tensor2vid(frames, self.image_processor, output_type=output_type)
+                frames = tensor2vid(
+                    frames, self.image_processor, output_type=output_type
+                )
             else:
-                frames = self.video_processor.postprocess_video(video=frames, output_type=output_type)
+                frames = self.video_processor.postprocess_video(
+                    video=frames, output_type=output_type
+                )
         else:
             frames = latents
 
