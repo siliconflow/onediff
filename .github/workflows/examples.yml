@@ -337,6 +337,7 @@ jobs:
         run: |
           docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} sh -c 'cd onediff_diffusers_extensions && python3 -m pip install -e .'
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install huggingface-hub==0.25.2 --user
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
         run: docker exec -w /src/onediff ${{ env.CONTAINER_NAME }} python3 tests/test_quantize_custom_model.py
       - if: matrix.test-suite == 'diffusers_examples' && startsWith(matrix.image, 'onediff-pro')
