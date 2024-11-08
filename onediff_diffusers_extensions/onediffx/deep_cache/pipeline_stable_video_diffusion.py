@@ -20,13 +20,18 @@ from packaging import version
 diffusers_0240_v = version.parse("0.24.0")
 diffusers_0251_v = version.parse("0.25.1")
 diffusers_0263_v = version.parse("0.26.3")
+diffusers_0280_v = version.parse("0.28.0")
 diffusers_version = version.parse(importlib.metadata.version("diffusers"))
 
 import numpy as np
 import PIL.Image
 import torch
 
-from diffusers.image_processor import VaeImageProcessor
+
+if diffusers_version >= diffusers_0280_v:
+    from diffusers.video_processor import VideoProcessor
+else:
+    from diffusers.image_processor import VaeImageProcessor
 from diffusers.models import AutoencoderKLTemporalDecoder
 from diffusers.schedulers import EulerDiscreteScheduler
 from diffusers.utils import BaseOutput, logging
@@ -100,7 +105,14 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
             feature_extractor=feature_extractor,
         )
         self.vae_scale_factor = 2 ** (len(self.vae.config.block_out_channels) - 1)
-        self.image_processor = VaeImageProcessor(vae_scale_factor=self.vae_scale_factor)
+        if diffusers_version >= diffusers_0280_v:
+            self.video_processor = VideoProcessor(
+                do_resize=True, vae_scale_factor=self.vae_scale_factor
+            )
+        else:
+            self.image_processor = VaeImageProcessor(
+                vae_scale_factor=self.vae_scale_factor
+            )
 
         self.fast_unet = FastUNetSpatioTemporalConditionModel(self.unet)
 
@@ -174,7 +186,12 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
         fps = fps - 1
 
         # 4. Encode input image using VAE
-        if diffusers_version > diffusers_0251_v:
+        if diffusers_version <= diffusers_0251_v:
+            image = self.image_processor.preprocess(image, height=height, width=width)
+            noise = randn_tensor(
+                image.shape, generator=generator, device=image.device, dtype=image.dtype
+            )
+        elif diffusers_version < diffusers_0280_v:
             image = self.image_processor.preprocess(
                 image, height=height, width=width
             ).to(device)
@@ -182,10 +199,13 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
                 image.shape, generator=generator, device=device, dtype=image.dtype
             )
         else:
-            image = self.image_processor.preprocess(image, height=height, width=width)
+            image = self.video_processor.preprocess(
+                image, height=height, width=width
+            ).to(device)
             noise = randn_tensor(
-                image.shape, generator=generator, device=image.device, dtype=image.dtype
+                image.shape, generator=generator, device=device, dtype=image.dtype
             )
+
         image = image + noise_aug_strength * noise
 
         needs_upcasting = (
@@ -359,7 +379,14 @@ class StableVideoDiffusionPipeline(DiffusersStableVideoDiffusionPipeline):
             if needs_upcasting:
                 self.vae.to(dtype=torch.float16)
             frames = self.decode_latents(latents, num_frames, decode_chunk_size)
-            frames = tensor2vid(frames, self.image_processor, output_type=output_type)
+            if diffusers_version < diffusers_0280_v:
+                frames = tensor2vid(
+                    frames, self.image_processor, output_type=output_type
+                )
+            else:
+                frames = self.video_processor.postprocess_video(
+                    video=frames, output_type=output_type
+                )
         else:
             frames = latents
 
