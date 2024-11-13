@@ -3,12 +3,10 @@
 1. [Environment Setup](#environment-setup)
    - [Set Up OneDiff](#set-up-onediff)
    - [Set Up NexFort Backend](#set-up-nexfort-backend)
-   - [Set Up Diffusers Library](#set-up-diffusers-library)
-   - [Download FLUX Model for Diffusers](#download-flux-model-for-diffusers)
-2. [Execution Instructions](#execution-instructions)
-   - [Run Without Compilation (Baseline)](#run-without-compilation-baseline)
-   - [Run With Compilation](#run-with-compilation)
-3. [Performance Comparison](#performance-comparison)
+   - [Set Up Diffusers Library](#set-up-diffusers)
+   - [Download FLUX Model for Diffusers](#set-up-flux)
+2. [Execution Instructions](#run)
+3. [Performance Comparison](#performance-comparation)
 4. [Dynamic Shape for Flux](#dynamic-shape-for-flux)
 5. [Quality](#quality)
 
@@ -92,7 +90,7 @@ Testing on RTX 4090, with image size of 1024*1024, iterating 20 steps::
  <sup>2</sup> OneDiff Warmup with Compilation time is tested on AMD EPYC 7543 32-Core Processor
 
 
-## Dynamic shape for Flux.
+## Dynamic shape for Flux
 
 Run:
 
