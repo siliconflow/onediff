@@ -129,7 +129,7 @@ class FluxGenerator:
             from nexfort.quantization import quantize
             self.pipe.transformer = quantize(self.pipe.transformer, quant_type="fp8_e4m3_e4m3_dynamic_per_tensor")
             if enable_speedup_t5:
-                pipe.text_encoder_2 = quantize(pipe.text_encoder_2, quant_type="fp8_e4m3_e4m3_dynamic_per_tensor")
+                self.pipe.text_encoder_2 = quantize(self.pipe.text_encoder_2, quant_type="fp8_e4m3_e4m3_dynamic_per_tensor")
         
         self.pipe.to(device)
 
@@ -138,7 +138,7 @@ class FluxGenerator:
             from nexfort.compilers.transform_model import transform_model
             self.pipe.transformer = transform_model(self.pipe.transformer)
             if enable_speedup_t5:
-                pipe.text_encoder_2 = transform_model(pipe.text_encoder_2)
+                self.pipe.text_encoder_2 = transform_model(self.pipe.text_encoder_2)
 
     def warmup(self, gen_args, warmup_iterations=1):
         warmup_args = gen_args.copy()
