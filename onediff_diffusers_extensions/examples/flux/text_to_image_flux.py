@@ -123,6 +123,7 @@ class FluxGenerator:
             torch_dtype=torch.bfloat16,
         )
 
+        # Put the quantize process after `self.pipe.to(device)` if you have more than 32GB ram.
         if enable_quantize:
             print("quant...")
             from nexfort.quantization import quantize
@@ -168,7 +169,7 @@ class FluxGenerator:
 
 
 def main():
-    flux = FluxGenerator(args.model, args.quantize, args.fast_transform)
+    flux = FluxGenerator(args.model, args.quantize, args.fast_transform, args.speedup_t5)
 
     if args.run_multiple_prompts:
         dynamic_prompts = generate_texts(max_length=101)
