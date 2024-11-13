@@ -2,9 +2,10 @@ import argparse
 import json
 import time
 
+import nexfort
+
 import torch
 from diffusers import FluxPipeline
-import nexfort
 
 
 def parse_args():
@@ -74,7 +75,7 @@ def parse_args():
     )
     parser.add_argument(
         "--run_multiple_prompts",
-       action="store_true",
+        action="store_true",
     )
     return parser.parse_args()
 
@@ -117,7 +118,13 @@ def generate_texts(min_length=50, max_length=302):
 
 
 class FluxGenerator:
-    def __init__(self, model, enable_quantize=False, enable_fast_transformer=False, enable_speedup_t5=False):
+    def __init__(
+        self,
+        model,
+        enable_quantize=False,
+        enable_fast_transformer=False,
+        enable_speedup_t5=False,
+    ):
         self.pipe = FluxPipeline.from_pretrained(
             model,
             torch_dtype=torch.bfloat16,
@@ -127,15 +134,22 @@ class FluxGenerator:
         if enable_quantize:
             print("quant...")
             from nexfort.quantization import quantize
-            self.pipe.transformer = quantize(self.pipe.transformer, quant_type="fp8_e4m3_e4m3_dynamic_per_tensor")
+
+            self.pipe.transformer = quantize(
+                self.pipe.transformer, quant_type="fp8_e4m3_e4m3_dynamic_per_tensor"
+            )
             if enable_speedup_t5:
-                self.pipe.text_encoder_2 = quantize(self.pipe.text_encoder_2, quant_type="fp8_e4m3_e4m3_dynamic_per_tensor")
-        
+                self.pipe.text_encoder_2 = quantize(
+                    self.pipe.text_encoder_2,
+                    quant_type="fp8_e4m3_e4m3_dynamic_per_tensor",
+                )
+
         self.pipe.to(device)
 
         if enable_fast_transformer:
             print("compile...")
             from nexfort.compilers.transform_model import transform_model
+
             self.pipe.transformer = transform_model(self.pipe.transformer)
             if enable_speedup_t5:
                 self.pipe.text_encoder_2 = transform_model(self.pipe.text_encoder_2)
@@ -169,7 +183,9 @@ class FluxGenerator:
 
 
 def main():
-    flux = FluxGenerator(args.model, args.quantize, args.fast_transform, args.speedup_t5)
+    flux = FluxGenerator(
+        args.model, args.quantize, args.fast_transform, args.speedup_t5
+    )
 
     if args.run_multiple_prompts:
         dynamic_prompts = generate_texts(max_length=101)
@@ -211,6 +227,7 @@ def main():
                 flux.generate(gen_args)
                 end_time = time.time()
                 print(f"Inference time: {end_time - start_time:.2f} seconds")
+
 
 if __name__ == "__main__":
     main()
