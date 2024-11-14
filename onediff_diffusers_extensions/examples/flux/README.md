@@ -40,7 +40,7 @@ python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
 
 
 ## Performance comparation
-### Acceleration Onediff-Community
+### Acceleration with Onediff-Community
 
 ```
 NEXFORT_ENABLE_FP8_QUANTIZE_ATTENTION=0 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
@@ -64,7 +64,7 @@ Testing on NVIDIA H20, with image size of 1024*1024, iterating 20 steps:
 
 <sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468V. Note this is just for reference, and it varies a lot on different CPU.
 
-### Acceleration Onediff-Enterprise(with quantization)
+### Acceleration with Onediff-Enterprise(with quantization)
 ```
 NEXFORT_FORCE_QUANTE_ON_CUDA=1 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --quantize \
