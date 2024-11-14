@@ -44,7 +44,7 @@ python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
 ```
 NEXFORT_FORCE_QUANTE_ON_CUDA=1 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --quantize \
-    --fast-transform \
+    --transform \
     --saved-image flux_compile.png
 ```
 
@@ -67,7 +67,7 @@ Testing on NVIDIA H20, with image size of 1024*1024, iterating 20 steps:
 ```
 NEXFORT_FORCE_QUANTE_ON_CUDA=1 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --quantize \
-    --fast-transform \
+    --transform \
     --speedup-t5 \  # Must quantize t5, because 4090 has only 24GB of memory
     --saved-image flux_compile.png
 ```
@@ -97,14 +97,20 @@ Run:
 ```
 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --quantize \
-    --fast-transform \
+    --transform \
     --run_multiple_resolutions 1 \
     --saved-image flux_compile.png
 ```
 
 ## Quality
-When using nexfort as the backend for onediff compilation acceleration, the generated images are lossless.
+When using nexfort as the backend for onediff compilation acceleration, the generated images are nearly lossless.(The following images are generated on an NVIDIA H20)
 
+### Generated image with pytorch
+<p align="center">
+<img src="../../../imgs/flux_base.png">
+</p>
+
+### Generated image with nexfort acceleration
 <p align="center">
 <img src="../../../imgs/nexfort_flux_demo.png">
 </p>

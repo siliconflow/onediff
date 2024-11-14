@@ -29,7 +29,7 @@ def parse_args():
         help="Enable fp8 quantization.",
     )
     parser.add_argument(
-        "--fast-transform",
+        "--transform",
         action="store_true",
         help="Enable speedup with nexfort.",
     )
@@ -148,11 +148,11 @@ class FluxGenerator:
 
         if enable_fast_transformer:
             print("compile...")
-            from nexfort.compilers.transform_model import transform_model
+            from nexfort.compilers import transform
 
-            self.pipe.transformer = transform_model(self.pipe.transformer)
+            self.pipe.transformer = transform(self.pipe.transformer)
             if enable_speedup_t5:
-                self.pipe.text_encoder_2 = transform_model(self.pipe.text_encoder_2)
+                self.pipe.text_encoder_2 = transform(self.pipe.text_encoder_2)
 
     def warmup(self, gen_args, warmup_iterations=1):
         warmup_args = gen_args.copy()
@@ -183,9 +183,7 @@ class FluxGenerator:
 
 
 def main():
-    flux = FluxGenerator(
-        args.model, args.quantize, args.fast_transform, args.speedup_t5
-    )
+    flux = FluxGenerator(args.model, args.quantize, args.transform, args.speedup_t5)
 
     if args.run_multiple_prompts:
         dynamic_prompts = generate_texts(max_length=101)
