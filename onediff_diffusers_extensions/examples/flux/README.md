@@ -40,7 +40,31 @@ python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
 
 
 ## Performance comparation
+### Acceleration Onediff-Community
 
+```
+NEXFORT_ENABLE_FP8_QUANTIZE_ATTENTION=0 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
+    --transform \
+    --saved-image flux_compile.png
+```
+
+Testing on NVIDIA H20, with image size of 1024*1024, iterating 20 steps:
+| Metric                                           |                     |
+| ------------------------------------------------ | ------------------- |
+| Data update date(yyyy-mm-dd)                     | 2024-11-13          |
+| PyTorch iteration speed                          | 1.38 it/s           |
+| OneDiff iteration speed                          | 1.89 it/s (+37.0%)  |
+| PyTorch E2E time                                 | 14.94 s             |
+| OneDiff E2E time                                 | 11.30 s (-24.4%)     |
+| PyTorch Max Mem Used                             | 33.849 GiB          |
+| OneDiff Max Mem Used                             | 33.850 GiB          |
+| PyTorch Warmup with Run time                     | 16.15 s             |
+| OneDiff Warmup with Compilation time<sup>1</sup> | 166.22 s            |
+| OneDiff Warmup with Cache time                   | 12.58 s              |
+
+<sup>1</sup> OneDiff Warmup with Compilation time is tested on Intel(R) Xeon(R) Platinum 8468V. Note this is just for reference, and it varies a lot on different CPU.
+
+### Acceleration Onediff-Enterprise(with quantization)
 ```
 NEXFORT_FORCE_QUANTE_ON_CUDA=1 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --quantize \
@@ -110,7 +134,12 @@ When using nexfort as the backend for onediff compilation acceleration, the gene
 <img src="../../../imgs/flux_base.png">
 </p>
 
-### Generated image with nexfort acceleration
+### Generated image with nexfort acceleration(Community)
 <p align="center">
-<img src="../../../imgs/nexfort_flux_demo.png">
+<img src="../../../imgs/nexfort_flux_community.png">
+</p>
+
+### Generated image with nexfort acceleration(Enterprise)
+<p align="center">
+<img src="../../../imgs/nexfort_flux_enterprise.png">
 </p>
