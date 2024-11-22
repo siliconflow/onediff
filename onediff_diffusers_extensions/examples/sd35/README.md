@@ -122,7 +122,7 @@ Run:
 python3 onediff_diffusers_extensions/examples/sd35/text_to_image_sd35.py \
     --quantize \
     --transform \
-    --run_multiple_resolutions 1 \
+    --run_multiple_resolutions \
     --saved-image sd35_compile.png
 ```
 
