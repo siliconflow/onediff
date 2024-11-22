@@ -192,7 +192,7 @@ def main():
         "guidance_scale": args.guidance_scale,
     }
 
-    # sd35.warmup(gen_args)
+    sd35.warmup(gen_args)
 
     for prompt in prompt_list:
         gen_args["prompt"] = prompt
