@@ -1,4 +1,4 @@
-# Run Flux with nexfort backend (Beta Release)
+# Run SD35 with nexfort backend (Beta Release)
 
 1. [Environment Setup](#environment-setup)
    - [Set Up OneDiff](#set-up-onediff)
