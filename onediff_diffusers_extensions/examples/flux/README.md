@@ -122,7 +122,7 @@ Run:
 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --quantize \
     --transform \
-    --run_multiple_resolutions 1 \
+    --run_multiple_resolutions \
     --saved-image flux_compile.png
 ```
 
