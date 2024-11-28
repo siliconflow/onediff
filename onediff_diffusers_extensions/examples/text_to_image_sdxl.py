@@ -93,7 +93,7 @@ base.to("cuda")
 
 # Compile the pipe
 if args.compiler == "oneflow":
-    base.unet = oneflow_compile(base.unet)
+from onediff.infer_compiler import oneflow_compile
 elif args.compiler == "nexfort":
     if args.compiler_config is not None:
         options = json.loads(args.compiler_config)
