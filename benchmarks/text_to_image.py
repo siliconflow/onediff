@@ -46,6 +46,7 @@ from PIL import Image, ImageDraw
 def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default=MODEL)
+    parser.add_argument("--dtype", type=str, default="half")
     parser.add_argument("--variant", type=str, default=VARIANT)
     parser.add_argument("--custom-pipeline", type=str, default=CUSTOM_PIPELINE)
     parser.add_argument("--scheduler", type=str, default=SCHEDULER)
@@ -92,6 +93,8 @@ def parse_args():
         default=QUANTIZE_CONFIG,
     )
     parser.add_argument("--quant-submodules-config-path", type=str, default=None)
+    parser.add_argument("--revision", type=str, default=None)
+    parser.add_argument("--local-files-only", action="store_true")
     return parser.parse_args()
 
 
@@ -108,6 +111,8 @@ def load_pipe(
     scheduler=None,
     lora=None,
     controlnet=None,
+    revision=None,
+    local_files_only=False,
 ):
     extra_kwargs = {}
     if custom_pipeline is not None:
@@ -115,6 +120,8 @@ def load_pipe(
     if variant is not None:
         extra_kwargs["variant"] = variant
     if dtype is not None:
+        dtype = getattr(torch, dtype)
+        assert isinstance(dtype, torch.dtype)
         extra_kwargs["torch_dtype"] = dtype
     if controlnet is not None:
         from diffusers import ControlNetModel
@@ -124,6 +131,11 @@ def load_pipe(
             torch_dtype=dtype,
         )
         extra_kwargs["controlnet"] = controlnet
+    if revision is not None:
+        extra_kwargs["revision"] = revision
+    if local_files_only:
+        extra_kwargs["local_files_only"] = True
+
     if os.path.exists(os.path.join(model_name, "calibrate_info.txt")):
         from onediff.quantization import QuantPipeline
 
@@ -231,11 +243,14 @@ def main():
     pipe = load_pipe(
         pipeline_cls,
         args.model,
+        dtype=args.dtype,
         variant=args.variant,
         custom_pipeline=args.custom_pipeline,
         scheduler=args.scheduler,
         lora=args.lora,
         controlnet=args.controlnet,
+        revision=args.revision,
+        local_files_only=args.local_files_only,
     )
 
     core_net = None
@@ -349,6 +364,13 @@ def main():
             kwarg_inputs["cache_block_id"] = args.cache_block_id
         return kwarg_inputs
 
+    kwarg_inputs = get_kwarg_inputs()
+
+    # patch for flux pipeline, rename negative_prompt to prompt2
+    if pipe.__class__.__name__ == "FluxPipeline":
+        kwarg_inputs["prompt_2"] = kwarg_inputs["negative_prompt"]
+        kwarg_inputs.pop("negative_prompt")
+
     # NOTE: Warm it up.
     # The initial calls will trigger compilation and might be very slow.
     # After that, it should be very fast.
@@ -357,7 +379,7 @@ def main():
         print("=======================================")
         print("Begin warmup")
         for _ in range(args.warmups):
-            pipe(**get_kwarg_inputs())
+            pipe(**kwarg_inputs)
         end = time.time()
         print("End warmup")
         print(f"Warmup time: {end - begin:.3f}s")
@@ -365,7 +387,7 @@ def main():
 
     # Let"s see it!
     # Note: Progress bar might work incorrectly due to the async nature of CUDA.
-    kwarg_inputs = get_kwarg_inputs()
+
     iter_profiler = IterationProfiler()
     if "callback_on_step_end" in inspect.signature(pipe).parameters:
         kwarg_inputs["callback_on_step_end"] = iter_profiler.callback_on_step_end
@@ -387,6 +409,9 @@ def main():
     else:
         cuda_mem_after_used = torch.cuda.max_memory_allocated() / (1024**3)
     print(f"Max used CUDA memory : {cuda_mem_after_used:.3f}GiB")
+    if args.compiler != "oneflow":
+        cuda_mem_max_reserved = torch.cuda.max_memory_reserved() / (1024**3)
+        print(f"Peak CUDA memory : {cuda_mem_max_reserved:.3f}GiB")
     print("=======================================")
 
     if args.print_output:
