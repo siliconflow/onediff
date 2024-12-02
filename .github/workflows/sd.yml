@@ -40,6 +40,16 @@ jobs:
               suffix: "cu121",
               repo: "onediff-pro",
             }
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:24.01-py3",
+              suffix: "cu118-dev",
+              repo: "onediff",
+            }
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:24.01-py3",
+              suffix: "cu121-dev",
+              repo: "onediff-pro",
+            }
 
     env:
       DOCKER_BUILDKIT: 1
