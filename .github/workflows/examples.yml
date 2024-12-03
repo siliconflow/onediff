@@ -174,14 +174,14 @@ jobs:
           - ${{ github.event.pull_request.head.repo.full_name == github.repository }}
         image:
           - onediff:cu118
-          - onediff-pro:cu121
+          - onediff-pro:cu122
         test-suite:
           - diffusers_examples
           - comfy
           - webui
         exclude:
           - should-run-pro: false
-            image: onediff-pro:cu121
+            image: onediff-pro:cu122
     steps:
       - name: Login to ACR with the AccessKey pair
         if: github.event.pull_request.head.repo.full_name == github.repository
