@@ -79,7 +79,7 @@ jobs:
       - name: Set env (Pro)
         if: matrix.image.repo == 'onediff-pro'
         run: |
-          echo ONEFLOW_PIP_INDEX="https://${{ secrets.ONEFLOW_PRIV_OSS_BUCKET }}.oss-cn-beijing.aliyuncs.com/branch/main/cu121" >> $GITHUB_ENV
+          echo ONEFLOW_PIP_INDEX="https://${{ secrets.ONEFLOW_PRIV_OSS_BUCKET }}.oss-cn-beijing.aliyuncs.com/branch/main/cu122" >> $GITHUB_ENV
       - name: Get OneFlow version
         id: get-oneflow-version
         run: |
