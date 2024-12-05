@@ -171,7 +171,7 @@ jobs:
       max-parallel: 5
       matrix:
         should-run-pro:
-          - ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+          - ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'schedule' }}
         image:
           - onediff:cu118
           - onediff-pro:cu122
