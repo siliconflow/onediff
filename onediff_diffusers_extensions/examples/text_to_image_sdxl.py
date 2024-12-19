@@ -15,7 +15,7 @@ import oneflow as flow  # usort: skip
 
 from diffusers import StableDiffusionXLPipeline
 
-# from onediff.infer_compiler import oneflow_compile
+from onediff.infer_compiler import oneflow_compile
 from onediff.schedulers import EulerDiscreteScheduler
 from onediffx import compile_pipe
 
@@ -93,7 +93,7 @@ base.to("cuda")
 
 # Compile the pipe
 if args.compiler == "oneflow":
-    base = compile_pipe(base)
+    base.unet = oneflow_compile(base.unet)
 elif args.compiler == "nexfort":
     if args.compiler_config is not None:
         options = json.loads(args.compiler_config)
