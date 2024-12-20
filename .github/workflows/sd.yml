@@ -40,6 +40,11 @@ jobs:
               suffix: "cu121",
               repo: "onediff-pro",
             }
+          - {
+              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
+              suffix: "cu122",
+              repo: "onediff-pro",
+            }
 
     env:
       DOCKER_BUILDKIT: 1
@@ -79,7 +84,7 @@ jobs:
       - name: Set env (Pro)
         if: matrix.image.repo == 'onediff-pro'
         run: |
-          echo ONEFLOW_PIP_INDEX="https://${{ secrets.ONEFLOW_PRIV_OSS_BUCKET }}.oss-cn-beijing.aliyuncs.com/branch/main/cu121" >> $GITHUB_ENV
+          echo ONEFLOW_PIP_INDEX="https://${{ secrets.ONEFLOW_PRIV_OSS_BUCKET }}.oss-cn-beijing.aliyuncs.com/branch/main/${{ matrix.image.suffix }}" >> $GITHUB_ENV
       - name: Get OneFlow version
         id: get-oneflow-version
         run: |
