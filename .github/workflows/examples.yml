@@ -8,8 +8,8 @@ on:
       - "**/*.md"
       - "LICENSE*"
   schedule:
-    # every 3 hours
-    - cron: "0 */3 * * *"
+    # every 6 hours
+    - cron: "0 */6 * * *"
 
 env:
   CONTAINER_NAME: onediff-test
