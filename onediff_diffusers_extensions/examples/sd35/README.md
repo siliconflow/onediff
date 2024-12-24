@@ -43,7 +43,9 @@ python3 onediff_diffusers_extensions/examples/sd35/text_to_image_sd35.py \
 ### Acceleration with Onediff-Community
 
 ```
-NEXFORT_ENABLE_FP8_QUANTIZE_ATTENTION=0 python3 onediff_diffusers_extensions/examples/sd35/text_to_image_sd35.py \
+NEXFORT_ENABLE_TRITON_AUTOTUNE_CACHE=0  \
+NEXFORT_ENABLE_FP8_QUANTIZE_ATTENTION=0 \
+python3 onediff_diffusers_extensions/examples/sd35/text_to_image_sd35.py \
     --transform \
     --saved-image sd35_compile.png
 ```
