@@ -43,7 +43,9 @@ python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
 ### Acceleration with Onediff-Community
 
 ```
-NEXFORT_ENABLE_FP8_QUANTIZE_ATTENTION=0 python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
+NEXFORT_ENABLE_TRITON_AUTOTUNE_CACHE=0  \
+NEXFORT_ENABLE_FP8_QUANTIZE_ATTENTION=0 \
+python3 onediff_diffusers_extensions/examples/flux/text_to_image_flux.py \
     --transform \
     --saved-image flux_compile.png
 ```
