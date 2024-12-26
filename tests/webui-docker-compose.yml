@@ -46,7 +46,6 @@ services:
 
 
     volumes:
-      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
       - /share_nfs/onediff_ci/sd-webui/images:/share_nfs/onediff_ci/sd-webui/images:rw
