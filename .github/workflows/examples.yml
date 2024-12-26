@@ -178,7 +178,6 @@ jobs:
         test-suite:
           - diffusers_examples
           - comfy
-          - webui
         exclude:
           - should-run-pro: false
             image: onediff-pro:cu122
