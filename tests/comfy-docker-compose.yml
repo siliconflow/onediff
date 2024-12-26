@@ -29,7 +29,6 @@ services:
       CI: "1"
       SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
     volumes:
-      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
       - ${PWD}/${COMFYUI_SRC_DIR}:/app/ComfyUI

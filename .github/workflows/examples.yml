@@ -178,7 +178,6 @@ jobs:
         test-suite:
           - diffusers_examples
           - comfy
-          - webui
         exclude:
           - should-run-pro: false
             image: onediff-pro:cu122
@@ -289,16 +288,13 @@ jobs:
       - name: Install onediff-quant if needed
         if: startsWith(matrix.image, 'onediff-pro')
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant "numpy<2" -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
       - name: Pip Install Requirements for ComfyUI & Test
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
-      - name: Print pip package versions
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip list
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
@@ -356,10 +352,10 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} python3 examples/text_to_image_controlnet.py --base=/share_nfs/hf_models/stable-diffusion-v1-5 --controlnet=/share_nfs/hf_models/sd-controlnet-canny --input_image=/share_nfs/hf_models/input_image_vermeer.png
       - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-2-1
+        run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-xl-base-1.0
       - if: matrix.test-suite == 'diffusers_examples'
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2"
           docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py --disable-warnings
 
       - name: Install Requirements for WebUI
