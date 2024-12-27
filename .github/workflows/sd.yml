@@ -53,7 +53,7 @@ jobs:
           - {
               BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime",
               suffix: "torch2.3-cuda12.1",
-              repo: "onediff",
+              repo: "onediff-pro",
             }
     env:
       DOCKER_BUILDKIT: 1
