@@ -86,7 +86,7 @@ jobs:
         run: |
           curl "${{ env.ONEFLOW_PIP_INDEX }}"
           ONEFLOW_PIP_INDEX=${{ env.ONEFLOW_PIP_INDEX }}
-          DEV_VERSION=$(curl ${{ env.ONEFLOW_PIP_INDEX }} | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | head -n 1)
+          DEV_VERSION=$(curl ${{ env.ONEFLOW_PIP_INDEX }} | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | sort | tail -n 1)
           echo "DEV_VERSION: ${DEV_VERSION}"
           if [ -z "$DEV_VERSION" ]
           then
