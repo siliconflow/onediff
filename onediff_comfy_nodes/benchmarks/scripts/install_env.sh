@@ -27,4 +27,4 @@ else
 fi
 
 echo "Installing common dependencies..."
-python3 -m pip install --user nexfort websocket-client==1.8.0 numpy==1.26.4 scikit-image "huggingface_hub==0.25.0" "flash-attn==2.5.8" -i https://pypi.tuna.tsinghua.edu.cn/simple
+python3 -m pip install --user nexfort websocket-client==1.8.0 numpy==1.26.4 scikit-image "huggingface_hub==0.25.0" -i https://pypi.tuna.tsinghua.edu.cn/simple
