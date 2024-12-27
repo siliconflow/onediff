@@ -292,7 +292,7 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant "numpy<2" -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
         if: matrix.test-suite == 'comfy'
-      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user "huggingface_hub==0.25.0"
         if: matrix.test-suite == 'comfy'
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
         if: matrix.test-suite == 'comfy'
