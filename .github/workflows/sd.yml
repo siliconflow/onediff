@@ -31,28 +31,15 @@ jobs:
       matrix:
         image:
           - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
-              suffix: "cu118",
-              repo: "onediff",
-            }
-          - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
-              suffix: "cu121",
-              repo: "onediff-pro",
-            }
-          - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
-              suffix: "cu122",
-              repo: "onediff-pro",
-            }
-          - {
               BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda11.8-cudnn8-runtime",
-              suffix: "torch2.3-cuda11.8",
+              suffix: "cu118",
+              tag: "torch2.3-cuda11.8",
               repo: "onediff",
             }
           - {
               BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime",
-              suffix: "torch2.3-cuda12.1",
+              suffix: "cu122",
+              tag: "torch2.3-cuda12.1",
               repo: "onediff-pro",
             }
     env:
@@ -88,8 +75,8 @@ jobs:
       # 1.2 Build and push image to ACR
       - name: Set env
         run: |
-          echo ACR_TAG="$REGISTRY/$NAMESPACE/${{ matrix.image.repo }}:${{ matrix.image.suffix }}" >> $GITHUB_ENV
-          echo DOCKERHUB_TAG="oneflowinc/${{ matrix.image.repo }}:${{ matrix.image.suffix }}" >> $GITHUB_ENV
+          echo ACR_TAG="$REGISTRY/$NAMESPACE/${{ matrix.image.repo }}:${{ matrix.image.tag }}" >> $GITHUB_ENV
+          echo DOCKERHUB_TAG="oneflowinc/${{ matrix.image.repo }}:${{ matrix.image.tag }}" >> $GITHUB_ENV
       - name: Set env (Pro)
         if: matrix.image.repo == 'onediff-pro'
         run: |
