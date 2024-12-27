@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build-oneflow:
-    name: Build sd ${{ matrix.image.repo }}:${{ matrix.image.suffix }}
+    name: Build sd ${{ matrix.image.repo }}:${{ matrix.image.tag }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
