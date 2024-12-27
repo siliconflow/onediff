@@ -173,14 +173,14 @@ jobs:
         should-run-pro:
           - ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'schedule' }}
         image:
-          - onediff:cu118
-          - onediff-pro:cu122
+          - onediff:torch2.3-cuda11.8
+          - onediff-pro:torch2.3-cuda12.1
         test-suite:
           - diffusers_examples
           - comfy
         exclude:
           - should-run-pro: false
-            image: onediff-pro:cu122
+            image: onediff-pro:torch2.3-cuda12.1
     steps:
       - name: Login to ACR with the AccessKey pair
         if: github.event.pull_request.head.repo.full_name == github.repository
@@ -283,18 +283,22 @@ jobs:
       - run: nvidia-smi
       - run: nvidia-smi -L
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip list
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip cache dir
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m oneflow --doctor
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
       - name: Install onediff-quant if needed
         if: startsWith(matrix.image, 'onediff-pro')
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant "numpy<2" -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
-      - name: Pip Install Requirements for ComfyUI & Test
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user "huggingface_hub==0.25.0"
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r /src/onediff/onediff_diffusers_extensions/examples/requirements.txt
+        if: matrix.test-suite == 'diffusers_examples'
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
         if: matrix.test-suite == 'comfy'
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
+        if: matrix.test-suite == 'comfy'
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
+        if: matrix.test-suite == 'comfy'
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
@@ -302,6 +306,8 @@ jobs:
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
+      - run: docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
+        if: matrix.test-suite == 'comfy'
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
         run: |
@@ -317,7 +323,6 @@ jobs:
           # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache.json" 600
           # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
           # run_comfy_test "workflows/text-to-video-speedup.json" 5000
-          docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
           docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/run_all_tests.sh || {
               echo "Test fails! print the ComfyUI logs..."
               docker exec onediff-test cat /app/ComfyUI/onediff_comfyui.log
@@ -355,7 +360,7 @@ jobs:
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-xl-base-1.0
       - if: matrix.test-suite == 'diffusers_examples'
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2"
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2" "diffusers==0.23" peft "huggingface_hub==0.25.0" "transformers>=4.28.1"
           docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py --disable-warnings
 
       - name: Install Requirements for WebUI
@@ -363,7 +368,7 @@ jobs:
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user pytorch-lightning gradio==3.41.2 diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user pytorch-lightning gradio==3.41.2 diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 opencv-python-headless piexif inflection ftfy regex tqdm pydantic==1.10.13
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
 
       - name: Prepare environment for WebUI
