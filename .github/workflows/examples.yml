@@ -289,12 +289,12 @@ jobs:
         if: startsWith(matrix.image, 'onediff-pro')
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant "numpy<2" -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
-      - name: Pip Install Requirements for ComfyUI & Test
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
         if: matrix.test-suite == 'comfy'
-        run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user "torchaudio==2.3.1"
+        if: matrix.test-suite == 'comfy'
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
+        if: matrix.test-suite == 'comfy'
       - name: Start ComfyUI Web Service
         if: matrix.test-suite == 'comfy'
         run: |
@@ -302,6 +302,8 @@ jobs:
           sleep 30
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
+      - run: docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
+        if: matrix.test-suite == 'comfy'
       - name: Test ComfyUI
         if: matrix.test-suite == 'comfy'
         run: |
@@ -317,7 +319,6 @@ jobs:
           # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache.json" 600
           # run_comfy_test "/share_nfs/hf_models/comfyui_resources/workflows/deep-cache-with-lora.json" 800
           # run_comfy_test "workflows/text-to-video-speedup.json" 5000
-          docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
           docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/run_all_tests.sh || {
               echo "Test fails! print the ComfyUI logs..."
               docker exec onediff-test cat /app/ComfyUI/onediff_comfyui.log
