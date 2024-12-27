@@ -23,7 +23,7 @@ concurrency:
 
 jobs:
   build-oneflow:
-    name: Build sd ${{ matrix.image.repo }}:${{ matrix.image.suffix }}
+    name: Build sd ${{ matrix.image.repo }}:${{ matrix.image.tag }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -31,21 +31,17 @@ jobs:
       matrix:
         image:
           - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
+              BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda11.8-cudnn8-runtime",
               suffix: "cu118",
+              tag: "torch2.3-cuda11.8",
               repo: "onediff",
             }
           - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
-              suffix: "cu121",
-              repo: "onediff-pro",
-            }
-          - {
-              BASE_IMAGE: "nvcr.io/nvidia/pytorch:23.08-py3",
+              BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime",
               suffix: "cu122",
+              tag: "torch2.3-cuda12.1",
               repo: "onediff-pro",
             }
-
     env:
       DOCKER_BUILDKIT: 1
     steps:
@@ -79,8 +75,8 @@ jobs:
       # 1.2 Build and push image to ACR
       - name: Set env
         run: |
-          echo ACR_TAG="$REGISTRY/$NAMESPACE/${{ matrix.image.repo }}:${{ matrix.image.suffix }}" >> $GITHUB_ENV
-          echo DOCKERHUB_TAG="oneflowinc/${{ matrix.image.repo }}:${{ matrix.image.suffix }}" >> $GITHUB_ENV
+          echo ACR_TAG="$REGISTRY/$NAMESPACE/${{ matrix.image.repo }}:${{ matrix.image.tag }}" >> $GITHUB_ENV
+          echo DOCKERHUB_TAG="oneflowinc/${{ matrix.image.repo }}:${{ matrix.image.tag }}" >> $GITHUB_ENV
       - name: Set env (Pro)
         if: matrix.image.repo == 'onediff-pro'
         run: |
@@ -90,7 +86,7 @@ jobs:
         run: |
           curl "${{ env.ONEFLOW_PIP_INDEX }}"
           ONEFLOW_PIP_INDEX=${{ env.ONEFLOW_PIP_INDEX }}
-          DEV_VERSION=$(curl ${{ env.ONEFLOW_PIP_INDEX }} | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | head -n 1)
+          DEV_VERSION=$(curl ${{ env.ONEFLOW_PIP_INDEX }} | rg '/oneflow-(\d.+?)%2B(.+?)-cp' -or '$1+${2}' | sort | tail -n 1)
           echo "DEV_VERSION: ${DEV_VERSION}"
           if [ -z "$DEV_VERSION" ]
           then
