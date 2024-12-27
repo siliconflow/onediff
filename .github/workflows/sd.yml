@@ -45,7 +45,16 @@ jobs:
               suffix: "cu122",
               repo: "onediff-pro",
             }
-
+          - {
+              BASE_IMAGE: "2.3.1-cuda11.8-cudnn8-devel",
+              suffix: "2.3.1-cuda11.8",
+              repo: "onediff",
+            }
+          - {
+              BASE_IMAGE: "2.3.1-cuda12.1-cudnn8-runtime",
+              suffix: "2.3.1-cuda12.1",
+              repo: "onediff",
+            }
     env:
       DOCKER_BUILDKIT: 1
     steps:
