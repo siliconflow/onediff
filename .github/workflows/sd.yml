@@ -46,12 +46,12 @@ jobs:
               repo: "onediff-pro",
             }
           - {
-              BASE_IMAGE: "2.3.1-cuda11.8-cudnn8-devel",
+              BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda11.8-cudnn8-runtime",
               suffix: "2.3.1-cuda11.8",
               repo: "onediff",
             }
           - {
-              BASE_IMAGE: "2.3.1-cuda12.1-cudnn8-runtime",
+              BASE_IMAGE: "pytorch/pytorch:2.3.1-cuda12.1-cudnn8-runtime",
               suffix: "2.3.1-cuda12.1",
               repo: "onediff",
             }
