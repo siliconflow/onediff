@@ -173,14 +173,14 @@ jobs:
         should-run-pro:
           - ${{ github.event.pull_request.head.repo.full_name == github.repository || github.event_name == 'schedule' }}
         image:
-          - onediff:cu118
-          - onediff-pro:cu122
+          - onediff:torch2.3-cuda11.8
+          - onediff-pro:torch2.3-cuda12.1
         test-suite:
           - diffusers_examples
           - comfy
         exclude:
           - should-run-pro: false
-            image: onediff-pro:cu122
+            image: onediff-pro:torch2.3-cuda12.1
     steps:
       - name: Login to ACR with the AccessKey pair
         if: github.event.pull_request.head.repo.full_name == github.repository
