@@ -295,9 +295,9 @@ jobs:
       # must install opencv-python-headless after installing opencv-python, in two separate steps
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user opencv-python-headless
         if: matrix.test-suite == 'diffusers_examples'
-      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r --user tests/comfyui/requirements.txt "huggingface_hub<=0.25.0"
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user -r tests/comfyui/requirements.txt "huggingface_hub<=0.25.0"
         if: matrix.test-suite == 'comfy'
-      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r --user ComfyUI/requirements.txt "huggingface_hub<=0.25.0"
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user -r ComfyUI/requirements.txt "huggingface_hub<=0.25.0"
         if: matrix.test-suite == 'comfy'
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
         if: matrix.test-suite == 'comfy'
