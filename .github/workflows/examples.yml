@@ -362,7 +362,7 @@ jobs:
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-xl-base-1.0
       - if: matrix.test-suite == 'diffusers_examples'
         run: |
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2" "diffusers==0.23" peft pytest
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2" "diffusers==0.23" peft pytest "huggingface_hub<=0.25.0"
           docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py --disable-warnings
 
       - name: Install Requirements for WebUI
