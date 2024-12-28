@@ -290,14 +290,14 @@ jobs:
         if: startsWith(matrix.image, 'onediff-pro')
         run: |
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --pre onediff-quant "numpy<2" -f https://oneflow-pro.oss-cn-beijing.aliyuncs.com/onediff-quant/
-      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user -r /src/onediff/onediff_diffusers_extensions/examples/requirements.txt
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user -r /src/onediff/onediff_diffusers_extensions/examples/requirements.txt "huggingface_hub<=0.25.0"
         if: matrix.test-suite == 'diffusers_examples'
       # must install opencv-python-headless after installing opencv-python, in two separate steps
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user opencv-python-headless
         if: matrix.test-suite == 'diffusers_examples'
-      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r tests/comfyui/requirements.txt --user
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r --user tests/comfyui/requirements.txt "huggingface_hub<=0.25.0"
         if: matrix.test-suite == 'comfy'
-      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r ComfyUI/requirements.txt --user
+      - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install -r --user ComfyUI/requirements.txt "huggingface_hub<=0.25.0"
         if: matrix.test-suite == 'comfy'
       - run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
         if: matrix.test-suite == 'comfy'
@@ -371,7 +371,7 @@ jobs:
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip config set global.extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user pytorch-lightning gradio==3.41.2 diskcache gitpython pytorch_lightning==1.9.4 scikit-image jsonmerge pillow-avif-plugin torchdiffeq torchsde clean-fid resize-right lark tomesd blendmodes facexlib opencv-python==4.8.0.74 piexif inflection ftfy regex tqdm pydantic==1.10.13
-          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip --user opencv-python-headless
+          docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user opencv-python-headless
           docker exec ${{ env.CONTAINER_NAME }} python3 -m pip uninstall -y transformer-engine
 
       - name: Prepare environment for WebUI
