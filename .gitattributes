@@ -1,0 +1,4 @@
+*.png export-ignore
+*.jpg export-ignore
+*.ipynb export-ignore
+*.gif export-ignore
