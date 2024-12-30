@@ -1,2 +1,3 @@
-imgs export-ignore
+*.png export-ignore
+*.jpg export-ignore
 *.ipynb export-ignore
