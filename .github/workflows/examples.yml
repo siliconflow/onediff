@@ -305,8 +305,11 @@ jobs:
         if: matrix.test-suite == 'comfy'
         run: |
           docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --gpu-only --disable-cuda-malloc --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
-          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "cp /src/onediff/tests/comfyui/workflows/input/control/ /app/ComfyUI/input/control -r"
           sleep 30
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "cp /src/onediff/tests/comfyui/workflows/input/control/ /app/ComfyUI/input/control -r"
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "ls -R /src/onediff/tests/comfyui/workflows/input/ > /app/ComfyUI/onediff_comfyui.log 2>&1"
+          docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "ls -R /app/ComfyUI/input > /app/ComfyUI/onediff_comfyui.log 2>&1"
+
 
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
