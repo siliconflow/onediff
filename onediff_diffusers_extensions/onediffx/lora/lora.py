@@ -1,10 +1,10 @@
+import functools
 import warnings
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import diffusers
-import functools
 
 import torch
 from diffusers.loaders import LoraLoaderMixin
@@ -33,8 +33,6 @@ is_onediffx_lora_available = version.parse(diffusers.__version__) >= version.par
 )
 
 
-
-
 class OneDiffXWarning(Warning):
     pass
 
@@ -42,17 +40,21 @@ class OneDiffXWarning(Warning):
 warnings.filterwarnings("always", category=OneDiffXWarning)
 warnings.filterwarnings("always", category=DeprecationWarning)
 
+
 def deprecated():
     def decorator(func):
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
             warnings.warn(
-                f"lora function {func.__name__} is deprecated",
+                f"function {func.__name__} of onediffx.lora is deprecated",
                 category=DeprecationWarning,
             )
             return func(*args, **kwargs)
+
         return wrapper
+
     return decorator
+
 
 USE_PEFT_BACKEND = False
 

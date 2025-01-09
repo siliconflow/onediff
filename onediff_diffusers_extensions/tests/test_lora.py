@@ -164,6 +164,7 @@ def preload_multi_loras(pipe, loras):
         )
         unfuse_lora(pipe)
 
+
 @pytest.mark.skip(reason="onediffx.lora is deprecated")
 def test_lora_loading(pipe, get_loras):
     pipe.unet = oneflow_compile(pipe.unet)
