@@ -95,9 +95,12 @@ class OneDiffControlLora(ControlLora):
         sd = diffusion_model.state_dict()
         cm = self.control_model.state_dict()
         for k in sd:
-            weight = comfy.model_management.resolve_lowvram_weight(
-                sd[k], diffusion_model, k
-            )
+            # comfy.model_management.resolve_lowvram_weight(weight, model, key) always returns weight
+            # and is removed now
+            # weight = comfy.model_management.resolve_lowvram_weight(
+            #     sd[k], diffusion_model, k
+            # )
+            weight = sd[k]
             try:
                 set_attr_of(self.control_model, k, weight)
             except Exception as e:
