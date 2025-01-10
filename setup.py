@@ -17,7 +17,7 @@ setup(
     python_requires=">=3.8.0",
     install_requires=[
         "transformers>=4.27.1",
-        "diffusers>=0.19.3",
+        "diffusers>=0.27.0",
         "accelerate",
         "torch",
     ],
