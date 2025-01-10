@@ -122,7 +122,7 @@
   },
   "43": {
     "inputs": {
-      "image": "control/sdxl-unet-control-lora-speedup.png",
+      "image": "sdxl-unet-control-lora-speedup.png",
       "upload": "image"
     },
     "class_type": "LoadImage",
