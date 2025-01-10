@@ -306,7 +306,7 @@ jobs:
         run: |
           docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --gpu-only --disable-cuda-malloc --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
           docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "mkdir -p /app/ConfyUI/input/control/"
-          docker cp /share_nfs/hf_models/controlnet/sdxl-unet-control-lora-speedup.png ${{ env.CONTAINER_NAME }}:/app/ComfyUI/input/control/
+          # docker cp /share_nfs/hf_models/controlnet/sdxl-unet-control-lora-speedup.png ${{ env.CONTAINER_NAME }}:/app/ComfyUI/input/control/
           sleep 30
           docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "ls -R  /app/ComfyUI/input/control > /app/ComfyUI/onediff_comfyui.log 2>&1"
 
