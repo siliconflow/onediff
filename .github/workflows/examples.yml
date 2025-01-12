@@ -306,6 +306,8 @@ jobs:
         run: |
           docker exec -w /app/ComfyUI -d ${{ env.CONTAINER_NAME }} sh -c "python3 /app/ComfyUI/main.py --gpu-only --disable-cuda-malloc --port 8188 --extra-model-paths-config /src/onediff/tests/comfyui/extra_model_paths.yaml > /app/ComfyUI/onediff_comfyui.log 2>&1"
           sleep 30
+
+
       # print to check if comfy is launched successfully
       - run: docker exec ${{ env.CONTAINER_NAME }} ps aux
       - run: docker exec -w /src/onediff/onediff_comfy_nodes/benchmarks ${{ env.CONTAINER_NAME }} bash scripts/install_env.sh /app/ComfyUI
@@ -361,7 +363,7 @@ jobs:
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -w /src/onediff/onediff_diffusers_extensions ${{ env.CONTAINER_NAME }} bash examples/unet_save_and_load.sh --model_id=/share_nfs/hf_models/stable-diffusion-xl-base-1.0
       - if: matrix.test-suite == 'diffusers_examples'
-        run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2" "diffusers==0.23" peft pytest "huggingface_hub<=0.25.0"
+        run: docker exec ${{ env.CONTAINER_NAME }} python3 -m pip install --user scikit-image "numpy<2" "diffusers==0.23" peft==0.6.0 pytest "huggingface_hub<=0.25.0"
       - if: matrix.test-suite == 'diffusers_examples'
         run: docker exec -e ONEFLOW_MLIR_ENABLE_INFERENCE_OPTIMIZATION=0 ${{ env.CONTAINER_NAME }} python3 -m pytest -v onediff_diffusers_extensions/tests/test_lora.py --disable-warnings
 

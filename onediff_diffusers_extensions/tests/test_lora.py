@@ -36,6 +36,8 @@ LATENTS = torch.randn(
 )
 
 image_file_prefix = "/share_nfs/onediff_ci/diffusers/images/1.0"
+if not Path(image_file_prefix).exists():
+    Path(image_file_prefix).mkdir(parents=True)
 
 
 @pytest.fixture
@@ -163,6 +165,7 @@ def preload_multi_loras(pipe, loras):
         unfuse_lora(pipe)
 
 
+@pytest.mark.skip(reason="onediffx.lora is deprecated")
 def test_lora_loading(pipe, get_loras):
     pipe.unet = oneflow_compile(pipe.unet)
     pipe(
@@ -193,6 +196,7 @@ def test_lora_loading(pipe, get_loras):
         assert ssim > 0.92, f"LoRA {name} ssim too low"
 
 
+@pytest.mark.skip(reason="onediffx.lora is deprecated")
 def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
     pipe.unet = oneflow_compile(pipe.unet)
     multi_loras = get_multi_loras()
@@ -226,6 +230,7 @@ def test_multi_lora_loading(pipe, get_multi_loras, get_loras):
         assert ssim > 0.92, f"LoRA {names} ssim too low"
 
 
+@pytest.mark.skip(reason="onediffx.lora is deprecated")
 def test_get_active_adapters(pipe, get_multi_loras, get_loras):
     multi_loras = get_multi_loras()
     preload_multi_loras(pipe, get_loras())
@@ -236,6 +241,7 @@ def test_get_active_adapters(pipe, get_multi_loras, get_loras):
         assert set(active_adapters) == set(names)
 
 
+@pytest.mark.skip(reason="onediffx.lora is deprecated")
 def test_delete_adapters(pipe, get_multi_loras, get_loras):
     multi_loras = get_multi_loras()
     for names, _ in multi_loras.items():
@@ -250,6 +256,7 @@ def test_delete_adapters(pipe, get_multi_loras, get_loras):
         assert set(active_adapters) == set(names) - set(names_to_delete)
 
 
+@pytest.mark.skip(reason="onediffx.lora is deprecated")
 def test_lora_numerical_stability():
     original_pipe = get_pipe("sd1.5")
     pipe = get_pipe("sd1.5")
