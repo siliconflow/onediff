@@ -22,10 +22,9 @@ if [ "$CI" = "1" ]; then
   echo "Detected CI environment. Skipping local environment-specific dependencies."
 else
   echo "Detected local environment. Installing local environment-specific dependencies."
-  pip install -r $CUSTOM_NODES/ComfyUI_InstantID/requirements.txt
-  pip install -r $CUSTOM_NODES/PuLID_ComfyUI/requirements.txt
+  python3 -m pip install --user -r $CUSTOM_NODES/ComfyUI_InstantID/requirements.txt
+  python3 -m pip install --user -r $CUSTOM_NODES/PuLID_ComfyUI/requirements.txt
 fi
 
 echo "Installing common dependencies..."
-pip install websocket-client==1.8.0 numpy==1.26.4 scikit-image -i https://pypi.tuna.tsinghua.edu.cn/simple
-pip install nexfort
+python3 -m pip install --user nexfort websocket-client==1.8.0 numpy==1.26.4 scikit-image

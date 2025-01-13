@@ -29,18 +29,18 @@ services:
       CI: "1"
       SILICON_ONEDIFF_LICENSE_KEY: ${SILICON_ONEDIFF_LICENSE_KEY}
     volumes:
-      - $HOME/test-container-cache-${CONTAINER_NAME}/dot-local:/root/.local
       - $HOME/test-container-cache-${CONTAINER_NAME}/dot-cache:/root/.cache
       - /share_nfs:/share_nfs:ro
       - ${PWD}/${COMFYUI_SRC_DIR}:/app/ComfyUI
       - /share_nfs/hf_models/comfyui_resources/custom_nodes/ComfyUI_IPAdapter_plus:/app/ComfyUI/custom_nodes/ComfyUI_IPAdapter_plus
       - /share_nfs/hf_models/comfyui_resources/input/input_image_vermeer.png:/app/ComfyUI/input/input_image_vermeer.png:ro
+      - /share_nfs/hf_models/comfyui_resources/input/sdxl-unet-control-lora-speedup.png:/app/ComfyUI/input/sdxl-unet-control-lora-speedup.png:ro
       - /share_nfs/hf_models/comfyui_resources/input/a_car.png:/app/ComfyUI/input/a_car.png:ro
       - ${PWD}/onediff_comfy_nodes:/app/ComfyUI/custom_nodes/onediff_comfy_nodes
       - ${SDXL_BASE}:/app/ComfyUI/models/checkpoints/sd_xl_base_1.0.safetensors:ro
       - ${UNET_INT8}:/app/ComfyUI/models/unet_int8/unet_int8:ro
       - ${CONTROL_LORA_OPENPOSEXL2_RANK256}:/app/ComfyUI/models/controlnet/control-lora-openposeXL2-rank256.safetensors:ro
-      - $PWD/tests/comfyui/workflows/input/control:/app/ComfyUI/input/control:ro
+      # - $PWD/tests/comfyui/workflows/input/control:/app/ComfyUI/input/control:ro
       - $PWD:/src/onediff
     working_dir: /src/onediff
     restart: "no"

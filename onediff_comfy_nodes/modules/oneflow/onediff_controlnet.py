@@ -40,7 +40,6 @@ class OneDiffControlLora(ControlLora):
         c = cls(
             controlnet.control_weights,
             global_average_pooling=controlnet.global_average_pooling,
-            device=controlnet.device,
         )
         controlnet.copy_to(c)
         c._oneflow_model = None
@@ -96,9 +95,12 @@ class OneDiffControlLora(ControlLora):
         sd = diffusion_model.state_dict()
         cm = self.control_model.state_dict()
         for k in sd:
-            weight = comfy.model_management.resolve_lowvram_weight(
-                sd[k], diffusion_model, k
-            )
+            # comfy.model_management.resolve_lowvram_weight(weight, model, key) always returns weight
+            # and is removed now
+            # weight = comfy.model_management.resolve_lowvram_weight(
+            #     sd[k], diffusion_model, k
+            # )
+            weight = sd[k]
             try:
                 set_attr_of(self.control_model, k, weight)
             except Exception as e:
@@ -117,7 +119,6 @@ class OneDiffControlLora(ControlLora):
         c = OneDiffControlLora(
             self.control_weights,
             global_average_pooling=self.global_average_pooling,
-            device=self.device,
         )
         self.copy_to(c)
         c._oneflow_model = self._oneflow_model

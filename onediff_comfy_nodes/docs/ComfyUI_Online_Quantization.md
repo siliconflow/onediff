@@ -49,9 +49,9 @@ Note that you can download all images in this page and then drag or load them on
 
 #### Examples
 
-| Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| [Baseline (non-optimized)](../workflows/sdxl-baseline.json) | [OneDiff(optimized)](../workflows/sdxl-onediff.json) | [OneDiff Quant(optimized)](../workflows/sdxl-quant.json) |
 | ------------------------ | ------------------ | ------------------------ |
-|![image](https://github.com/fmk345/pythonProject/assets/74238139/d5499822-e0b0-4186-831c-18f4c8921ec4)|![image](https://github.com/fmk345/pythonProject/assets/74238139/14feaaf4-6672-430c-85ff-d8c7d8b4d5a2)|![image](https://github.com/fmk345/pythonProject/assets/74238139/cb99f5d7-fb4f-421c-9783-a3adc4375759)|
+|![image](../comfyui_workflow_images/sdxl-baseline.png)|![image](../comfyui_workflow_images/sdxl-onediff.png)|![image](../comfyui_workflow_images/sdxl-quant.png)|
 
 Model parameters can be referred to [Parameter Description](#parameter-description).
 
@@ -74,7 +74,7 @@ python main.py --gpu-only
 
 
 
-### SD1.5
+### [SD1.5](https://huggingface.co/stable-diffusion-v1-5/stable-diffusion-v1-5)
 
 We compared the performance of the stable-diffusion-v1-5 model in the three conditions and listed them in the subscript.
 
@@ -88,9 +88,9 @@ Note that you can download all images in this page and then drag or load them on
 
 #### Examples
 
-| Baseline (non-optimized) | OneDiff(optimized) | OneDiff Quant(optimized) |
+| [Baseline (non-optimized)](../workflows/sd15-baseline.json) | [OneDiff(optimized)](../workflows/sd15-onediff.json) | [OneDiff Quant(optimized)](../workflows/sd15-quant.json) |
 | ------------------------ | ------------------ | ------------------------ |
-|![image](https://github.com/fmk345/pythonProject/assets/74238139/948271d2-24db-483f-9f33-81a64ae44c9e)|![image](https://github.com/fmk345/pythonProject/assets/74238139/08495a75-03f5-4e7d-93a2-b206ea755901)|![image](https://github.com/fmk345/pythonProject/assets/74238139/10c00186-fe72-4cca-92d2-2a672b8ffac5)|
+|![image](../comfyui_workflow_images/sd15-baseline.png)|![image](../comfyui_workflow_images/sd15-onediff.png)|![image](../comfyui_workflow_images/sd15-quant.png)|
 
 Model parameters can be referred to [Parameter Description](#parameter-description).
 
@@ -100,7 +100,7 @@ Model parameters can be referred to [Parameter Description](#parameter-descripti
 
 ```
 cd ComfyUI
-wget -O  models/v1-5-pruned-emaonly.ckpt  https://huggingface.co/runwayml/stable-diffusion-v1-5/blob/main/v1-5-pruned-emaonly.ckpt
+wget -O  models/checkpoints/v1-5-pruned-emaonly.safetensors https://huggingface.co/sd-legacy/stable-diffusion-v1-5/resolve/main/v1-5-pruned-emaonly.safetensors
 ```
 
 

@@ -1,3 +1,4 @@
+import functools
 import warnings
 from collections import OrderedDict
 from pathlib import Path
@@ -37,10 +38,28 @@ class OneDiffXWarning(Warning):
 
 
 warnings.filterwarnings("always", category=OneDiffXWarning)
+warnings.filterwarnings("always", category=DeprecationWarning)
+
+
+def deprecated():
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            warnings.warn(
+                f"function {func.__name__} of onediffx.lora is deprecated",
+                category=DeprecationWarning,
+            )
+            return func(*args, **kwargs)
+
+        return wrapper
+
+    return decorator
+
 
 USE_PEFT_BACKEND = False
 
 
+@deprecated()
 def load_and_fuse_lora(
     pipeline: LoraLoaderMixin,
     pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]],
@@ -63,6 +82,7 @@ def load_and_fuse_lora(
     )
 
 
+@deprecated()
 def load_lora_and_optionally_fuse(
     pipeline: LoraLoaderMixin,
     pretrained_model_name_or_path_or_dict: Union[str, Path, Dict[str, torch.Tensor]],
@@ -186,6 +206,7 @@ def load_lora_and_optionally_fuse(
         )
 
 
+@deprecated()
 def unfuse_lora(pipeline: LoraLoaderMixin):
     def _unfuse_lora_apply(m: torch.nn.Module):
         if isinstance(m, (torch.nn.Linear, PatchedLoraProjection, torch.nn.Conv2d)):
@@ -205,6 +226,7 @@ def unfuse_lora(pipeline: LoraLoaderMixin):
         pipeline.text_encoder_2.apply(_unfuse_lora_apply)
 
 
+@deprecated()
 def set_and_fuse_adapters(
     pipeline: LoraLoaderMixin,
     adapter_names: Optional[Union[List[str], str]] = None,
@@ -248,6 +270,7 @@ def set_and_fuse_adapters(
         pipeline.text_encoder_2.apply(set_adapters_apply)
 
 
+@deprecated()
 def delete_adapters(
     self, adapter_names: Union[List[str], str] = None, safe_delete=True
 ):
@@ -276,6 +299,7 @@ def delete_adapters(
         self.text_encoder_2.apply(delete_adapters_apply)
 
 
+@deprecated()
 def get_active_adapters(self) -> List[str]:
     if hasattr(self, "_adapter_names"):
         return list(self._active_adapter_names.keys())
