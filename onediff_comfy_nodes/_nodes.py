@@ -47,6 +47,7 @@ class SpeedupMixin:
     def speedup(
         self,
         model,
+        ckpt_name: Optional[str] = None,
         inplace: bool = False,
         custom_booster: Optional[BoosterScheduler] = None,
         booster_settings: Optional[BoosterSettings] = None,
@@ -77,7 +78,7 @@ class SpeedupMixin:
         booster.settings = (
             self.booster_settings if booster_settings is None else booster_settings
         )
-        return (booster(model, *args, **kwargs),)
+        return (booster(model, ckpt_name, *args, **kwargs),)
 
 
 class ModelSpeedup(SpeedupMixin):
@@ -244,6 +245,7 @@ class OneDiffCheckpointLoaderSimple(CheckpointLoaderSimple, SpeedupMixin):
         modelpatcher, clip, vae = self.load_checkpoint(ckpt_name)
         modelpatcher = self.speedup(
             modelpatcher,
+            ckpt_name=ckpt_name,
             inplace=True,
             custom_booster=custom_booster,
             booster_settings=self.unet_booster_settings,
